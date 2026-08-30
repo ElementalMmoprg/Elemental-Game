@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aincrad Online — Portal da Torre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#0d0b09; --bg-stone:#171310; --bg-panel:#221b14; --bg-panel-2:#2b2118;
+    --line-gold:#8a6a34; --line-gold-bright:#d3ab54;
+    --text-main:#ece1c8; --text-dim:#9c8d6f;
+    --fogo:#e2542b; --agua:#3a8fc2; --terra:#6f8f4e; --ar:#cdd9df; --luz:#e9c14a; --trevas:#8358c9;
+    --err:#c9455a; --ok:#7fae5e;
+    --font-display:'Cinzel', serif; --font-body:'Spectral', serif; --font-mono:'JetBrains Mono', monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; min-height:100%; font-family:var(--font-body); color:var(--text-main);
+    background:
+      radial-gradient(ellipse at 20% 10%, #241a10 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 90%, #1a1410 0%, transparent 50%),
+      var(--bg-void);
+  }
+  #wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px; gap:56px; flex-wrap:wrap; }
+
+  /* ---------- Ilustração da Torre ---------- */
+  #tower-side{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+  #tower-side h1{ font-family:var(--font-display); font-size:22px; letter-spacing:.12em; color:var(--line-gold-bright);
+    text-transform:uppercase; margin:0; text-shadow:0 0 18px rgba(211,171,84,.35); text-align:center; }
+  #tower-side .sub{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); text-align:center; max-width:280px; }
+
+  /* ---------- Card de autenticação ---------- */
+  #auth-card{
+    width:380px; max-width:92vw;
+    background:linear-gradient(180deg,var(--bg-panel),var(--bg-stone));
+    border:1px solid var(--line-gold); border-radius:10px;
+    box-shadow:0 24px 70px rgba(0,0,0,.6);
+    overflow:hidden;
+  }
+  #auth-tabs{ display:flex; border-bottom:1px solid var(--line-gold); }
+  .auth-tab{ flex:1; text-align:center; padding:12px 4px; font-family:var(--font-mono); font-size:11px;
+    letter-spacing:.05em; color:var(--text-dim); cursor:pointer; text-transform:uppercase; }
+  .auth-tab.active{ color:var(--luz); background:rgba(233,193,74,.06); box-shadow:inset 0 -2px 0 var(--luz); }
+
+  .auth-body{ padding:24px 22px; display:none; }
+  .auth-body.active{ display:block; }
+
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); margin-bottom:5px; letter-spacing:.03em; }
+  .field input{
+    width:100%; background:#140f0a; border:1px solid #3a2f1f; border-radius:5px; color:var(--text-main);
+    padding:10px 11px; font-family:var(--font-body); font-size:13.5px; outline:none;
+  }
+  .field input:focus{ border-color:var(--line-gold-bright); }
+
+  .btn-primary{
+    width:100%; padding:11px; border-radius:6px; border:1px solid var(--line-gold-bright);
+    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--luz); font-family:var(--font-display);
+    font-size:13px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; margin-top:4px;
+  }
+  .btn-primary:hover{ filter:brightness(1.15); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:12px; display:none; line-height:1.5; }
+  .msg.show{ display:block; }
+  .msg.error{ background:rgba(201,69,90,.12); border:1px solid var(--err); color:#ef9aa5; }
+  .msg.ok{ background:rgba(127,174,94,.12); border:1px solid var(--ok); color:#b9dba0; }
+
+  .recovery-box{
+    margin-top:14px; padding:12px; background:#140f0a; border:1px dashed var(--line-gold-bright); border-radius:6px;
+    font-family:var(--font-mono); font-size:12px; display:none;
+  }
+  .recovery-box.show{ display:block; }
+  .recovery-box .key{ color:var(--luz); font-size:15px; letter-spacing:.03em; margin:6px 0; word-break:break-all; }
+  .recovery-box .warn{ color:var(--text-dim); font-size:10.5px; }
+
+  .link-row{ text-align:center; margin-top:14px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); }
+  .link-row a{ color:var(--line-gold-bright); text-decoration:none; cursor:pointer; }
+  .link-row a:hover{ text-decoration:underline; }
+
+  .dev-note{ margin-top:16px; padding-top:12px; border-top:1px dashed #3a2f1f; font-family:var(--font-mono); font-size:9.5px; color:#6a5c44; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+
+  <!-- ILUSTRAÇÃO: torre + 6 orbes elementais -->
+  <div id="tower-side">
+    <svg width="240" height="320" viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="glowFogo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e2542b" stop-opacity=".9"/><stop offset="100%" stop-color="#e2542b" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowAgua" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3a8fc2" stop-opacity=".9"/><stop offset="100%" stop-color="#3a8fc2" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowTerra" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6f8f4e" stop-opacity=".9"/><stop offset="100%" stop-color="#6f8f4e" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowAr" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#cdd9df" stop-opacity=".9"/><stop offset="100%" stop-color="#cdd9df" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowLuz" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e9c14a" stop-opacity=".9"/><stop offset="100%" stop-color="#e9c14a" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowTrevas" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#8358c9" stop-opacity=".9"/><stop offset="100%" stop-color="#8358c9" stop-opacity="0"/></radialGradient>
+        <linearGradient id="towerBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3a2f22"/><stop offset="100%" stop-color="#171310"/>
+        </linearGradient>
+      </defs>
+
+      <ellipse cx="120" cy="300" rx="90" ry="14" fill="#000" opacity=".35"/>
+
+      <!-- orbes elementais orbitando a base -->
+      <circle cx="35"  cy="250" r="26" fill="url(#glowFogo)"/>
+      <circle cx="205" cy="250" r="26" fill="url(#glowAgua)"/>
+      <circle cx="20"  cy="180" r="22" fill="url(#glowTerra)"/>
+      <circle cx="220" cy="180" r="22" fill="url(#glowAr)"/>
+      <circle cx="45"  cy="120" r="20" fill="url(#glowLuz)"/>
+      <circle cx="195" cy="120" r="20" fill="url(#glowTrevas)"/>
+      <circle cx="35" cy="250" r="5" fill="#e2542b"/>
+      <circle cx="205" cy="250" r="5" fill="#3a8fc2"/>
+      <circle cx="20" cy="180" r="4.5" fill="#6f8f4e"/>
+      <circle cx="220" cy="180" r="4.5" fill="#cdd9df"/>
+      <circle cx="45" cy="120" r="4" fill="#e9c14a"/>
+      <circle cx="195" cy="120" r="4" fill="#8358c9"/>
+
+      <!-- torre central -->
+      <polygon points="95,300 145,300 140,60 100,60" fill="url(#towerBody)" stroke="#8a6a34" stroke-width="1.5"/>
+      <polygon points="100,60 140,60 132,30 108,30" fill="#4a3a24" stroke="#8a6a34" stroke-width="1.5"/>
+      <polygon points="108,30 132,30 120,8" fill="#d3ab54"/>
+      <rect x="106" y="140" width="28" height="40" fill="#0d0b09" stroke="#8a6a34" stroke-width="1"/>
+      <rect x="106" y="200" width="28" height="40" fill="#0d0b09" stroke="#8a6a34" stroke-width="1"/>
+      <circle cx="120" cy="19" r="4" fill="#f2e2a8"/>
+    </svg>
+    <h1>Aincrad Online</h1>
+    <div class="sub">Cidade Central e as 6 Torres Elementais aguardam. Crie sua conta para começar a escalada.</div>
+  </div>
+
+  <!-- CARD DE AUTENTICAÇÃO -->
+  <div id="auth-card">
+    <div id="auth-tabs">
+      <div class="auth-tab active" data-tab="login">Entrar</div>
+      <div class="auth-tab" data-tab="register">Criar Conta</div>
+      <div class="auth-tab" data-tab="recover">Recuperar</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="auth-body active" id="tab-login">
+      <div class="msg" id="login-msg"></div>
+      <div class="field"><label>Usuário</label><input type="text" id="login-username" autocomplete="username"></div>
+      <div class="field"><label>Senha</label><input type="password" id="login-password" autocomplete="current-password"></div>
+      <button class="btn-primary" id="login-btn">Entrar na Torre</button>
+      <div class="link-row">Esqueceu o acesso? <a data-goto="recover">Recuperar conta</a></div>
+    </div>
+
+    <!-- CRIAR CONTA -->
+    <div class="auth-body" id="tab-register">
+      <div class="msg" id="register-msg"></div>
+      <div class="field"><label>Usuário</label><input type="text" id="register-username" autocomplete="username"></div>
+      <div class="field"><label>Email</label><input type="email" id="register-email" autocomplete="email"></div>
+      <div class="field"><label>Senha (mín. 6 caracteres)</label><input type="password" id="register-password" autocomplete="new-password"></div>
+      <button class="btn-primary" id="register-btn">Criar Conta</button>
+      <div class="recovery-box" id="register-recovery">
+        <div class="warn">Sua Recovery Key (enviada por email) — guarde-a, é a única forma de trocar o email da conta:</div>
+        <div class="key" id="register-recovery-key">—</div>
+        <div class="warn">Você será levado ao jogo em alguns segundos...</div>
+      </div>
+      <div class="dev-note">Modo de desenvolvimento: este servidor não envia email de verdade. A recovery key acima veio do "outbox" mockado só para você testar o fluxo.</div>
+    </div>
+
+    <!-- RECUPERAR CONTA -->
+    <div class="auth-body" id="tab-recover">
+      <div class="msg" id="recover-msg"></div>
+      <div class="field"><label>Usuário</label><input type="text" id="recover-username"></div>
+      <div class="field"><label>Recovery Key</label><input type="text" id="recover-key" placeholder="EX: FOGO-1D3B-B828-562B" style="font-family:var(--font-mono);"></div>
+      <div class="field"><label>Novo Email</label><input type="email" id="recover-newemail"></div>
+      <button class="btn-primary" id="recover-btn">Trocar Email da Conta</button>
+      <div class="recovery-box" id="recover-recovery">
+        <div class="warn">Sua NOVA Recovery Key (a antiga não funciona mais):</div>
+        <div class="key" id="recover-recovery-key">—</div>
+      </div>
+      <div class="link-row">Lembrou a senha? <a data-goto="login">Voltar ao login</a></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // Ajuste este endereço se o servidor rodar em outra máquina/porta.
+  const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
+
+  function showMsg(id, text, type){
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg show ' + type;
+  }
+  function clearMsg(id){
+    const el = document.getElementById(id);
+    el.className = 'msg';
+  }
+
+  // troca de abas
+  document.querySelectorAll('.auth-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=> switchTab(tab.dataset.tab));
+  });
+  document.querySelectorAll('[data-goto]').forEach(a=>{
+    a.addEventListener('click', ()=> switchTab(a.dataset.goto));
+  });
+  function switchTab(name){
+    document.querySelectorAll('.auth-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===name));
+    document.querySelectorAll('.auth-body').forEach(b=> b.classList.toggle('active', b.id==='tab-'+name));
+  }
+
+  async function api(path, body){
+    const res = await fetch(API_BASE + path, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    let data;
+    try { data = await res.json(); } catch(e){ data = { ok:false, error:'resposta_invalida' }; }
+    return data;
+  }
+
+  const ERROR_LABELS = {
+    campos_obrigatorios:'Preencha todos os campos.',
+    usuario_curto:'Usuário precisa ter ao menos 3 caracteres.',
+    senha_curta:'Senha precisa ter ao menos 6 caracteres.',
+    email_invalido:'Email inválido.',
+    usuario_em_uso:'Esse nome de usuário já existe.',
+    email_em_uso:'Esse email já está em uso.',
+    credenciais_invalidas:'Usuário ou senha incorretos.',
+    usuario_nao_encontrado:'Usuário não encontrado.',
+    recovery_key_invalida:'Recovery key inválida para esse usuário.',
+    erro_interno:'Erro no servidor. Tente novamente.',
+    resposta_invalida:'Não foi possível falar com o servidor. Ele está rodando (node server.js)?',
+  };
+  function labelFor(err){ return ERROR_LABELS[err] || 'Algo deu errado.'; }
+
+  function saveSessionAndEnter(token, username){
+    localStorage.setItem('aincrad_token', token);
+    localStorage.setItem('aincrad_username', username);
+    setTimeout(()=>{ window.location.href = 'world-prototype.html'; }, 1600);
+  }
+
+  // ---- LOGIN ----
+  document.getElementById('login-btn').addEventListener('click', async ()=>{
+    clearMsg('login-msg');
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    if(!username || !password){ showMsg('login-msg','Preencha usuário e senha.','error'); return; }
+    const data = await api('/api/login', { username, password });
+    if(!data.ok){ showMsg('login-msg', labelFor(data.error), 'error'); return; }
+    showMsg('login-msg', `Bem-vindo de volta, ${data.username}. Entrando...`, 'ok');
+    saveSessionAndEnter(data.token, data.username);
+  });
+
+  // ---- CRIAR CONTA ----
+  document.getElementById('register-btn').addEventListener('click', async ()=>{
+    clearMsg('register-msg');
+    document.getElementById('register-recovery').classList.remove('show');
+    const username = document.getElementById('register-username').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    if(!username || !email || !password){ showMsg('register-msg','Preencha todos os campos.','error'); return; }
+    const data = await api('/api/register', { username, email, password });
+    if(!data.ok){ showMsg('register-msg', labelFor(data.error), 'error'); return; }
+    showMsg('register-msg', 'Conta criada! Recovery key enviada por email.', 'ok');
+
+    // busca a recovery key no outbox mockado (modo dev) só pra exibir na tela
+    try{
+      const inbox = await fetch(`${API_BASE}/api/dev/outbox?email=${encodeURIComponent(email)}`).then(r=>r.json());
+      const last = inbox.mails && inbox.mails[inbox.mails.length-1];
+      if(last){
+        const m = last.body.match(/Recovery Key é: (\S+)/);
+        if(m){
+          document.getElementById('register-recovery-key').textContent = m[1];
+          document.getElementById('register-recovery').classList.add('show');
+        }
+      }
+    } catch(e){}
+
+    saveSessionAndEnter(data.token, data.username);
+  });
+
+  // ---- RECUPERAR CONTA (troca de email com recovery key) ----
+  document.getElementById('recover-btn').addEventListener('click', async ()=>{
+    clearMsg('recover-msg');
+    document.getElementById('recover-recovery').classList.remove('show');
+    const username = document.getElementById('recover-username').value.trim();
+    const recoveryKey = document.getElementById('recover-key').value.trim();
+    const newEmail = document.getElementById('recover-newemail').value.trim();
+    if(!username || !recoveryKey || !newEmail){ showMsg('recover-msg','Preencha todos os campos.','error'); return; }
+    const data = await api('/api/recover/change-email', { username, recoveryKey, newEmail });
+    if(!data.ok){ showMsg('recover-msg', labelFor(data.error), 'error'); return; }
+    showMsg('recover-msg', 'Email atualizado com sucesso! Nova recovery key enviada.', 'ok');
+
+    try{
+      const inbox = await fetch(`${API_BASE}/api/dev/outbox?email=${encodeURIComponent(newEmail)}`).then(r=>r.json());
+      const last = inbox.mails && inbox.mails[inbox.mails.length-1];
+      if(last){
+        const m = last.body.match(/NOVA Recovery Key é: (\S+)/);
+        if(m){
+          document.getElementById('recover-recovery-key').textContent = m[1];
+          document.getElementById('recover-recovery').classList.add('show');
+        }
+      }
+    } catch(e){}
+  });
+
+  // se já tem sessão salva, pula direto pro jogo
+  if(localStorage.getItem('aincrad_token')){
+    // não redireciona automaticamente pra permitir trocar de conta a partir desta tela;
+    // só mostra um aviso discreto.
+  }
+})();
+</script>
+</body>
+</html>
