@@ -3,562 +3,309 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aincrad Online — HUD Premium</title>
+<title>Aincrad Online — Portal da Torre</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  /* ============ DESIGN TOKENS — Dark Gold & Glass ============ */
   :root{
-    --gold-deep:    #7a6435;
-    --gold:         #bfa15f;   /* ouro envelhecido / bronze — pedido explicitamente */
-    --gold-bright:  #f0d38a;
-    --glass-1:      rgba(22,18,13,.70);
-    --glass-2:      rgba(9,7,5,.82);
-    --ink:          #f2e8d0;
-    --ink-dim:      #a99872;
-    --hp-a: #ff7a7a; --hp-b: #8a1f2b; --hp-c: #4a0e17;
-    --mp-a: #7fc6ff; --mp-b: #1f4a7a; --mp-c: #0e2540;
-    --ok: #6fae6f; --bot-on: #52d1a3;
-    --font-display:'Cinzel', serif;
-    --font-body:'Spectral', serif;
-    --font-mono:'JetBrains Mono', monospace;
+    --bg-void:#0d0b09; --bg-stone:#171310; --bg-panel:#221b14; --bg-panel-2:#2b2118;
+    --line-gold:#8a6a34; --line-gold-bright:#d3ab54;
+    --text-main:#ece1c8; --text-dim:#9c8d6f;
+    --fogo:#e2542b; --agua:#3a8fc2; --terra:#6f8f4e; --ar:#cdd9df; --luz:#e9c14a; --trevas:#8358c9;
+    --err:#c9455a; --ok:#7fae5e;
+    --font-display:'Cinzel', serif; --font-body:'Spectral', serif; --font-mono:'JetBrains Mono', monospace;
   }
   *{ box-sizing:border-box; }
-  html,body{ margin:0; height:100%; font-family:var(--font-body); color:var(--ink); overflow:hidden; }
-  body{
+  html,body{ margin:0; min-height:100%; font-family:var(--font-body); color:var(--text-main);
     background:
-      radial-gradient(ellipse 900px 600px at 22% 18%, rgba(191,161,95,.10), transparent 60%),
-      radial-gradient(ellipse 700px 500px at 85% 85%, rgba(90,60,20,.10), transparent 55%),
-      #050403;
+      radial-gradient(ellipse at 20% 10%, #241a10 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 90%, #1a1410 0%, transparent 50%),
+      var(--bg-void);
   }
-  #stage{ position:relative; width:100vw; height:100vh; }
-  #stage > *{ position:absolute; }
+  #wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px; gap:56px; flex-wrap:wrap; }
 
-  /* ============ PAINEL DE VIDRO BASE (item 1) ============ */
-  .glass{
-    background: linear-gradient(180deg, var(--glass-1), var(--glass-2));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid var(--gold);
-    border-radius: 8px;
-    box-shadow:
-      0 0 0 1px rgba(191,161,95,.14) inset,
-      0 16px 44px rgba(0,0,0,.55),
-      0 0 26px rgba(191,161,95,.07);
-  }
-  /* cantoneiras douradas — a assinatura visual ornamentada da HUD */
-  .ornate{ position:relative; }
-  .ornate::before, .ornate::after,
-  .ornate .corner-br::before, .ornate .corner-br::after{
-    content:''; position:absolute; width:14px; height:14px; pointer-events:none;
-    border-color:var(--gold-bright); opacity:.85;
-  }
-  .ornate::before{ top:-1px; left:-1px; border-top:2px solid; border-left:2px solid; border-top-left-radius:6px; }
-  .ornate::after{ top:-1px; right:-1px; border-top:2px solid; border-right:2px solid; border-top-right-radius:6px; }
-  .ornate .corner-br::before{ bottom:-1px; left:-1px; border-bottom:2px solid; border-left:2px solid; border-bottom-left-radius:6px; }
-  .ornate .corner-br::after{ bottom:-1px; right:-1px; border-bottom:2px solid; border-right:2px solid; border-bottom-right-radius:6px; }
+  /* ---------- Ilustração da Torre ---------- */
+  #tower-side{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+  #tower-side h1{ font-family:var(--font-display); font-size:22px; letter-spacing:.12em; color:var(--line-gold-bright);
+    text-transform:uppercase; margin:0; text-shadow:0 0 18px rgba(211,171,84,.35); text-align:center; }
+  #tower-side .sub{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); text-align:center; max-width:280px; }
 
-  .panel-title{
-    font-family:var(--font-display); font-size:12.5px; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--gold-bright); text-shadow:0 0 10px rgba(240,211,138,.35);
-    display:flex; align-items:center; gap:6px; margin:0 0 10px;
+  /* ---------- Card de autenticação ---------- */
+  #auth-card{
+    width:380px; max-width:92vw;
+    background:linear-gradient(180deg,var(--bg-panel),var(--bg-stone));
+    border:1px solid var(--line-gold); border-radius:10px;
+    box-shadow:0 24px 70px rgba(0,0,0,.6);
+    overflow:hidden;
   }
-  .panel-title .rule{ flex:1; height:1px; background:linear-gradient(90deg, var(--gold), transparent); }
+  #auth-tabs{ display:flex; border-bottom:1px solid var(--line-gold); }
+  .auth-tab{ flex:1; text-align:center; padding:12px 4px; font-family:var(--font-mono); font-size:11px;
+    letter-spacing:.05em; color:var(--text-dim); cursor:pointer; text-transform:uppercase; }
+  .auth-tab.active{ color:var(--luz); background:rgba(233,193,74,.06); box-shadow:inset 0 -2px 0 var(--luz); }
 
-  /* ============ BARRAS DE VIDA/MANA TEXTURIZADAS ============ */
-  .stat-row{ margin-bottom:8px; }
-  .stat-label{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:3px; }
-  .stat-label b{ color:var(--ink); font-weight:600; }
-  .bar-track{
-    position:relative; height:14px; border-radius:4px; overflow:hidden;
-    background:#0a0705; border:1px solid var(--gold-deep);
-    box-shadow: inset 0 2px 5px rgba(0,0,0,.7);
-  }
-  .bar-fill{ position:relative; height:100%; transition:width .3s ease; overflow:hidden; }
-  .bar-fill.hp{ background:linear-gradient(180deg, var(--hp-a), var(--hp-b) 55%, var(--hp-c)); box-shadow: inset 0 0 10px rgba(255,140,140,.55), 0 0 12px rgba(138,31,43,.45); }
-  .bar-fill.mp{ background:linear-gradient(180deg, var(--mp-a), var(--mp-b) 55%, var(--mp-c)); box-shadow: inset 0 0 10px rgba(140,200,255,.55), 0 0 12px rgba(31,74,122,.45); }
-  .bar-fill::after{
-    content:''; position:absolute; inset:0;
-    background: repeating-linear-gradient(115deg, rgba(255,255,255,.16) 0 6px, transparent 6px 14px);
-    animation: shine 3.2s linear infinite; mix-blend-mode:overlay;
-  }
-  @keyframes shine{ from{ background-position-x:0; } to{ background-position-x:80px; } }
+  .auth-body{ padding:24px 22px; display:none; }
+  .auth-body.active{ display:block; }
 
-  /* ============ HERÓI (item 4: avatar 2.5D) ============ */
-  #hero-panel{ top:20px; left:20px; width:250px; padding:16px; }
-  #avatar-frame{
-    width:120px; height:150px; margin:0 auto 10px; border-radius:6px;
-    border:1px solid var(--gold); background:radial-gradient(ellipse at 50% 30%, #201808, #0a0704 75%);
-    box-shadow: inset 0 0 18px rgba(0,0,0,.7), 0 0 14px rgba(191,161,95,.15);
-    position:relative; overflow:hidden;
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); margin-bottom:5px; letter-spacing:.03em; }
+  .field input{
+    width:100%; background:#140f0a; border:1px solid #3a2f1f; border-radius:5px; color:var(--text-main);
+    padding:10px 11px; font-family:var(--font-body); font-size:13.5px; outline:none;
   }
-  #avatarCanvas{ display:block; width:120px; height:150px; }
-  #vocation-tag{
-    text-align:center; font-family:var(--font-display); font-size:13px; letter-spacing:.03em;
-    color:var(--gold-bright); margin-bottom:12px; text-shadow:0 0 8px rgba(240,211,138,.3);
-  }
-  .weapon-picker{ display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-bottom:4px; }
-  .weapon-btn{
-    font-family:var(--font-mono); font-size:9.5px; padding:6px 2px; text-align:center; cursor:pointer;
-    background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink-dim);
-  }
-  .weapon-btn.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); box-shadow:0 0 8px rgba(240,211,138,.25); }
-  .weapon-btn:hover{ color:var(--ink); }
+  .field input:focus{ border-color:var(--line-gold-bright); }
 
-  /* ============ PARTY (mostra a tag calculada) ============ */
-  #party-panel{ top:20px; right:20px; width:210px; padding:14px 16px; }
-  .party-row{ display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:11px; padding:5px 0; border-bottom:1px dashed rgba(191,161,95,.2); }
-  .party-row:last-child{ border-bottom:none; }
-  .party-row .pname{ color:var(--ink); }
-  .party-row .ptag{ color:var(--gold-bright); }
+  .btn-primary{
+    width:100%; padding:11px; border-radius:6px; border:1px solid var(--line-gold-bright);
+    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--luz); font-family:var(--font-display);
+    font-size:13px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; margin-top:4px;
+  }
+  .btn-primary:hover{ filter:brightness(1.15); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
 
-  /* ============ CHAT FLUTUANTE (item 2) ============ */
-  #chat-window{ left:20px; bottom:20px; width:400px; height:220px; display:flex; flex-direction:column; overflow:hidden; }
-  #chat-head{
-    padding:8px 12px; cursor:move; display:flex; justify-content:space-between; align-items:center;
-    border-bottom:1px solid var(--gold-deep); user-select:none; flex-shrink:0;
-  }
-  #chat-head span{ font-family:var(--font-display); font-size:11px; letter-spacing:.1em; color:var(--gold-bright); text-transform:uppercase; }
-  #chat-tabs{ display:flex; border-bottom:1px solid rgba(191,161,95,.25); flex-shrink:0; }
-  .chat-tab{
-    padding:6px 12px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); cursor:pointer;
-    border-right:1px solid rgba(191,161,95,.15);
-  }
-  .chat-tab.active{ color:var(--gold-bright); background:rgba(191,161,95,.08); box-shadow:inset 0 -2px 0 var(--gold-bright); }
-  #chat-body{ flex:1; overflow-y:auto; padding:8px 12px; font-size:12px; line-height:1.55; }
-  #chat-body div{ margin-bottom:2px; }
-  .msg-geral{ color:var(--ink); } .msg-guilda{ color:var(--mp-a); } .msg-grupo{ color:var(--ok); } .msg-loot{ color:var(--gold-bright); }
-  #chat-input{
-    flex-shrink:0; background:rgba(0,0,0,.35); border:none; border-top:1px solid var(--gold-deep);
-    color:var(--ink); padding:8px 12px; font-family:var(--font-body); font-size:12px; outline:none;
-  }
+  .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:12px; display:none; line-height:1.5; }
+  .msg.show{ display:block; }
+  .msg.error{ background:rgba(201,69,90,.12); border:1px solid var(--err); color:#ef9aa5; }
+  .msg.ok{ background:rgba(127,174,94,.12); border:1px solid var(--ok); color:#b9dba0; }
 
-  /* ============ HOTBAR (item 3) ============ */
-  #hotbar-wrap{ bottom:18px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:8px; }
-  #spell-tray{ display:flex; gap:8px; padding:8px 10px; }
-  .tray-item{
-    width:38px; height:38px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.35);
-    display:flex; align-items:center; justify-content:center; font-size:17px; cursor:grab; position:relative;
+  .recovery-box{
+    margin-top:14px; padding:12px; background:#140f0a; border:1px dashed var(--line-gold-bright); border-radius:6px;
+    font-family:var(--font-mono); font-size:12px; display:none;
   }
-  .tray-item[draggable="true"]:active{ cursor:grabbing; }
-  .tray-item.locked{ opacity:.32; filter:grayscale(1); cursor:not-allowed; }
-  .tray-item .lock{ position:absolute; bottom:-2px; right:-2px; font-size:9px; }
-  #hotbar{ display:flex; gap:6px; padding:10px; }
-  .slot{
-    position:relative; width:54px; height:54px; border-radius:6px; background:rgba(0,0,0,.4);
-    border:1px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:20px;
-  }
-  .slot.dragover{ border-color:var(--gold-bright); box-shadow:0 0 10px rgba(240,211,138,.4); }
-  .slot .num{ position:absolute; top:1px; left:3px; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
-  .slot .bot-toggle{
-    position:absolute; bottom:-1px; right:-1px; width:15px; height:15px; border-radius:50%;
-    background:#1a1510; border:1px solid var(--gold-deep); font-size:8px; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; color:var(--ink-dim);
-  }
-  .slot.bot-enabled{ box-shadow:0 0 0 1px var(--bot-on), 0 0 10px rgba(82,209,163,.4); }
-  .slot.bot-enabled .bot-toggle{ background:var(--bot-on); color:#06231a; border-color:var(--bot-on); }
-  .slot.empty{ color:rgba(191,161,95,.25); }
+  .recovery-box.show{ display:block; }
+  .recovery-box .key{ color:var(--luz); font-size:15px; letter-spacing:.03em; margin:6px 0; word-break:break-all; }
+  .recovery-box .warn{ color:var(--text-dim); font-size:10.5px; }
 
-  #bot-queue-readout{
-    font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); max-width:520px; text-align:center;
-    background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); border-radius:4px; padding:4px 10px;
-  }
+  .link-row{ text-align:center; margin-top:14px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); }
+  .link-row a{ color:var(--line-gold-bright); text-decoration:none; cursor:pointer; }
+  .link-row a:hover{ text-decoration:underline; }
 
-  ::-webkit-scrollbar{ width:7px; } ::-webkit-scrollbar-thumb{ background:var(--gold-deep); border-radius:4px; }
+  .dev-note{ margin-top:16px; padding-top:12px; border-top:1px dashed #3a2f1f; font-family:var(--font-mono); font-size:9.5px; color:#6a5c44; line-height:1.5; }
 </style>
 </head>
 <body>
 
-<div id="stage">
+<div id="wrap">
 
-  <!-- ================= HERÓI + AVATAR 2.5D ================= -->
-  <div id="hero-panel" class="glass ornate">
-    <div class="corner-br"></div>
-    <div class="panel-title">Herói<span class="rule"></span></div>
+  <!-- ILUSTRAÇÃO: torre + 6 orbes elementais -->
+  <div id="tower-side">
+    <svg width="240" height="320" viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="glowFogo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e2542b" stop-opacity=".9"/><stop offset="100%" stop-color="#e2542b" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowAgua" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3a8fc2" stop-opacity=".9"/><stop offset="100%" stop-color="#3a8fc2" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowTerra" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6f8f4e" stop-opacity=".9"/><stop offset="100%" stop-color="#6f8f4e" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowAr" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#cdd9df" stop-opacity=".9"/><stop offset="100%" stop-color="#cdd9df" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowLuz" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e9c14a" stop-opacity=".9"/><stop offset="100%" stop-color="#e9c14a" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glowTrevas" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#8358c9" stop-opacity=".9"/><stop offset="100%" stop-color="#8358c9" stop-opacity="0"/></radialGradient>
+        <linearGradient id="towerBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3a2f22"/><stop offset="100%" stop-color="#171310"/>
+        </linearGradient>
+      </defs>
 
-    <div id="avatar-frame"><canvas id="avatarCanvas" width="120" height="150"></canvas></div>
-    <div id="vocation-tag">[⚔️ Andarilho]</div>
+      <ellipse cx="120" cy="300" rx="90" ry="14" fill="#000" opacity=".35"/>
 
-    <div class="stat-row">
-      <div class="stat-label"><span>Vida</span><span id="hp-num"><b>320</b>/320</span></div>
-      <div class="bar-track"><div class="bar-fill hp" id="hp-bar" style="width:100%"></div></div>
+      <!-- orbes elementais orbitando a base -->
+      <circle cx="35"  cy="250" r="26" fill="url(#glowFogo)"/>
+      <circle cx="205" cy="250" r="26" fill="url(#glowAgua)"/>
+      <circle cx="20"  cy="180" r="22" fill="url(#glowTerra)"/>
+      <circle cx="220" cy="180" r="22" fill="url(#glowAr)"/>
+      <circle cx="45"  cy="120" r="20" fill="url(#glowLuz)"/>
+      <circle cx="195" cy="120" r="20" fill="url(#glowTrevas)"/>
+      <circle cx="35" cy="250" r="5" fill="#e2542b"/>
+      <circle cx="205" cy="250" r="5" fill="#3a8fc2"/>
+      <circle cx="20" cy="180" r="4.5" fill="#6f8f4e"/>
+      <circle cx="220" cy="180" r="4.5" fill="#cdd9df"/>
+      <circle cx="45" cy="120" r="4" fill="#e9c14a"/>
+      <circle cx="195" cy="120" r="4" fill="#8358c9"/>
+
+      <!-- torre central -->
+      <polygon points="95,300 145,300 140,60 100,60" fill="url(#towerBody)" stroke="#8a6a34" stroke-width="1.5"/>
+      <polygon points="100,60 140,60 132,30 108,30" fill="#4a3a24" stroke="#8a6a34" stroke-width="1.5"/>
+      <polygon points="108,30 132,30 120,8" fill="#d3ab54"/>
+      <rect x="106" y="140" width="28" height="40" fill="#0d0b09" stroke="#8a6a34" stroke-width="1"/>
+      <rect x="106" y="200" width="28" height="40" fill="#0d0b09" stroke="#8a6a34" stroke-width="1"/>
+      <circle cx="120" cy="19" r="4" fill="#f2e2a8"/>
+    </svg>
+    <h1>Aincrad Online</h1>
+    <div class="sub">Cidade Central e as 6 Torres Elementais aguardam. Crie sua conta para começar a escalada.</div>
+  </div>
+
+  <!-- CARD DE AUTENTICAÇÃO -->
+  <div id="auth-card">
+    <div id="auth-tabs">
+      <div class="auth-tab active" data-tab="login">Entrar</div>
+      <div class="auth-tab" data-tab="register">Criar Conta</div>
+      <div class="auth-tab" data-tab="recover">Recuperar</div>
     </div>
-    <div class="stat-row">
-      <div class="stat-label"><span>Mana</span><span id="mp-num"><b>140</b>/140</span></div>
-      <div class="bar-track"><div class="bar-fill mp" id="mp-bar" style="width:100%"></div></div>
+
+    <!-- LOGIN -->
+    <div class="auth-body active" id="tab-login">
+      <div class="msg" id="login-msg"></div>
+      <div class="field"><label>Usuário</label><input type="text" id="login-username" autocomplete="username"></div>
+      <div class="field"><label>Senha</label><input type="password" id="login-password" autocomplete="current-password"></div>
+      <button class="btn-primary" id="login-btn">Entrar na Torre</button>
+      <div class="link-row">Esqueceu o acesso? <a data-goto="recover">Recuperar conta</a></div>
     </div>
 
-    <div class="panel-title" style="margin-top:12px;font-size:10px;">Arma equipada<span class="rule"></span></div>
-    <div class="weapon-picker" id="weapon-picker"></div>
-  </div>
+    <!-- CRIAR CONTA -->
+    <div class="auth-body" id="tab-register">
+      <div class="msg" id="register-msg"></div>
+      <div class="field"><label>Usuário</label><input type="text" id="register-username" autocomplete="username"></div>
+      <div class="field"><label>Email</label><input type="email" id="register-email" autocomplete="email"></div>
+      <div class="field"><label>Senha (mín. 6 caracteres)</label><input type="password" id="register-password" autocomplete="new-password"></div>
+      <button class="btn-primary" id="register-btn">Criar Conta</button>
+      <div class="recovery-box" id="register-recovery">
+        <div class="warn">Sua Recovery Key (enviada por email) — guarde-a, é a única forma de trocar o email da conta:</div>
+        <div class="key" id="register-recovery-key">—</div>
+        <div class="warn">Você será levado ao jogo em alguns segundos...</div>
+      </div>
+      <div class="dev-note">Modo de desenvolvimento: este servidor não envia email de verdade. A recovery key acima veio do "outbox" mockado só para você testar o fluxo.</div>
+    </div>
 
-  <!-- ================= PARTY ================= -->
-  <div id="party-panel" class="glass ornate">
-    <div class="corner-br"></div>
-    <div class="panel-title">Grupo<span class="rule"></span></div>
-    <div id="party-list"></div>
-  </div>
-
-  <!-- ================= CHAT FLUTUANTE ================= -->
-  <div id="chat-window" class="glass ornate">
-    <div class="corner-br"></div>
-    <div id="chat-head"><span>Comunicações</span><span style="font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);">arraste</span></div>
-    <div id="chat-tabs"></div>
-    <div id="chat-body"></div>
-    <input id="chat-input" placeholder="Digite e pressione Enter...">
-  </div>
-
-  <!-- ================= HOTBAR + TRAY DE MAGIAS ================= -->
-  <div id="hotbar-wrap">
-    <div id="spell-tray" class="glass ornate"><div class="corner-br"></div></div>
-    <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
-    <div id="bot-queue-readout">botConfig.combatBotSkillQueue: []</div>
+    <!-- RECUPERAR CONTA -->
+    <div class="auth-body" id="tab-recover">
+      <div class="msg" id="recover-msg"></div>
+      <div class="field"><label>Usuário</label><input type="text" id="recover-username"></div>
+      <div class="field"><label>Recovery Key</label><input type="text" id="recover-key" placeholder="EX: FOGO-1D3B-B828-562B" style="font-family:var(--font-mono);"></div>
+      <div class="field"><label>Novo Email</label><input type="email" id="recover-newemail"></div>
+      <button class="btn-primary" id="recover-btn">Trocar Email da Conta</button>
+      <div class="recovery-box" id="recover-recovery">
+        <div class="warn">Sua NOVA Recovery Key (a antiga não funciona mais):</div>
+        <div class="key" id="recover-recovery-key">—</div>
+      </div>
+      <div class="link-row">Lembrou a senha? <a data-goto="login">Voltar ao login</a></div>
+    </div>
   </div>
 
 </div>
 
-<script src="vocation-logic.js"></script>
 <script>
 (function(){
   "use strict";
-  const VL = window.VocationLogic;
+  // Ajuste este endereço se o servidor rodar em outra máquina/porta.
+  const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
 
-  /* =========================================================
-     ESTADO DO JOGADOR — mesmo shape de player-state-schema.json,
-     bloco 'vocation' (item conectado ao sistema anterior)
-     ========================================================= */
-  const player = {
-    vocation: {
-      equippedWeapon: { weaponId:null, weaponTag:'espada_escudo' },
-      trainingLevels: { espada_escudo:62, cajado:20, arco:35, adaga:15, lanca:10 }
-    }
-  };
+  function showMsg(id, text, type){
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg show ' + type;
+  }
+  function clearMsg(id){
+    const el = document.getElementById(id);
+    el.className = 'msg';
+  }
 
-  const WEAPONS = [
-    { tag:'espada_escudo', label:'Espada+Escudo', icon:'🛡️' },
-    { tag:'cajado',        label:'Cajado',        icon:'🔮' },
-    { tag:'arco',          label:'Arco',          icon:'🏹' },
-    { tag:'adaga',         label:'Adaga',         icon:'🗡️' },
-    { tag:'lanca',         label:'Lança',         icon:'➿' },
-    { tag:null,            label:'Desarmado',     icon:'✋' },
-  ];
+  // troca de abas
+  document.querySelectorAll('.auth-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=> switchTab(tab.dataset.tab));
+  });
+  document.querySelectorAll('[data-goto]').forEach(a=>{
+    a.addEventListener('click', ()=> switchTab(a.dataset.goto));
+  });
+  function switchTab(name){
+    document.querySelectorAll('.auth-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===name));
+    document.querySelectorAll('.auth-body').forEach(b=> b.classList.toggle('active', b.id==='tab-'+name));
+  }
 
-  /* =========================================================
-     SELETOR DE ARMA — troca a vocação em tempo real (sem classe fixa)
-     ========================================================= */
-  const weaponPicker = document.getElementById('weapon-picker');
-  WEAPONS.forEach(w=>{
-    const btn = document.createElement('div');
-    btn.className = 'weapon-btn' + (player.vocation.equippedWeapon.weaponTag===w.tag ? ' active':'');
-    btn.textContent = w.icon + ' ' + w.label.split('+')[0];
-    btn.title = w.label;
-    btn.addEventListener('click', ()=>{
-      player.vocation.equippedWeapon.weaponTag = w.tag;
-      refreshAll();
+  async function api(path, body){
+    const res = await fetch(API_BASE + path, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
     });
-    weaponPicker.appendChild(btn);
+    let data;
+    try { data = await res.json(); } catch(e){ data = { ok:false, error:'resposta_invalida' }; }
+    return data;
+  }
+
+  const ERROR_LABELS = {
+    campos_obrigatorios:'Preencha todos os campos.',
+    usuario_curto:'Usuário precisa ter ao menos 3 caracteres.',
+    senha_curta:'Senha precisa ter ao menos 6 caracteres.',
+    email_invalido:'Email inválido.',
+    usuario_em_uso:'Esse nome de usuário já existe.',
+    email_em_uso:'Esse email já está em uso.',
+    credenciais_invalidas:'Usuário ou senha incorretos.',
+    usuario_nao_encontrado:'Usuário não encontrado.',
+    recovery_key_invalida:'Recovery key inválida para esse usuário.',
+    erro_interno:'Erro no servidor. Tente novamente.',
+    resposta_invalida:'Não foi possível falar com o servidor. Ele está rodando (node server.js)?',
+  };
+  function labelFor(err){ return ERROR_LABELS[err] || 'Algo deu errado.'; }
+
+  function saveSessionAndEnter(token, username){
+    localStorage.setItem('aincrad_token', token);
+    localStorage.setItem('aincrad_username', username);
+    setTimeout(()=>{ window.location.href = 'world-prototype.html'; }, 1600);
+  }
+
+  // ---- LOGIN ----
+  document.getElementById('login-btn').addEventListener('click', async ()=>{
+    clearMsg('login-msg');
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    if(!username || !password){ showMsg('login-msg','Preencha usuário e senha.','error'); return; }
+    const data = await api('/api/login', { username, password });
+    if(!data.ok){ showMsg('login-msg', labelFor(data.error), 'error'); return; }
+    showMsg('login-msg', `Bem-vindo de volta, ${data.username}. Entrando...`, 'ok');
+    saveSessionAndEnter(data.token, data.username);
   });
 
-  function refreshWeaponPicker(){
-    [...weaponPicker.children].forEach((btn,i)=>{
-      btn.classList.toggle('active', WEAPONS[i].tag === player.vocation.equippedWeapon.weaponTag);
-    });
-  }
+  // ---- CRIAR CONTA ----
+  document.getElementById('register-btn').addEventListener('click', async ()=>{
+    clearMsg('register-msg');
+    document.getElementById('register-recovery').classList.remove('show');
+    const username = document.getElementById('register-username').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    if(!username || !email || !password){ showMsg('register-msg','Preencha todos os campos.','error'); return; }
+    const data = await api('/api/register', { username, email, password });
+    if(!data.ok){ showMsg('register-msg', labelFor(data.error), 'error'); return; }
+    showMsg('register-msg', 'Conta criada! Recovery key enviada por email.', 'ok');
 
-  /* =========================================================
-     VOCAÇÃO — usa a MESMA função do servidor (vocation-logic.js)
-     ========================================================= */
-  function refreshVocation(){
-    const tag = VL.getPartyVocationTag(player);
-    document.getElementById('vocation-tag').textContent = tag;
-    document.getElementById('party-tag-you').textContent = tag;
-  }
-
-  /* =========================================================
-     PARTY PANEL
-     ========================================================= */
-  const partyList = document.getElementById('party-list');
-  partyList.innerHTML = `
-    <div class="party-row"><span class="pname">Você</span><span class="ptag" id="party-tag-you">—</span></div>
-    <div class="party-row"><span class="pname">Nyra</span><span class="ptag">[🔮 Místico]</span></div>
-    <div class="party-row"><span class="pname">Thoric</span><span class="ptag">[🏹 Atirador]</span></div>
-  `;
-
-  /* =========================================================
-     AVATAR 2.5D — draw2DAvatar()
-     Camadas: Base Corpo -> Roupa/Armadura -> Cabelo -> Elmo
-     ========================================================= */
-  const avatarCanvas = document.getElementById('avatarCanvas');
-  const actx = avatarCanvas.getContext('2d');
-
-  // cor de armadura/roupa varia com a arma equipada — reforça a leitura visual da vocação
-  const ARMOR_COLOR = {
-    espada_escudo: { main:'#5a6b8a', dark:'#333f57' },
-    cajado:        { main:'#6a3fa0', dark:'#3a2258' },
-    arco:          { main:'#4f7a4a', dark:'#2c4529' },
-    adaga:         { main:'#4a4038', dark:'#241f1a' },
-    lanca:         { main:'#8a6a34', dark:'#4a3a1e' },
-    null:          { main:'#7a6a54', dark:'#443a2c' },
-  };
-
-  function draw2DAvatar(timeSeconds){
-    const w = avatarCanvas.width, h = avatarCanvas.height;
-    actx.clearRect(0,0,w,h);
-
-    const cx = w/2;
-    const groundY = h - 18;
-    const breathe = Math.sin(timeSeconds * 1.6) * 2.2; // oscilação de respiração
-
-    actx.save();
-    // sombra no chão (fixa, não participa da respiração/perspectiva)
-    actx.beginPath();
-    actx.ellipse(cx, groundY+10, 24, 6, 0, 0, Math.PI*2);
-    actx.fillStyle = 'rgba(0,0,0,.45)';
-    actx.fill();
-
-    // ---- projeção 2.5D: leve inclinação/perspectiva em todo o corpo ----
-    actx.translate(cx, groundY);
-    actx.transform(1, 0, -0.12, 0.94, 0, 0); // skew + achatamento vertical = "câmera" oblíqua
-    actx.translate(-cx, -groundY);
-
-    const armor = ARMOR_COLOR[player.vocation.equippedWeapon.weaponTag ?? 'null'] || ARMOR_COLOR.null;
-
-    // ---- CAMADA 1: Base Corpo (pernas fixas no chão, sem respiração) ----
-    actx.fillStyle = '#caa06f';
-    actx.fillRect(cx-9, groundY-38, 8, 34);   // perna esq.
-    actx.fillRect(cx+1, groundY-38, 8, 34);   // perna dir.
-    actx.fillStyle = '#3a2a1c';
-    actx.fillRect(cx-10, groundY-6, 9, 8);    // bota esq.
-    actx.fillRect(cx+1, groundY-6, 9, 8);     // bota dir.
-
-    // a partir daqui, tudo participa da respiração (translação vertical sutil)
-    actx.save();
-    actx.translate(0, breathe);
-
-    // torso (parte da Base Corpo)
-    actx.beginPath();
-    actx.ellipse(cx, groundY-52, 11, 16, 0, 0, Math.PI*2);
-    actx.fillStyle = '#caa06f';
-    actx.fill();
-
-    // ---- CAMADA 2: Roupa / Armadura ----
-    actx.fillStyle = armor.main;
-    actx.fillRect(cx-12, groundY-64, 24, 24);
-    actx.fillStyle = armor.dark;
-    actx.fillRect(cx-12, groundY-64, 24, 6); // reforço de ombro
-    // cinto
-    actx.fillStyle = '#2a2015';
-    actx.fillRect(cx-12, groundY-44, 24, 4);
-
-    // cabeça (base, embaixo do cabelo/elmo)
-    actx.beginPath();
-    actx.arc(cx, groundY-76, 10, 0, Math.PI*2);
-    actx.fillStyle = '#e0b98a';
-    actx.fill();
-
-    // ---- CAMADA 3: Cabelo ----
-    actx.fillStyle = '#3a2418';
-    actx.beginPath();
-    actx.arc(cx, groundY-80, 10.5, Math.PI, Math.PI*2);
-    actx.fill();
-    actx.fillRect(cx-10.5, groundY-80, 4, 10); // franja lateral esq.
-    actx.fillRect(cx+6.5, groundY-80, 4, 10);  // franja lateral dir.
-
-    // ---- CAMADA 4: Elmo (por cima de tudo) ----
-    if(document.getElementById('toggle-helmet').checked){
-      actx.fillStyle = '#d3ab54';
-      actx.beginPath();
-      actx.arc(cx, groundY-80, 11.5, Math.PI*0.95, Math.PI*2.05);
-      actx.fill();
-      actx.fillStyle = '#8a6a34';
-      actx.fillRect(cx-11.5, groundY-72, 23, 3); // aba do elmo
-      actx.beginPath(); actx.arc(cx, groundY-92, 2.2, 0, Math.PI*2); actx.fillStyle='#f0d38a'; actx.fill(); // ponteira
-    }
-
-    // arma equipada (indicador simples ao lado do corpo)
-    actx.strokeStyle = '#d3ab54'; actx.lineWidth = 2.4;
-    actx.beginPath();
-    actx.moveTo(cx+13, groundY-58); actx.lineTo(cx+13, groundY-84);
-    actx.stroke();
-
-    actx.restore(); // fim da respiração
-    actx.restore(); // fim da perspectiva 2.5D
-  }
-
-  function animateAvatar(ts){
-    draw2DAvatar(ts/1000);
-    requestAnimationFrame(animateAvatar);
-  }
-  requestAnimationFrame(animateAvatar);
-  document.getElementById('hero-panel').insertAdjacentHTML('beforeend',
-    `<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);">
-       <input type="checkbox" id="toggle-helmet" checked style="accent-color:var(--gold);"> mostrar elmo
-     </label>`);
-
-  /* =========================================================
-     CHAT FLUTUANTE — abas, arrastar, rolagem
-     ========================================================= */
-  const chatData = {
-    geral:   { label:'Geral',   msgs:['Bem-vindo a Aincrad Online.'] },
-    guilda:  { label:'Guilda',  msgs:['[Guilda] Boa noite, aventureiros.'] },
-    grupo:   { label:'Grupo',   msgs:['Nyra entrou no grupo.'] },
-    loot:    { label:'Loot/Sistema', msgs:['Bot de combate inicializado.'] },
-  };
-  let activeChatTab = 'geral';
-  const chatTabsEl = document.getElementById('chat-tabs');
-  const chatBodyEl = document.getElementById('chat-body');
-
-  function renderChatTabs(){
-    chatTabsEl.innerHTML = '';
-    Object.keys(chatData).forEach(id=>{
-      const el = document.createElement('div');
-      el.className = 'chat-tab' + (id===activeChatTab?' active':'');
-      el.textContent = '['+chatData[id].label+']';
-      el.addEventListener('click', ()=>{ activeChatTab=id; renderChatTabs(); renderChatBody(); });
-      chatTabsEl.appendChild(el);
-    });
-  }
-  function renderChatBody(){
-    chatBodyEl.innerHTML = chatData[activeChatTab].msgs.map(m=>`<div class="msg-${activeChatTab}">${m}</div>`).join('');
-    chatBodyEl.scrollTop = chatBodyEl.scrollHeight;
-  }
-  document.getElementById('chat-input').addEventListener('keydown', e=>{
-    if(e.key==='Enter' && e.target.value.trim()){
-      chatData[activeChatTab].msgs.push(e.target.value.trim());
-      renderChatBody();
-      e.target.value='';
-    }
-  });
-  renderChatTabs(); renderChatBody();
-
-  // arrastar a janela pelo cabeçalho
-  (function makeDraggable(){
-    const win = document.getElementById('chat-window');
-    const handle = document.getElementById('chat-head');
-    let dragging=false, offX=0, offY=0;
-    handle.addEventListener('mousedown', e=>{
-      dragging = true;
-      const r = win.getBoundingClientRect();
-      offX = e.clientX-r.left; offY = e.clientY-r.top;
-      win.style.left=r.left+'px'; win.style.top=r.top+'px'; win.style.bottom='auto';
-    });
-    window.addEventListener('mousemove', e=>{
-      if(!dragging) return;
-      win.style.left = Math.max(0,e.clientX-offX)+'px';
-      win.style.top  = Math.max(0,e.clientY-offY)+'px';
-    });
-    window.addEventListener('mouseup', ()=> dragging=false);
-  })();
-
-  /* =========================================================
-     TRAY DE MAGIAS/POÇÕES + HOTBAR (drag&drop + toggle de bot)
-     ========================================================= */
-  const SPELLS = [
-    { id:'flecha_agua', icon:'💧', element:'agua',   label:'Flecha de Água' },
-    { id:'bola_fogo',   icon:'🔥', element:'fogo',   label:'Bola de Fogo' },
-    { id:'punho_terra', icon:'🪨', element:'terra',  label:'Punho de Terra' },
-    { id:'lamina_ar',   icon:'🌪️', element:'ar',     label:'Lâmina de Ar' },
-    { id:'golpe_luz',   icon:'✨', element:'luz',    label:'Golpe de Luz' },
-    { id:'pot_vida',    icon:'❤️', element:null,     label:'Poção de Vida' },
-  ];
-
-  const trayEl = document.getElementById('spell-tray');
-  SPELLS.forEach(s=>{
-    const el = document.createElement('div');
-    el.className = 'tray-item';
-    el.id = 'tray_'+s.id;
-    el.draggable = true;
-    el.title = s.label;
-    el.innerHTML = `<span>${s.icon}</span>`;
-    el.addEventListener('dragstart', e=>{
-      e.dataTransfer.setData('text/plain', JSON.stringify(s));
-    });
-    trayEl.appendChild(el);
-  });
-
-  function refreshTrayLocks(){
-    SPELLS.forEach(s=>{
-      const el = document.getElementById('tray_'+s.id);
-      const locked = s.element ? !VL.canActivateElementalSkill(player, s.element) : false;
-      el.classList.toggle('locked', locked);
-      el.title = locked ? `${s.label} — exige arma compatível com o elemento ${s.element}` : s.label;
-      // remove indicador de cadeado antigo, se houver, antes de recriar
-      const oldLock = el.querySelector('.lock'); if(oldLock) oldLock.remove();
-      if(locked){ el.insertAdjacentHTML('beforeend', `<span class="lock">🔒</span>`); }
-    });
-  }
-
-  const hotbarEl = document.getElementById('hotbar');
-  const HOTBAR_SIZE = 10;
-  const hotbarState = Array.from({length:HOTBAR_SIZE}, ()=>({ item:null, botEnabled:false }));
-
-  function renderHotbar(){
-    hotbarEl.innerHTML = '<div class="corner-br"></div>';
-    for(let i=0;i<HOTBAR_SIZE;i++){
-      const slotData = hotbarState[i];
-      const slot = document.createElement('div');
-      slot.className = 'slot' + (slotData.item?'':' empty') + (slotData.botEnabled?' bot-enabled':'');
-      slot.innerHTML = `
-        <span class="num">${i+1}</span>
-        <span>${slotData.item ? slotData.item.icon : ''}</span>
-        <span class="bot-toggle" title="Ativar/desativar uso deste slot pelo Bot de Combate">🤖</span>
-      `;
-      slot.addEventListener('dragover', e=>{ e.preventDefault(); slot.classList.add('dragover'); });
-      slot.addEventListener('dragleave', ()=> slot.classList.remove('dragover'));
-      slot.addEventListener('drop', e=>{
-        e.preventDefault();
-        slot.classList.remove('dragover');
-        const data = e.dataTransfer.getData('text/plain');
-        if(!data) return;
-        const item = JSON.parse(data);
-        if(item.element && !VL.canActivateElementalSkill(player, item.element)){
-          return; // arma incompatível — não permite equipar na hotbar
+    // busca a recovery key no outbox mockado (modo dev) só pra exibir na tela
+    try{
+      const inbox = await fetch(`${API_BASE}/api/dev/outbox?email=${encodeURIComponent(email)}`).then(r=>r.json());
+      const last = inbox.mails && inbox.mails[inbox.mails.length-1];
+      if(last){
+        const m = last.body.match(/Recovery Key é: (\S+)/);
+        if(m){
+          document.getElementById('register-recovery-key').textContent = m[1];
+          document.getElementById('register-recovery').classList.add('show');
         }
-        hotbarState[i].item = item;
-        renderHotbar();
-        updateBotQueueReadout();
-      });
-      slot.querySelector('.bot-toggle').addEventListener('click', (e)=>{
-        e.stopPropagation();
-        if(!slotData.item) return;
-        slotData.botEnabled = !slotData.botEnabled;
-        renderHotbar();
-        updateBotQueueReadout();
-      });
-      hotbarEl.appendChild(slot);
-    }
-  }
-
-  // Reflete visualmente o botConfig.combatBotSkillQueue do schema:
-  // cada slot com o robozinho ativado vira uma entrada na fila de prioridade do bot.
-  function updateBotQueueReadout(){
-    const queue = hotbarState
-      .map((s,i)=> ({ ...s, slot:i+1 }))
-      .filter(s=> s.botEnabled && s.item)
-      .map((s,idx)=> `{priority:${idx+1}, skillId:'${s.item.id}'}`);
-    document.getElementById('bot-queue-readout').textContent =
-      'botConfig.combatBotSkillQueue: [' + queue.join(', ') + ']';
-  }
-
-  /* =========================================================
-     REFRESH GERAL — chamado sempre que a arma equipada muda
-     ========================================================= */
-  function refreshAll(){
-    refreshWeaponPicker();
-    refreshVocation();
-    refreshTrayLocks();
-    // remove da hotbar/desativa do bot qualquer skill que ficou incompatível com a nova arma
-    hotbarState.forEach(s=>{
-      if(s.item && s.item.element && !VL.canActivateElementalSkill(player, s.item.element)){
-        s.item = null; s.botEnabled = false;
       }
-    });
-    renderHotbar();
-    updateBotQueueReadout();
-  }
+    } catch(e){}
 
-  renderHotbar();
-  refreshAll();
+    saveSessionAndEnter(data.token, data.username);
+  });
+
+  // ---- RECUPERAR CONTA (troca de email com recovery key) ----
+  document.getElementById('recover-btn').addEventListener('click', async ()=>{
+    clearMsg('recover-msg');
+    document.getElementById('recover-recovery').classList.remove('show');
+    const username = document.getElementById('recover-username').value.trim();
+    const recoveryKey = document.getElementById('recover-key').value.trim();
+    const newEmail = document.getElementById('recover-newemail').value.trim();
+    if(!username || !recoveryKey || !newEmail){ showMsg('recover-msg','Preencha todos os campos.','error'); return; }
+    const data = await api('/api/recover/change-email', { username, recoveryKey, newEmail });
+    if(!data.ok){ showMsg('recover-msg', labelFor(data.error), 'error'); return; }
+    showMsg('recover-msg', 'Email atualizado com sucesso! Nova recovery key enviada.', 'ok');
+
+    try{
+      const inbox = await fetch(`${API_BASE}/api/dev/outbox?email=${encodeURIComponent(newEmail)}`).then(r=>r.json());
+      const last = inbox.mails && inbox.mails[inbox.mails.length-1];
+      if(last){
+        const m = last.body.match(/NOVA Recovery Key é: (\S+)/);
+        if(m){
+          document.getElementById('recover-recovery-key').textContent = m[1];
+          document.getElementById('recover-recovery').classList.add('show');
+        }
+      }
+    } catch(e){}
+  });
+
+  // se já tem sessão salva, pula direto pro jogo
+  if(localStorage.getItem('aincrad_token')){
+    // não redireciona automaticamente pra permitir trocar de conta a partir desta tela;
+    // só mostra um aviso discreto.
+  }
 })();
 </script>
 </body>
