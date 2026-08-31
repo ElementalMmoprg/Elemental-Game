@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aincrad Online — Portal da Torre</title>
+<title>Elemental Online — Portal da Torre</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -125,7 +125,7 @@
       <rect x="106" y="200" width="28" height="40" fill="#0d0b09" stroke="#8a6a34" stroke-width="1"/>
       <circle cx="120" cy="19" r="4" fill="#f2e2a8"/>
     </svg>
-    <h1>Aincrad Online</h1>
+    <h1>Elemental Online</h1>
     <div class="sub">Cidade Central e as 6 Torres Elementais aguardam. Crie sua conta para começar a escalada.</div>
   </div>
 
@@ -182,7 +182,7 @@
 (function(){
   "use strict";
   // Ajuste este endereço se o servidor rodar em outra máquina/porta.
-  const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
+  const API_BASE = 'https://elemental-server.onrender.com';
 
   function showMsg(id, text, type){
     const el = document.getElementById(id);
