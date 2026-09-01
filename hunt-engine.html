@@ -692,7 +692,7 @@
      o jogo continua 100% jogável mesmo sem nenhum asset hospedado.
      ========================================================= */
   const SpriteManager = (function(){
-    const URL_BASE = 'https://SEU-USUARIO.github.io/aincrad-assets/'; // <- troque pela sua URL real
+    const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/'; // <- troque pela sua URL real
     const cache = {};
     function load(key, path){
       if(cache[key]) return cache[key];
@@ -1642,9 +1642,10 @@
       statusEl.textContent = '● sem login (modo solo)';
       return;
     }
-    const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
-    const wsProto = API_BASE.startsWith('https') ? 'wss:' : 'ws:';
-    const wsHost = API_BASE.replace(/^https?:\/\//,'');
+    // Força a conexão direta com o seu servidor estável do Render
+    const API_BASE = 'https://elemental-server.onrender.com';
+    const wsProto = 'wss:';
+    const wsHost = 'elemental-server.onrender.com';
     let ws;
     try{ ws = new WebSocket(`${wsProto}//${wsHost}/ws`); }
     catch(e){ statusEl.textContent = '● offline (modo solo)'; return; }
