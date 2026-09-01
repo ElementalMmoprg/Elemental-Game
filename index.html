@@ -181,8 +181,12 @@
 <script>
 (function(){
   "use strict";
-  // Ajuste este endereço se o servidor rodar em outra máquina/porta.
-  const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
+  // Backend oficial no Render — fixo, não detectado por location.origin.
+  const API_BASE = 'https://elemental-server.onrender.com';
+
+  // localStorage padronizado globalmente (index.html, character-select.html, hunt-engine.html)
+  const LS_TOKEN = 'elemental_token';
+  const LS_USERNAME = 'elemental_username';
 
   function showMsg(id, text, type){
     const el = document.getElementById(id);
@@ -231,8 +235,8 @@
   function labelFor(err){ return ERROR_LABELS[err] || 'Algo deu errado.'; }
 
   function saveSessionAndEnter(token, username){
-    localStorage.setItem('aincrad_token', token);
-    localStorage.setItem('aincrad_username', username);
+    localStorage.setItem(LS_TOKEN, token);
+    localStorage.setItem(LS_USERNAME, username);
     setTimeout(()=>{ window.location.href = 'character-select.html'; }, 1600);
   }
 
@@ -302,7 +306,7 @@
   });
 
   // se já tem sessão salva, pula direto pro jogo
-  if(localStorage.getItem('aincrad_token')){
+  if(localStorage.getItem(LS_TOKEN)){
     // não redireciona automaticamente pra permitir trocar de conta a partir desta tela;
     // só mostra um aviso discreto.
   }
