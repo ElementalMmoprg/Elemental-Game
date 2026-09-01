@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aincrad Online — Seleção de Personagem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold-deep:#7a6435; --gold:#bfa15f; --gold-bright:#f0d38a;
+    --glass-1:rgba(22,18,13,.72); --glass-2:rgba(9,7,5,.86);
+    --ink:#f2e8d0; --ink-dim:#a99872; --err:#c9455a; --ok:#7fae5e;
+    --font-display:'Cinzel', serif; --font-body:'Spectral', serif; --font-mono:'JetBrains Mono', monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; min-height:100%; font-family:var(--font-body); color:var(--ink); overflow:hidden; }
+  body{
+    height:100vh; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(ellipse 900px 600px at 25% 20%, rgba(191,161,95,.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 80% 85%, rgba(90,60,20,.10), transparent 55%),
+      #050403;
+  }
+  .glass{
+    background:linear-gradient(180deg, var(--glass-1), var(--glass-2));
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1px solid var(--gold); border-radius:10px;
+    box-shadow:0 0 0 1px rgba(191,161,95,.14) inset, 0 20px 60px rgba(0,0,0,.6);
+  }
+  #top-bar{ position:absolute; top:18px; left:0; right:0; display:flex; justify-content:space-between; padding:0 24px; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); }
+  #top-bar b{ color:var(--gold-bright); }
+  #logout-link{ color:var(--err); cursor:pointer; }
+
+  h1.title{ font-family:var(--font-display); font-size:20px; letter-spacing:.1em; color:var(--gold-bright); text-transform:uppercase; text-align:center; margin:0 0 22px; text-shadow:0 0 14px rgba(240,211,138,.3); }
+
+  /* ---------- Lista / card de personagem existente ---------- */
+  #char-select-view{ width:420px; padding:28px 30px; }
+  .char-card{
+    display:flex; gap:16px; align-items:center; padding:16px; border-radius:8px;
+    border:1px solid var(--gold-deep); background:rgba(0,0,0,.25); margin-bottom:18px; cursor:pointer;
+  }
+  .char-card:hover{ border-color:var(--gold-bright); }
+  .char-card.selected{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright) inset; }
+  .char-card canvas{ width:72px; height:90px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:5px; }
+  .char-card .info .nick{ font-family:var(--font-display); font-size:15px; color:var(--gold-bright); }
+  .char-card .info .lvl{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); margin-top:4px; }
+  #connect-btn{
+    width:100%; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
+    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display);
+    font-size:14px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
+  }
+  #connect-btn:hover{ filter:brightness(1.15); }
+
+  /* ---------- Criação de personagem ---------- */
+  #char-create-view{ width:460px; padding:28px 30px; display:none; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:6px; letter-spacing:.03em; }
+  .field input{
+    width:100%; background:#140f0a; border:1px solid #3a2f1f; border-radius:5px; color:var(--ink);
+    padding:10px 11px; font-family:var(--font-body); font-size:13.5px; outline:none;
+  }
+  .field input:focus{ border-color:var(--gold-bright); }
+
+  .toggle-row{ display:flex; gap:10px; }
+  .toggle-btn{
+    flex:1; padding:11px; text-align:center; border-radius:6px; border:1px solid var(--gold-deep);
+    background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-display); font-size:12px;
+    letter-spacing:.05em; cursor:pointer; text-transform:uppercase;
+  }
+  .toggle-btn.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); box-shadow:0 0 10px rgba(240,211,138,.2); }
+
+  .hair-picker{ display:flex; align-items:center; justify-content:center; gap:18px; }
+  .hair-arrow{ width:34px; height:34px; border-radius:50%; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--gold-bright); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .hair-arrow:hover{ border-color:var(--gold-bright); }
+  #hair-preview-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  #hair-preview{ width:96px; height:120px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:6px; }
+  #hair-preview-label{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+
+  #create-btn{
+    width:100%; margin-top:20px; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
+    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display);
+    font-size:14px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
+  }
+  #create-btn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:14px; display:none; }
+  .msg.show{ display:block; }
+  .msg.error{ background:rgba(201,69,90,.12); border:1px solid var(--err); color:#ef9aa5; }
+  .msg.ok{ background:rgba(127,174,94,.12); border:1px solid var(--ok); color:#b9dba0; }
+
+  #loading-view{ font-family:var(--font-mono); color:var(--ink-dim); font-size:12px; }
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <span>Conta: <b id="account-name">—</b></span>
+  <span id="logout-link">Sair</span>
+</div>
+
+<div id="loading-view">Carregando personagens...</div>
+
+<!-- TEM PERSONAGEM: mostra o card + CONECTAR -->
+<div id="char-select-view" class="glass" style="display:none;">
+  <h1 class="title">Seleção de Personagem</h1>
+  <div id="char-list"></div>
+  <button id="connect-btn" disabled>Conectar</button>
+</div>
+
+<!-- SEM PERSONAGEM: painel de criação -->
+<div id="char-create-view" class="glass">
+  <h1 class="title">Criação de Personagem</h1>
+  <div class="msg" id="create-msg"></div>
+
+  <div class="field">
+    <label>Nick (apelido único do herói)</label>
+    <input type="text" id="nick-input" maxlength="20" placeholder="Ex: Kael">
+  </div>
+
+  <div class="field">
+    <label>Sexo</label>
+    <div class="toggle-row" id="gender-toggle">
+      <div class="toggle-btn active" data-gender="male">Masculino</div>
+      <div class="toggle-btn" data-gender="female">Feminino</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label style="text-align:center;">Estilo de Cabelo</label>
+    <div class="hair-picker">
+      <div class="hair-arrow" id="hair-prev">◀</div>
+      <div id="hair-preview-wrap">
+        <canvas id="hair-preview" width="96" height="120"></canvas>
+        <div id="hair-preview-label">Cabelo Tipo 1</div>
+      </div>
+      <div class="hair-arrow" id="hair-next">▶</div>
+    </div>
+  </div>
+
+  <button id="create-btn">Criar Personagem</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
+  const token = localStorage.getItem('aincrad_token');
+  const username = localStorage.getItem('aincrad_username');
+  if(!token || !username){ window.location.href = 'login.html'; return; }
+  document.getElementById('account-name').textContent = username;
+
+  document.getElementById('logout-link').addEventListener('click', ()=>{
+    localStorage.removeItem('aincrad_token');
+    localStorage.removeItem('aincrad_username');
+    localStorage.removeItem('aincrad_character');
+    window.location.href = 'login.html';
+  });
+
+  async function api(path, opts={}){
+    const res = await fetch(API_BASE+path, {
+      ...opts,
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, ...(opts.headers||{}) },
+    });
+    let data; try{ data = await res.json(); }catch(e){ data = { ok:false, error:'resposta_invalida' }; }
+    return data;
+  }
+
+  /* =========================================================
+     PREVIEW EM CANVAS — mesma lógica de camadas do draw2DAvatar,
+     só que cor/estilo varia com gênero + cabelo escolhidos (sem
+     depender de asset real, igual ao fallback do SpriteManager).
+     ========================================================= */
+  const HAIR_COLORS = { 1:'#3a2418', 2:'#8a5a2a', 3:'#c94040' };
+  function drawMiniAvatar(canvas, gender, hairId){
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+    const cx = w/2, groundY = h-14;
+    ctx.beginPath(); ctx.ellipse(cx, groundY+8, 20, 5, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
+    // pernas/botas
+    ctx.fillStyle = '#caa06f'; ctx.fillRect(cx-8, groundY-30, 7,26); ctx.fillRect(cx+1, groundY-30, 7,26);
+    ctx.fillStyle = '#3a2a1c'; ctx.fillRect(cx-9, groundY-6, 8,7); ctx.fillRect(cx+1, groundY-6, 8,7);
+    // torso — cor varia sutilmente por gênero, só pra diferenciar visualmente sem asset real
+    ctx.fillStyle = gender==='female' ? '#8a4a6a' : '#5a6b8a';
+    ctx.fillRect(cx-10, groundY-52, 20,22);
+    // cabeça
+    ctx.beginPath(); ctx.arc(cx, groundY-62, 9,0,Math.PI*2); ctx.fillStyle='#e0b98a'; ctx.fill();
+    // cabelo — cor por tipo escolhido
+    ctx.fillStyle = HAIR_COLORS[hairId] || HAIR_COLORS[1];
+    ctx.beginPath(); ctx.arc(cx, groundY-66, 9.5, Math.PI, Math.PI*2); ctx.fill();
+    if(hairId===2){ ctx.fillRect(cx-9.5, groundY-66, 3,14); ctx.fillRect(cx+6.5, groundY-66, 3,14); } // cabelo mais longo
+    if(hairId===3){ ctx.beginPath(); ctx.moveTo(cx-9,groundY-66); ctx.lineTo(cx,groundY-80); ctx.lineTo(cx+9,groundY-66); ctx.fill(); } // moicano/pontudo
+  }
+
+  /* =========================================================
+     CARREGA OS PERSONAGENS DA CONTA
+     ========================================================= */
+  async function loadCharacters(){
+    const data = await api('/api/characters');
+    document.getElementById('loading-view').style.display = 'none';
+    if(!data.ok){
+      // sem servidor/erro: melhor deixar seguir pra criação do que travar o jogador
+      document.getElementById('char-create-view').style.display = 'block';
+      setupCreateView();
+      return;
+    }
+    if(data.characters && data.characters.length > 0){
+      setupSelectView(data.characters);
+    } else {
+      document.getElementById('char-create-view').style.display = 'block';
+      setupCreateView();
+    }
+  }
+
+  function setupSelectView(characters){
+    const view = document.getElementById('char-select-view');
+    view.style.display = 'block';
+    const list = document.getElementById('char-list');
+    let selected = characters[0];
+    list.innerHTML = '';
+    characters.forEach((c,i)=>{
+      const card = document.createElement('div');
+      card.className = 'char-card' + (i===0?' selected':'');
+      card.innerHTML = `
+        <canvas width="72" height="90"></canvas>
+        <div class="info"><div class="nick">${c.nick}</div><div class="lvl">Nível ${c.level||1} · ${c.gender==='female'?'Feminino':'Masculino'}</div></div>
+      `;
+      card.addEventListener('click', ()=>{
+        document.querySelectorAll('.char-card').forEach(el=>el.classList.remove('selected'));
+        card.classList.add('selected');
+        selected = c;
+      });
+      list.appendChild(card);
+      drawMiniAvatar(card.querySelector('canvas'), c.gender, c.hairId);
+    });
+    document.getElementById('connect-btn').disabled = false;
+    document.getElementById('connect-btn').addEventListener('click', ()=>{
+      localStorage.setItem('aincrad_character', JSON.stringify(selected));
+      window.location.href = 'hunt-engine.html';
+    });
+  }
+
+  /* =========================================================
+     CRIAÇÃO DE PERSONAGEM
+     ========================================================= */
+  function setupCreateView(){
+    let gender = 'male';
+    let hairIndex = 0; // 0->tipo1, 1->tipo2, 2->tipo3
+    const HAIR_IDS = [1,2,3];
+
+    function refreshPreview(){
+      drawMiniAvatar(document.getElementById('hair-preview'), gender, HAIR_IDS[hairIndex]);
+      document.getElementById('hair-preview-label').textContent = `Cabelo Tipo ${HAIR_IDS[hairIndex]}`;
+    }
+    refreshPreview();
+
+    document.querySelectorAll('#gender-toggle .toggle-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('#gender-toggle .toggle-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        gender = btn.dataset.gender;
+        refreshPreview();
+      });
+    });
+    document.getElementById('hair-prev').addEventListener('click', ()=>{
+      hairIndex = (hairIndex-1+HAIR_IDS.length)%HAIR_IDS.length; refreshPreview();
+    });
+    document.getElementById('hair-next').addEventListener('click', ()=>{
+      hairIndex = (hairIndex+1)%HAIR_IDS.length; refreshPreview();
+    });
+
+    const ERROR_LABELS = {
+      nick_invalido:'Nick precisa ter ao menos 3 caracteres.',
+      genero_invalido:'Escolha um gênero válido.',
+      cabelo_invalido:'Escolha um estilo de cabelo válido.',
+      nick_em_uso:'Esse nick já está em uso — escolha outro.',
+      token_invalido:'Sessão expirada. Faça login novamente.',
+      erro_interno:'Erro no servidor. Tente novamente.',
+      resposta_invalida:'Não foi possível falar com o servidor.',
+    };
+
+    document.getElementById('create-btn').addEventListener('click', async ()=>{
+      const msgEl = document.getElementById('create-msg');
+      msgEl.className = 'msg';
+      const nick = document.getElementById('nick-input').value.trim();
+      if(nick.length < 3){ msgEl.textContent = ERROR_LABELS.nick_invalido; msgEl.className='msg show error'; return; }
+
+      const data = await api('/api/characters/create', {
+        method:'POST',
+        body: JSON.stringify({ nick, gender, hairId: HAIR_IDS[hairIndex] }),
+      });
+      if(!data.ok){
+        msgEl.textContent = ERROR_LABELS[data.error] || 'Não foi possível criar o personagem.';
+        msgEl.className = 'msg show error';
+        return;
+      }
+      msgEl.textContent = `Herói ${data.character.nick} criado! Entrando...`;
+      msgEl.className = 'msg show ok';
+      localStorage.setItem('aincrad_character', JSON.stringify(data.character));
+      setTimeout(()=>{ window.location.href = 'hunt-engine.html'; }, 900);
+    });
+  }
+
+  loadCharacters();
+})();
+</script>
+</body>
+</html>
