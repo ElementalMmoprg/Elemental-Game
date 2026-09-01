@@ -144,17 +144,26 @@
 <script>
 (function(){
   "use strict";
-  const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
-  const token = localStorage.getItem('aincrad_token');
-  const username = localStorage.getItem('aincrad_username');
-  if(!token || !username){ window.location.href = 'login.html'; return; }
+  // Backend oficial no Render — fixo, não detectado por location.origin.
+  const API_BASE = 'https://elemental-server.onrender.com';
+  // Repositório oficial de artes/sprites no GitHub Pages — fixo character por character.
+  const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/';
+
+  // localStorage padronizado globalmente (index.html, character-select.html, hunt-engine.html)
+  const LS_TOKEN = 'elemental_token';
+  const LS_USERNAME = 'elemental_username';
+  const LS_CHARACTER = 'elemental_character';
+
+  const token = localStorage.getItem(LS_TOKEN);
+  const username = localStorage.getItem(LS_USERNAME);
+  if(!token || !username){ window.location.href = 'index.html'; return; }
   document.getElementById('account-name').textContent = username;
 
   document.getElementById('logout-link').addEventListener('click', ()=>{
-    localStorage.removeItem('aincrad_token');
-    localStorage.removeItem('aincrad_username');
-    localStorage.removeItem('aincrad_character');
-    window.location.href = 'login.html';
+    localStorage.removeItem(LS_TOKEN);
+    localStorage.removeItem(LS_USERNAME);
+    localStorage.removeItem(LS_CHARACTER);
+    window.location.href = 'index.html';
   });
 
   async function api(path, opts={}){
@@ -191,6 +200,14 @@
     ctx.beginPath(); ctx.arc(cx, groundY-66, 9.5, Math.PI, Math.PI*2); ctx.fill();
     if(hairId===2){ ctx.fillRect(cx-9.5, groundY-66, 3,14); ctx.fillRect(cx+6.5, groundY-66, 3,14); } // cabelo mais longo
     if(hairId===3){ ctx.beginPath(); ctx.moveTo(cx-9,groundY-66); ctx.lineTo(cx,groundY-80); ctx.lineTo(cx+9,groundY-66); ctx.fill(); } // moicano/pontudo
+
+    // tenta sobrepor o sprite REAL da cabeça (repositório de assets no GitHub Pages);
+    // se o arquivo ainda não existir lá (404) ou a rede falhar, o avatar procedural
+    // acima já ficou desenhado — a troca só acontece se o load funcionar.
+    const realHead = new Image();
+    realHead.crossOrigin = 'anonymous';
+    realHead.onload = () => { ctx.drawImage(realHead, cx-11, groundY-78, 22, 22); };
+    realHead.src = URL_BASE + `player/heads/${gender}/${hairId}.png`;
   }
 
   /* =========================================================
@@ -236,7 +253,7 @@
     });
     document.getElementById('connect-btn').disabled = false;
     document.getElementById('connect-btn').addEventListener('click', ()=>{
-      localStorage.setItem('aincrad_character', JSON.stringify(selected));
+      localStorage.setItem(LS_CHARACTER, JSON.stringify(selected));
       window.location.href = 'hunt-engine.html';
     });
   }
@@ -297,7 +314,7 @@
       }
       msgEl.textContent = `Herói ${data.character.nick} criado! Entrando...`;
       msgEl.className = 'msg show ok';
-      localStorage.setItem('aincrad_character', JSON.stringify(data.character));
+      localStorage.setItem(LS_CHARACTER, JSON.stringify(data.character));
       setTimeout(()=>{ window.location.href = 'hunt-engine.html'; }, 900);
     });
   }
