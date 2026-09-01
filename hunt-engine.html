@@ -329,6 +329,24 @@
   const now = () => performance.now();
 
   /* =========================================================
+     0. CHARACTER MANAGEMENT — exige personagem selecionado
+     Se existe um token de login salvo (veio do fluxo real do
+     servidor) mas nenhum personagem foi escolhido ainda, manda
+     pra character-select.html — é exatamente o bug relatado
+     (conta nova pulava direto pro mapa sem criar o herói).
+     Sem token nenhum (aberto direto via file://, sem servidor),
+     o jogo continua liberado em modo solo, como sempre foi.
+     ========================================================= */
+  const AUTH_TOKEN = localStorage.getItem('aincrad_token');
+  let SELECTED_CHARACTER = null;
+  try { SELECTED_CHARACTER = JSON.parse(localStorage.getItem('aincrad_character') || 'null'); } catch (e) {}
+  if (AUTH_TOKEN && !SELECTED_CHARACTER) {
+    window.location.href = 'character-select.html';
+    return;
+  }
+  const PLAYER_NICK = SELECTED_CHARACTER ? SELECTED_CHARACTER.nick : 'Você';
+
+  /* =========================================================
      1. DADOS DAS CAÇADAS — locais, circuito de waypoints, loot
      ========================================================= */
   const HUNTS = [
@@ -692,7 +710,7 @@
      o jogo continua 100% jogável mesmo sem nenhum asset hospedado.
      ========================================================= */
   const SpriteManager = (function(){
-    const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/'; // <- troque pela sua URL real
+    const URL_BASE = 'https://SEU-USUARIO.github.io/aincrad-assets/'; // <- troque pela sua URL real
     const cache = {};
     function load(key, path){
       if(cache[key]) return cache[key];
@@ -1123,10 +1141,18 @@
       baseCart:{x:player.x,y:player.y},
       draw:()=>{
         const s = toScreen(player.x,player.y);
-        ctx.beginPath(); ctx.arc(s.x, s.y-9+breathe, 9, 0, Math.PI*2);
-        ctx.fillStyle = '#d3ab54'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
+        // tenta a cabeça real do personagem (gênero + cabelo escolhidos na criação); cai pro círculo se não tiver asset
+        let drewHead = false;
+        if(SELECTED_CHARACTER){
+          const headSprite = SpriteManager.headSprite(SELECTED_CHARACTER.gender, SELECTED_CHARACTER.hairId);
+          drewHead = headSprite.loaded && SpriteManager.drawClippedFrame(ctx, headSprite, 32,32, 0,0, s.x-10, s.y-27+breathe, 20,20);
+        }
+        if(!drewHead){
+          ctx.beginPath(); ctx.arc(s.x, s.y-9+breathe, 9, 0, Math.PI*2);
+          ctx.fillStyle = '#d3ab54'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
+        }
       },
-      headCart:{x:player.x,y:player.y}, headLift:22, isPlayer:true, nick:'Você',
+      headCart:{x:player.x,y:player.y}, headLift:22, isPlayer:true, nick:PLAYER_NICK,
     });
 
     // >>> O CORAÇÃO DO Y-SORTING: ordena pela projeção em tela da base <<<
@@ -1642,10 +1668,9 @@
       statusEl.textContent = '● sem login (modo solo)';
       return;
     }
-    // Força a conexão direta com o seu servidor estável do Render
-    const API_BASE = 'https://elemental-server.onrender.com';
-    const wsProto = 'wss:';
-    const wsHost = 'elemental-server.onrender.com';
+    const API_BASE = location.origin && location.origin.startsWith('http') ? location.origin : 'http://localhost:8787';
+    const wsProto = API_BASE.startsWith('https') ? 'wss:' : 'ws:';
+    const wsHost = API_BASE.replace(/^https?:\/\//,'');
     let ws;
     try{ ws = new WebSocket(`${wsProto}//${wsHost}/ws`); }
     catch(e){ statusEl.textContent = '● offline (modo solo)'; return; }
