@@ -1258,6 +1258,7 @@
   let location = 'city'; // 'city' | 'dungeon'
   const prestige = { bronzeStars:0, silverStars:0, goldStars:0, diamondRank:false };
   let isPremium = false;
+  let premiumExpiresAt = null;
   const training = { magia:0, defesa:0, esquiva:0, critico:0, sword:0, axe:0, club:0, distance:0 };
   let trainingBank = 0;
   let combatPosture = 'balanca';
@@ -1451,7 +1452,27 @@
       else targetCtx.drawImage(entry.img, col*frameW, row*frameH, frameW, frameH, dx, dy, dw, dh);
       return true;
     }
-    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, URL_BASE };
+    // Corpo/cabeça (bodies */heads *) NÃO são ícones quadrados — são recortes
+    // de uma folha de animação (ver comentário grandão acima) com proporção
+    // retangular (ex.: parado de pé, ~35x69). drawClippedFrame força um
+    // quadrado fixo (esticando/achatando o recorte pra caber), o que deixava
+    // a cabeça enorme e o corpo espremido ("parece estar segurando a
+    // cabeça"). Esta variante preserva a proporção real (contain-fit, como
+    // já fazíamos pra gemas/aura) e ancora pelo CENTRO-BASE (cx, bottomY) —
+    // pé fixo no chão, altura real do recorte pra cima — devolvendo a altura
+    // desenhada pra quem chama poder empilhar a cabeça em cima do corpo de
+    // verdade, em vez de usar um offset fixo que só por acaso batia certo
+    // quando o recorte já era quadrado.
+    function drawFrameContainFit(targetCtx, entry, cx, bottomY, maxW, maxH){
+      if(!entry.loaded || !entry.frame) return null;
+      const f = entry.frame;
+      const scale = Math.min(maxW/f.sw, maxH/f.sh);
+      const dw = f.sw*scale, dh = f.sh*scale;
+      const dx = cx - dw/2, dy = bottomY - dh;
+      targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+      return { dw, dh, dx, dy, topY: dy };
+    }
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -1479,15 +1500,28 @@
       const wing = SpriteManager.wingSprite(wingId);
       if(wing.loaded) SpriteManager.drawClippedFrame(tctx, wing, 64,64, 0,0, s.x-30, s.y-46+breathe, 60,52);
     }
+    // Pés fixos em (s.x, feetY); corpo cresce PRA CIMA a partir daí mantendo
+    // a proporção real do recorte (ver drawFrameContainFit) — nada de
+    // esticar num quadrado fixo, que era a causa da cabeça gigante/corpo
+    // espremido.
+    const feetY = s.y + breathe;
     const body = SpriteManager.bodySprite(genero);
-    drewBody = body.loaded && SpriteManager.drawClippedFrame(tctx, body, 64,64, 0,0, s.x-21, s.y-42+breathe, 42,42);
+    const bodyDraw = SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34, 46);
+    drewBody = !!bodyDraw;
     if(outfitId && outfitId !== 'padrao'){
       const armor = SpriteManager.armorSprite(genero, outfitId);
-      if(armor.loaded) SpriteManager.drawClippedFrame(tctx, armor, 64,64, 0,0, s.x-21, s.y-42+breathe, 42,42);
+      // Armadura cobre o MESMO recorte do corpo — usa a altura real do corpo
+      // (ou o próprio tamanho-alvo se o corpo não carregou) pra alinhar.
+      SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34, 46);
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
     const headSprite = SpriteManager.headSprite(genero, corCabelo);
-    drewHead = headSprite.loaded && SpriteManager.drawClippedFrame(tctx, headSprite, 32,32, 0,0, s.x-15, s.y-40+breathe, 30,30);
+    // Cabeça senta em cima do topo real do corpo desenhado (com uma pequena
+    // sobreposição de "pescoço"); se o corpo não carregou, cai pro topo
+    // aproximado que o boneco procedural já usava.
+    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30) + 8;
+    const headDraw = SpriteManager.drawFrameContainFit(tctx, headSprite, s.x, headBottomY, 26, 26);
+    drewHead = !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
@@ -1900,6 +1934,7 @@
     equipment = msg.equipment; cosmetics = msg.cosmetics;
     Object.assign(prestige, msg.prestige);
     isPremium = msg.isPremium;
+    premiumExpiresAt = msg.premiumExpiresAt || null;
     fragments = msg.fragments || 0;
     starEvolutionCost = msg.starEvolutionCost || null;
     friends = msg.friends || [];
@@ -2132,6 +2167,12 @@
       if(msg.ok) logLoot(`💎 Compra confirmada (modo teste): +${msg.granted} Elemental Coin.`);
       else logLoot(`⚠️ Não foi possível comprar: ${msg.reason}`);
       renderCoinShopIfOpen();
+    }
+    if(msg.forType === 'shop:buyPremium'){
+      if(msg.ok){ isPremium = true; premiumExpiresAt = msg.premiumExpiresAt; logLoot(`✨ Premium ativado (modo teste) por ${msg.package.days} dias!`); }
+      else logLoot(`⚠️ Não foi possível ativar Premium: ${msg.reason}`);
+      renderCoinShopIfOpen();
+      renderAltar();
     }
     if(msg.forType === 'shop:buyEnchantMaterial'){
       if(msg.ok) logLoot(`⚒️ Comprou ${msg.qty}x material de Encantamento por ${msg.cost} Gold.`);
@@ -3658,7 +3699,7 @@
         <div class="top"><h3>${t.icon} ${t.name}</h3><span class="floor">Andar ${floor}/100</span></div>
         <div class="tower-bar-track"><div class="tower-bar-fill" style="width:${floor}%"></div></div>
         <div class="tower-btns">
-          <button data-tower="${t.id}" data-mode="dungeon" ${activeHunt.running?'disabled':''}>Entrar na Dungeon</button>
+          <button data-tower="${t.id}" data-mode="dungeon" ${activeHunt.running?'disabled':''}>Entrar na Torre</button>
           <button data-tower="${t.id}" data-mode="boss" ${activeHunt.running?'disabled':''}>Entrar no Boss</button>
         </div>
       </div>`;
@@ -3686,27 +3727,34 @@
     const body = document.getElementById('altar-body');
     const tierLabel = prestige.diamondRank ? 'Diamante (Rank máximo — teto de treino 200)' : `Bronze ${prestige.bronzeStars}/5 · Prata ${prestige.silverStars}/5 · Ouro ${prestige.goldStars}/5`;
     const inCity = location === 'city';
+    // Reset de Estrela exige Nível 100 (ver evolveStarRank no servidor) — o
+    // botão precisa refletir isso visualmente (cinza/desabilitado) em vez de
+    // só rejeitar silenciosamente no clique, senão parece que "não funciona".
+    const meetsLevel = player.level >= 100;
     const canAfford = starEvolutionCost && player.gold >= starEvolutionCost.gold && fragments >= starEvolutionCost.fragments;
     const costLine = starEvolutionCost
       ? `<div class="altar-req-row"><span>Custo da próxima estrela</span><span class="${canAfford?'ok':'missing'}">${starEvolutionCost.gold} Gold + ${starEvolutionCost.fragments} Fragmentos</span></div>`
       : `<div class="altar-req-row"><span>Custo</span><span class="ok">Rank máximo atingido</span></div>`;
     body.innerHTML = `
       <div class="altar-rank-display">${tierLabel}</div>
-      <div class="altar-req-row"><span>Nível</span><span>${player.level}</span></div>
+      <div class="altar-req-row"><span>Nível</span><span class="${meetsLevel?'ok':'missing'}">${player.level}/100</span></div>
       <div class="altar-req-row"><span>Teto de treino atual</span><span class="ok">${getTrainingCap()}</span></div>
       <div class="altar-req-row"><span>Seu Ouro</span><span>${Math.floor(player.gold)}</span></div>
       <div class="altar-req-row"><span>Seus Fragmentos</span><span>💠 ${fragments}</span></div>
       ${costLine}
       ${starEvolutionCost ? `<div class="altar-req-row" style="color:var(--ink-dim);font-size:9.5px;">ℹ️ Só o Nível e o XP voltam a 1 — equipamento, Encantamento, Árvore de Habilidades, treino, itens e todo o resto conquistado permanecem intactos.</div>` : ''}
       ${!inCity ? `<div class="altar-req-row" style="color:#ff9a80;">⚠️ Disponível apenas na Cidade Principal</div>` : ''}
-      <button id="altar-evolve-btn" ${(!inCity || !starEvolutionCost || !canAfford) ? 'disabled' : ''}>🔥 Realizar Reset de Estrela</button>
-      <div class="panel-title" style="margin-top:16px;font-size:11px;">Dev/teste</div>
-      <div class="altar-req-row"><span>Status</span><span>${isPremium?'Premium':'Free'}</span></div>
-      <button id="altar-confirm-btn">${isPremium?'Cancelar Premium (dev)':'Ativar Premium (dev)'}</button>
+      ${(!meetsLevel && starEvolutionCost) ? `<div class="altar-req-row" style="color:#ff9a80;">⚠️ Requer Nível 100 pra evoluir de estrela.</div>` : ''}
+      <button id="altar-evolve-btn" ${(!inCity || !starEvolutionCost || !canAfford || !meetsLevel) ? 'disabled' : ''}>🔥 Realizar Reset de Estrela</button>
+      <div class="panel-title" style="margin-top:16px;font-size:11px;">Premium</div>
+      <div class="altar-req-row"><span>Status</span><span>${isPremium?'Premium ativo':'Free'}</span></div>
+      <button id="altar-confirm-btn">🛒 Ativar Premium</button>
     `;
     document.getElementById('altar-evolve-btn').addEventListener('click', ()=> sendWS({ type:'altar:evolve' }));
     document.getElementById('altar-confirm-btn').addEventListener('click', ()=>{
-      sendWS({ type:'hunt:configure', isPremium: !isPremium });
+      altarModal.classList.remove('open');
+      coinshopModal.classList.add('open');
+      renderCoinShop();
     });
   }
 
@@ -3773,13 +3821,27 @@
   ];
   document.getElementById('tb-coin-pill').addEventListener('click', ()=>{ coinshopModal.classList.toggle('open'); renderCoinShop(); });
   function renderCoinShopIfOpen(){ if(coinshopModal.classList.contains('open')) renderCoinShop(); }
+  // Premium por tempo — vendida na mesma loja cash (mesmo catálogo espelho
+  // de huntEngine.js PREMIUM_PACKAGES; quem credita de verdade é o servidor).
+  const PREMIUM_PACKAGES = [
+    { id:'premium_30d', days:30, priceBRL:19.90 },
+    { id:'premium_90d', days:90, priceBRL:49.90 },
+  ];
   function renderCoinShop(){
     const list = document.getElementById('coinshop-items-list');
-    list.innerHTML = ELEMENTAL_COIN_PACKAGES.map(p=>`
+    const statusLine = isPremium
+      ? `<div class="coin-pkg-row" style="border-color:var(--ok);"><span class="cname" style="color:var(--ok);">✨ Premium ativo${premiumExpiresAt ? ` — até ${new Date(premiumExpiresAt).toLocaleDateString('pt-BR')}` : ''}</span></div>`
+      : '';
+    list.innerHTML = statusLine + `<div class="panel-title" style="margin-top:4px;">Premium</div>` + PREMIUM_PACKAGES.map(p=>`
+      <div class="coin-pkg-row"><span class="cname">✨ Premium ${p.days} dias</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-premium="${p.id}">Comprar</button></div>
+    `).join('') + `<div class="panel-title" style="margin-top:10px;">Elemental Coin</div>` + ELEMENTAL_COIN_PACKAGES.map(p=>`
       <div class="coin-pkg-row"><span class="cname">💎 ${p.coins}${p.bonusCoins?` <span style="color:var(--ok);">+${p.bonusCoins} bônus</span>`:''}</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-coin="${p.id}">Comprar</button></div>
     `).join('');
     list.querySelectorAll('[data-buy-coin]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'shop:buyElementalCoins', packageId: btn.dataset.buyCoin }));
+    });
+    list.querySelectorAll('[data-buy-premium]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'shop:buyPremium', packageId: btn.dataset.buyPremium }));
     });
   }
 
