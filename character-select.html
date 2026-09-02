@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aincrad Online — Seleção de Personagem</title>
+<title>Elemental Online — Seleção de Personagem</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -147,7 +147,10 @@
   // Backend oficial no Render — fixo, não detectado por location.origin.
   const API_BASE = 'https://elemental-server.onrender.com';
   // Repositório oficial de artes/sprites no GitHub Pages — fixo character por character.
-  const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/';
+  // O repo publica a pasta "assets/" na raiz (assets/player/..., assets/monsters/...),
+  // então a URL pública precisa desse prefixo — sem ele, todo load cai em 404 e o
+  // avatar procedural (fallback) é tudo que aparece, mesmo com os PNGs já existindo.
+  const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/';
 
   // localStorage padronizado globalmente (index.html, character-select.html, world-prototype.html)
   const LS_TOKEN = 'elemental_token';
@@ -213,7 +216,7 @@
     const realHead = new Image();
     realHead.crossOrigin = 'anonymous';
     realHead.onload = () => { ctx.drawImage(realHead, cx-11, groundY-78, 22, 22); };
-    realHead.src = URL_BASE + `player/heads/${gender}/${corCabelo}.png`;
+    realHead.src = URL_BASE + `player/heads ${gender}/${corCabelo}.png`;
   }
 
   /* =========================================================
