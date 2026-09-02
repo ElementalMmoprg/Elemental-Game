@@ -1436,24 +1436,16 @@
       return entry;
     }
     function monsterSprite(id){ return load('m_'+id, `monsters/${id}.png`); }
-    // ---- CABEÇA/CABELO: 1 atlas com 19 PENTEADOS, cor sintetizada em tempo real ----
-    // O repositório de assets hoje só tem UM arquivo real de cabeça por gênero
-    // (player/heads <gênero>/black.png) — mas esse arquivo NÃO é um penteado
-    // só: é uma grade de 19 linhas, cada linha um penteado diferente (mesma
-    // ideia de "folha/atlas" do comentário grandão acima, só que em vez de UM
-    // recorte útil, tem 19 lado a lado verticalmente). hairStyleId (1-19,
-    // ver huntEngine.HAIR_STYLE_COUNT) escolhe a LINHA; a "cor" (hairId,
-    // huntEngine.HAIR_COLORS) nunca existiu como arquivo separado pras outras
-    // 7 cores — é aplicada por cima via tingimento por luminância (ver
-    // getTintedHeadCanvas), a mesma técnica que uma folha de sprite indexada
-    // faria com troca de paleta, só que num PNG comum sem paleta.
-    // IMPORTANTE (limitação atual, não bug): só existe "heads male/black.png"
-    // no repositório — não existe "heads female/*" nenhum ainda. Pra
-    // personagem feminino, load() abaixo vai falhar (404) até esse arquivo
-    // ser adicionado, e o boneco procedural (fallback já existente) desenha
-    // no lugar — de propósito: não reaproveitamos a cabeça masculina pra não
-    // misturar o rosto errado num personagem feminino.
-    function headSprite(genero){ return load('h_'+genero, `player/heads ${genero}/black.png`); }
+    // ---- CABEÇA/CABELO: 1 atlas com 19 PENTEADOS por arquivo de COR ----
+    // Cada arquivo player/heads <gênero>/<cor>.png (8 cores reais hoje —
+    // black/blue/brown/green/purple/red/white/yellow, confirmado no
+    // repositório pra AMBOS os gêneros) não é um penteado só: é uma grade de
+    // 19 linhas, cada linha um penteado diferente (mesma ideia de
+    // "folha/atlas" do comentário grandão acima, só que em vez de UM recorte
+    // útil, tem 19 empilhados verticalmente). hairStyleId (1-19, ver
+    // huntEngine.HAIR_STYLE_COUNT) escolhe a LINHA; hairId escolhe qual dos 8
+    // ARQUIVOS carregar (a cor já vem pronta da arte, sem tingir nada aqui).
+    function headSprite(genero, corCabelo){ return load('h_'+genero+'_'+corCabelo, `player/heads ${genero}/${corCabelo}.png`); }
     // Acha TODAS as linhas de conteúdo do atlas (não só a primeira, como
     // computeAutoFrame) e, dentro de cada linha, o primeiro bloco de coluna —
     // ou seja, o "quadro parado" de cada um dos 19 penteados. Roda uma vez só
@@ -1508,50 +1500,17 @@
       const idx = ((Math.floor(Number(styleId)||1) - 1) % frames.length + frames.length) % frames.length;
       return frames[idx];
     }
-    // Tinge (por luminância, não por hue-rotate — funciona mesmo a partir de
-    // um cabelo preto/quase-sem-saturação) o recorte do penteado escolhido
-    // pra cor pedida, preservando luz/sombra do desenho original. Cacheia o
-    // canvas resultado por (imagem, estilo, cor) — sem isso, recolorir pixel
-    // a pixel a cada frame do loop de 60fps pra cada jogador em tela custaria
-    // caro à toa, já que o resultado nunca muda depois de calculado uma vez.
-    const tintCache = {};
-    const HAIR_COLOR_RGB = { black:[42,33,24], blue:[58,95,160], brown:[138,90,42], green:[63,155,74], purple:[122,63,160], red:[201,64,64], white:[232,226,208], yellow:[216,194,58] };
-    function getTintedHeadCanvas(entry, styleId, colorName){
-      const frame = getHeadStyleFrame(entry, styleId);
-      if(!frame) return null;
-      const key = entry.img.src+'|'+styleId+'|'+colorName;
-      const hit = tintCache[key];
-      if(hit) return hit;
-      const c = document.createElement('canvas');
-      c.width = frame.sw; c.height = frame.sh;
-      const cctx = c.getContext('2d');
-      cctx.drawImage(entry.img, frame.sx, frame.sy, frame.sw, frame.sh, 0, 0, frame.sw, frame.sh);
-      const rgb = HAIR_COLOR_RGB[colorName] || HAIR_COLOR_RGB.black;
-      if(colorName !== 'black'){
-        const imgData = cctx.getImageData(0, 0, frame.sw, frame.sh);
-        const d = imgData.data;
-        for(let i=0; i<d.length; i+=4){
-          if(d[i+3] === 0) continue;
-          const lum = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255;
-          const factor = Math.min(1.6, 0.35 + 1.3*lum*(1-0.35));
-          d[i]   = Math.min(255, rgb[0]*factor);
-          d[i+1] = Math.min(255, rgb[1]*factor);
-          d[i+2] = Math.min(255, rgb[2]*factor);
-        }
-        cctx.putImageData(imgData, 0, 0);
-      }
-      const result = { canvas:c, sw:frame.sw, sh:frame.sh };
-      tintCache[key] = result;
-      return result;
-    }
-    function drawHeadStyleContainFit(targetCtx, entry, styleId, colorName, cx, bottomY, maxW, maxH){
+    // Desenha o penteado (linha hairStyleId do atlas JÁ na cor certa — ver
+    // headSprite acima) preservando a proporção real, igual drawFrameContainFit,
+    // só que recortando a linha certa em vez do único frame de computeAutoFrame.
+    function drawHeadStyleContainFit(targetCtx, entry, styleId, cx, bottomY, maxW, maxH){
       if(!entry.loaded) return null;
-      const tinted = getTintedHeadCanvas(entry, styleId, colorName);
-      if(!tinted) return null;
-      const scale = Math.min(maxW/tinted.sw, maxH/tinted.sh);
-      const dw = tinted.sw*scale, dh = tinted.sh*scale;
+      const f = getHeadStyleFrame(entry, styleId);
+      if(!f) return null;
+      const scale = Math.min(maxW/f.sw, maxH/f.sh);
+      const dw = f.sw*scale, dh = f.sh*scale;
       const dx = cx - dw/2, dy = bottomY - dh;
-      targetCtx.drawImage(tinted.canvas, 0, 0, tinted.sw, tinted.sh, dx, dy, dw, dh);
+      targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       return { dw, dh, dx, dy, topY: dy };
     }
     // arquivo real é "{genero}_base.png" (ex.: male_base.png, female_base.png),
@@ -1593,7 +1552,7 @@
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       return { dw, dh, dx, dy, topY: dy };
     }
-    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawHeadStyleContainFit, getHeadStyleFrame, HAIR_COLOR_RGB, URL_BASE };
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawHeadStyleContainFit, getHeadStyleFrame, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -1636,16 +1595,16 @@
       SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34, 46);
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
-    const headAtlas = SpriteManager.headSprite(genero);
+    const headAtlas = SpriteManager.headSprite(genero, corCabelo);
     // Cabeça senta em cima do topo real do corpo desenhado (com uma pequena
     // sobreposição de "pescoço"); se o corpo não carregou, cai pro topo
     // aproximado que o boneco procedural já usava.
     const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30) + 8;
-    // hairStyleId escolhe QUAL das 19 linhas do atlas (ver comentário grandão
-    // em SpriteManager.headSprite); corCabelo tinge por cima. Sem
-    // hairStyleId (chamadores antigos/retrato ainda não atualizados) cai no
-    // estilo 1, igual ao default do servidor pra personagens antigos.
-    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, corCabelo, s.x, headBottomY, 26, 26);
+    // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
+    // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
+    // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
+    // igual ao default do servidor pra personagens antigos.
+    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26, 26);
     drewHead = !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
