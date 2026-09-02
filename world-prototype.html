@@ -56,27 +56,29 @@
   .tb-icon{ width:34px; height:34px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
   .tb-icon:hover{ border-color:var(--gold-bright); box-shadow:0 0 10px rgba(240,211,138,.2); }
 
-  #minimap{ top:60px; left:50%; transform:translateX(-50%); width:130px; height:130px; padding:0; overflow:hidden; z-index:7; }
-  #minimap canvas{ width:100%; height:100%; display:block; }
-  #minimap .mm-label{ position:absolute; top:3px; left:6px; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); background:rgba(9,7,5,.7); padding:1px 5px; border-radius:3px; }
-
   #ws-status{ top:56px; right:16px; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); z-index:9; }
+  #build-tag{ bottom:2px; right:4px; font-family:var(--font-mono); font-size:8px; color:rgba(169,152,114,.4); z-index:9; pointer-events:none; }
 
-  /* Vitals (HP/Mana/Stamina) — agora colados na hotbar, à esquerda dela,
-     em vez de uma janela solta no canto (era o que virava "janela gigante"). */
-  #vitals-block{ position:static; width:150px; padding:8px 10px; flex-shrink:0; }
-  .bar-track{ height:11px; border-radius:4px; overflow:hidden; background:#0a0705; border:1px solid var(--gold-deep); box-shadow:inset 0 2px 5px rgba(0,0,0,.7); margin-bottom:5px; position:relative; }
+  /* Vitals (HP/Mana/Stamina) — colados na hotbar, à esquerda dela. Alongado
+     e com barras mais altas (pedido explícito — estava pequeno d+). */
+  #vitals-block{ position:static; width:230px; padding:9px 12px; flex-shrink:0; }
+  .bar-track{ height:15px; border-radius:4px; overflow:hidden; background:#0a0705; border:1px solid var(--gold-deep); box-shadow:inset 0 2px 5px rgba(0,0,0,.7); margin-bottom:6px; position:relative; }
   .bar-fill{ height:100%; transition:width .25s; }
   .bar-fill.hp{ background:linear-gradient(180deg,var(--hp-a),var(--hp-b) 55%,var(--hp-c)); }
   .bar-fill.mp{ background:linear-gradient(180deg,var(--mp-a),var(--mp-b) 55%,var(--mp-c)); }
   .bar-fill.stam{ background:linear-gradient(180deg,var(--stam-a),var(--stam-b) 55%,var(--stam-c)); }
-  .bar-label{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:7.5px; color:#000; text-shadow:0 1px 0 rgba(255,255,255,.25); }
-  #hunt-status-line{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); line-height:1.5; }
+  .bar-label{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:9px; color:#000; text-shadow:0 1px 0 rgba(255,255,255,.25); }
+  #hunt-status-line{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); line-height:1.6; }
   #hunt-status-line b{ color:var(--gold-bright); }
   #premium-badge{ display:inline-block; font-family:var(--font-mono); font-size:8px; padding:0 4px; border-radius:3px; margin-left:5px; border:1px solid var(--premium); color:var(--premium); }
   #premium-badge.free{ border-color:var(--ink-dim); color:var(--ink-dim); }
-  #recharge-stamina-btn{ display:none; width:100%; margin-top:5px; padding:5px; border-radius:5px; border:1px dashed var(--premium); background:rgba(240,211,138,.08); color:var(--premium); font-family:var(--font-mono); font-size:8.5px; cursor:pointer; }
-  #recharge-stamina-btn.show{ display:block; }
+  .win-close-x{ margin-left:auto; color:var(--danger); cursor:pointer; font-family:var(--font-mono); font-size:11px; padding:2px 6px; }
+  .win-close-x:hover{ color:#ff9a80; }
+  /* Botão "+" compacto ao lado da barra de Stamina (recarga Premium) — só
+     visível se sobrar recarga hoje; some quando não é premium ou já usou as 4. */
+  #stam-recharge-btn{ display:none; width:18px; height:18px; border-radius:50%; border:1px solid var(--premium); background:rgba(240,211,138,.1); color:var(--premium); align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; line-height:1; cursor:pointer; flex-shrink:0; }
+  #stam-recharge-btn.show{ display:flex; }
+  #stam-recharge-btn .popover{ bottom:calc(100% + 8px); right:0; width:190px; }
 
   /* ============ POPOVERS DE HOVER ============ */
   .hover-trigger{ position:relative; }
@@ -95,7 +97,12 @@
   /* ============ BARRA DE AÇÃO DA CAÇADA (Detalhes / Robô de Venda / Sair) —
      colada ACIMA da hotbar+barra tática, só aparece dentro de uma Dungeon.
      Os popovers de Despacho e Saída abrem por HOVER, se abrindo pra CIMA. ============ */
-  #hunt-action-row{ display:none; gap:8px; padding:6px 8px; }
+  /* #stage > * já vira position:absolute (ver regra #stage acima), mas sem
+     top/left/bottom essa div cai no canto (0,0) do #stage e nunca aparece
+     "acima da hotbar" como o comentário HTML promete — esse é o bug real
+     por trás de "onde estão os ícones da caçada?". Ancorando ela igual ao
+     #footer-bar (mesmo bottom/left/transform, só que mais alto) resolve. */
+  #hunt-action-row{ display:none; bottom:96px; left:50%; transform:translateX(-50%); gap:8px; padding:6px 8px; z-index:6; }
   #hunt-action-row.show{ display:flex; }
   .hunt-pill{
     position:relative; display:flex; align-items:center; gap:6px; padding:8px 12px;
@@ -351,17 +358,23 @@
     grid-template-rows:repeat(3, 46px);
     gap:12px 10px;
     grid-template-areas:
-      "topL    topC   topR"
+      ".       topC   topR"
       "midL    midC   midR"
-      ".       botC   .";
+      "botL    botC   .";
   }
-  .equip-grid3 [data-equip="ring"]{ grid-area:topL; }
   .equip-grid3 [data-equip="helmet"]{ grid-area:topC; }
   .equip-grid3 [data-equip="amulet"]{ grid-area:topR; }
   .equip-grid3 [data-equip="weapon"]{ grid-area:midL; }
   .equip-grid3 [data-equip="armor"]{ grid-area:midC; }
   .equip-grid3 [data-equip="offhand"]{ grid-area:midR; }
+  .equip-grid3 [data-equip="ring"]{ grid-area:botL; }
   .equip-grid3 [data-equip="boots"]{ grid-area:botC; }
+  /* vazio até equipar algo — só o ícone (slot-icon) fica invisível, a caixa
+     do slot continua ali pra poder soltar (drop) um item da Mochila nela */
+  .equip-slot .slot-icon{ visibility:hidden; }
+  .equip-slot.filled .slot-icon{ visibility:visible; }
+  .equip-slot.drop-hover{ border-color:var(--gold-bright); background:rgba(240,211,138,.12); }
+  .item-slot[draggable="true"]{ cursor:grab; }
 
   /* coluna direita: Bolsa (consumíveis empilhados) / Mochila (loot) */
   #inv-items-col{ flex:1; display:flex; flex-direction:column; overflow:hidden; }
@@ -385,6 +398,54 @@
 
   #attrs-panel{ top:60px; right:250px; width:230px; display:none; z-index:6; }
   #attrs-panel.open{ display:block; }
+
+  /* ===== ÁRVORE DE HABILIDADES ELEMENTAL ===== */
+  #skilltree-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:460px; max-width:94vw; height:560px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #skilltree-panel.open{ display:flex; }
+  #skilltree-panel .panel-title{ flex-shrink:0; }
+  .skilltree-body{ flex:1; display:flex; flex-direction:column; overflow:hidden; padding:0 14px 14px; }
+  .skill-tabs{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; flex-shrink:0; }
+  .skill-tab{ font-family:var(--font-mono); font-size:10.5px; padding:4px 10px; border:1px solid var(--gold-deep); border-radius:12px; cursor:pointer; color:var(--ink-dim); background:rgba(0,0,0,.25); }
+  .skill-tab.active{ color:var(--gold-bright); border-color:var(--gold-bright); }
+  .skill-points-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:6px; flex-shrink:0; }
+  .skill-points-row b{ color:var(--gold-bright); }
+  #skill-list-wrap{ flex:1; overflow-y:auto; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.2); }
+  .skill-node-row{ display:flex; align-items:center; gap:7px; padding:5px 8px; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .skill-node-row.dirty{ background:rgba(211,171,84,.08); }
+  .skill-node-row .node-index{ width:22px; flex-shrink:0; color:var(--ink-dim); opacity:.7; text-align:right; }
+  .skill-node-row .node-cat-icon{ flex-shrink:0; }
+  .skill-node-row .node-name{ flex:1; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
+  .skill-node-row.investable .node-name{ color:var(--gold-bright); }
+  .skill-node-row.milestone .node-name{ color:#f0d38a; font-weight:600; }
+  .skill-node-row.locked{ opacity:.45; }
+  .skill-node-row .node-level{ flex-shrink:0; color:var(--ink-dim); min-width:50px; text-align:right; }
+  .skill-node-row .node-level b{ color:var(--gold-bright); }
+  .skill-node-row button{ flex-shrink:0; width:20px; height:20px; line-height:18px; padding:0; font-family:var(--font-mono); font-size:12px; border:1px solid var(--gold-deep); border-radius:4px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .skill-node-row button:hover:not(:disabled){ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .skill-node-row button:disabled{ opacity:.3; cursor:not-allowed; }
+  .skill-actions-row{ display:flex; gap:8px; margin-top:8px; flex-shrink:0; }
+  .skill-save-btn, .skill-reset-btn{ flex:1; font-family:var(--font-mono); font-size:11px; padding:8px; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .skill-save-btn:not(:disabled){ color:#7fbf6a; border-color:#7fbf6a; }
+  .skill-save-btn:disabled, .skill-reset-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .skill-reset-btn:not(:disabled):hover{ color:#ff9a80; border-color:#ff9a80; }
+  .skill-node-tip{ position:fixed; z-index:50; max-width:220px; padding:7px 10px; background:rgba(9,7,5,.95); border:1px solid var(--gold-bright); border-radius:6px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); pointer-events:none; display:none; }
+  .skill-node-tip b{ color:var(--gold-bright); display:block; margin-bottom:3px; }
+  .skill-node-tip .hint{ display:block; margin-top:4px; color:#7fbf6a; }
+
+  /* ===== TORRES ELEMENTAIS ===== */
+  #towers-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; height:460px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #towers-panel.open{ display:flex; }
+  .towers-body{ flex:1; overflow:auto; padding:0 14px 14px; }
+  .tower-row{ border:1px solid var(--gold-deep); border-radius:6px; padding:8px 10px; margin-bottom:8px; }
+  .tower-row .top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+  .tower-row h3{ font-size:12px; margin:0; color:var(--gold-bright); }
+  .tower-row .floor{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .tower-bar-track{ height:7px; background:#0a0705; border:1px solid var(--gold-deep); border-radius:3px; overflow:hidden; margin-bottom:6px; }
+  .tower-bar-fill{ height:100%; background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); }
+  .tower-btns{ display:flex; gap:6px; }
+  .tower-btns button{ flex:1; font-family:var(--font-mono); font-size:9.5px; padding:5px; border:1px solid var(--gold-deep); border-radius:4px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .tower-btns button:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .tower-btns button:disabled{ opacity:.4; cursor:not-allowed; }
   #attrs-panel .cap-line{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:8px; display:flex; justify-content:space-between; }
   .attr-row{ display:flex; align-items:center; gap:6px; margin-bottom:6px; font-family:var(--font-mono); font-size:10.5px; }
   .attr-row .name{ width:56px; }
@@ -471,6 +532,62 @@
   .shop-item-row .sname{ color:var(--ink); }
   .shop-item-row .scost{ color:var(--gold-bright); white-space:nowrap; }
 
+  /* ============ LOJA DE ELEMENTAL COIN (Moeda Real) ============ */
+  #coinshop-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:400px; max-width:94vw; display:none; z-index:17; }
+  #coinshop-modal.open{ display:block; }
+  .coin-pkg-row{ display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; padding:8px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .coin-pkg-row .cname{ color:var(--ink); }
+  .coin-pkg-row .cprice{ color:var(--gold-bright); white-space:nowrap; }
+  .coinshop-devnote{ color:#ff9a80; font-family:var(--font-mono); font-size:9.5px; margin-top:10px; line-height:1.5; }
+
+  /* ============ RANK GERAL (Leaderboard) ============ */
+  #rank-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:94vw; height:440px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
+  #rank-modal.open{ display:flex; }
+  #rank-list{ flex:1; overflow-y:auto; padding:0 14px 14px; }
+  .rank-row{ display:grid; grid-template-columns:28px 1fr auto; gap:8px; align-items:center; padding:6px 0; border-bottom:1px dashed rgba(191,161,95,.12); font-family:var(--font-mono); font-size:10.5px; }
+  .rank-row.me{ background:rgba(240,211,138,.08); border-radius:4px; }
+  .rank-row .rpos{ color:var(--gold-bright); text-align:center; }
+  .rank-row .rscore{ color:var(--ok); white-space:nowrap; }
+  #rank-my-line{ padding:8px 14px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); border-bottom:1px solid rgba(191,161,95,.2); }
+
+  /* ============ ENCANTAMENTO (estilo Ragnarok) ============ */
+  #enchant-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; display:none; z-index:17; }
+  #enchant-modal.open{ display:block; }
+  .enchant-slot-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+  .enchant-slot-tab{ padding:4px 8px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
+  .enchant-slot-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
+  .enchant-req-row{ display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .enchant-req-row .ok{ color:var(--ok); }
+  .enchant-req-row .missing{ color:#ff9a80; }
+  .enchant-stats-box{ background:rgba(0,0,0,.3); border:1px solid rgba(191,161,95,.2); border-radius:4px; padding:8px; margin:8px 0; font-family:var(--font-mono); font-size:10px; line-height:1.6; }
+  .enchant-affix{ color:#b98af0; }
+
+  /* ============ PETS + GACHA ============ */
+  #pets-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; height:520px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
+  #pets-modal.open{ display:flex; }
+  .pets-tabs{ display:flex; gap:4px; padding:0 14px; }
+  .pets-tab{ padding:6px 10px; border:1px solid var(--gold-deep); border-radius:4px 4px 0 0; font-family:var(--font-mono); font-size:10.5px; cursor:pointer; color:var(--ink-dim); }
+  .pets-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
+  .pets-body{ flex:1; overflow-y:auto; padding:10px 14px 14px; }
+  .pet-row{ display:grid; grid-template-columns:28px 1fr auto auto; gap:8px; align-items:center; padding:7px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .pet-row .picon{ font-size:18px; text-align:center; }
+  .pet-row.active-pet{ background:rgba(111,143,78,.12); border-radius:4px; }
+  .pet-active-badge{ color:var(--ok); font-size:9px; }
+  .gacha-box{ text-align:center; padding:14px 0; border-bottom:1px solid rgba(191,161,95,.2); margin-bottom:10px; }
+  .gacha-result{ font-family:var(--font-mono); font-size:11px; margin-top:8px; min-height:16px; }
+
+  /* ============ BATTLE PASS ============ */
+  #battlepass-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:460px; max-width:94vw; height:540px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
+  #battlepass-modal.open{ display:flex; }
+  #bp-progress-bar{ margin:0 14px 10px; height:8px; border-radius:4px; background:rgba(0,0,0,.4); border:1px solid var(--gold-deep); overflow:hidden; }
+  #bp-progress-fill{ height:100%; background:linear-gradient(90deg,#6f8f4e,#a9c97e); }
+  #bp-tier-list{ flex:1; overflow-y:auto; padding:0 14px 14px; }
+  .bp-tier-row{ display:grid; grid-template-columns:34px 1fr 1fr; gap:8px; align-items:center; padding:7px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10px; }
+  .bp-tier-row.locked{ opacity:.4; }
+  .bp-tier-num{ color:var(--gold-bright); text-align:center; }
+  .bp-reward{ display:flex; align-items:center; justify-content:space-between; gap:4px; }
+  .bp-reward button{ font-size:9px; padding:3px 6px; }
+
   /* ============ CHAT FLUTUANTE (Global/Local/Guild/Sistema/Combate) ============ */
   #chat-window{ left:14px; bottom:80px; width:400px; height:220px; min-width:260px; min-height:130px; display:flex; flex-direction:column; overflow:hidden; z-index:5; }
   #chat-titlebar{ padding:6px 10px; display:flex; align-items:center; justify-content:space-between; cursor:move; border-bottom:1px solid var(--gold-deep); user-select:none; }
@@ -524,7 +641,9 @@
       </div>
     </div>
     <div class="tb-pill" id="tb-gold-pill">🪙 <span id="tb-gold">0</span></div>
+    <div class="tb-pill" id="tb-coin-pill" title="Elemental Coin — comprada com Moeda Real, usada pra Reset da Árvore e Encantamento. Clique pra comprar mais.">💎 <span id="tb-elementalcoins">0</span></div>
     <div class="tb-pill tb-shop" id="btn-open-shop">🛒 Loja</div>
+    <div class="tb-pill" id="btn-open-rank" title="Rank Geral">🏆 Rank</div>
     <div id="tb-online">— jogadores online</div>
     <div id="matchmaking-pill" class="tb-pill searching" title="Clique para cancelar a busca por time" style="display:none;">🔎 Buscando time...</div>
     <div id="training-pill" class="tb-pill searching" title="Treinando no boneco (2x o ritmo de caçada) — clique para parar" style="display:none;">🏋️ Treinando...</div>
@@ -535,20 +654,21 @@
       <div class="tb-icon" id="btn-open-friends" title="Amigos">👤</div>
       <div class="tb-icon" id="btn-open-altar" title="Altar de Evolução">🔥</div>
       <div class="tb-icon" id="btn-open-attrs" title="Atributos Livres">🎯</div>
+      <div class="tb-icon" id="btn-open-skilltree" title="Árvore de Habilidades">🌳</div>
+      <div class="tb-icon" id="btn-open-towers" title="Torres Elementais">🗼</div>
+      <div class="tb-icon" id="btn-open-enchant" title="Encantamento">⚒️</div>
+      <div class="tb-icon" id="btn-open-pets" title="Pets">🐾</div>
+      <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass">🎫</div>
       <div class="tb-icon" id="btn-open-analyzer" title="Analisador">📊</div>
     </div>
   </div>
 
-  <div id="minimap" class="glass" title="Mapa">
-    <canvas id="minimap-canvas"></canvas>
-    <span class="mm-label" id="mm-label">Cidade Principal</span>
-  </div>
-
   <div id="ws-status">● conectando...</div>
+  <div id="build-tag">build 2026-09-02-r2</div>
 
   <!-- PARTY — até 10 jogadores, convite, e o botão IR (só Líder) -->
   <div id="party-panel" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Grupo (máx. 10)<span class="rule"></span></div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Grupo (máx. 10)<span class="rule"></span><span class="win-close-x" data-close-win="party-panel">✕</span></div>
     <div style="padding:0 14px 14px;">
       <div id="party-list"></div>
       <div id="party-invite-row">
@@ -567,6 +687,7 @@
     <div class="analyzer-tabs win-drag">
       <div class="analyzer-tab active" data-atab="geral">Geral</div>
       <div class="analyzer-tab" data-atab="combate">Combate</div>
+      <span class="win-close-x" style="margin-left:auto;align-self:center;" data-close-win="analyzer-panel">✕</span>
     </div>
     <div class="analyzer-body" id="analyzer-body"></div>
     <div class="win-resize"></div>
@@ -574,7 +695,7 @@
 
   <!-- PAINEL DE ATRIBUTOS LIVRES -->
   <div id="attrs-panel" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Atributos Livres<span class="rule"></span></div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Atributos Livres<span class="rule"></span><span class="win-close-x" data-close-win="attrs-panel">✕</span></div>
     <div style="padding:0 14px 14px;">
       <div class="cap-line"><span>Teto atual: <b id="attr-cap" style="color:var(--gold-bright)">100</b></span><span>Banco: <b id="attr-bank" style="color:var(--gold-bright)">0</b></span></div>
       <div id="attrs-list"></div>
@@ -584,14 +705,14 @@
 
   <!-- ALTAR DE EVOLUÇÃO -->
   <div id="altar-modal" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Altar de Evolução<span class="rule"></span></div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Altar de Evolução<span class="rule"></span><span class="win-close-x" data-close-win="altar-modal">✕</span></div>
     <div id="altar-body" style="padding:0 16px 16px;"></div>
     <div class="win-resize"></div>
   </div>
 
   <!-- AMIGOS — acessível em qualquer área do jogo, igual aos outros painéis -->
   <div id="friends-panel" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Amigos<span class="rule"></span></div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Amigos<span class="rule"></span><span class="win-close-x" data-close-win="friends-panel">✕</span></div>
     <div style="padding:0 14px 14px;">
       <div id="friends-list"></div>
       <div id="friends-add-row" style="display:flex;gap:6px;margin-top:10px;">
@@ -602,13 +723,82 @@
     <div class="win-resize"></div>
   </div>
 
+  <!-- ÁRVORE DE HABILIDADES ELEMENTAL -->
+  <div id="skilltree-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Árvore de Habilidades<span class="rule"></span><span class="win-close-x" data-close-win="skilltree-panel">✕</span></div>
+    <div class="skilltree-body">
+      <div class="skill-tabs" id="skill-tabs"></div>
+      <div class="skill-points-row"><span>Pontos de Habilidade</span><span><b id="skill-points-available">0</b> / <span id="skill-points-total">0</span> disponíveis</span></div>
+      <div id="skill-list-wrap"></div>
+      <div class="skill-actions-row">
+        <button class="skill-save-btn" id="skill-save-btn" disabled>💾 Salvar Árvore</button>
+        <button class="skill-reset-btn" id="skill-reset-btn">♻️ Resetar (150 💎)</button>
+      </div>
+    </div>
+  </div>
+  <div class="skill-node-tip" id="skill-node-tip"></div>
+
+  <!-- TORRES ELEMENTAIS -->
+  <div id="towers-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Torres Elementais<span class="rule"></span><span class="win-close-x" data-close-win="towers-panel">✕</span></div>
+    <div class="towers-body" id="towers-body"></div>
+  </div>
+
   <!-- LOJA DO FERREIRO BRAN — compra só é processada pelo servidor na Cidade Principal -->
   <div id="shop-modal" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ <span id="shop-npc-name">Ferreiro Bran</span><span class="rule"></span></div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ <span id="shop-npc-name">Ferreiro Bran</span><span class="rule"></span><span class="win-close-x" data-close-win="shop-modal">✕</span></div>
     <div style="padding:0 14px 14px;">
       <div id="shop-city-warning" style="display:none;color:#ff9a80;font-family:var(--font-mono);font-size:10.5px;margin-bottom:8px;">⚠️ Compras só são processadas na Cidade Principal.</div>
       <div id="shop-items-list"></div>
     </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- LOJA DE ELEMENTAL COIN — moeda comprada com Moeda Real (R$). Sem gateway
+       de pagamento real conectado ainda (ver aviso no corpo do painel). -->
+  <div id="coinshop-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 💎 Loja de Elemental Coin<span class="rule"></span><span class="win-close-x" data-close-win="coinshop-modal">✕</span></div>
+    <div style="padding:0 14px 14px;">
+      <div id="coinshop-items-list"></div>
+      <div class="coinshop-devnote">⚠️ Modo teste — este projeto ainda não tem um gateway de pagamento real conectado (Stripe/Mercado Pago/PagBank). As compras abaixo creditam a moeda na hora, sem cobrança real, só pra validar o sistema.</div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- RANK GERAL — leaderboard combinando nível efetivo (contando as voltas
+       de estrela) + progresso acumulado nas 7 Torres Elementais. -->
+  <div id="rank-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🏆 Rank Geral<span class="rule"></span><span class="win-close-x" data-close-win="rank-modal">✕</span></div>
+    <div id="rank-my-line"></div>
+    <div id="rank-list"></div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- ENCANTAMENTO — +1 a +10 em equipamento usando Cristal (obrigatório) +
+       Bênção do Ferreiro (opcional, aumenta chance de sucesso), estilo Ragnarok. -->
+  <div id="enchant-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ ⚒️ Encantamento<span class="rule"></span><span class="win-close-x" data-close-win="enchant-modal">✕</span></div>
+    <div style="padding:0 14px 14px;">
+      <div class="enchant-slot-tabs" id="enchant-slot-tabs"></div>
+      <div id="enchant-body"></div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- PETS + GACHA — coleção, loja de compra direta e sorteio -->
+  <div id="pets-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🐾 Pets<span class="rule"></span><span class="win-close-x" data-close-win="pets-modal">✕</span></div>
+    <div class="pets-tabs" id="pets-tabs"></div>
+    <div class="pets-body" id="pets-body"></div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- BATTLE PASS — progressão sazonal, trilha Free + Premium -->
+  <div id="battlepass-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🎫 Battle Pass<span class="rule"></span><span class="win-close-x" data-close-win="battlepass-modal">✕</span></div>
+    <div id="bp-header" style="padding:8px 14px 0;font-family:var(--font-mono);font-size:10.5px;"></div>
+    <div id="bp-progress-bar"><div id="bp-progress-fill" style="width:0%;"></div></div>
+    <div id="bp-tier-list"></div>
     <div class="win-resize"></div>
   </div>
 
@@ -646,24 +836,27 @@
       <div id="inv-equip-col">
         <div class="panel-title" style="align-self:flex-start;">Combate</div>
         <!-- Os 3 cosméticos ficam numa linha horizontal centralizada, LOGO
-             ACIMA do Elmo (igual ao Huntera). Abaixo, o grid de combate
-             replica o layout de referência:
-               Anel | Elmo | Amuleto
+             ACIMA do Elmo (igual ao Huntera). Abaixo, o grid de combate:
+               (—)  | Elmo | Amuleto
                Arma | Armadura | Offhand
-               (—)  | Botas | (—) -->
+               Anel | Botas | (—)
+             Anel fica embaixo da Arma (nunca perto da cabeça). Cada slot
+             começa vazio (ícone escondido via .slot-icon) — só aparece
+             quando de fato tem item equipado; arraste um item da Mochila
+             pra cá pra equipar, ou clique num slot ocupado pra desequipar. -->
         <div class="cosmetics-row">
-          <div class="equip-slot" data-cosmetic="outfit" title="Outfit">👕<span class="slot-tag">Outfit</span></div>
-          <div class="equip-slot" data-cosmetic="aura" title="Aura">✨<span class="slot-tag">Aura</span></div>
-          <div class="equip-slot" data-cosmetic="wings" title="Asas">🪽<span class="slot-tag">Asas</span></div>
+          <div class="equip-slot" data-cosmetic="outfit" title="Outfit"><span class="slot-icon">👕</span><span class="slot-tag">Outfit</span></div>
+          <div class="equip-slot" data-cosmetic="aura" title="Aura"><span class="slot-icon">✨</span><span class="slot-tag">Aura</span></div>
+          <div class="equip-slot" data-cosmetic="wings" title="Asas"><span class="slot-icon">🪽</span><span class="slot-tag">Asas</span></div>
         </div>
         <div class="equip-grid3">
-          <div class="equip-slot" data-equip="ring" title="Anel">💍<span class="slot-tag">Anel</span></div>
-          <div class="equip-slot" data-equip="helmet" title="Elmo">🪖<span class="slot-tag">Elmo</span></div>
-          <div class="equip-slot" data-equip="amulet" title="Amuleto">📿<span class="slot-tag">Amuleto</span></div>
-          <div class="equip-slot" data-equip="weapon" title="Arma">🗡️<span class="slot-tag">Arma</span></div>
-          <div class="equip-slot" data-equip="armor" title="Armadura">🥋<span class="slot-tag">Armadura</span></div>
-          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand">🛡️<span class="slot-tag">Offhand</span></div>
-          <div class="equip-slot" data-equip="boots" title="Botas">🥾<span class="slot-tag">Botas</span></div>
+          <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon">🪖</span><span class="slot-tag">Elmo</span></div>
+          <div class="equip-slot" data-equip="amulet" title="Amuleto"><span class="slot-icon">📿</span><span class="slot-tag">Amuleto</span></div>
+          <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon">🗡️</span><span class="slot-tag">Arma</span></div>
+          <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon">🥋</span><span class="slot-tag">Armadura</span></div>
+          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon">🛡️</span><span class="slot-tag">Offhand</span></div>
+          <div class="equip-slot" data-equip="ring" title="Anel"><span class="slot-icon">💍</span><span class="slot-tag">Anel</span></div>
+          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon">🥾</span><span class="slot-tag">Botas</span></div>
         </div>
       </div>
       <div id="inv-items-col">
@@ -736,9 +929,20 @@
     <div id="vitals-block" class="glass ornate">
       <div class="bar-track"><div class="bar-fill hp" id="hp-bar" style="width:100%"></div><div class="bar-label" id="hp-label"></div></div>
       <div class="bar-track"><div class="bar-fill mp" id="mp-bar" style="width:100%"></div><div class="bar-label" id="mp-label"></div></div>
-      <div class="bar-track"><div class="bar-fill stam" id="stam-bar" style="width:100%"></div><div class="bar-label" id="stam-label"></div></div>
-      <div id="hunt-status-line">Nenhuma caçada ativa.</div>
-      <button id="recharge-stamina-btn">⚡ Recarregar Stamina (Premium)</button>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <div class="bar-track" style="flex:1;margin-bottom:0;"><div class="bar-fill stam" id="stam-bar" style="width:100%"></div><div class="bar-label" id="stam-label"></div></div>
+        <div id="stam-recharge-btn" class="hover-trigger" title="Recarregar Stamina (Premium)">
+          <span id="stam-recharge-plus">+</span>
+          <div class="popover glass" id="stam-recharge-popover">
+            <div class="panel-title" style="margin-bottom:8px;">Recarregar Stamina<span class="rule"></span></div>
+            <div class="row">Ganho<b>+4h</b></div>
+            <div class="row">Hoje<b id="stam-recharge-count">0/4</b></div>
+            <div class="row">Custo<b id="stam-recharge-cost">—</b></div>
+            <div class="italic-note" id="stam-recharge-note"></div>
+          </div>
+        </div>
+      </div>
+      <div id="hunt-status-line" style="margin-top:5px;">Nenhuma caçada ativa.</div>
       <label style="display:flex;align-items:center;gap:5px;margin-top:5px;font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);">
         <input type="checkbox" id="toggle-aura" checked style="accent-color:var(--gold);"> Aura equipada
       </label>
@@ -833,12 +1037,6 @@
         <div id="outfit-subtabs">
           <div class="outfit-subtab active" data-osub="outfits">Outfits</div>
           <div class="outfit-subtab" data-osub="mounts">Monturas</div>
-        </div>
-        <div id="outfit-colors">
-          <div class="color-row"><span>Cabeça</span><div class="color-swatches" data-part-swatches="head"></div></div>
-          <div class="color-row"><span>Corpo</span><div class="color-swatches" data-part-swatches="body"></div></div>
-          <div class="color-row"><span>Pernas</span><div class="color-swatches" data-part-swatches="legs"></div></div>
-          <div class="color-row"><span>Pés</span><div class="color-swatches" data-part-swatches="feet"></div></div>
         </div>
         <div id="outfit-grid"></div>
       </div>
@@ -964,7 +1162,7 @@
   let sqmDistance = 1;
   let targetMode = 'closest';
   let followUsername = null; // username sendo seguido quando targetMode==='followPartyMember'
-  let stamina = { current:6*3600*1000, max:6*3600*1000, rechargesUsedToday:0, maxRechargesPerDay:3, rechargeCost:500 };
+  let stamina = { current:6*3600*1000, max:6*3600*1000, rechargesUsedToday:0, maxRechargesPerDay:4, rechargeCost:0 };
   let dispatch = { cooldownMs:60*60*1000, remainingMs:60*60*1000 };
   let autoSellOnBagFull = true;
   let bag = [], bagCapacity = 30;
@@ -976,6 +1174,16 @@
   let currentTrade = null;
   let fragments = 0; // Fragmentos do Altar — moeda do Reset de Estrela
   let starEvolutionCost = null; // {gold,fragments} para a próxima estrela; null quando já é Diamante
+  let skillTree = { levels: { fogo:{}, agua:{}, terra:{}, ar:{}, luz:{}, trevas:{} }, ultimateChoice: { fogo:null, agua:null, terra:null, ar:null, luz:null, trevas:null } };
+  let usedFreeSkillReset = false;
+  let skillPoints = { total:0, spent:0 };
+  let elementalCoins = 0;
+  let towers = { central:0, fogo:0, agua:0, terra:0, ar:0, luz:0, trevas:0 };
+  let materials = { enchantCrystal:0, enchantProtector:0, antiBreakWard:0 }; // Cristal + Bênção do Ferreiro + Selo Inquebrável
+  let rankScore = 0; // Rank Geral — nível efetivo*10 + soma dos andares de Torre (ver huntEngine.computeRankScore)
+  let rankTop = [], rankMyPosition = null; // preenchidos sob demanda por 'rank:get' (ver renderRank)
+  let pets = { owned:[], active:null, pityCounter:0 };
+  let battlePass = { xp:0, tier:0, claimedFree:[], claimedPremium:[] };
   let friends = []; // [{username, online}]
   let npcShops = {}; // catálogo estático mandado uma vez no 'welcome'
   let trainingDummies = []; // posições fixas dos bonecos na Cidade — vem no 'welcome'
@@ -1066,9 +1274,12 @@
       return entry;
     }
     function monsterSprite(id){ return load('m_'+id, `monsters/${id}.png`); }
-    function headSprite(genero, corCabelo){ return load('h_'+genero+'_'+corCabelo, `player/heads/${genero}/${corCabelo}.png`); }
-    function bodySprite(genero){ return load('b_'+genero, `player/bodies/${genero}/base.png`); }
-    function armorSprite(genero, outfitId){ return load('a_'+genero+'_'+outfitId, `player/armors/${genero}/${outfitId}.png`); }
+    // pasta é "heads female"/"heads male" (um nome só, com espaço) — não
+    // "heads/female" aninhado — pra bater com a estrutura real do repositório
+    // de assets (armors female/armors male, bodies female/bodies male, etc.).
+    function headSprite(genero, corCabelo){ return load('h_'+genero+'_'+corCabelo, `player/heads ${genero}/${corCabelo}.png`); }
+    function bodySprite(genero){ return load('b_'+genero, `player/bodies ${genero}/base.png`); }
+    function armorSprite(genero, outfitId){ return load('a_'+genero+'_'+outfitId, `player/armors ${genero}/${outfitId}.png`); }
     function drawClippedFrame(targetCtx, entry, frameW, frameH, col, row, dx, dy, dw, dh){
       if(!entry.loaded) return false;
       targetCtx.drawImage(entry.img, col*frameW, row*frameH, frameW, frameH, dx, dy, dw, dh);
@@ -1086,16 +1297,16 @@
     const genero = gender === 'female' ? 'female' : 'male';
     let drewBody = false, drewHead = false;
     const body = SpriteManager.bodySprite(genero);
-    drewBody = body.loaded && SpriteManager.drawClippedFrame(ctx, body, 64,64, 0,0, s.x-14, s.y-28+breathe, 28,28);
+    drewBody = body.loaded && SpriteManager.drawClippedFrame(ctx, body, 64,64, 0,0, s.x-21, s.y-42+breathe, 42,42);
     if(outfitId && outfitId !== 'padrao'){
       const armor = SpriteManager.armorSprite(genero, outfitId);
-      if(armor.loaded) SpriteManager.drawClippedFrame(ctx, armor, 64,64, 0,0, s.x-14, s.y-28+breathe, 28,28);
+      if(armor.loaded) SpriteManager.drawClippedFrame(ctx, armor, 64,64, 0,0, s.x-21, s.y-42+breathe, 42,42);
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
     const headSprite = SpriteManager.headSprite(genero, corCabelo);
-    drewHead = headSprite.loaded && SpriteManager.drawClippedFrame(ctx, headSprite, 32,32, 0,0, s.x-10, s.y-27+breathe, 20,20);
-    if(!drewBody){ ctx.beginPath(); ctx.ellipse(s.x, s.y+breathe, 7, 10, 0, 0, Math.PI*2); ctx.fillStyle = fallbackColor || '#3a4a6a'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); }
-    if(!drewHead){ ctx.beginPath(); ctx.arc(s.x, s.y-9+breathe, 9, 0, Math.PI*2); ctx.fillStyle = '#d3ab54'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); }
+    drewHead = headSprite.loaded && SpriteManager.drawClippedFrame(ctx, headSprite, 32,32, 0,0, s.x-15, s.y-40+breathe, 30,30);
+    if(!drewBody){ ctx.beginPath(); ctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); ctx.fillStyle = fallbackColor || '#3a4a6a'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); }
+    if(!drewHead){ ctx.beginPath(); ctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); ctx.fillStyle = '#d3ab54'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); }
     return { drewBody, drewHead };
   }
 
@@ -1107,48 +1318,7 @@
   function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
   window.addEventListener('resize', resize); resize();
 
-  /* =========================================================
-     MINIMAPA — projeção top-down simples (não-isométrica) das mesmas
-     coordenadas cartesianas do mundo, só pra dar noção de posição/rota;
-     não precisa ser pixel-perfect com o canvas principal.
-     ========================================================= */
-  const minimapCanvas = document.getElementById('minimap-canvas');
-  const mmCtx = minimapCanvas.getContext('2d');
-  function drawMinimap(){
-    if(minimapCanvas.width !== 130){ minimapCanvas.width = 130; minimapCanvas.height = 130; }
-    document.getElementById('mm-label').textContent = location==='city' ? 'Cidade Principal' : (activeHunt.huntName || 'Caçada');
-    mmCtx.fillStyle = '#0d0b09'; mmCtx.fillRect(0,0,130,130);
-
-    const pts = activeHunt.running && activeHunt.lurePoints.length
-      ? activeHunt.lurePoints
-      : [CITY_POSITION, {x:CITY_POSITION.x+300,y:CITY_POSITION.y-300}];
-    const minX = Math.min(...pts.map(p=>p.x))-150, maxX = Math.max(...pts.map(p=>p.x))+150;
-    const minY = Math.min(...pts.map(p=>p.y))-150, maxY = Math.max(...pts.map(p=>p.y))+150;
-    const scaleX = 130/(maxX-minX), scaleY = 130/(maxY-minY);
-    const toMM = (x,y)=>({ x:(x-minX)*scaleX, y:(y-minY)*scaleY });
-
-    if(activeHunt.running){
-      activeHunt.lurePoints.forEach(p=>{
-        const m = toMM(p.x,p.y);
-        mmCtx.fillStyle = 'rgba(191,161,95,.55)'; mmCtx.beginPath(); mmCtx.arc(m.x,m.y,3,0,Math.PI*2); mmCtx.fill();
-        p.monsters.forEach(mo=>{
-          const mp = toMM(mo.x ?? p.x, mo.y ?? p.y);
-          mmCtx.fillStyle = '#e2542b'; mmCtx.beginPath(); mmCtx.arc(mp.x,mp.y,1.6,0,Math.PI*2); mmCtx.fill();
-        });
-      });
-    }
-    remotePlayers.forEach((rp, uname)=>{
-      const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
-      if(!sameBucket) return;
-      const m = toMM(rp.x, rp.y);
-      mmCtx.fillStyle = (party && party.members.includes(uname)) ? '#6f8f4e' : '#5a6b8a';
-      mmCtx.beginPath(); mmCtx.arc(m.x,m.y,2.2,0,Math.PI*2); mmCtx.fill();
-    });
-    const sp = toMM(player.x, player.y);
-    mmCtx.fillStyle = '#fff'; mmCtx.beginPath(); mmCtx.arc(sp.x,sp.y,2.6,0,Math.PI*2); mmCtx.fill();
-  }
-
-  const ISO_SCALE = 0.72;
+  const ISO_SCALE = 1.08; // zoom da câmera — era 0.72 (jogador/monstro ficavam minúsculos e distantes demais)
   const TILE_STEP = 34;
   function cartesianToIso(cartX, cartY){ return { x:(cartX-cartY)*ISO_SCALE, y:(cartX+cartY)*ISO_SCALE*0.5 }; }
   function worldToScreen(cx, cy){ const off = getIsoOffset(); const p = cartesianToIso(cx,cy); return { x:p.x+off.x, y:p.y+off.y }; }
@@ -1167,7 +1337,7 @@
   const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
   const SCENERY_CITY = [ {type:'pilastra',x:CITY_POSITION.x-60,y:CITY_POSITION.y-40,h:90}, {type:'pilastra',x:CITY_POSITION.x+220,y:CITY_POSITION.y-40,h:90}, {type:'rocha',x:CITY_POSITION.x+80,y:CITY_POSITION.y+40,h:16} ];
 
-  const BLOCK_HW = 26, BLOCK_HH = 13;
+  const BLOCK_HW = 39, BLOCK_HH = 20;
   function drawIsoBlock(sx, sy, height, topColor, sideColorL, sideColorR){
     const hw = BLOCK_HW, hh = BLOCK_HH;
     const N = {x:sx, y:sy-hh-height}, E = {x:sx+hw, y:sy-height}, S = {x:sx, y:sy+hh-height}, W = {x:sx-hw, y:sy-height};
@@ -1295,14 +1465,14 @@
           drawList.push({ baseCart:{x:m.x,y:m.y}, draw:()=>{
             const s = toScreen(m.x,m.y);
             const sprite = m.spriteId ? SpriteManager.monsterSprite(m.spriteId) : null;
-            const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-16, s.y-32, 32,32);
+            const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-24, s.y-48, 48,48);
             if(!drew){
               // sem sprite carregado ainda (ou espécie sem arte) — bolinha
               // procedural com o ícone do bestiário por cima, nunca quebra.
-              ctx.beginPath(); ctx.arc(s.x, s.y-6, 6, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
-              if(m.icon){ ctx.font = '10px sans-serif'; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-3); }
+              ctx.beginPath(); ctx.arc(s.x, s.y-9, 9, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
+              if(m.icon){ ctx.font = '15px sans-serif'; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-5); }
             }
-          }, headCart:{x:m.x,y:m.y}, headLift:16, hpPct:m.hp/m.hpMax, kind:'monster' });
+          }, headCart:{x:m.x,y:m.y}, headLift:24, hpPct:m.hp/m.hpMax, kind:'monster' });
         });
       });
     }
@@ -1316,10 +1486,14 @@
       const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
       if(!sameBucket) return;
       const isPartyMember = party && party.members.includes(uname);
+      // companheiro de grupo OFFLINE (fechou a tela, mas a caçada dele continua
+      // rodando no servidor — ver broadcastPositions) continua sendo desenhado
+      // normalmente, só com o nick marcado "(offline)" pro grupo saber que
+      // ninguém está mais controlando aquele personagem ativamente.
       drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
         const s = toScreen(rp.x,rp.y);
-        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, isPartyMember ? '#6f8f4e' : '#5a6b8a');
-      }, headCart:{x:rp.x,y:rp.y}, headLift:18, nick:uname, dimNick:!isPartyMember });
+        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a');
+      }, headCart:{x:rp.x,y:rp.y}, headLift:27, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
     drawList.push({ baseCart:{x:player.x,y:player.y}, draw:()=>{
@@ -1327,7 +1501,7 @@
       const genero = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
       const hairId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, '#d3ab54');
-    }, headCart:{x:player.x,y:player.y}, headLift:22, isPlayer:true, nick:PLAYER_NICK });
+    }, headCart:{x:player.x,y:player.y}, headLift:33, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     drawList.forEach(item=> item.draw());
@@ -1341,8 +1515,8 @@
       ctx.textAlign = 'center';
       if(item.nick) drawNickAndStar(s.x, headY-10, item.nick, item.dimNick);
       if(item.kind==='monster' && item.hpPct!=null){
-        ctx.fillStyle='#000'; ctx.fillRect(s.x-8, headY-16, 16, 3);
-        ctx.fillStyle='#c94040'; ctx.fillRect(s.x-8, headY-16, 16*item.hpPct, 3);
+        ctx.fillStyle='#000'; ctx.fillRect(s.x-12, headY-24, 24, 4);
+        ctx.fillStyle='#c94040'; ctx.fillRect(s.x-12, headY-24, 24*item.hpPct, 4);
       }
     });
 
@@ -1410,7 +1584,6 @@
     spawnAuraParticles(dt);
     updateStatusLine();
     draw();
-    drawMinimap();
   }
   requestAnimationFrame(loop);
 
@@ -1432,15 +1605,22 @@
     document.body.classList.toggle('in-dungeon', location==='dungeon');
     document.getElementById('hunt-action-row').classList.toggle('show', location==='dungeon');
     if(location !== 'dungeon' && typeof cancelExitCountdown === 'function') cancelExitCountdown();
-    document.getElementById('recharge-stamina-btn').classList.toggle('show', isPremium && stamina.rechargesUsedToday < stamina.maxRechargesPerDay);
-    document.getElementById('recharge-stamina-btn').textContent = `⚡ Recarregar +6h (${stamina.rechargesUsedToday}/${stamina.maxRechargesPerDay}) — ${stamina.rechargeCost} Gold`;
+    const canRecharge = isPremium && stamina.rechargesUsedToday < stamina.maxRechargesPerDay;
+    document.getElementById('stam-recharge-btn').classList.toggle('show', canRecharge);
+    document.getElementById('stam-recharge-count').textContent = `${stamina.rechargesUsedToday}/${stamina.maxRechargesPerDay}`;
+    document.getElementById('stam-recharge-cost').textContent = canRecharge ? `${Math.round(stamina.rechargeCost).toLocaleString('pt-BR')} Gold` : '—';
+    document.getElementById('stam-recharge-note').textContent = canRecharge ? 'Clique pra comprar — fica mais caro a cada compra do dia.' : 'Reseta à meia-noite.';
     const badge = document.getElementById('premium-badge');
     badge.textContent = isPremium ? 'PREMIUM' : 'FREE'; badge.classList.toggle('free', !isPremium);
 
     document.getElementById('tb-nick').textContent = PLAYER_NICK;
     document.getElementById('tb-level').textContent = `Nv. ${player.level}`;
     document.getElementById('tb-gold').textContent = Math.round(player.gold).toLocaleString('pt-BR');
-    document.getElementById('tb-online').textContent = `${remotePlayers.size + 1} jogador${remotePlayers.size===0?'':'es'} online`;
+    document.getElementById('tb-elementalcoins').textContent = Math.round(elementalCoins).toLocaleString('pt-BR');
+    { // conta só quem está realmente conectado — companheiros offline visíveis no grupo (ver 'positions'/broadcastPositions) não entram nessa contagem
+      const onlineCount = [...remotePlayers.values()].filter(rp=>!rp.offline).length + 1;
+      document.getElementById('tb-online').textContent = `${onlineCount} jogador${onlineCount===1?'':'es'} online`;
+    }
     document.getElementById('matchmaking-pill').style.display = matchmakingActive ? 'flex' : 'none';
     document.getElementById('training-pill').style.display = trainingActive ? 'flex' : 'none';
 
@@ -1535,6 +1715,26 @@
     cosmeticColors = msg.cosmeticColors || cosmeticColors;
     hasTrainingKit = !!msg.hasTrainingKit; canTrainAtDummy = !!msg.canTrainAtDummy;
     trainingActive = msg.trainingActive || null; offlineTrainingArmed = msg.offlineTrainingArmed || null;
+    if(msg.skillTree) skillTree = msg.skillTree;
+    if(msg.skillPoints) skillPoints = msg.skillPoints;
+    if(typeof msg.elementalCoins === 'number') elementalCoins = msg.elementalCoins;
+    if(typeof msg.usedFreeSkillReset === 'boolean') usedFreeSkillReset = msg.usedFreeSkillReset;
+    if(msg.towers) towers = msg.towers;
+    if(msg.materials) materials = msg.materials;
+    if(typeof msg.rankScore === 'number') rankScore = msg.rankScore;
+    if(msg.pets) pets = msg.pets;
+    if(msg.battlePass) battlePass = msg.battlePass;
+    // hotbar: só os slots 'spell' vêm do servidor (autoritativo/validado); slots
+    // de item/poção continuam só configuração local (ver POTIONS/potionAutoUse).
+    if(Array.isArray(msg.hotbar)){
+      msg.hotbar.forEach((slot,i)=>{
+        if(!hotbar[i]) return;
+        if(slot.kind==='spell') hotbar[i] = { kind:'spell', id:slot.id, condition:{type:'always',threshold:0}, cooldownUntil:0 };
+        else if(hotbar[i].kind==='spell') hotbar[i] = { kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 };
+      });
+      renderHotbar();
+    }
+    renderSkillTreeIfOpen(); renderTowersIfOpen();
     if(msg.hunt.running){
       activeHunt.running = true; activeHunt.huntId = msg.hunt.huntId; activeHunt.huntName = msg.hunt.huntName;
       activeHunt.difficulty = msg.hunt.difficulty; activeHunt.currentIndex = msg.hunt.currentIndex;
@@ -1545,6 +1745,8 @@
     renderTargetModeOptions();
     refreshTacticsUI();
     renderAttrs(); renderParty(); renderInventoryIfOpen(); renderAltar(); renderFriends(); renderShop();
+    renderCoinShopIfOpen(); renderEnchantIfOpen(); updateRankPill();
+    renderPetsIfOpen(); renderBattlePassIfOpen();
     if(currentTrade) renderTrade();
     if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="treino"]').classList.contains('active')) renderTreinoTab();
     if(typeof renderCharacterModalIfOpen === 'function') renderCharacterModalIfOpen();
@@ -1657,7 +1859,16 @@
         logLoot('⚠️ Fragmentos insuficientes para o Reset de Estrela.');
       } else if(msg.reason === 'rank_maximo_atingido'){
         logLoot('✨ Você já atingiu o Rank máximo (Diamante).');
+      } else if(msg.reason === 'nivel_maximo_necessario'){
+        logLoot('⚠️ Você precisa estar no nível 100 pra evoluir de estrela.');
       }
+    }
+    if(msg.forType === 'skill:chooseUltimate'){
+      if(!msg.ok){
+        const reasonMap = { tipo_invalido:'essa opção não é válida pra esse elemento.', ja_investido_use_reset:'esse elemento já tem pontos salvos no nó 15/30 — resete pra escolher de novo.' };
+        logLoot(`⚠️ Não foi possível escolher: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderSkillTreeIfOpen();
     }
     if(msg.forType === 'npc:buy'){
       if(msg.ok) logLoot(`🛒 Comprou ${msg.qty}x ${msg.item.name} por ${msg.cost} Gold.`);
@@ -1695,6 +1906,78 @@
 
     if(['outfit:buy','mount:buy'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ Compra falhou: ${msg.reason}`);
     if(['outfit:equip','mount:equip','cosmetic:color'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
+    if(['equip:item','equip:remove'].includes(msg.forType)){
+      if(!msg.ok) logLoot(`⚠️ ${msg.reason}`);
+      renderInventoryIfOpen();
+    }
+    if(msg.forType === 'skill:save'){
+      if(msg.ok){
+        logLoot(`🌳 Árvore de ${ELEMENT_LABEL[pendingSaveElement]||''} salva!`);
+        pendingSkillLevels[pendingSaveElement] = null; // resincroniza com o commited na próxima renderização
+      } else {
+        const reasonMap = { cadeia_invalida:'existe uma lacuna na corrente de nós.', pontos_insuficientes:'você não tem pontos suficientes pra esse plano.' };
+        logLoot(`⚠️ Não foi possível salvar: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderSkillTreeIfOpen();
+    }
+    if(msg.forType === 'skill:reset'){
+      if(msg.ok){ logLoot('♻️ Árvore resetada — pontos devolvidos.'); pendingSkillLevels[activeSkillElementTab] = null; }
+      else if(msg.reason === 'moedas_insuficientes') logLoot(`⚠️ Você precisa de ${ELEMENTAL_COIN_RESET_COST} Elemental Coin pra resetar.`);
+      else logLoot(`⚠️ Reset falhou: ${msg.reason}`);
+      renderSkillTreeIfOpen();
+    }
+    if(msg.forType === 'shop:buyElementalCoins'){
+      if(msg.ok) logLoot(`💎 Compra confirmada (modo teste): +${msg.granted} Elemental Coin.`);
+      else logLoot(`⚠️ Não foi possível comprar: ${msg.reason}`);
+      renderCoinShopIfOpen();
+    }
+    if(msg.forType === 'shop:buyEnchantMaterial'){
+      if(msg.ok) logLoot(`⚒️ Comprou ${msg.qty}x material de Encantamento por ${msg.cost} Gold.`);
+      else if(msg.reason === 'apenas_na_cidade_principal') logLoot('⚠️ Materiais de Encantamento só são vendidos na Cidade Principal.');
+      else if(msg.reason === 'ouro_insuficiente') logLoot('⚠️ Ouro insuficiente para essa compra.');
+      else logLoot(`⚠️ Compra falhou: ${msg.reason}`);
+      renderEnchantIfOpen();
+    }
+    if(msg.forType === 'item:enchant'){
+      if(msg.ok && msg.success) logLoot(`✨ Encantamento bem-sucedido! Item agora está +${msg.item.enchantLevel}.`);
+      else if(msg.ok && msg.broke) logLoot('💥 O item se QUEBROU no Encantamento e foi perdido!');
+      else if(msg.ok && !msg.success) logLoot('⚠️ Encantamento falhou — o item perdeu 1 nível.');
+      else {
+        const reasonMap = { slot_invalido:'slot inválido.', slot_vazio:'não há item equipado nesse slot.', nivel_maximo:'esse item já está no nível máximo (+10).', sem_cristal:'você precisa de 1 Cristal de Encantamento.', sem_protetor:'você precisa de 1 Bênção do Ferreiro.', sem_selo:'você precisa de 1 Selo Inquebrável.' };
+        logLoot(`⚠️ Não foi possível encantar: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderInventoryIfOpen();
+      renderEnchantIfOpen();
+    }
+    if(msg.forType === 'rank:get'){
+      if(msg.ok){ rankTop = msg.top || []; rankMyPosition = msg.myPosition; if(typeof msg.myScore === 'number') rankScore = msg.myScore; }
+      renderRank();
+      updateRankPill();
+    }
+    if(msg.forType === 'pet:buy'){
+      if(msg.ok) logLoot(`🐾 ${msg.pet.icon} ${msg.pet.name} adicionado à sua coleção por ${msg.cost} Elemental Coin.`);
+      else if(msg.reason === 'ja_possui') logLoot('⚠️ Você já tem esse Pet.');
+      else if(msg.reason === 'moedas_insuficientes') logLoot('⚠️ Elemental Coin insuficiente para esse Pet.');
+      else logLoot(`⚠️ Não foi possível comprar: ${msg.reason}`);
+      renderPetsIfOpen();
+    }
+    if(msg.forType === 'pet:setActive'){
+      if(!msg.ok) logLoot(`⚠️ ${msg.reason}`);
+      renderPetsIfOpen();
+    }
+    if(msg.forType === 'pet:gachaRoll'){
+      if(msg.ok) showGachaResult(msg);
+      else logLoot('⚠️ Elemental Coin insuficiente pro Gacha.');
+      renderPetsIfOpen();
+    }
+    if(msg.forType === 'battlepass:claim'){
+      if(msg.ok) logLoot(`🎫 Recompensa do tier ${msg.reward ? '' : ''}resgatada!`);
+      else {
+        const reasonMap = { tier_nao_alcancado:'você ainda não chegou nesse tier.', ja_resgatado:'essa recompensa já foi resgatada.', apenas_premium:'essa recompensa é exclusiva da trilha Premium.', tier_invalido:'tier inválido.', trilha_invalida:'trilha inválida.' };
+        logLoot(`⚠️ Não foi possível resgatar: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderBattlePassIfOpen();
+    }
   }
 
   function showRankUpOverlay(){
@@ -1961,7 +2244,11 @@
      RECARGA DE STAMINA PREMIUM — "Retornar à Cidade" virou o pill
      "↩ Sair da Caçada" (ver BARRA DE AÇÃO DA CAÇADA mais abaixo).
      ========================================================= */
-  document.getElementById('recharge-stamina-btn').addEventListener('click', ()=> sendWS({ type:'stamina:recharge' }));
+  const stamRechargeBtn = document.getElementById('stam-recharge-btn');
+  const stamRechargePopover = document.getElementById('stam-recharge-popover');
+  stamRechargeBtn.addEventListener('mouseenter', ()=> stamRechargePopover.classList.add('show'));
+  stamRechargeBtn.addEventListener('mouseleave', ()=> stamRechargePopover.classList.remove('show'));
+  stamRechargeBtn.addEventListener('click', ()=> sendWS({ type:'stamina:recharge' }));
 
   /* =========================================================
      PARTY — convite / aceitar / sair / IR (só Líder)
@@ -1974,6 +2261,14 @@
     matchmakingActive = false; matchmakingKey = null;
     logLoot('🔎 Busca por time cancelada.');
     if(document.getElementById('hunts-modal').classList.contains('open')) renderHuntCenter();
+  });
+  // X de fechar nos painéis flutuantes (Grupo/Atributos/Altar/Amigos/Loja/
+  // Analisador) — todos usam a mesma convenção .open, então um handler
+  // delegado só cobre todo mundo de uma vez.
+  document.addEventListener('click', e=>{
+    const x = e.target.closest('.win-close-x');
+    if(!x) return;
+    document.getElementById(x.dataset.closeWin).classList.remove('open');
   });
   document.getElementById('training-pill').addEventListener('click', ()=>{
     if(!trainingActive) return;
@@ -2089,18 +2384,9 @@
     });
   });
   function renderCharOutfit(){
-    const swatchesEl = document.getElementById('outfit-colors');
-    swatchesEl.style.display = outfitSubTab === 'outfits' ? 'flex' : 'none';
-    ['head','body','legs','feet'].forEach(part=>{
-      const wrap = document.querySelector(`[data-part-swatches="${part}"]`);
-      wrap.innerHTML = (colorPalette.length ? colorPalette : ['#888']).map((hex,i)=>
-        `<div class="color-swatch${cosmeticColors[part]===i?' selected':''}" style="background:${hex}" data-part="${part}" data-idx="${i}"></div>`
-      ).join('');
-      wrap.querySelectorAll('.color-swatch').forEach(sw=>{
-        sw.addEventListener('click', ()=> sendWS({ type:'cosmetic:color', part, colorIndex: Number(sw.dataset.idx) }));
-      });
-    });
-
+    // Sem paleta de cor: o cabelo é escolhido na criação do personagem (fixo
+    // depois disso) e cada outfit já tem uma cor própria definida na arte —
+    // nada aqui é recolorável, então não existe seletor de cor por partes.
     const grid = document.getElementById('outfit-grid');
     if(outfitSubTab === 'outfits'){
       grid.innerHTML = outfitCatalog.map(o=>{
@@ -2460,10 +2746,12 @@
   function renderInventory(){
     document.querySelectorAll('.equip-slot[data-equip]').forEach(el=>{
       const key = el.dataset.equip; const item = equipment[key];
+      el.classList.toggle('filled', !!item);
       el.title = item ? item.name : el.querySelector('.slot-tag').textContent;
     });
     document.querySelectorAll('.equip-slot[data-cosmetic]').forEach(el=>{
       const key = el.dataset.cosmetic; const item = cosmetics[key];
+      el.classList.toggle('filled', !!item);
       el.title = item ? item.name : el.querySelector('.slot-tag').textContent;
     });
     const grid = document.getElementById('inv-items-grid');
@@ -2472,14 +2760,34 @@
     const capMax = invTab === 'bolsa' ? pouchCapacity : bagCapacity;
     cap.textContent = `${invTab === 'bolsa' ? 'Bolsa (consumíveis)' : 'Mochila (loot)'}: ${items.length}/${capMax}`;
     grid.innerHTML = '';
-    items.forEach(it=>{
+    items.forEach((it,i)=>{
       const slot = document.createElement('div'); slot.className = 'item-slot';
       slot.innerHTML = `${invTab==='bolsa' ? '🧪' : '💎'}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}<span class="rarity-dot" style="background:${RARITY_COLORS[it.rarity]||'#a99872'}"></span>`;
       slot.title = it.name || it.id;
+      // só itens da Mochila com "slot" definido (arma/elmo/etc) são equipáveis —
+      // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
+      if(invTab==='mochila' && it.slot){
+        slot.draggable = true;
+        slot.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(i)); e.dataTransfer.effectAllowed = 'move'; });
+      }
       grid.appendChild(slot);
     });
     for(let i=items.length;i<Math.min(capMax,30);i++){ const empty = document.createElement('div'); empty.className='item-slot'; empty.style.opacity='.35'; grid.appendChild(empty); }
   }
+  // Drop (equipar) e clique (desequipar) nos slots do paperdoll — os elementos
+  // são fixos no DOM, então isso só precisa ser ligado uma vez, fora do render.
+  document.querySelectorAll('.equip-slot[data-equip]').forEach(el=>{
+    el.addEventListener('dragover', e=>{ e.preventDefault(); el.classList.add('drop-hover'); });
+    el.addEventListener('dragleave', ()=> el.classList.remove('drop-hover'));
+    el.addEventListener('drop', e=>{
+      e.preventDefault(); el.classList.remove('drop-hover');
+      const bagIndex = e.dataTransfer.getData('text/plain');
+      if(bagIndex !== '') sendWS({ type:'equip:item', bagIndex: Number(bagIndex) });
+    });
+    el.addEventListener('click', ()=>{
+      if(el.classList.contains('filled')) sendWS({ type:'equip:remove', slot: el.dataset.equip });
+    });
+  });
 
   /* =========================================================
      HOTBAR UNIFICADA (magias + itens com condição de disparo).
@@ -2487,12 +2795,112 @@
      (poções automáticas por %); a hotbar aqui é a configuração
      visual das condições — igual à barra expandida pedida.
      ========================================================= */
-  const SKILLS = [
-    { id:'flecha_agua', icon:'💧', name:'Flecha de Água' },
-    { id:'bola_fogo',   icon:'🔥', name:'Bola de Fogo' },
-    { id:'punho_terra', icon:'🪨', name:'Punho de Terra' },
-    { id:'lamina_ar',   icon:'🌪️', name:'Lâmina de Ar' },
-  ];
+  /* ---- ÁRVORE DE HABILIDADES ELEMENTAL — dados/catálogo (espelha
+     exatamente o grafo gerado em huntEngine.js: mesmos ids/nomes/
+     descrições, só pra desenhar a UI; quem valida e persiste os níveis
+     de verdade é sempre o servidor). Fica aqui, antes da hotbar, porque
+     renderHotbar() já usa getUnlockedSpells() no primeiro render
+     síncrono da página. ---- */
+  const ELEMENT_IDS = ['fogo','agua','terra','ar','luz','trevas'];
+  const ELEMENT_LABEL = { fogo:'Fogo', agua:'Água', terra:'Terra', ar:'Ar', luz:'Luz', trevas:'Trevas' };
+  const ELEMENT_TAB_COLOR = { fogo:'var(--fogo, #e2542b)', agua:'var(--agua, #3aa0c9)', terra:'var(--terra, #8a6a3a)', ar:'var(--ar, #bcd9d0)', luz:'var(--luz, #f0d38a)', trevas:'var(--trevas, #8a5ad6)' };
+  const SPELL_ICON = { fogo:'🔥', agua:'💧', terra:'🪨', ar:'🌪️', luz:'✨', trevas:'🌑' };
+  const CATEGORY_ICON = { attack:'⚔️', defense:'🛡️', support:'💚', semiUltimate:'🌟', ultimate:'👑' };
+  const ELEMENTAL_COIN_RESET_COST = 150;
+  // e15 (Semi Ultimate) e e30 (Ultimate) não têm nome fixo: o jogador
+  // ESCOLHE entre Ataque/Defesa (e também Cura, só no caminho de Luz) na
+  // 1ª vez que investe no nó 15 — por isso cada elemento tem um nome/
+  // descrição por opção (semiOptions/ultimateOptions), igual ao servidor.
+  const ELEMENT_WORDBANK = {
+    fogo: { starter:'Bola de Fogo', appliesState:'queimando',
+      attack:['Fagulha Perfurante','Labareda Cortante','Chama Voraz','Brasa Perfurante','Incandescência','Fogo Fátuo','Cinza Ardente','Fúria Ígnea','Coração da Fornalha','Chuva de Faíscas','Lança Flamejante','Investida em Chamas'],
+      defense:['Escudo de Brasa','Manto Cinzento','Couraça Ardente','Pele de Magma','Barreira Incandescente','Casca Vulcânica','Anel de Fogo','Bastião Flamejante','Resistência Ígnea','Cúpula de Lava','Armadura Vulcânica','Fortaleza Ardente'],
+      support:['Sopro Quente','Bênção da Fornalha','Calor Vital','Chama Curativa','Fôlego Ardente','Aura de Brasa','Vigor Flamejante','Toque da Fênix','Fagulha Vital','Rescaldo Reconfortante','Chama Renovadora','Ânimo Ígneo'],
+      semiOptions:{ attack:{name:'Erupção Menor', desc:'Uma erupção de Fogo que atinge o alvo com força considerável e aplica Queimando.'}, defense:{name:'Manto Vulcânico Menor', desc:'Ergue um escudo de Fogo mais robusto, absorvendo bastante dano por um tempo.'} },
+      ultimateOptions:{ attack:{name:'Nova Explosiva', desc:'Explosão em área — dano de Fogo em todos os inimigos próximos e aplica Queimando.'}, defense:{name:'Coração Vulcânico', desc:'Ergue uma cúpula de magma em área — absorve grande parte do dano recebido por alguns segundos.'} } },
+    agua: { starter:'Flecha de Água', appliesState:'molhado',
+      attack:['Lâmina de Maré','Jato Cortante','Correnteza Furiosa','Investida Aquática','Chicote de Água','Estilhaço Gélido','Golpe da Maré','Redemoinho Cortante','Fúria das Profundezas','Lança de Gelo','Onda Perfurante','Maré Vingativa'],
+      defense:['Escudo de Maré','Manto Aquático','Couraça de Gelo','Bolha Protetora','Barreira Líquida','Casca de Coral','Névoa Densa','Bastião das Marés','Resistência Glacial','Cúpula Líquida','Armadura de Gelo','Fortaleza Abissal'],
+      support:['Sopro Refrescante','Bênção das Águas','Orvalho Vital','Maré Curativa','Fôlego das Profundezas','Aura Aquática','Vigor da Correnteza','Toque das Marés','Gota Vital','Rescaldo Sereno','Água Renovadora','Ânimo das Águas'],
+      semiOptions:{ attack:{name:'Maré Impetuosa', desc:'Uma onda de Água que empurra e atinge o alvo com força, aplicando Molhado.'}, defense:{name:'Bolha Menor', desc:'Envolve o jogador numa bolha d’água que absorve boa parte do dano recebido.'} },
+      ultimateOptions:{ attack:{name:'Maré Congelante', desc:'Onda em área — aplica Molhado e Congela (imobiliza) quem já estiver Molhado.'}, defense:{name:'Prisão de Gelo', desc:'Ergue uma muralha de gelo em área — absorve grande parte do dano recebido por alguns segundos.'} } },
+    terra: { starter:'Punho de Terra', appliesState:null,
+      attack:['Punho de Pedra','Lança de Rocha','Estilhaço Cortante','Investida Rochosa','Golpe Sísmico','Fragmento de Granito','Impacto Telúrico','Chicote de Raízes','Fúria da Montanha','Espinho de Pedra','Avalanche Menor','Golpe Tectônico'],
+      defense:['Escudo de Pedra','Manto Rochoso','Couraça Granítica','Pele de Basalto','Barreira Terrena','Casca Mineral','Anel de Raízes','Bastião Rochoso','Resistência Telúrica','Cúpula de Pedra','Armadura de Granito','Fortaleza Montanhosa'],
+      support:['Sopro da Terra','Bênção da Montanha','Raiz Vital','Solo Curativo','Fôlego Mineral','Aura Rochosa','Vigor Telúrico','Toque da Raiz','Fragmento Vital','Rescaldo da Terra','Pedra Renovadora','Ânimo Telúrico'],
+      semiOptions:{ attack:{name:'Punho Sísmico Menor', desc:'Um golpe sísmico de Terra que atinge o alvo com força considerável.'}, defense:{name:'Muralha Menor', desc:'Ergue uma barreira de Terra que absorve parte do dano recebido.'} },
+      ultimateOptions:{ attack:{name:'Terremoto', desc:'Abalo em área — dano de Terra contínuo em todos os inimigos próximos.'}, defense:{name:'Muralha Absoluta', desc:'Ergue uma barreira em área — absorve dano recebido por alguns segundos (escudo).'} } },
+    ar: { starter:'Lâmina de Ar', appliesState:'ventania',
+      attack:['Rajada Cortante','Investida do Vendaval','Golpe da Tempestade','Chicote de Ar','Estilhaço de Vento','Fúria dos Ventos','Redemoinho Cortante','Lança de Vento','Sopro Perfurante','Ciclone Menor','Tornado Vingativo','Corte do Vendaval'],
+      defense:['Escudo de Vento','Manto do Vendaval','Couraça Aérea','Barreira de Ar','Redoma de Vento','Casca Etérea','Anel dos Ventos','Bastião do Vendaval','Resistência Aérea','Cúpula de Vento','Armadura Etérea','Fortaleza dos Ventos'],
+      support:['Sopro Leve','Bênção do Vendaval','Brisa Vital','Ar Curativo','Fôlego dos Céus','Aura Etérea','Vigor dos Ventos','Toque da Brisa','Corrente Vital','Suspiro Reconfortante','Vento Renovador','Ânimo dos Céus'],
+      semiOptions:{ attack:{name:'Rajada Selvagem', desc:'Uma rajada poderosa de Ar que causa dano e aplica Ventania.'}, defense:{name:'Redoma Menor', desc:'Envolve o jogador num redemoinho protetor que absorve parte do dano recebido.'} },
+      ultimateOptions:{ attack:{name:'Vendaval Cortante', desc:'Tempestade em área — dano de Ar contínuo e empurra os inimigos para longe.'}, defense:{name:'Olho da Tempestade', desc:'Ergue um vórtice protetor em área — absorve grande parte do dano recebido por alguns segundos.'} } },
+    luz: { starter:'Golpe Sagrado', appliesState:'marcado',
+      attack:['Facho Perfurante','Lança Radiante','Golpe Celestial','Investida Sagrada','Raio Purificador','Estilhaço de Luz','Fúria Divina','Chicote Radiante','Lâmina Celeste','Brilho Cortante','Julgamento Menor','Golpe da Aurora'],
+      defense:['Escudo Sagrado','Manto Radiante','Couraça Celestial','Barreira de Luz','Redoma Divina','Casca Luminosa','Anel Sagrado','Bastião Radiante','Resistência Celestial','Cúpula de Luz','Armadura Divina','Fortaleza Sagrada'],
+      support:['Sopro Celeste','Bênção Divina','Luz Vital','Toque Sagrado','Fôlego Radiante','Aura Celestial','Vigor Divino','Carícia da Aurora','Brilho Vital','Rescaldo Sagrado','Luz Renovadora','Ânimo Celestial'],
+      semiOptions:{ attack:{name:'Julgamento Menor', desc:'Um facho de Luz que fere e Marca o alvo com força.'}, defense:{name:'Anteparo Sagrado Menor', desc:'Ergue um escudo de Luz que absorve parte do dano recebido.'}, heal:{name:'Facho Restaurador', desc:'Um facho de Luz que restaura parte do HP do jogador.'} },
+      ultimateOptions:{ attack:{name:'Julgamento Solar', desc:'Explosão de Luz em área — dano Sagrado em todos os inimigos próximos e Marca todos.'}, defense:{name:'Domo Celestial', desc:'Ergue uma cúpula de Luz em área — absorve grande parte do dano recebido por alguns segundos.'}, heal:{name:'Luz Restauradora', desc:'ÚNICA ultimate de cura do jogo — restaura HP em área por alguns segundos.'} } },
+    trevas: { starter:'Corte das Trevas', appliesState:null,
+      attack:['Lâmina Sombria','Toque do Vazio','Golpe Umbrio','Investida das Trevas','Corte Espectral','Estilhaço Sombrio','Fúria do Abismo','Chicote Sombrio','Lança do Vazio','Sopro Sombrio','Golpe Umbral','Investida Espectral'],
+      defense:['Escudo Sombrio','Manto das Sombras','Couraça Umbria','Barreira do Vazio','Redoma Sombria','Casca Espectral','Anel Umbrio','Bastião das Sombras','Resistência Umbria','Cúpula Sombria','Armadura Espectral','Fortaleza do Abismo'],
+      support:['Dreno Vital','Toque Vampírico','Sugar Sombrio','Absorção Umbria','Fôlego do Vazio','Aura Sombria','Vigor das Sombras','Carícia do Abismo','Essência Roubada','Rescaldo Sombrio','Sombra Renovadora','Ânimo Umbrio'],
+      semiOptions:{ attack:{name:'Ceifar Menor', desc:'Um golpe sombrio que causa dano verdadeiro, maior contra alvos com pouca vida.'}, defense:{name:'Véu Sombrio Menor', desc:'Envolve o jogador em sombras que absorvem parte do dano recebido.'} },
+      ultimateOptions:{ attack:{name:'Ceifar das Sombras', desc:'Golpe em área — dano verdadeiro de Trevas, maior contra alvos com pouca vida.'}, defense:{name:'Véu do Abismo', desc:'Envolve a área em sombras densas — absorve grande parte do dano recebido por alguns segundos.'} } },
+  };
+  const ULTIMATE_KIND_LABEL = { attack:'Ataque', defense:'Defesa', heal:'Cura' };
+  function allowedUltimateKindsClient(elementId){ return elementId==='luz' ? ['attack','defense','heal'] : ['attack','defense']; }
+  // Resolve nome/descrição reais do nó 15/30 pra exibição, de acordo com a
+  // escolha já SALVA no servidor pra esse elemento (skillTree.ultimateChoice).
+  function resolveMilestoneDisplay(elementId, category, chosenKind){
+    const wb = ELEMENT_WORDBANK[elementId];
+    const pool = category==='semiUltimate' ? wb.semiOptions : wb.ultimateOptions;
+    if(chosenKind && pool[chosenKind]) return pool[chosenKind];
+    return { name: category==='semiUltimate' ? 'Semi Ultimate' : 'Ultimate', desc: 'Escolha entre Ataque, Defesa' + (elementId==='luz' ? ' ou Cura' : '') + ' ao investir o 1º ponto neste nó.' };
+  }
+  // Gera os mesmos 30 nós lineares que huntEngine.buildSkillTreeGraph gera no
+  // servidor (e1..e30, semi-ultimate no 15, ultimate no 30). e15/e30 levam um
+  // nome placeholder aqui — renderSkillTree resolve o nome real por jogador.
+  function buildSkillTreeGraphClient(elementId){
+    const wb = ELEMENT_WORDBANK[elementId], label = ELEMENT_LABEL[elementId];
+    const nodes = []; let atkI=0, defI=0, supI=0;
+    function descFor(category){
+      if(category==='attack') return `Golpe de ${label}: causa dano de ${label}${wb.appliesState?`, aplica ${wb.appliesState}`:''}.`;
+      if(category==='defense') return `Ergue um escudo temporário de ${label} que absorve parte do dano recebido.`;
+      if(elementId==='trevas') return `Absorve energia vital das Trevas ao seu redor, restaurando parte do seu HP.`;
+      return `Canaliza ${label} para restaurar parte do seu HP.`;
+    }
+    function pushRegular(index, category){
+      let name = category==='attack' ? wb.attack[atkI++] : category==='defense' ? wb.defense[defI++] : wb.support[supI++];
+      nodes.push({ id:`e${index}`, index, category, deps:[`e${index-1}`], name, desc:descFor(category) });
+    }
+    nodes.push({ id:'e1', index:1, category:'attack', deps:[], name:wb.starter, desc:`Ataque básico de ${label}${wb.appliesState?`, aplica ${wb.appliesState}`:''}.` });
+    for(let i=2;i<=14;i++) pushRegular(i, ['defense','support','attack'][(i-2)%3]);
+    nodes.push({ id:'e15', index:15, category:'semiUltimate', deps:['e14'] });
+    for(let i=16;i<=29;i++) pushRegular(i, ['defense','support','attack'][(i-16)%3]);
+    nodes.push({ id:'e30', index:30, category:'ultimate', deps:['e29'] });
+    return nodes;
+  }
+  const SKILL_TREE_GRAPH_CLIENT = {};
+  ELEMENT_IDS.forEach(id=>{ SKILL_TREE_GRAPH_CLIENT[id] = buildSkillTreeGraphClient(id); });
+  function spellIdFor(elementId, nodeId){ return `${elementId}_${nodeId}`; }
+  function getUnlockedSpells(){
+    // hotbar só pode receber magias com pelo menos 1 ponto investido (nível > 0)
+    const list = [];
+    ELEMENT_IDS.forEach(elementId=>{
+      const levels = (skillTree.levels && skillTree.levels[elementId]) || {};
+      const chosenKind = skillTree.ultimateChoice && skillTree.ultimateChoice[elementId];
+      SKILL_TREE_GRAPH_CLIENT[elementId].forEach(n=>{
+        if((levels[n.id]||0) <= 0) return;
+        const isMilestone = n.category==='semiUltimate' || n.category==='ultimate';
+        const name = isMilestone ? resolveMilestoneDisplay(elementId, n.category, chosenKind).name : n.name;
+        list.push({ id:spellIdFor(elementId,n.id), name, icon:SPELL_ICON[elementId], element:elementId, node:n });
+      });
+    });
+    return list;
+  }
+
   const POTIONS = [
     { id:'lesser_health', icon:'🧪', name:'Lesser Health', minLevel:1, kind:'health' },
     { id:'strong_health', icon:'❤️', name:'Strong Health', minLevel:50, kind:'health' },
@@ -2505,10 +2913,10 @@
     { id:'manaBelow', label:'Mana do jogador menor que X%' },
   ];
   const HOTBAR_SIZE = 8;
+  // Slots 'spell' são espelho do state.hotbar do servidor (ver applyHuntSnapshot)
+  // — começam vazios até o jogador arrastar uma magia da Árvore de Habilidades
+  // ou escolher pelo menu (clique direito). Slots 'item' continuam 100% locais.
   const hotbar = Array.from({length:HOTBAR_SIZE}, ()=>({ kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 }));
-  hotbar[0] = { kind:'spell', id:'flecha_agua', condition:{type:'always',threshold:0}, cooldownUntil:0 };
-  hotbar[1] = { kind:'spell', id:'bola_fogo',   condition:{type:'always',threshold:0}, cooldownUntil:0 };
-  hotbar[2] = { kind:'spell', id:'punho_terra', condition:{type:'always',threshold:0}, cooldownUntil:0 };
   hotbar[3] = { kind:'item',  id:'lesser_health',condition:{type:'hpBelow',threshold:50}, cooldownUntil:0 };
   hotbar[4] = { kind:'item',  id:'strong_health',condition:{type:'hpBelow',threshold:30}, cooldownUntil:0 };
   hotbar[5] = { kind:'item',  id:'strong_mana',  condition:{type:'manaBelow',threshold:30}, cooldownUntil:0 };
@@ -2520,13 +2928,22 @@
     hotbar.forEach((slot,i)=>{
       const el = document.createElement('div');
       let locked = false, icon = '';
-      if(slot.kind==='spell'){ icon = SKILLS.find(s=>s.id===slot.id).icon; }
+      if(slot.kind==='spell'){ const sp = getUnlockedSpells().find(s=>s.id===slot.id); icon = sp ? sp.icon : '❔'; }
       else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot.icon; locked = !canUsePotion(pot); }
       el.className = 'slot' + (locked?' locked':'');
       const cdPct = slot.kind && Date.now() < slot.cooldownUntil ? Math.round((slot.cooldownUntil-Date.now())/2200*100) : 0;
       const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
       el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>`;
       el.addEventListener('contextmenu', e=>{ e.preventDefault(); openActionModal(i); });
+      // arrastar uma magia desbloqueada da Árvore de Habilidades solta aqui
+      el.addEventListener('dragover', e=>{ e.preventDefault(); el.classList.add('drop-hover'); });
+      el.addEventListener('dragleave', ()=> el.classList.remove('drop-hover'));
+      el.addEventListener('drop', e=>{
+        e.preventDefault(); el.classList.remove('drop-hover');
+        const spellId = e.dataTransfer.getData('text/spell-id');
+        if(!spellId) return;
+        sendWS({ type:'hotbar:set', index:i, kind:'spell', spellId });
+      });
       hotbarEl.appendChild(el);
     });
   }
@@ -2543,7 +2960,10 @@
     const slot = hotbar[configuringSlotIndex];
     let html = '';
     if(activeTab==='magias'){
-      SKILLS.forEach(s=>{ const selected = slot.kind==='spell' && slot.id===s.id;
+      // só lista magias já desbloqueadas (base sempre; menor/maior/ultimate
+      // exigem o nó correspondente na Árvore de Habilidades) — o servidor
+      // valida de novo mesmo assim, isso aqui só evita mostrar opção inválida.
+      getUnlockedSpells().forEach(s=>{ const selected = slot.kind==='spell' && slot.id===s.id;
         html += `<div class="opt-row ${selected?'selected':''}" data-assign-spell="${s.id}">${s.icon} ${s.name}</div>`; });
     } else {
       POTIONS.forEach(p=>{
@@ -2558,7 +2978,13 @@
       <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);text-align:right;" id="cond-threshold-val">${slot.condition.threshold||50}%</div>
     </div>`;
     body.innerHTML = html;
-    body.querySelectorAll('[data-assign-spell]').forEach(el=> el.addEventListener('click', ()=>{ slot.kind='spell'; slot.id=el.dataset.assignSpell; renderActionBody(); renderHotbar(); }));
+    body.querySelectorAll('[data-assign-spell]').forEach(el=> el.addEventListener('click', ()=>{
+      // servidor valida/persiste — a resposta chega no próximo snapshot e
+      // atualiza hotbar[] de verdade (ver applyHuntSnapshot); aqui só
+      // fechamos o ciclo visual otimisticamente.
+      sendWS({ type:'hotbar:set', index:configuringSlotIndex, kind:'spell', spellId:el.dataset.assignSpell });
+      slot.kind='spell'; slot.id=el.dataset.assignSpell; renderActionBody(); renderHotbar();
+    }));
     body.querySelectorAll('[data-assign-item]').forEach(el=> el.addEventListener('click', ()=>{
       slot.kind='item'; slot.id=el.dataset.assignItem; renderActionBody(); renderHotbar();
       const pot = POTIONS.find(p=>p.id===slot.id);
@@ -2638,6 +3064,165 @@
   }
 
   /* =========================================================
+     ÁRVORE DE HABILIDADES ELEMENTAL — UI (dados/catálogo compartilhados
+     ficam antes da HOTBAR, logo acima, porque renderHotbar já precisa
+     deles no primeiro render síncrono da página).
+     ========================================================= */
+  let activeSkillElementTab = 'fogo';
+  // Rascunho local por elemento — níveis-alvo (absolutos, não deltas) que o
+  // jogador está planejando. null = ainda não inicializado nesta sessão de
+  // edição (renderSkillTree clona de skillTree.levels[el] na 1ª renderização
+  // e só volta a ficar null depois de um Salvar/Reset confirmado pelo
+  // servidor — assim um snapshot chegando no meio da edição não apaga o
+  // que o jogador ainda não salvou).
+  const pendingSkillLevels = { fogo:null, agua:null, terra:null, ar:null, luz:null, trevas:null };
+  let pendingSaveElement = null;
+  function sumLevels(obj){ return Object.values(obj||{}).reduce((a,b)=>a+(b||0),0); }
+  function currentDraft(elementId){
+    if(!pendingSkillLevels[elementId]) pendingSkillLevels[elementId] = { ...((skillTree.levels && skillTree.levels[elementId]) || {}) };
+    return pendingSkillLevels[elementId];
+  }
+  function draftIsDirty(elementId){
+    const draft = pendingSkillLevels[elementId];
+    if(!draft) return false;
+    const committed = (skillTree.levels && skillTree.levels[elementId]) || {};
+    return SKILL_TREE_GRAPH_CLIENT[elementId].some(n => (draft[n.id]||0) !== (committed[n.id]||0));
+  }
+  function availablePointsFor(elementId){
+    const total = (skillPoints && skillPoints.total) || 0;
+    let spentOthers = 0;
+    ELEMENT_IDS.forEach(id=>{ if(id!==elementId) spentOthers += sumLevels(skillTree.levels && skillTree.levels[id]); });
+    const draft = currentDraft(elementId);
+    return total - spentOthers - sumLevels(draft);
+  }
+
+  const skilltreePanel = document.getElementById('skilltree-panel');
+  document.getElementById('btn-open-skilltree').addEventListener('click', ()=>{ skilltreePanel.classList.toggle('open'); renderSkillTabs(); renderSkillTree(); });
+  function switchSkillTab(id){
+    if(id===activeSkillElementTab) return;
+    if(draftIsDirty(activeSkillElementTab) && !confirm('Você tem alterações não salvas nessa árvore. Trocar de elemento vai descartá-las. Continuar?')) return;
+    pendingSkillLevels[activeSkillElementTab] = null;
+    activeSkillElementTab = id; renderSkillTabs(); renderSkillTree();
+  }
+  function renderSkillTabs(){
+    const wrap = document.getElementById('skill-tabs');
+    wrap.innerHTML = '';
+    ELEMENT_IDS.forEach(id=>{
+      const el = document.createElement('div');
+      el.className = 'skill-tab' + (id===activeSkillElementTab ? ' active':'') + (draftIsDirty(id) ? ' dirty':'');
+      if(id===activeSkillElementTab){ el.style.color = ELEMENT_TAB_COLOR[id]; el.style.borderColor = ELEMENT_TAB_COLOR[id]; }
+      el.textContent = ELEMENT_LABEL[id] + (draftIsDirty(id) ? ' •' : '');
+      el.addEventListener('click', ()=> switchSkillTab(id));
+      wrap.appendChild(el);
+    });
+  }
+  const skillTip = document.getElementById('skill-node-tip');
+  function renderSkillTree(){
+    if(!skilltreePanel.classList.contains('open')) return;
+    const elementId = activeSkillElementTab;
+    const nodes = SKILL_TREE_GRAPH_CLIENT[elementId];
+    const committed = (skillTree.levels && skillTree.levels[elementId]) || {};
+    const chosenKind = skillTree.ultimateChoice && skillTree.ultimateChoice[elementId];
+    const draft = currentDraft(elementId);
+    const available = availablePointsFor(elementId);
+    document.getElementById('skill-points-total').textContent = (skillPoints && skillPoints.total) || 0;
+    document.getElementById('skill-points-available').textContent = Math.max(0, available);
+
+    const wrap = document.getElementById('skill-list-wrap');
+    wrap.innerHTML = '';
+    nodes.forEach((n, idx)=>{
+      const isMilestone = n.category==='semiUltimate' || n.category==='ultimate';
+      const display = isMilestone ? resolveMilestoneDisplay(elementId, n.category, chosenKind) : n;
+      const committedLvl = committed[n.id] || 0;
+      const pendingLvl = draft[n.id] || 0;
+      const prevOk = n.deps.length===0 || (draft[n.deps[0]]||0) > 0;
+      const locked = !prevOk;
+      const needsChoice = n.category==='semiUltimate' && !chosenKind; // e15 sem escolha ainda feita
+      const dirty = pendingLvl !== committedLvl;
+      const canInc = !locked && !needsChoice && pendingLvl < 10 && available > 0;
+      // só pode cancelar (descer) pontos AINDA NÃO salvos, e só até 0 se
+      // nenhum nó depois dele já tiver pontos no rascunho (senão quebra a corrente)
+      const laterInvested = nodes.slice(idx+1).some(later => (draft[later.id]||0) > 0);
+      const canDec = pendingLvl > committedLvl && (pendingLvl > 1 || !laterInvested);
+      const row = document.createElement('div');
+      row.className = 'skill-node-row' + (locked?' locked':'') + (dirty?' dirty':'') + (pendingLvl>0&&!locked?' investable':'') + (isMilestone?' milestone':'');
+      if(committedLvl>0){ row.draggable = true; row.style.cursor = 'grab';
+        row.addEventListener('dragstart', e=> e.dataTransfer.setData('text/spell-id', spellIdFor(elementId, n.id))); }
+      if(needsChoice && !locked){
+        const opts = allowedUltimateKindsClient(elementId);
+        row.innerHTML = `<span class="node-index">${String(n.index).padStart(2,'0')}</span><span class="node-cat-icon">${CATEGORY_ICON[n.category]}</span><span class="node-name">Escolher natureza da Semi Ultimate / Ultimate</span>` +
+          opts.map(k=>`<button class="node-choose-kind" data-kind="${k}" style="width:auto;padding:0 8px;">${ULTIMATE_KIND_LABEL[k]}</button>`).join('');
+        row.querySelectorAll('.node-choose-kind').forEach(btn=> btn.addEventListener('click', ()=>{
+          sendWS({ type:'skill:chooseUltimate', elementId, kind: btn.dataset.kind });
+        }));
+      } else {
+        row.innerHTML = `<span class="node-index">${String(n.index).padStart(2,'0')}</span><span class="node-cat-icon">${CATEGORY_ICON[n.category]}</span><span class="node-name">${display.name}</span><span class="node-level">Nv. <b>${pendingLvl}</b>/10</span><button class="node-minus" ${canDec?'':'disabled'}>−</button><button class="node-plus" ${canInc?'':'disabled'}>+</button>`;
+        row.querySelector('.node-name').addEventListener('mouseenter', e=>{
+          skillTip.innerHTML = `<b>${display.name}</b>${display.desc}${locked?'<span class="hint" style="color:#ff9a80;">Requer o nó anterior investido</span>':''}${committedLvl>0?'<span class="hint">Arraste pra um slot da hotbar</span>':''}`;
+          skillTip.style.display = 'block';
+        });
+        row.querySelector('.node-name').addEventListener('mousemove', e=>{ skillTip.style.left = (e.clientX+14)+'px'; skillTip.style.top = (e.clientY+14)+'px'; });
+        row.querySelector('.node-name').addEventListener('mouseleave', ()=>{ skillTip.style.display = 'none'; });
+        row.querySelector('.node-plus').addEventListener('click', ()=>{ if(!canInc) return; draft[n.id] = pendingLvl+1; renderSkillTree(); });
+        row.querySelector('.node-minus').addEventListener('click', ()=>{ if(!canDec) return; draft[n.id] = pendingLvl-1; renderSkillTree(); });
+      }
+      wrap.appendChild(row);
+    });
+
+    const dirty = draftIsDirty(elementId);
+    const resetCost = usedFreeSkillReset ? ELEMENTAL_COIN_RESET_COST : 0;
+    const saveBtn = document.getElementById('skill-save-btn');
+    saveBtn.disabled = !dirty;
+    saveBtn.onclick = ()=>{
+      if(!dirty) return;
+      if(!confirm(`Tem certeza que quer salvar a Árvore de ${ELEMENT_LABEL[elementId]}? Depois de salvar, a única forma de reorganizar os pontos é resetando essa árvore${usedFreeSkillReset ? ` por ${ELEMENTAL_COIN_RESET_COST} Elemental Coin` : ' (1º reset da conta é grátis)'}.`)) return;
+      pendingSaveElement = elementId;
+      sendWS({ type:'skill:save', elementId, levels: draft });
+    };
+    const resetBtn = document.getElementById('skill-reset-btn');
+    resetBtn.textContent = resetCost ? `♻️ Resetar (${resetCost} 💎)` : '♻️ Resetar (1º grátis)';
+    resetBtn.disabled = resetCost > elementalCoins;
+    resetBtn.onclick = ()=>{
+      if(resetCost > elementalCoins) return;
+      const msg = resetCost ? `Resetar a Árvore de ${ELEMENT_LABEL[elementId]} vai devolver todos os pontos investidos nela e custa ${resetCost} Elemental Coin. Continuar?`
+        : `Resetar a Árvore de ${ELEMENT_LABEL[elementId]} vai devolver todos os pontos investidos nela. Este é o seu 1º reset e é GRÁTIS. Continuar?`;
+      if(!confirm(msg)) return;
+      sendWS({ type:'skill:reset', elementId });
+    };
+  }
+  function renderSkillTreeIfOpen(){ if(skilltreePanel.classList.contains('open')){ renderSkillTabs(); renderSkillTree(); } }
+
+  /* =========================================================
+     TORRES ELEMENTAIS
+     ========================================================= */
+  const TOWERS_CATALOG_CLIENT = [
+    { id:'central', name:'Torre Central', icon:'🏛️' }, { id:'fogo', name:'Torre do Fogo', icon:'🔥' },
+    { id:'agua', name:'Torre da Água', icon:'💧' }, { id:'terra', name:'Torre da Terra', icon:'🪨' },
+    { id:'ar', name:'Torre do Ar', icon:'🌪️' }, { id:'luz', name:'Torre da Luz', icon:'✨' }, { id:'trevas', name:'Torre das Trevas', icon:'🌑' },
+  ];
+  const towersPanel = document.getElementById('towers-panel');
+  document.getElementById('btn-open-towers').addEventListener('click', ()=>{ towersPanel.classList.toggle('open'); renderTowers(); });
+  function renderTowers(){
+    if(!towersPanel.classList.contains('open')) return;
+    const body = document.getElementById('towers-body');
+    body.innerHTML = TOWERS_CATALOG_CLIENT.map(t=>{
+      const floor = (towers && towers[t.id]) || 0;
+      return `<div class="tower-row">
+        <div class="top"><h3>${t.icon} ${t.name}</h3><span class="floor">Andar ${floor}/100</span></div>
+        <div class="tower-bar-track"><div class="tower-bar-fill" style="width:${floor}%"></div></div>
+        <div class="tower-btns">
+          <button data-tower="${t.id}" data-mode="dungeon" ${activeHunt.running?'disabled':''}>Entrar na Dungeon</button>
+          <button data-tower="${t.id}" data-mode="boss" ${activeHunt.running?'disabled':''}>Entrar no Boss</button>
+        </div>
+      </div>`;
+    }).join('');
+    body.querySelectorAll('button[data-tower]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'tower:enter', towerId:btn.dataset.tower, mode:btn.dataset.mode }));
+    });
+  }
+  function renderTowersIfOpen(){ if(towersPanel.classList.contains('open')) renderTowers(); }
+
+  /* =========================================================
      ALTAR DE EVOLUÇÃO — Reset de Estrela real: gasta Gold + Fragmentos
      para avançar Bronze -> Prata -> Ouro -> Diamante (5 estrelas por
      tier). O painel abre em QUALQUER mapa (Cidade, Caçadas, Torre
@@ -2665,6 +3250,7 @@
       <div class="altar-req-row"><span>Seu Ouro</span><span>${Math.floor(player.gold)}</span></div>
       <div class="altar-req-row"><span>Seus Fragmentos</span><span>💠 ${fragments}</span></div>
       ${costLine}
+      ${starEvolutionCost ? `<div class="altar-req-row" style="color:var(--ink-dim);font-size:9.5px;">ℹ️ Só o Nível e o XP voltam a 1 — equipamento, Encantamento, Árvore de Habilidades, treino, itens e todo o resto conquistado permanecem intactos.</div>` : ''}
       ${!inCity ? `<div class="altar-req-row" style="color:#ff9a80;">⚠️ Disponível apenas na Cidade Principal</div>` : ''}
       <button id="altar-evolve-btn" ${(!inCity || !starEvolutionCost || !canAfford) ? 'disabled' : ''}>🔥 Realizar Reset de Estrela</button>
       <div class="panel-title" style="margin-top:16px;font-size:11px;">Dev/teste</div>
@@ -2721,6 +3307,277 @@
     `).join('');
     list.querySelectorAll('[data-buy-item]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'npc:buy', npcId: SHOP_NPC_ID, itemId: btn.dataset.buyItem, qty: 1 }));
+    });
+  }
+
+  /* =========================================================
+     LOJA DE ELEMENTAL COIN — moeda cash comprada com Moeda Real (R$).
+     Sem gateway de pagamento real conectado ainda (ver aviso no painel);
+     o catálogo aqui é só um espelho de exibição — quem valida e credita
+     de verdade é sempre huntEngine.ELEMENTAL_COIN_PACKAGES no servidor.
+     ========================================================= */
+  const coinshopModal = document.getElementById('coinshop-modal');
+  const ELEMENTAL_COIN_PACKAGES = [
+    { id:'coin_100', coins:100, bonusCoins:0, priceBRL:4.90 },
+    { id:'coin_300', coins:300, bonusCoins:30, priceBRL:14.90 },
+    { id:'coin_650', coins:650, bonusCoins:100, priceBRL:29.90 },
+    { id:'coin_1400', coins:1400, bonusCoins:300, priceBRL:59.90 },
+    { id:'coin_3000', coins:3000, bonusCoins:800, priceBRL:119.90 },
+  ];
+  document.getElementById('tb-coin-pill').addEventListener('click', ()=>{ coinshopModal.classList.toggle('open'); renderCoinShop(); });
+  function renderCoinShopIfOpen(){ if(coinshopModal.classList.contains('open')) renderCoinShop(); }
+  function renderCoinShop(){
+    const list = document.getElementById('coinshop-items-list');
+    list.innerHTML = ELEMENTAL_COIN_PACKAGES.map(p=>`
+      <div class="coin-pkg-row"><span class="cname">💎 ${p.coins}${p.bonusCoins?` <span style="color:var(--ok);">+${p.bonusCoins} bônus</span>`:''}</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-coin="${p.id}">Comprar</button></div>
+    `).join('');
+    list.querySelectorAll('[data-buy-coin]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'shop:buyElementalCoins', packageId: btn.dataset.buyCoin }));
+    });
+  }
+
+  /* =========================================================
+     RANK GERAL — leaderboard combinando nível efetivo (contando as
+     voltas de estrela) + progresso acumulado nas 7 Torres Elementais.
+     Só busca do servidor quando o painel é aberto (não a cada snapshot),
+     pra não martelar o Mongo com uma query de leaderboard 30x/segundo.
+     ========================================================= */
+  const rankModal = document.getElementById('rank-modal');
+  document.getElementById('btn-open-rank').addEventListener('click', ()=>{
+    const wasOpen = rankModal.classList.contains('open');
+    rankModal.classList.toggle('open');
+    if(!wasOpen) sendWS({ type:'rank:get', limit:100 });
+  });
+  function updateRankPill(){
+    document.getElementById('btn-open-rank').title = `Rank Geral — sua pontuação: ${rankScore}`;
+  }
+  function renderRank(){
+    if(!rankModal.classList.contains('open')) return;
+    document.getElementById('rank-my-line').innerHTML = rankMyPosition
+      ? `Sua posição: <b style="color:var(--gold-bright)">#${rankMyPosition}</b> · Pontuação: <b style="color:var(--ok)">${rankScore}</b>`
+      : `Pontuação: <b style="color:var(--ok)">${rankScore}</b> <span style="color:var(--ink-dim);">(salva automaticamente enquanto você joga)</span>`;
+    const list = document.getElementById('rank-list');
+    if(!rankTop.length){ list.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);padding:10px 0;">Carregando ranking...</div>`; return; }
+    list.innerHTML = rankTop.map((r,i)=>`
+      <div class="rank-row ${r.nick===PLAYER_NICK?'me':''}"><span class="rpos">${i+1}</span><span>${escapeHtml(r.nick)} <span style="color:var(--ink-dim);">Nv.${r.level}</span></span><span class="rscore">${r.rankScore}</span></div>
+    `).join('');
+  }
+
+  /* =========================================================
+     ENCANTAMENTO (+1 a +10, estilo Ragnarok) — status base do equipamento
+     é derivado aqui só pra EXIBIÇÃO (o servidor recalcula tudo de novo em
+     huntEngine.getItemTotalStats antes de aplicar qualquer coisa no combate;
+     nada aqui é confiável pra validação, só espelha o mesmo cálculo).
+     ========================================================= */
+  const enchantModal = document.getElementById('enchant-modal');
+  const ENCHANT_SLOTS = ['weapon','offhand','helmet','armor','boots','ring','amulet'];
+  const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', ring:'Anel', amulet:'Colar' };
+  const RARITY_STAT_MULT = { comum:1, incomum:1.4, rara:2, 'épica':3, 'lendária':4.5 };
+  const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3} };
+  const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %' };
+  const ENCHANT_MAX_LEVEL = 10;
+  const ENCHANT_SUCCESS_CHANCE = { 1:1.0, 2:.95, 3:.9, 4:.8, 5:.7, 6:.6, 7:.5, 8:.4, 9:.3, 10:.2 };
+  const ENCHANT_BREAK_FROM_LEVEL = 7;
+  const ENCHANT_PROTECTOR_CHANCE_BONUS = 0.15;
+  const ENCHANT_CRYSTAL_COST_GOLD = 400;
+  const ENCHANT_PROTECTOR_COST_GOLD = 900;
+  const ENCHANT_WARD_COST_GOLD = 3500; // Selo Inquebrável — custo elevado, garante que o item não quebra na tentativa
+  let enchantSelectedSlot = 'weapon';
+  function computeBaseItemStatsClient(slot, rarity){
+    const base = SLOT_BASE_STATS[slot]; if(!base) return {};
+    const mult = RARITY_STAT_MULT[rarity] || 1; const out = {};
+    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*10)/10);
+    return out;
+  }
+  function getItemTotalStatsClient(item){
+    if(!item || !item.slot) return {};
+    const base = computeBaseItemStatsClient(item.slot, item.rarity);
+    const mult = 1 + (item.enchantLevel||0)*0.08;
+    const out = {};
+    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*10)/10);
+    (item.bonusStats||[]).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
+    return out;
+  }
+  function formatStats(stats){
+    const keys = Object.keys(stats);
+    if(!keys.length) return '<span style="color:var(--ink-dim);">nenhum status</span>';
+    return keys.map(k=>`${STAT_LABEL[k]||k}: <b>+${stats[k]}</b>`).join(' · ');
+  }
+  document.getElementById('btn-open-enchant').addEventListener('click', ()=>{ enchantModal.classList.toggle('open'); renderEnchant(); });
+  function renderEnchantIfOpen(){ if(enchantModal.classList.contains('open')) renderEnchant(); }
+  function renderEnchant(){
+    if(!enchantModal.classList.contains('open')) return;
+    const tabs = document.getElementById('enchant-slot-tabs');
+    tabs.innerHTML = ENCHANT_SLOTS.map(s=>`<div class="enchant-slot-tab ${s===enchantSelectedSlot?'active':''}" data-enchant-slot="${s}">${ENCHANT_SLOT_LABEL[s]}${equipment[s]?'':' (vazio)'}</div>`).join('');
+    tabs.querySelectorAll('[data-enchant-slot]').forEach(tab=>{
+      tab.addEventListener('click', ()=>{ enchantSelectedSlot = tab.dataset.enchantSlot; renderEnchant(); });
+    });
+    const body = document.getElementById('enchant-body');
+    const item = equipment[enchantSelectedSlot];
+    if(!item){
+      body.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);padding:10px 0;">Nenhum item equipado em ${ENCHANT_SLOT_LABEL[enchantSelectedSlot]}.</div>`;
+      return;
+    }
+    const level = item.enchantLevel || 0;
+    const stats = getItemTotalStatsClient(item);
+    const nextLevel = level + 1;
+    const atMax = level >= ENCHANT_MAX_LEVEL;
+    const baseChance = ENCHANT_SUCCESS_CHANCE[nextLevel] != null ? ENCHANT_SUCCESS_CHANCE[nextLevel] : 0.2;
+    const canBreak = nextLevel >= ENCHANT_BREAK_FROM_LEVEL;
+    const hasCrystal = (materials.enchantCrystal||0) >= 1;
+    const hasProtector = (materials.enchantProtector||0) >= 1;
+    const hasWard = (materials.antiBreakWard||0) >= 1;
+    body.innerHTML = `
+      <div class="enchant-req-row"><span>Item</span><span style="color:${RARITY_COLORS[item.rarity]||'var(--ink)'}">${item.name} (${item.rarity})</span></div>
+      <div class="enchant-req-row"><span>Nível de Encantamento</span><span class="${level>0?'ok':''}">${atMax ? '+10 (MÁXIMO)' : `+${level} → +${nextLevel}`}</span></div>
+      <div class="enchant-stats-box">Status atuais: ${formatStats(stats)}${(item.bonusStats||[]).length ? `<br><span class="enchant-affix">Bônus únicos: ${item.bonusStats.map(b=>`${b.label} +${b.value}`).join(', ')}</span>` : ''}</div>
+      ${!atMax ? `
+      <div class="enchant-req-row"><span>Chance de sucesso</span><span class="${hasProtector?'ok':''}">${Math.round(baseChance*100)}% ${hasProtector?`(+${Math.round(ENCHANT_PROTECTOR_CHANCE_BONUS*100)}% com Bênção)`:''}</span></div>
+      ${canBreak ? `<div class="enchant-req-row"><span>⚠️ Risco</span><span class="missing">Falhar pode QUEBRAR o item (destruído) — use o Selo Inquebrável abaixo pra evitar</span></div>` : `<div class="enchant-req-row"><span>Risco</span><span>Falhar só volta 1 nível (sem quebrar)</span></div>`}
+      <div class="enchant-req-row"><span>Cristal de Encantamento</span><span class="${hasCrystal?'ok':'missing'}">${materials.enchantCrystal||0} <button class="party-btn" id="enchant-buy-crystal" style="margin-left:6px;">Comprar (${ENCHANT_CRYSTAL_COST_GOLD} Gold)</button></span></div>
+      <div class="enchant-req-row"><span>Bênção do Ferreiro (opcional, +chance)</span><span>${materials.enchantProtector||0} <button class="party-btn" id="enchant-buy-protector" style="margin-left:6px;">Comprar (${ENCHANT_PROTECTOR_COST_GOLD} Gold)</button></span></div>
+      <div class="enchant-req-row"><span>Selo Inquebrável (opcional, nunca quebra)</span><span>${materials.antiBreakWard||0} <button class="party-btn" id="enchant-buy-ward" style="margin-left:6px;">Comprar (${ENCHANT_WARD_COST_GOLD} Gold)</button></span></div>
+      <label style="display:flex;gap:6px;align-items:center;margin:8px 0;font-family:var(--font-mono);font-size:10.5px;"><input type="checkbox" id="enchant-use-protector" ${hasProtector?'':'disabled'}> Usar Bênção do Ferreiro nesta tentativa</label>
+      <label style="display:flex;gap:6px;align-items:center;margin:8px 0;font-family:var(--font-mono);font-size:10.5px;"><input type="checkbox" id="enchant-use-ward" ${(hasWard && canBreak)?'':'disabled'}> Usar Selo Inquebrável nesta tentativa ${!canBreak?'<span style="color:var(--ink-dim);">(sem risco de quebra nesse nível — desnecessário)</span>':''}</label>
+      ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Comprar materiais só na Cidade Principal (encantar funciona em qualquer lugar)</div>` : ''}
+      <button class="skill-save-btn" id="enchant-go-btn" style="width:100%;margin-top:8px;" ${hasCrystal?'':'disabled'}>⚒️ Encantar (+${level} → +${nextLevel})</button>
+      ` : ''}
+    `;
+    if(!atMax){
+      document.getElementById('enchant-buy-crystal').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'crystal', qty:1 }));
+      document.getElementById('enchant-buy-protector').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'protector', qty:1 }));
+      document.getElementById('enchant-buy-ward').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'ward', qty:1 }));
+      document.getElementById('enchant-go-btn').addEventListener('click', ()=>{
+        const useProtector = document.getElementById('enchant-use-protector').checked;
+        const useWard = document.getElementById('enchant-use-ward').checked;
+        const finalChance = Math.round((baseChance+(useProtector?ENCHANT_PROTECTOR_CHANCE_BONUS:0))*100);
+        const warn = (canBreak && !useWard)
+          ? `Tentar encantar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso — falhar pode QUEBRAR o item de vez (perda total). Continuar?`
+          : `Tentar encantar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso${useWard?' (Selo Inquebrável garante que não vai quebrar mesmo falhando)':''}. Continuar?`;
+        if(!confirm(warn)) return;
+        sendWS({ type:'item:enchant', slot: enchantSelectedSlot, useProtector, useWard });
+      });
+    }
+  }
+  function inCityForShop(){ return location === 'city'; }
+
+  /* =========================================================
+     PETS + GACHA — catálogo espelhado de huntEngine.PETS_CATALOG só
+     pra exibição; quem valida/credita de verdade é sempre o servidor.
+     ========================================================= */
+  const petsModal = document.getElementById('pets-modal');
+  const PETS_CATALOG = [
+    { id:'pet_gato_ferreiro', name:'Gato do Ferreiro', icon:'🐈', rarity:'comum', baseStats:{ atk:2 } },
+    { id:'pet_coelho_sortudo', name:'Coelho Sortudo', icon:'🐇', rarity:'comum', baseStats:{ critPct:1 } },
+    { id:'pet_raposa_arcana', name:'Raposa Arcana', icon:'🦊', rarity:'incomum', baseStats:{ magicPct:2 } },
+    { id:'pet_coruja_vigilante', name:'Coruja Vigilante', icon:'🦉', rarity:'incomum', baseStats:{ def:3 } },
+    { id:'pet_lobo_sombrio', name:'Lobo Sombrio', icon:'🐺', rarity:'rara', baseStats:{ atk:4, critPct:1 } },
+    { id:'pet_salamandra_ignea', name:'Salamandra Ígnea', icon:'🦎', rarity:'rara', baseStats:{ magicPct:4 } },
+    { id:'pet_grifo_menor', name:'Grifo Menor', icon:'🦅', rarity:'épica', baseStats:{ atk:6, def:4 } },
+    { id:'pet_espirito_glacial', name:'Espírito Glacial', icon:'❄️', rarity:'épica', baseStats:{ def:8, magicPct:3 } },
+    { id:'pet_dragao_ancestral', name:'Dragãozinho Ancestral', icon:'🐉', rarity:'lendária', baseStats:{ atk:8, def:8, critPct:2, magicPct:4 } },
+    { id:'pet_fenix_dourada', name:'Fênix Dourada', icon:'🔥', rarity:'lendária', baseStats:{ atk:10, magicPct:6 } },
+  ];
+  const PET_SHOP_PRICE = { comum:200, incomum:450, rara:900, 'épica':1800, 'lendária':3500 };
+  const GACHA_COST_COIN = 150;
+  let petsActiveTab = 'colecao';
+  document.getElementById('btn-open-pets').addEventListener('click', ()=>{ petsModal.classList.toggle('open'); renderPets(); });
+  function renderPetsIfOpen(){ if(petsModal.classList.contains('open')) renderPets(); }
+  function renderPets(){
+    if(!petsModal.classList.contains('open')) return;
+    const tabs = document.getElementById('pets-tabs');
+    tabs.innerHTML = ['colecao','loja','gacha'].map(t=>`<div class="pets-tab ${t===petsActiveTab?'active':''}" data-pets-tab="${t}">${t==='colecao'?'Coleção':t==='loja'?'Loja':'Gacha'}</div>`).join('');
+    tabs.querySelectorAll('[data-pets-tab]').forEach(tab=> tab.addEventListener('click', ()=>{ petsActiveTab = tab.dataset.petsTab; renderPets(); }));
+    const body = document.getElementById('pets-body');
+    if(petsActiveTab === 'colecao'){
+      if(!pets.owned.length){ body.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum Pet ainda — compre na Loja ou tente o Gacha.</div>`; return; }
+      body.innerHTML = `<div class="pet-row" style="border-bottom:1px solid rgba(191,161,95,.3);"><span></span><span style="color:var(--ink-dim);">Nenhum (desativar)</span><span></span><button class="party-btn ${!pets.active?'primary':''}" data-set-active="">Ativar</button></div>` +
+        pets.owned.map(petId=>{
+          const def = PETS_CATALOG.find(p=>p.id===petId);
+          if(!def) return '';
+          const statsStr = Object.entries(def.baseStats).map(([k,v])=>`${STAT_LABEL[k]||k} +${v}`).join(', ');
+          const isActive = pets.active === petId;
+          return `<div class="pet-row ${isActive?'active-pet':''}"><span class="picon">${def.icon}</span><span>${def.name}<br><span style="color:var(--ink-dim);">${statsStr}</span></span><span>${isActive?'<span class=\"pet-active-badge\">● ATIVO</span>':''}</span><button class="party-btn ${isActive?'':'primary'}" data-set-active="${petId}">${isActive?'Ativo':'Ativar'}</button></div>`;
+        }).join('');
+      body.querySelectorAll('[data-set-active]').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'pet:setActive', petId: btn.dataset.setActive || null })));
+    } else if(petsActiveTab === 'loja'){
+      body.innerHTML = PETS_CATALOG.map(def=>{
+        const owned = pets.owned.includes(def.id);
+        const statsStr = Object.entries(def.baseStats).map(([k,v])=>`${STAT_LABEL[k]||k} +${v}`).join(', ');
+        return `<div class="pet-row"><span class="picon">${def.icon}</span><span>${def.name} <span style="color:${RARITY_COLORS[def.rarity]||'var(--ink)'}">(${def.rarity})</span><br><span style="color:var(--ink-dim);">${statsStr}</span></span><span>💎 ${PET_SHOP_PRICE[def.rarity]}</span><button class="party-btn primary" data-buy-pet="${def.id}" ${owned?'disabled':''}>${owned?'Possui':'Comprar'}</button></div>`;
+      }).join('');
+      body.querySelectorAll('[data-buy-pet]').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'pet:buy', petId: btn.dataset.buyPet })));
+    } else {
+      body.innerHTML = `
+        <div class="gacha-box">
+          <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);margin-bottom:8px;">Sorteia 1 Pet aleatório (chance maior pros comuns, chance rara pros lendários). Pet repetido vira reembolso parcial de Elemental Coin.</div>
+          <button class="skill-save-btn" id="gacha-roll-btn">🎰 Sortear (${GACHA_COST_COIN} 💎)</button>
+          <div class="gacha-result" id="gacha-result"></div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);">Seu Elemental Coin: 💎 ${elementalCoins}</div>
+      `;
+      document.getElementById('gacha-roll-btn').addEventListener('click', ()=> sendWS({ type:'pet:gachaRoll' }));
+    }
+  }
+  function showGachaResult(msg){
+    const box = document.getElementById('gacha-result');
+    if(box) box.innerHTML = msg.duplicate
+      ? `${msg.pet.icon} <b>${msg.pet.name}</b> (${msg.pet.rarity}) — já possuía, reembolsado 💎 ${msg.coinRefund}`
+      : `✨ Novo! ${msg.pet.icon} <b>${msg.pet.name}</b> (${msg.pet.rarity}) adicionado à coleção!`;
+    logLoot(msg.duplicate ? `🎰 Gacha: ${msg.pet.icon} ${msg.pet.name} repetido — reembolso de 💎 ${msg.coinRefund}.` : `🎰 Gacha: ganhou ${msg.pet.icon} <b>${msg.pet.name}</b> (${msg.pet.rarity})!`);
+  }
+
+  /* =========================================================
+     BATTLE PASS — progressão sazonal, trilha Free + Premium. Catálogo
+     de recompensas espelhado de huntEngine.BATTLE_PASS_REWARDS só pra
+     exibição; o servidor valida tier alcançado/resgate/status Premium.
+     ========================================================= */
+  const battlePassModal = document.getElementById('battlepass-modal');
+  const BATTLE_PASS_XP_PER_TIER = 500;
+  const BATTLE_PASS_MAX_TIER = 30;
+  const BATTLE_PASS_REWARDS = [];
+  (function buildBpRewardsClient(){
+    for(let t=1;t<=BATTLE_PASS_MAX_TIER;t++){
+      const free = (t%5===0) ? { type:'fragments', amount:5 } : { type:'gold', amount:200*t };
+      let premium;
+      if(t===10) premium = { type:'pet', petId:'pet_raposa_arcana' };
+      else if(t===20) premium = { type:'pet', petId:'pet_grifo_menor' };
+      else if(t===BATTLE_PASS_MAX_TIER) premium = { type:'pet', petId:'pet_dragao_ancestral' };
+      else premium = { type:'elementalCoins', amount:20+t*5 };
+      BATTLE_PASS_REWARDS.push({ tier:t, free, premium });
+    }
+  })();
+  function formatBpReward(reward){
+    if(reward.type==='gold') return `🪙 ${reward.amount} Gold`;
+    if(reward.type==='fragments') return `💠 ${reward.amount} Fragmentos`;
+    if(reward.type==='elementalCoins') return `💎 ${reward.amount} Coin`;
+    if(reward.type==='pet'){ const def = PETS_CATALOG.find(p=>p.id===reward.petId); return def ? `${def.icon} ${def.name}` : 'Pet'; }
+    return '?';
+  }
+  document.getElementById('btn-open-battlepass').addEventListener('click', ()=>{ battlePassModal.classList.toggle('open'); renderBattlePass(); });
+  function renderBattlePassIfOpen(){ if(battlePassModal.classList.contains('open')) renderBattlePass(); }
+  function renderBattlePass(){
+    if(!battlePassModal.classList.contains('open')) return;
+    const xpIntoTier = battlePass.xp - battlePass.tier*BATTLE_PASS_XP_PER_TIER;
+    const pct = Math.min(100, Math.round(xpIntoTier / BATTLE_PASS_XP_PER_TIER * 100));
+    document.getElementById('bp-header').innerHTML = `Tier <b style="color:var(--gold-bright);">${battlePass.tier}</b>/${BATTLE_PASS_MAX_TIER} — ${xpIntoTier}/${BATTLE_PASS_XP_PER_TIER} XP pro próximo tier · Trilha Premium: <b style="color:${isPremium?'var(--ok)':'#ff9a80'}">${isPremium?'ativa':'inativa'}</b>`;
+    document.getElementById('bp-progress-fill').style.width = pct+'%';
+    const list = document.getElementById('bp-tier-list');
+    list.innerHTML = BATTLE_PASS_REWARDS.map(entry=>{
+      const unlocked = battlePass.tier >= entry.tier;
+      const freeClaimed = battlePass.claimedFree.includes(entry.tier);
+      const premiumClaimed = battlePass.claimedPremium.includes(entry.tier);
+      return `<div class="bp-tier-row ${unlocked?'':'locked'}">
+        <span class="bp-tier-num">#${entry.tier}</span>
+        <span class="bp-reward">${formatBpReward(entry.free)} ${unlocked?`<button class="party-btn ${freeClaimed?'':'primary'}" data-claim="${entry.tier}:free" ${freeClaimed?'disabled':''}>${freeClaimed?'✓':'Resgatar'}</button>`:''}</span>
+        <span class="bp-reward">${formatBpReward(entry.premium)} ${unlocked?`<button class="party-btn ${premiumClaimed?'':'primary'}" data-claim="${entry.tier}:premium" ${(premiumClaimed||!isPremium)?'disabled':''}>${premiumClaimed?'✓':(isPremium?'Resgatar':'🔒 Premium')}</button>`:''}</span>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-claim]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const [tier, track] = btn.dataset.claim.split(':');
+        sendWS({ type:'battlepass:claim', tier:Number(tier), track });
+      });
     });
   }
 
