@@ -147,9 +147,9 @@
   // Backend oficial no Render — fixo, não detectado por location.origin.
   const API_BASE = 'https://elemental-server.onrender.com';
   // Repositório oficial de artes/sprites no GitHub Pages — fixo character por character.
-  const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets';
+  const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/';
 
-  // localStorage padronizado globalmente (index.html, character-select.html, hunt-engine.html)
+  // localStorage padronizado globalmente (index.html, character-select.html, world-prototype.html)
   const LS_TOKEN = 'elemental_token';
   const LS_USERNAME = 'elemental_username';
   const LS_CHARACTER = 'elemental_character';
@@ -180,12 +180,20 @@
      só que cor/estilo varia com gênero + cabelo escolhidos (sem
      depender de asset real, igual ao fallback do SpriteManager).
      ========================================================= */
-  const HAIR_COLORS = { 1:'#3a2418', 2:'#8a5a2a', 3:'#c94040' };
+  // hairId (1-8) é o índice em HAIR_COLOR_NAMES — mesma ordem/mesmo arquivo
+  // que huntEngine.HAIR_COLORS no servidor (mirror, igual HUNTS/DIFFICULTIES
+  // já são espelhados no world-prototype.html). Repositório hoje só tem 1
+  // estilo por cor, então o fallback procedural também não varia mais o
+  // formato — só a cor —, pra bater com o que o sprite real vai mostrar.
+  const HAIR_COLOR_NAMES = ['black','blue','brown','green','purple','red','white','yellow'];
+  const HAIR_COLOR_HEX = { black:'#2a2118', blue:'#2e5fa0', brown:'#8a5a2a', green:'#3f9b4a', purple:'#7a3fa0', red:'#c94040', white:'#e8e2d0', yellow:'#d8c23a' };
+  const HAIR_COLOR_LABEL = { black:'Preto', blue:'Azul', brown:'Castanho', green:'Verde', purple:'Roxo', red:'Vermelho', white:'Branco', yellow:'Loiro' };
   function drawMiniAvatar(canvas, gender, hairId){
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0,0,w,h);
     const cx = w/2, groundY = h-14;
+    const corCabelo = HAIR_COLOR_NAMES[(Number(hairId)||1)-1] || 'black';
     ctx.beginPath(); ctx.ellipse(cx, groundY+8, 20, 5, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
     // pernas/botas
     ctx.fillStyle = '#caa06f'; ctx.fillRect(cx-8, groundY-30, 7,26); ctx.fillRect(cx+1, groundY-30, 7,26);
@@ -196,10 +204,8 @@
     // cabeça
     ctx.beginPath(); ctx.arc(cx, groundY-62, 9,0,Math.PI*2); ctx.fillStyle='#e0b98a'; ctx.fill();
     // cabelo — cor por tipo escolhido
-    ctx.fillStyle = HAIR_COLORS[hairId] || HAIR_COLORS[1];
+    ctx.fillStyle = HAIR_COLOR_HEX[corCabelo] || HAIR_COLOR_HEX.black;
     ctx.beginPath(); ctx.arc(cx, groundY-66, 9.5, Math.PI, Math.PI*2); ctx.fill();
-    if(hairId===2){ ctx.fillRect(cx-9.5, groundY-66, 3,14); ctx.fillRect(cx+6.5, groundY-66, 3,14); } // cabelo mais longo
-    if(hairId===3){ ctx.beginPath(); ctx.moveTo(cx-9,groundY-66); ctx.lineTo(cx,groundY-80); ctx.lineTo(cx+9,groundY-66); ctx.fill(); } // moicano/pontudo
 
     // tenta sobrepor o sprite REAL da cabeça (repositório de assets no GitHub Pages);
     // se o arquivo ainda não existir lá (404) ou a rede falhar, o avatar procedural
@@ -207,7 +213,7 @@
     const realHead = new Image();
     realHead.crossOrigin = 'anonymous';
     realHead.onload = () => { ctx.drawImage(realHead, cx-11, groundY-78, 22, 22); };
-    realHead.src = URL_BASE + `player/heads/${gender}/${hairId}.png`;
+    realHead.src = URL_BASE + `player/heads/${gender}/${corCabelo}.png`;
   }
 
   /* =========================================================
@@ -254,7 +260,7 @@
     document.getElementById('connect-btn').disabled = false;
     document.getElementById('connect-btn').addEventListener('click', ()=>{
       localStorage.setItem(LS_CHARACTER, JSON.stringify(selected));
-      window.location.href = 'hunt-engine.html';
+      window.location.href = 'world-prototype.html';
     });
   }
 
@@ -263,12 +269,12 @@
      ========================================================= */
   function setupCreateView(){
     let gender = 'male';
-    let hairIndex = 0; // 0->tipo1, 1->tipo2, 2->tipo3
-    const HAIR_IDS = [1,2,3];
+    let hairIndex = 0;
+    const HAIR_IDS = HAIR_COLOR_NAMES.map((_,i)=>i+1); // 1..8, mesma ordem de HAIR_COLOR_NAMES
 
     function refreshPreview(){
       drawMiniAvatar(document.getElementById('hair-preview'), gender, HAIR_IDS[hairIndex]);
-      document.getElementById('hair-preview-label').textContent = `Cabelo Tipo ${HAIR_IDS[hairIndex]}`;
+      document.getElementById('hair-preview-label').textContent = `Cabelo ${HAIR_COLOR_LABEL[HAIR_COLOR_NAMES[hairIndex]]}`;
     }
     refreshPreview();
 
@@ -315,7 +321,7 @@
       msgEl.textContent = `Herói ${data.character.nick} criado! Entrando...`;
       msgEl.className = 'msg show ok';
       localStorage.setItem(LS_CHARACTER, JSON.stringify(data.character));
-      setTimeout(()=>{ window.location.href = 'hunt-engine.html'; }, 900);
+      setTimeout(()=>{ window.location.href = 'world-prototype.html'; }, 900);
     });
   }
 

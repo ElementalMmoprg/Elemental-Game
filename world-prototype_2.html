@@ -1,0 +1,2892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elemental Online — Huntera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold-deep:#7a6435; --gold:#bfa15f; --gold-bright:#f0d38a;
+    --glass-1:rgba(22,18,13,.70); --glass-2:rgba(9,7,5,.86);
+    --ink:#f2e8d0; --ink-dim:#a99872;
+    --hp-a:#ff7a7a; --hp-b:#8a1f2b; --hp-c:#4a0e17;
+    --mp-a:#7fc6ff; --mp-b:#1f4a7a; --mp-c:#0e2540;
+    --stam-a:#9dff7a; --stam-b:#2f7a1f; --stam-c:#153e0e;
+    --ok:#6fae6f; --danger:#e2542b; --cooldown:#5a7ac0; --premium:#f0d38a;
+    --font-display:'Cinzel', serif; --font-body:'Spectral', serif; --font-mono:'JetBrains Mono', monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; font-family:var(--font-body); color:var(--ink); overflow:hidden; }
+  body{ background:
+      radial-gradient(ellipse 900px 600px at 22% 18%, rgba(191,161,95,.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 85% 85%, rgba(90,60,20,.10), transparent 55%), #050403;
+      transition:background-color .6s; }
+  body.in-city{ background-color:#0c0a06; }
+  body.in-dungeon{ background-color:#050403; }
+  #stage{ position:relative; width:100vw; height:100vh; }
+  #stage > *{ position:absolute; }
+  #world-canvas{ inset:0; width:100%; height:100%; display:block; }
+
+  .glass{
+    background:linear-gradient(180deg, var(--glass-1), var(--glass-2));
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1px solid var(--gold); border-radius:8px;
+    box-shadow:0 0 0 1px rgba(191,161,95,.14) inset, 0 16px 44px rgba(0,0,0,.55), 0 0 26px rgba(191,161,95,.07);
+  }
+  .panel-title{ font-family:var(--font-display); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-bright); display:flex; align-items:center; gap:6px; margin:0 0 8px; cursor:default; }
+  .panel-title .rule{ flex:1; height:1px; background:linear-gradient(90deg, var(--gold), transparent); }
+
+  /* ============ BARRA SUPERIOR ÚNICA (estilo Huntera) ============ */
+  #top-bar{ top:0; left:0; right:0; height:52px; border-radius:0; border-top:none; border-left:none; border-right:none;
+    display:flex; align-items:center; gap:14px; padding:0 16px; z-index:8; }
+  .tb-portrait{ display:flex; align-items:center; gap:8px; cursor:default; padding:4px 6px; border-radius:6px; }
+  .tb-portrait:hover{ background:rgba(191,161,95,.08); }
+  .tb-avatar{ font-size:22px; }
+  .tb-namelv{ display:flex; flex-direction:column; line-height:1.25; }
+  .tb-namelv b{ font-family:var(--font-display); font-size:12px; color:var(--gold-bright); letter-spacing:.04em; }
+  .tb-namelv small{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
+  #profile-popover{ top:100%; left:0; margin-top:8px; }
+  .tb-pill{ font-family:var(--font-mono); font-size:11px; padding:6px 12px; border-radius:20px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink); white-space:nowrap; }
+  .tb-shop{ cursor:pointer; color:var(--gold-bright); border-color:var(--gold-bright); }
+  .tb-shop:hover{ box-shadow:0 0 14px rgba(240,211,138,.25); }
+  #tb-online{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); white-space:nowrap; }
+  #tb-icons{ margin-left:auto; display:flex; gap:6px; }
+  .tb-icon{ width:34px; height:34px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
+  .tb-icon:hover{ border-color:var(--gold-bright); box-shadow:0 0 10px rgba(240,211,138,.2); }
+
+  #minimap{ top:60px; left:50%; transform:translateX(-50%); width:130px; height:130px; padding:0; overflow:hidden; z-index:7; }
+  #minimap canvas{ width:100%; height:100%; display:block; }
+  #minimap .mm-label{ position:absolute; top:3px; left:6px; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); background:rgba(9,7,5,.7); padding:1px 5px; border-radius:3px; }
+
+  #ws-status{ top:56px; right:16px; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); z-index:9; }
+
+  /* Vitals (HP/Mana/Stamina) — agora colados na hotbar, à esquerda dela,
+     em vez de uma janela solta no canto (era o que virava "janela gigante"). */
+  #vitals-block{ position:static; width:150px; padding:8px 10px; flex-shrink:0; }
+  .bar-track{ height:11px; border-radius:4px; overflow:hidden; background:#0a0705; border:1px solid var(--gold-deep); box-shadow:inset 0 2px 5px rgba(0,0,0,.7); margin-bottom:5px; position:relative; }
+  .bar-fill{ height:100%; transition:width .25s; }
+  .bar-fill.hp{ background:linear-gradient(180deg,var(--hp-a),var(--hp-b) 55%,var(--hp-c)); }
+  .bar-fill.mp{ background:linear-gradient(180deg,var(--mp-a),var(--mp-b) 55%,var(--mp-c)); }
+  .bar-fill.stam{ background:linear-gradient(180deg,var(--stam-a),var(--stam-b) 55%,var(--stam-c)); }
+  .bar-label{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:7.5px; color:#000; text-shadow:0 1px 0 rgba(255,255,255,.25); }
+  #hunt-status-line{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); line-height:1.5; }
+  #hunt-status-line b{ color:var(--gold-bright); }
+  #premium-badge{ display:inline-block; font-family:var(--font-mono); font-size:8px; padding:0 4px; border-radius:3px; margin-left:5px; border:1px solid var(--premium); color:var(--premium); }
+  #premium-badge.free{ border-color:var(--ink-dim); color:var(--ink-dim); }
+  #recharge-stamina-btn{ display:none; width:100%; margin-top:5px; padding:5px; border-radius:5px; border:1px dashed var(--premium); background:rgba(240,211,138,.08); color:var(--premium); font-family:var(--font-mono); font-size:8.5px; cursor:pointer; }
+  #recharge-stamina-btn.show{ display:block; }
+
+  /* ============ POPOVERS DE HOVER ============ */
+  .hover-trigger{ position:relative; }
+  .popover{
+    position:absolute; z-index:40; width:220px; padding:12px 14px; display:none;
+    font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); line-height:1.7;
+  }
+  .popover.show{ display:block; }
+  .popover b{ color:var(--gold-bright); }
+  .popover .row{ display:flex; justify-content:space-between; }
+  #profile-popover{ top:100%; left:0; margin-top:8px; }
+  #dispatch-popover .opt-box{ display:flex; align-items:center; gap:6px; padding:5px 0; }
+  #dispatch-popover .countdown{ margin-top:8px; padding:8px; background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); border-radius:5px; text-align:center; }
+  #dispatch-popover .countdown .big{ font-family:var(--font-display); font-size:15px; color:var(--gold-bright); }
+
+  /* ============ BARRA DE AÇÃO DA CAÇADA (Detalhes / Robô de Venda / Sair) —
+     colada ACIMA da hotbar+barra tática, só aparece dentro de uma Dungeon.
+     Os popovers de Despacho e Saída abrem por HOVER, se abrindo pra CIMA. ============ */
+  #hunt-action-row{ display:none; gap:8px; padding:6px 8px; }
+  #hunt-action-row.show{ display:flex; }
+  .hunt-pill{
+    position:relative; display:flex; align-items:center; gap:6px; padding:8px 12px;
+    border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3);
+    color:var(--ink-dim); font-family:var(--font-display); font-size:10px; letter-spacing:.04em;
+    text-transform:uppercase; cursor:pointer; white-space:nowrap;
+  }
+  .hunt-pill:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .hunt-pill.danger{ border-color:var(--danger); color:#ff9a80; }
+  .hunt-pill.danger:hover{ background:rgba(226,84,43,.12); }
+  .hunt-pill .mini-arrow{ opacity:.65; font-size:11px; }
+  .hunt-pill .popover{ bottom:calc(100% + 10px); left:50%; transform:translateX(-50%); width:230px; text-align:left; text-transform:none; letter-spacing:normal; }
+
+  /* ============ MODAL DE CAÇADAS ============ */
+  #hunts-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:920px; max-width:94vw; height:600px; max-height:88vh; display:none; flex-direction:column; overflow:hidden; z-index:10; }
+  #hunts-modal.open{ display:flex; }
+  #hunts-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); align-items:center; }
+  .hunts-tab{ padding:12px 20px; font-family:var(--font-display); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
+  .hunts-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); background:rgba(191,161,95,.06); }
+  .hunts-tab.disabled{ opacity:.4; cursor:default; }
+  #treino-body{ flex:1; padding:16px 20px; overflow-y:auto; display:none; }
+  #treino-body .ok-line{ color:#8fd18a; font-family:var(--font-mono); font-size:11.5px; margin-bottom:8px; }
+  #treino-body .missing-line{ color:var(--ink-dim); font-family:var(--font-mono); font-size:11.5px; margin-bottom:8px; }
+  #treino-actions{ display:flex; flex-direction:column; gap:10px; margin:6px 0 16px; max-width:420px; }
+  #treino-actions button, .treino-inline-btn{
+    padding:11px 14px; border-radius:6px; border:1px solid var(--gold-bright);
+    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright);
+    font-family:var(--font-display); font-size:12px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
+  }
+  #treino-actions button.stop{ border-color:var(--danger); color:#ff9a80; }
+  #treino-actions button:disabled{ opacity:.35; cursor:not-allowed; }
+  #treino-offline-row{ display:flex; flex-direction:column; gap:6px; }
+  #treino-offline-row .opt-box{ display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  #treino-bank-status{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-dim); line-height:1.8; }
+  #treino-bank-status b{ color:var(--gold-bright); }
+  #party-mode-chip{ margin-left:10px; font-family:var(--font-mono); font-size:9.5px; padding:3px 8px; border-radius:10px; border:1px solid var(--gold-bright); color:var(--gold-bright); display:none; }
+  #party-mode-chip.show{ display:inline-block; }
+  #hunts-close{ margin-left:auto; padding:12px 18px; color:var(--danger); cursor:pointer; font-family:var(--font-mono); }
+
+  #hunts-body{ flex:1; display:flex; overflow:hidden; }
+  #hunts-left{ width:220px; border-right:1px solid rgba(191,161,95,.2); padding:12px; overflow-y:auto; flex-shrink:0; }
+  #hunts-search{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:7px 9px; font-family:var(--font-body); font-size:12px; outline:none; margin-bottom:10px; }
+  .hunt-list-item{ padding:9px 10px; border-radius:5px; cursor:pointer; font-family:var(--font-body); font-size:12.5px; color:var(--ink-dim); margin-bottom:4px; border:1px solid transparent; }
+  .hunt-list-item.selected{ color:var(--gold-bright); border-color:var(--gold-deep); background:rgba(191,161,95,.08); }
+  .hunt-list-item .lvl{ display:block; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-top:2px; }
+
+  #hunts-center{ flex:1; padding:16px 20px; overflow-y:auto; }
+  #hunts-center h2{ font-family:var(--font-display); font-size:18px; color:var(--gold-bright); margin:0 0 4px; letter-spacing:.03em; }
+  #hunts-center .meta{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); margin-bottom:14px; }
+  #hunts-center .meta b{ color:var(--ink); }
+  .diff-picker{ display:flex; gap:8px; margin:10px 0 16px; }
+  .diff-btn{ flex:1; padding:10px 6px; text-align:center; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); cursor:pointer; }
+  .diff-btn .name{ font-family:var(--font-display); font-size:11.5px; letter-spacing:.05em; color:var(--ink-dim); }
+  .diff-btn .sub{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); margin-top:3px; }
+  .diff-btn.active{ border-color:var(--gold-bright); background:rgba(191,161,95,.1); box-shadow:0 0 10px rgba(240,211,138,.2); }
+  .diff-btn.active .name{ color:var(--gold-bright); }
+  .hunt-center-actions{ display:flex; gap:8px; }
+  #hunt-action-btn{ flex:1; padding:12px; border-radius:6px; border:1px solid var(--gold-bright); background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display); font-size:13px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+  #hunt-action-btn.stop{ border-color:var(--danger); color:#ff9a80; }
+  #hunt-action-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  #hunt-findteam-btn{ padding:12px 14px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink); font-family:var(--font-mono); font-size:10.5px; cursor:pointer; white-space:nowrap; }
+  #hunt-findteam-btn:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  #hunt-findteam-btn.searching, #matchmaking-pill.searching{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); animation:findteam-pulse 1.1s ease-in-out infinite; cursor:pointer; }
+  @keyframes findteam-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+  #hunts-live-status{ margin-top:14px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); border-radius:5px; padding:10px; line-height:1.7; }
+  #hunts-live-status b{ color:var(--gold-bright); }
+
+  /* tática — postura / alvo / sqm — vivem SÓ na barra compacta do rodapé
+     (#tactics-bar) agora; botões pequenos, estilo "chip", sem quebra de linha. */
+  .tactics-row{ display:flex; gap:4px; }
+  .posture-btn{ display:flex; align-items:center; justify-content:center; padding:5px 7px; border-radius:4px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-mono); font-size:13px; line-height:1; cursor:pointer; white-space:nowrap; }
+  .posture-btn:hover{ border-color:var(--gold-bright); }
+  .posture-btn.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.16); }
+  .sqm-btn{ width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:4px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-mono); font-size:9.5px; line-height:1; cursor:pointer; }
+  .sqm-btn:hover{ border-color:var(--gold-bright); }
+  .sqm-btn.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.16); }
+  #target-mode-select{ background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:4px 6px; font-family:var(--font-mono); font-size:9.5px; max-width:140px; }
+
+  /* MODAL "DETALHES DA CAÇADA" — recorde, bestiário com fraqueza elemental
+     de cada monstro (revelada por um toggle "Detalhes") e o loot possível. */
+  #hunt-details-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:720px; max-width:94vw; height:580px; max-height:88vh; display:none; flex-direction:column; overflow:hidden; z-index:11; }
+  #hunt-details-modal.open{ display:flex; }
+
+  /* ============ MODAL DE PERSONAGEM (Personagem / Outfit) ============ */
+  #character-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:760px; max-width:94vw; height:600px; max-height:88vh; display:none; flex-direction:column; overflow:hidden; z-index:11; }
+  #character-modal.open{ display:flex; }
+  #char-tabs{ display:flex; align-items:center; border-bottom:1px solid var(--gold-deep); }
+  .char-tab{ padding:12px 20px; font-family:var(--font-display); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
+  .char-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); background:rgba(191,161,95,.06); }
+  #char-close{ margin-left:auto; padding:12px 18px; color:var(--danger); cursor:pointer; font-family:var(--font-mono); }
+  #char-body{ flex:1; overflow-y:auto; padding:16px 20px; }
+  #char-summary{ display:flex; gap:24px; flex-wrap:wrap; margin-bottom:16px; }
+  #char-summary .cs-left{ flex:1; min-width:240px; }
+  #char-summary .cs-right{ width:230px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  #char-summary .cs-right .row{ display:flex; justify-content:space-between; padding:3px 0; }
+  #char-summary .cs-right b{ color:var(--gold-bright); }
+  .char-bar-row{ display:flex; align-items:center; gap:8px; margin-bottom:7px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  .char-bar-row .lbl{ width:100px; flex-shrink:0; }
+  .char-bar-row .val{ width:120px; flex-shrink:0; text-align:right; }
+  .char-bar-track{ flex:1; height:10px; background:#0a0705; border:1px solid var(--gold-deep); border-radius:4px; overflow:hidden; }
+  .char-bar-fill{ height:100%; }
+  .char-bar-fill.hp{ background:linear-gradient(180deg,var(--hp-a),var(--hp-b) 55%,var(--hp-c)); }
+  .char-bar-fill.mp{ background:linear-gradient(180deg,var(--mp-a),var(--mp-b) 55%,var(--mp-c)); }
+  .char-bar-fill.xp{ background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); }
+  #char-skills-list .skill-row{ display:grid; grid-template-columns:120px 1fr 90px; align-items:center; gap:8px; margin-bottom:5px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  #char-skills-list .skill-track{ height:8px; background:#0a0705; border:1px solid var(--gold-deep); border-radius:3px; overflow:hidden; }
+  #char-skills-list .skill-fill{ height:100%; background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); }
+  #char-progress-box .prog-row{ display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  #char-progress-box .prog-row b{ color:var(--gold-bright); }
+  #char-progress-box .prog-total{ margin-top:6px; padding-top:8px; border-top:1px solid var(--gold-deep); font-weight:bold; }
+  #char-progress-box .prog-total span, #char-progress-box .prog-total b{ color:var(--gold-bright); }
+
+  #outfit-subtabs{ display:flex; gap:6px; margin-bottom:14px; }
+  .outfit-subtab{ padding:6px 14px; border-radius:5px; border:1px solid var(--gold-deep); font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); cursor:pointer; }
+  .outfit-subtab.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.1); }
+  #outfit-colors{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+  .color-row{ display:flex; align-items:center; gap:10px; }
+  .color-row span{ width:56px; flex-shrink:0; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .color-swatches{ display:flex; gap:4px; flex-wrap:wrap; }
+  .color-swatch{ width:18px; height:18px; border-radius:3px; border:2px solid transparent; cursor:pointer; }
+  .color-swatch.selected{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright); }
+  #outfit-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:12px; }
+  .outfit-card{ border:1px solid var(--gold-deep); border-radius:6px; padding:10px; text-align:center; cursor:pointer; background:rgba(0,0,0,.25); }
+  .outfit-card.owned{ border-color:var(--gold-bright); }
+  .outfit-card.equipped{ background:rgba(191,161,95,.15); box-shadow:0 0 0 1px var(--gold-bright) inset; }
+  .outfit-card .oc-icon{ font-size:28px; margin-bottom:6px; }
+  .outfit-card .oc-name{ font-family:var(--font-mono); font-size:10px; color:var(--ink); margin-bottom:4px; }
+  .outfit-card .oc-price{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
+
+  /* ============ MODAL DE GUILD ============ */
+  #guild-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:820px; max-width:94vw; height:600px; max-height:88vh; display:none; flex-direction:column; overflow:hidden; z-index:11; }
+  #guild-modal.open{ display:flex; }
+  #guild-tabs{ display:flex; align-items:center; border-bottom:1px solid var(--gold-deep); }
+  .guild-tab{ padding:12px 20px; font-family:var(--font-display); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
+  .guild-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); background:rgba(191,161,95,.06); }
+  #guild-close{ margin-left:auto; padding:12px 18px; color:var(--danger); cursor:pointer; font-family:var(--font-mono); }
+  #guild-body{ flex:1; overflow-y:auto; padding:16px 20px; }
+  #guild-header-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  #guild-header-row .gh-name{ font-family:var(--font-display); font-size:18px; color:var(--gold-bright); }
+  #guild-header-row .gh-badges{ display:flex; gap:10px; flex-wrap:wrap; }
+  .gh-badge{ border:1px solid var(--gold-deep); border-radius:6px; padding:8px 12px; text-align:center; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .gh-badge b{ display:block; font-size:13px; color:var(--gold-bright); margin-top:2px; }
+  #guild-subtabs{ display:flex; gap:6px; margin-bottom:14px; }
+  .guild-subtab{ padding:6px 14px; border-radius:5px; border:1px solid var(--gold-deep); font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); cursor:pointer; }
+  .guild-subtab.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.1); }
+  #guild-members-table{ width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:10.5px; }
+  #guild-members-table th{ text-align:left; color:var(--ink-dim); font-weight:normal; padding:6px 8px; border-bottom:1px solid var(--gold-deep); }
+  #guild-members-table td{ padding:6px 8px; border-bottom:1px dashed rgba(191,161,95,.12); color:var(--ink); }
+  #guild-members-table .online-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:#555; margin-right:5px; }
+  #guild-members-table .online-dot.online{ background:#7fd17f; }
+  .guild-expedition-card{ border:1px solid var(--gold-deep); border-radius:6px; padding:12px; margin-bottom:10px; }
+  .guild-expedition-card .ge-title{ font-family:var(--font-mono); font-size:11px; color:var(--ink); margin-bottom:6px; display:flex; justify-content:space-between; }
+  .guild-expedition-card .ge-bar{ height:8px; background:#0a0705; border:1px solid var(--gold-deep); border-radius:3px; overflow:hidden; }
+  .guild-expedition-card .ge-fill{ height:100%; background:linear-gradient(90deg,#3f9b4a,#6bd16b); }
+  .guild-expedition-card.done .ge-fill{ background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); }
+  #guild-manage-box textarea, #guild-manage-box input[type=text]{ background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:10.5px; }
+  .guild-history-item{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); padding:4px 0; border-bottom:1px dashed rgba(191,161,95,.1); }
+  .guild-history-item b{ color:var(--gold-bright); }
+  #guild-create-box{ max-width:420px; }
+  #guild-create-box input{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:8px 10px; font-family:var(--font-mono); font-size:11px; margin-bottom:10px; }
+  .guild-list-row{ display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid var(--gold-deep); border-radius:6px; margin-bottom:8px; font-family:var(--font-mono); font-size:11px; }
+  #hd-header{ display:flex; align-items:center; border-bottom:1px solid var(--gold-deep); padding:12px 18px; flex-shrink:0; }
+  #hd-header h2{ font-family:var(--font-display); font-size:16px; color:var(--gold-bright); margin:0; letter-spacing:.03em; }
+  #hd-close{ margin-left:auto; padding:6px 12px; color:var(--danger); cursor:pointer; font-family:var(--font-mono); font-size:11px; }
+  #hd-body{ flex:1; overflow-y:auto; padding:16px 20px; }
+  #hd-record{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); background:rgba(191,161,95,.08); border:1px solid rgba(191,161,95,.2); border-radius:6px; padding:8px 12px; margin-bottom:16px; }
+  #hd-record b{ color:var(--gold-bright); }
+  .hd-monster-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px; margin-bottom:20px; }
+  .hd-monster-card{ background:rgba(0,0,0,.25); border:1px solid rgba(191,161,95,.2); border-radius:8px; padding:10px; text-align:center; }
+  .hd-monster-icon{ font-size:30px; margin-bottom:4px; }
+  .hd-monster-name{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink); margin-bottom:6px; }
+  .hd-monster-toggle{ font-family:var(--font-mono); font-size:9.5px; color:var(--gold); cursor:pointer; text-decoration:underline; text-underline-offset:2px; user-select:none; }
+  .hd-monster-weak{ display:none; margin-top:6px; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); line-height:1.6; }
+  .hd-monster-weak.show{ display:block; }
+  .hd-monster-weak .elem-chip{ display:inline-block; background:rgba(191,161,95,.15); border:1px solid var(--gold-deep); border-radius:4px; padding:1px 6px; margin:2px; color:var(--gold-bright); }
+
+  #hunts-right{ width:220px; border-left:1px solid rgba(191,161,95,.2); padding:12px; overflow-y:auto; flex-shrink:0; }
+  .loot-item{ display:flex; align-items:center; gap:8px; padding:6px 4px; font-family:var(--font-mono); font-size:11px; border-bottom:1px dashed rgba(191,161,95,.15); }
+  .loot-item input{ accent-color:var(--gold); }
+  .loot-item .rarity-comum{ color:var(--ink-dim); } .loot-item .rarity-incomum{ color:var(--ok); }
+  .loot-item .rarity-rara{ color:var(--mp-a); } .loot-item .rarity-épica{ color:#b98af0; } .loot-item .rarity-lendária{ color:var(--gold-bright); }
+
+  .lure-label{ position:absolute; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); pointer-events:none; }
+
+  /* ============ HOTBAR UNIFICADA + MOCHILA ============ */
+  /* ============ RODAPÉ UNIFICADO (estilo Huntera) — hotbar + barra tática
+     em UMA ÚNICA linha horizontal fina e compacta. #footer-bar é quem
+     centraliza o conjunto inteiro; hotbar-wrap e tactics-bar são só flex
+     items dele agora (não têm posição própria). ============ */
+  #footer-bar{ bottom:14px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:12px; z-index:6; }
+  #hotbar-wrap{ display:flex; align-items:flex-end; gap:10px; }
+  #hotbar{ display:flex; gap:6px; padding:10px; }
+  #bag-shortcut{ width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4); border:1px solid var(--gold-bright); display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; }
+  #bag-shortcut:hover{ box-shadow:0 0 12px rgba(240,211,138,.3); }
+  .slot{ position:relative; width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4); border:1px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:19px; cursor:context-menu; }
+  .slot .num{ position:absolute; top:1px; left:3px; font-family:var(--font-mono); font-size:8px; color:var(--ink-dim); }
+  .slot .cd-overlay{ position:absolute; inset:0; background:conic-gradient(rgba(0,0,0,.78) var(--pct,0%), transparent 0); border-radius:6px; }
+  .slot.locked{ opacity:.35; filter:grayscale(1); }
+  .slot .cond-chip{ position:absolute; bottom:-1px; right:-1px; font-size:7.5px; background:#1a1510; border:1px solid var(--gold-deep); border-radius:3px; padding:0 2px; color:var(--ink-dim); }
+  .slot .pct-input{ position:absolute; bottom:-16px; left:0; width:100%; font-family:var(--font-mono); font-size:8px; text-align:center; background:transparent; border:none; color:var(--ink-dim); }
+  #hotbar-hint{ position:absolute; bottom:96px; left:50%; transform:translateX(-50%); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); background:rgba(0,0,0,.4); padding:3px 9px; border-radius:10px; white-space:nowrap; z-index:6; }
+
+  /* ============ BARRA TÁTICA COMPACTA (Postura/Alvo/SQM) — estilo Huntera:
+     fininha, colada ao lado direito da hotbar (mesma linha, dentro de
+     #footer-bar), sempre visível em qualquer área do jogo. ============ */
+  #tactics-bar{ display:flex; align-items:center; gap:10px; padding:6px 10px; white-space:nowrap; align-self:center; }
+  .tactics-group{ display:flex; align-items:center; gap:5px; }
+  .tactics-group + .tactics-group{ padding-left:10px; border-left:1px solid rgba(191,161,95,.2); }
+  .tactics-label{ font-family:var(--font-mono); font-size:7.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; }
+
+  /* ============ MODAL "CONFIGURAR AÇÃO" ============ */
+  #action-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; display:none; flex-direction:column; z-index:20; }
+  #action-modal.open{ display:flex; }
+  .action-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); }
+  .action-tab{ flex:1; text-align:center; padding:9px; font-family:var(--font-display); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
+  .action-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); }
+  .action-body{ padding:14px 16px; }
+  .opt-row{ display:flex; align-items:center; gap:8px; padding:6px 4px; font-family:var(--font-mono); font-size:11px; cursor:pointer; border-radius:4px; }
+  .opt-row:hover{ background:rgba(191,161,95,.08); }
+  .opt-row.selected{ color:var(--gold-bright); background:rgba(191,161,95,.12); }
+  .opt-row.disabled{ opacity:.35; cursor:not-allowed; }
+  .opt-row .req{ font-size:9px; color:var(--ink-dim); margin-left:auto; }
+  .cond-select{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:7px; font-family:var(--font-mono); font-size:11px; margin:8px 0; }
+  .cond-threshold{ width:100%; accent-color:var(--gold); }
+  #action-close{ text-align:center; padding:8px; font-family:var(--font-mono); font-size:10px; color:var(--danger); cursor:pointer; border-top:1px solid var(--gold-deep); }
+
+  /* ============ INVENTÁRIO DIVIDIDO ============ */
+  #inventory-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:640px; max-width:94vw; height:520px; max-height:88vh; display:none; flex-direction:column; z-index:22; }
+  #inventory-modal.open{ display:flex; }
+  #inv-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); }
+  .inv-tab{ padding:10px 18px; font-family:var(--font-display); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
+  .inv-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); }
+  #inv-close{ margin-left:auto; padding:10px 16px; color:var(--danger); cursor:pointer; font-family:var(--font-mono); }
+  #inv-body{ flex:1; display:flex; overflow:hidden; }
+
+  /* coluna esquerda: boneco de equipamento */
+  #inv-equip-col{ width:230px; border-right:1px solid rgba(191,161,95,.2); padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px; overflow-y:auto; }
+  .equip-slot{ width:46px; height:46px; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:17px; position:relative; cursor:pointer; }
+  .equip-slot:hover{ border-color:var(--gold-bright); }
+  .equip-slot .slot-tag{ position:absolute; bottom:-13px; left:0; right:0; text-align:center; font-family:var(--font-mono); font-size:7px; color:var(--ink-dim); }
+  /* Cosméticos (Outfit/Aura/Asas) centralizados numa linha, exatamente acima
+     do Elmo — igual ao Huntera. Abaixo, o paperdoll de combate replica
+     EXATAMENTE o layout de referência via grid-template-areas nomeado (sem
+     nth-child ambíguo, que foi a causa do bug de alinhamento anterior):
+       Anel     | Elmo   | Amuleto
+       Arma     | Armadura | Offhand
+       (vazio)  | Botas  | (vazio)
+     ========================================================= */
+  .cosmetics-row{ display:flex; justify-content:center; gap:6px; margin-bottom:20px; }
+  .equip-grid3{
+    display:grid;
+    grid-template-columns:repeat(3, 46px);
+    grid-template-rows:repeat(3, 46px);
+    gap:12px 10px;
+    grid-template-areas:
+      "topL    topC   topR"
+      "midL    midC   midR"
+      ".       botC   .";
+  }
+  .equip-grid3 [data-equip="ring"]{ grid-area:topL; }
+  .equip-grid3 [data-equip="helmet"]{ grid-area:topC; }
+  .equip-grid3 [data-equip="amulet"]{ grid-area:topR; }
+  .equip-grid3 [data-equip="weapon"]{ grid-area:midL; }
+  .equip-grid3 [data-equip="armor"]{ grid-area:midC; }
+  .equip-grid3 [data-equip="offhand"]{ grid-area:midR; }
+  .equip-grid3 [data-equip="boots"]{ grid-area:botC; }
+
+  /* coluna direita: Bolsa (consumíveis empilhados) / Mochila (loot) */
+  #inv-items-col{ flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  #inv-items-grid{ flex:1; padding:14px; display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; overflow-y:auto; align-content:start; }
+  .item-slot{ aspect-ratio:1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:18px; position:relative; }
+  .item-slot .qty{ position:absolute; bottom:1px; right:3px; font-family:var(--font-mono); font-size:9px; color:var(--gold-bright); }
+  .item-slot .rarity-dot{ position:absolute; top:2px; left:2px; width:6px; height:6px; border-radius:50%; }
+  #inv-capacity-line{ padding:6px 14px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); border-top:1px solid rgba(191,161,95,.2); }
+
+  /* ============ JANELA ANALISADORA / ATRIBUTOS / PARTY / ALTAR (genérico .win) ============ */
+  /* Analisador — compacto, canto inferior direito, colado logo acima do
+     rodapé unificado (hotbar + barra tática de Postura/Alvo/SQM). */
+  #analyzer-panel{ top:60px; right:14px; width:210px; padding:0; display:none; z-index:6; overflow:hidden; }
+  #analyzer-panel.open{ display:block; }
+  .analyzer-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); }
+  .analyzer-tab{ flex:1; text-align:center; padding:8px; font-family:var(--font-display); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
+  .analyzer-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); }
+  .analyzer-body{ padding:12px 14px; font-family:var(--font-mono); font-size:11px; }
+  .analyzer-row{ display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed rgba(191,161,95,.15); }
+  .analyzer-row b{ color:var(--gold-bright); }
+
+  #attrs-panel{ top:60px; right:250px; width:230px; display:none; z-index:6; }
+  #attrs-panel.open{ display:block; }
+  #attrs-panel .cap-line{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:8px; display:flex; justify-content:space-between; }
+  .attr-row{ display:flex; align-items:center; gap:6px; margin-bottom:6px; font-family:var(--font-mono); font-size:10.5px; }
+  .attr-row .name{ width:56px; }
+  .attr-track{ flex:1; height:8px; background:#0a0705; border:1px solid var(--gold-deep); border-radius:3px; overflow:hidden; }
+  .attr-fill{ height:100%; background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); }
+  .attr-val{ width:36px; text-align:right; }
+  .attr-plus{ width:16px; height:16px; border-radius:3px; background:rgba(191,161,95,.15); border:1px solid var(--gold-deep); color:var(--gold-bright); font-size:10px; cursor:pointer; text-align:center; line-height:14px; }
+  .attr-plus:disabled{ opacity:.3; cursor:not-allowed; }
+
+  #toolbar-open{ top:70px; right:18px; display:flex; gap:6px; z-index:6; }
+  .exit-checks{ margin-top:10px; padding-top:8px; border-top:1px dashed rgba(191,161,95,.2); }
+  .exit-checks label{ display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:5px; cursor:pointer; }
+  .exit-checks input{ accent-color:var(--gold); }
+  .italic-note{ margin-top:8px; font-style:italic; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); opacity:.8; }
+
+  .win{ min-width:180px; min-height:80px; overflow:auto; resize:none; }
+  .win-drag{ cursor:move; user-select:none; }
+  .win-resize{ position:absolute; right:2px; bottom:2px; width:14px; height:14px; cursor:nwse-resize; border-right:2px solid var(--gold); border-bottom:2px solid var(--gold); opacity:.6; z-index:2; }
+  .win-resize:hover{ opacity:1; }
+
+  /* ============ PARTY — membros, convite, botão IR (só líder) ============ */
+  #party-panel{ top:60px; right:480px; width:250px; display:none; z-index:6; }
+  #party-panel.open{ display:block; }
+  .party-row{ display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; padding:6px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .party-row .pname{ color:var(--ink); }
+  .party-row .crown{ color:var(--gold-bright); }
+  #party-invite-row{ display:flex; gap:6px; margin-top:10px; }
+  #party-invite-input{ flex:1; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:10.5px; }
+  .party-btn{ padding:6px 10px; border-radius:4px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-mono); font-size:9.5px; cursor:pointer; }
+  .party-btn:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .party-btn.primary{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); }
+  .party-btn.danger{ border-color:var(--danger); color:#ff9a80; }
+  #party-actions{ display:flex; gap:6px; margin-top:10px; }
+
+  /* ============ TRADE — seguro em duas etapas ============ */
+  #trade-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:520px; max-width:94vw; display:none; flex-direction:column; z-index:25; }
+  #trade-modal.open{ display:flex; }
+  #trade-header{ padding:12px 16px; border-bottom:1px solid var(--gold-deep); font-family:var(--font-display); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-bright); }
+  #trade-body{ display:flex; gap:12px; padding:14px 16px; }
+  .trade-side{ flex:1; border:1px solid var(--gold-deep); border-radius:6px; padding:10px; }
+  .trade-side h4{ margin:0 0 8px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); text-transform:uppercase; }
+  .trade-side.locked{ border-color:var(--ok); box-shadow:0 0 10px rgba(111,174,111,.2); }
+  .trade-gold-input{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:11px; margin-bottom:8px; }
+  .trade-items-list{ min-height:80px; max-height:140px; overflow-y:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .trade-item-row{ display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed rgba(191,161,95,.12); cursor:pointer; }
+  .trade-item-row.picked{ color:var(--gold-bright); }
+  #trade-footer{ display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--gold-deep); }
+  #trade-footer button{ flex:1; padding:9px; border-radius:5px; font-family:var(--font-display); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; }
+  #trade-lock-btn{ border:1px solid var(--cooldown); background:rgba(90,122,192,.14); color:#a9c3ff; }
+  #trade-confirm-btn{ border:1px solid var(--ok); background:rgba(111,174,111,.14); color:#bfe3bf; }
+  #trade-confirm-btn:disabled, #trade-lock-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  #trade-cancel-btn{ border:1px solid var(--danger); background:rgba(226,84,43,.1); color:#ff9a80; flex:0 0 90px; }
+  #trade-status-line{ padding:0 16px 10px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+
+  /* ============ TOASTS (convites de party/trade) ============ */
+  #toast-stack{ top:80px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; z-index:50; align-items:center; }
+  .toast{ padding:10px 16px; border-radius:6px; font-family:var(--font-mono); font-size:11px; display:flex; align-items:center; gap:10px; }
+  .toast button{ padding:4px 10px; border-radius:4px; border:1px solid var(--gold-bright); background:rgba(191,161,95,.15); color:var(--gold-bright); font-family:var(--font-mono); font-size:10px; cursor:pointer; }
+  .toast button.decline{ border-color:var(--danger); color:#ff9a80; background:rgba(226,84,43,.1); }
+
+  /* ============ REBIRTH / ALTAR ============ */
+  #altar-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:340px; display:none; z-index:15; }
+  #altar-modal.open{ display:block; }
+  .altar-rank-display{ text-align:center; font-family:var(--font-display); font-size:16px; color:var(--gold-bright); margin-bottom:10px; letter-spacing:.05em; }
+  .altar-req-row{ display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:11px; padding:6px 0; border-bottom:1px dashed rgba(191,161,95,.15); }
+  .altar-req-row .ok{ color:var(--ok); } .altar-req-row .missing{ color:var(--danger); }
+  #altar-confirm-btn{ width:100%; margin-top:12px; padding:11px; border-radius:6px; border:1px solid var(--gold-bright); background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display); font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+  #altar-confirm-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  #altar-evolve-btn{ width:100%; margin-top:6px; padding:11px; border-radius:6px; border:1px solid var(--gold-bright); background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display); font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+  #altar-evolve-btn:disabled{ opacity:.35; cursor:not-allowed; }
+
+  /* ============ AMIGOS ============ */
+  #friends-panel{ top:60px; right:730px; width:230px; display:none; z-index:6; }
+  #friends-panel.open{ display:block; }
+  .friend-row{ display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; padding:6px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .friend-row .fdot{ width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:6px; background:#5a5348; }
+  .friend-row .fdot.online{ background:var(--ok); box-shadow:0 0 5px rgba(111,174,111,.7); }
+  #friends-add-input{ flex:1; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:10.5px; }
+
+  /* ============ LOJA (NPC) ============ */
+  #shop-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; display:none; z-index:16; }
+  #shop-modal.open{ display:block; }
+  .shop-item-row{ display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; padding:7px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .shop-item-row .sname{ color:var(--ink); }
+  .shop-item-row .scost{ color:var(--gold-bright); white-space:nowrap; }
+
+  /* ============ CHAT FLUTUANTE (Global/Local/Guild/Sistema/Combate) ============ */
+  #chat-window{ left:14px; bottom:80px; width:400px; height:220px; min-width:260px; min-height:130px; display:flex; flex-direction:column; overflow:hidden; z-index:5; }
+  #chat-titlebar{ padding:6px 10px; display:flex; align-items:center; justify-content:space-between; cursor:move; border-bottom:1px solid var(--gold-deep); user-select:none; }
+  #chat-titlebar span{ font-family:var(--font-display); font-size:10.5px; letter-spacing:.08em; color:var(--gold-bright); text-transform:uppercase; }
+  #chat-tabs{ display:flex; background:rgba(0,0,0,.25); border-bottom:1px solid var(--gold-deep); overflow-x:auto; flex-shrink:0; }
+  .chat-tab{ padding:5px 10px; font-size:10.5px; font-family:var(--font-mono); color:var(--ink-dim); border-right:1px solid rgba(191,161,95,.15); cursor:pointer; white-space:nowrap; }
+  .chat-tab.active{ color:var(--gold-bright); background:rgba(191,161,95,.08); }
+  #chat-messages{ flex:1; overflow-y:auto; padding:7px 10px; font-size:11.5px; line-height:1.5; }
+  #chat-messages div{ margin-bottom:2px; }
+  .ch-sistema{ color:var(--gold-bright); }
+  .ch-guild{ color:var(--mp-a); }
+  .ch-global{ color:var(--ink); }
+  .ch-local{ color:var(--ok); }
+  .ch-combate{ color:var(--danger); }
+  #chat-input-row{ display:flex; border-top:1px solid var(--gold-deep); flex-shrink:0; }
+  #chat-input{ flex:1; background:rgba(0,0,0,.35); border:none; color:var(--ink); padding:7px 9px; font-family:var(--font-body); font-size:11.5px; outline:none; }
+  #chat-input::placeholder{ color:var(--ink-dim); }
+
+  #rankup-overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; z-index:30; background:radial-gradient(ellipse at center, rgba(240,211,138,.25), transparent 60%); }
+  #rankup-overlay.show{ animation:rankupFlash 1.8s ease-out; }
+  #rankup-text{ font-family:var(--font-display); font-size:64px; font-weight:800; letter-spacing:.1em; color:var(--gold-bright); text-shadow:0 0 30px rgba(240,211,138,.9), 0 0 60px rgba(240,211,138,.5); transform:scale(0.5); }
+  @keyframes rankupFlash{ 0%{opacity:0;} 15%{opacity:1;} 70%{opacity:1;} 100%{opacity:0;} }
+  #rankup-overlay.show #rankup-text{ animation:rankupPop 1.8s ease-out; }
+  @keyframes rankupPop{ 0%{transform:scale(0.3) rotate(-6deg);} 25%{transform:scale(1.15) rotate(2deg);} 40%{transform:scale(1) rotate(0deg);} 80%{transform:scale(1) rotate(0deg);} 100%{transform:scale(1.3) rotate(0deg);} }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="world-canvas"></canvas>
+
+  <div id="toast-stack"></div>
+
+  <!-- BARRA SUPERIOR ÚNICA (estilo Huntera) — retrato/nome/level, ouro, Loja,
+       jogadores online e a fileira de ícones de menu, tudo numa faixa só no
+       topo da tela, visível em qualquer área do jogo. -->
+  <div id="top-bar" class="glass">
+    <div class="tb-portrait hover-trigger" id="profile-hover">
+      <span class="tb-avatar">🧙</span>
+      <span class="tb-namelv"><b id="tb-nick">—</b><span id="premium-badge" class="free">FREE</span><small id="tb-level">Nv. 1</small></span>
+      <div class="popover glass" id="profile-popover">
+        <div class="row"><span>Nível</span><b id="pf-level">1</b></div>
+        <div class="row"><span>Magia</span><b id="pf-magia">0</b></div>
+        <div class="row"><span>Defesa</span><b id="pf-defesa">0</b></div>
+        <div class="row"><span>Esquiva</span><b id="pf-esquiva">0</b></div>
+        <div class="row"><span>Crítico</span><b id="pf-critico">0</b></div>
+        <div class="row"><span>Sword/Axe/Club</span><b id="pf-melee">0/0/0</b></div>
+        <div class="row"><span>Distance</span><b id="pf-distance">0</b></div>
+        <div class="row" style="margin-top:6px;border-top:1px dashed rgba(191,161,95,.2);padding-top:6px;"><span>Status VIP</span><b id="pf-vip">Free</b></div>
+        <button class="treino-inline-btn" id="pf-open-character-btn" style="width:100%;margin-top:8px;">Ver Personagem</button>
+      </div>
+    </div>
+    <div class="tb-pill" id="tb-gold-pill">🪙 <span id="tb-gold">0</span></div>
+    <div class="tb-pill tb-shop" id="btn-open-shop">🛒 Loja</div>
+    <div id="tb-online">— jogadores online</div>
+    <div id="matchmaking-pill" class="tb-pill searching" title="Clique para cancelar a busca por time" style="display:none;">🔎 Buscando time...</div>
+    <div id="training-pill" class="tb-pill searching" title="Treinando no boneco (2x o ritmo de caçada) — clique para parar" style="display:none;">🏋️ Treinando...</div>
+    <div id="tb-icons">
+      <div class="tb-icon" id="open-hunts-btn" title="Caçadas">⚔️</div>
+      <div class="tb-icon" id="btn-open-party" title="Grupo">👥</div>
+      <div class="tb-icon" id="btn-open-guild" title="Guilda">🛡️</div>
+      <div class="tb-icon" id="btn-open-friends" title="Amigos">👤</div>
+      <div class="tb-icon" id="btn-open-altar" title="Altar de Evolução">🔥</div>
+      <div class="tb-icon" id="btn-open-attrs" title="Atributos Livres">🎯</div>
+      <div class="tb-icon" id="btn-open-analyzer" title="Analisador">📊</div>
+    </div>
+  </div>
+
+  <div id="minimap" class="glass" title="Mapa">
+    <canvas id="minimap-canvas"></canvas>
+    <span class="mm-label" id="mm-label">Cidade Principal</span>
+  </div>
+
+  <div id="ws-status">● conectando...</div>
+
+  <!-- PARTY — até 10 jogadores, convite, e o botão IR (só Líder) -->
+  <div id="party-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Grupo (máx. 10)<span class="rule"></span></div>
+    <div style="padding:0 14px 14px;">
+      <div id="party-list"></div>
+      <div id="party-invite-row">
+        <input id="party-invite-input" placeholder="Nick do jogador...">
+        <button class="party-btn primary" id="party-invite-btn">Convidar</button>
+      </div>
+      <div id="party-actions">
+        <button class="party-btn" id="party-leave-btn">Sair do Grupo</button>
+      </div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- JANELA ANALISADORA -->
+  <div id="analyzer-panel" class="glass ornate win">
+    <div class="analyzer-tabs win-drag">
+      <div class="analyzer-tab active" data-atab="geral">Geral</div>
+      <div class="analyzer-tab" data-atab="combate">Combate</div>
+    </div>
+    <div class="analyzer-body" id="analyzer-body"></div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- PAINEL DE ATRIBUTOS LIVRES -->
+  <div id="attrs-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Atributos Livres<span class="rule"></span></div>
+    <div style="padding:0 14px 14px;">
+      <div class="cap-line"><span>Teto atual: <b id="attr-cap" style="color:var(--gold-bright)">100</b></span><span>Banco: <b id="attr-bank" style="color:var(--gold-bright)">0</b></span></div>
+      <div id="attrs-list"></div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- ALTAR DE EVOLUÇÃO -->
+  <div id="altar-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Altar de Evolução<span class="rule"></span></div>
+    <div id="altar-body" style="padding:0 16px 16px;"></div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- AMIGOS — acessível em qualquer área do jogo, igual aos outros painéis -->
+  <div id="friends-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Amigos<span class="rule"></span></div>
+    <div style="padding:0 14px 14px;">
+      <div id="friends-list"></div>
+      <div id="friends-add-row" style="display:flex;gap:6px;margin-top:10px;">
+        <input id="friends-add-input" placeholder="Nick do jogador...">
+        <button class="party-btn primary" id="friends-add-btn">Adicionar</button>
+      </div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- LOJA DO FERREIRO BRAN — compra só é processada pelo servidor na Cidade Principal -->
+  <div id="shop-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ <span id="shop-npc-name">Ferreiro Bran</span><span class="rule"></span></div>
+    <div style="padding:0 14px 14px;">
+      <div id="shop-city-warning" style="display:none;color:#ff9a80;font-family:var(--font-mono);font-size:10.5px;margin-bottom:8px;">⚠️ Compras só são processadas na Cidade Principal.</div>
+      <div id="shop-items-list"></div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- CHAT — sempre visível, em qualquer área do jogo (Cidade/Caçada/Torre) -->
+  <div id="chat-window" class="glass win">
+    <div id="chat-titlebar" class="win-drag"><span>Chat</span></div>
+    <div id="chat-tabs"></div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-row">
+      <input id="chat-input" type="text" placeholder="Fale com todo mundo online... (Enter pra enviar)">
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <div id="rankup-overlay"><div id="rankup-text">RANK UP!</div></div>
+
+  <!-- MODAL "CONFIGURAR AÇÃO" (right-click num slot da hotbar) -->
+  <div id="action-modal" class="glass ornate win">
+    <div class="action-tabs win-drag">
+      <div class="action-tab active" data-actiontab="magias">Magias</div>
+      <div class="action-tab" data-actiontab="itens">Itens</div>
+    </div>
+    <div class="action-body" id="action-body"></div>
+    <div id="action-close">✕ Fechar</div>
+  </div>
+
+  <!-- INVENTÁRIO DIVIDIDO: combate + cosméticos acima do Elmo + Bolsa/Mochila -->
+  <div id="inventory-modal" class="glass ornate win">
+    <div id="inv-tabs" class="win-drag">
+      <div class="inv-tab active" data-invtab="bolsa">Bolsa</div>
+      <div class="inv-tab" data-invtab="mochila">Mochila</div>
+      <div id="inv-close">✕ Fechar</div>
+    </div>
+    <div id="inv-body">
+      <div id="inv-equip-col">
+        <div class="panel-title" style="align-self:flex-start;">Combate</div>
+        <!-- Os 3 cosméticos ficam numa linha horizontal centralizada, LOGO
+             ACIMA do Elmo (igual ao Huntera). Abaixo, o grid de combate
+             replica o layout de referência:
+               Anel | Elmo | Amuleto
+               Arma | Armadura | Offhand
+               (—)  | Botas | (—) -->
+        <div class="cosmetics-row">
+          <div class="equip-slot" data-cosmetic="outfit" title="Outfit">👕<span class="slot-tag">Outfit</span></div>
+          <div class="equip-slot" data-cosmetic="aura" title="Aura">✨<span class="slot-tag">Aura</span></div>
+          <div class="equip-slot" data-cosmetic="wings" title="Asas">🪽<span class="slot-tag">Asas</span></div>
+        </div>
+        <div class="equip-grid3">
+          <div class="equip-slot" data-equip="ring" title="Anel">💍<span class="slot-tag">Anel</span></div>
+          <div class="equip-slot" data-equip="helmet" title="Elmo">🪖<span class="slot-tag">Elmo</span></div>
+          <div class="equip-slot" data-equip="amulet" title="Amuleto">📿<span class="slot-tag">Amuleto</span></div>
+          <div class="equip-slot" data-equip="weapon" title="Arma">🗡️<span class="slot-tag">Arma</span></div>
+          <div class="equip-slot" data-equip="armor" title="Armadura">🥋<span class="slot-tag">Armadura</span></div>
+          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand">🛡️<span class="slot-tag">Offhand</span></div>
+          <div class="equip-slot" data-equip="boots" title="Botas">🥾<span class="slot-tag">Botas</span></div>
+        </div>
+      </div>
+      <div id="inv-items-col">
+        <div id="inv-items-grid"></div>
+        <div id="inv-capacity-line">0/0</div>
+      </div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- TRADE — seguro em duas etapas (Travar Oferta + Confirmar) -->
+  <div id="trade-modal" class="glass ornate win">
+    <div id="trade-header">Troca com <span id="trade-other-name">—</span></div>
+    <div id="trade-body">
+      <div class="trade-side" id="trade-side-mine">
+        <h4>Sua oferta</h4>
+        <input type="number" min="0" class="trade-gold-input" id="trade-my-gold" placeholder="Ouro">
+        <div class="trade-items-list" id="trade-my-items"></div>
+      </div>
+      <div class="trade-side" id="trade-side-theirs">
+        <h4 id="trade-their-label">Oferta dele(a)</h4>
+        <div class="trade-gold-input" id="trade-their-gold" style="opacity:.8;">Ouro: 0</div>
+        <div class="trade-items-list" id="trade-their-items"></div>
+      </div>
+    </div>
+    <div id="trade-status-line">Monte sua oferta e trave quando estiver pronto.</div>
+    <div id="trade-footer">
+      <button id="trade-cancel-btn">Cancelar</button>
+      <button id="trade-lock-btn">1. Travar Oferta</button>
+      <button id="trade-confirm-btn" disabled>2. Confirmar</button>
+    </div>
+  </div>
+
+  <!-- BARRA DE AÇÃO DA CAÇADA — Detalhes / Robô de Venda (Despacho) / Sair.
+       Fica ACIMA da hotbar (pedido explícito), só aparece em Dungeon. -->
+  <div id="hunt-action-row" class="glass ornate">
+    <button type="button" id="hunt-details-btn" class="hunt-pill">ⓘ Detalhes da Caçada</button>
+
+    <div id="dispatch-pill" class="hunt-pill hover-trigger">
+      <span id="dispatch-pill-label">Pronto</span><span class="mini-arrow">»</span>
+      <div class="popover glass" id="dispatch-popover">
+        <div class="panel-title" style="margin-bottom:8px;">Robô de Venda<span class="rule"></span></div>
+        <label class="opt-box"><input type="checkbox" id="dispatch-bagfull-cb"> A bolsa encher (30/30)</label>
+        <label class="opt-box"><input type="checkbox" id="dispatch-timer-cb" checked disabled> A cada X minutos</label>
+        <div class="countdown">
+          <div>Próxima venda automática em:</div>
+          <div class="big" id="dispatch-countdown">--:--</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="exit-hunt-pill" class="hunt-pill hover-trigger danger">
+      <span id="exit-hunt-label">↩ Sair da Caçada</span><span class="mini-arrow">»</span>
+      <div class="popover glass" id="exit-popover">
+        <div class="panel-title" style="margin-bottom:8px;">Sair sozinho quando...<span class="rule"></span></div>
+        <div class="exit-checks" id="exit-checks"></div>
+        <div class="italic-note">A mesma saída de cinco segundos, iniciada para você.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RODAPÉ UNIFICADO (estilo Huntera) — hotbar + barra tática (Postura,
+       Alvo, SQM) numa ÚNICA barra horizontal fina, sempre visível, em
+       qualquer área do jogo (Cidade, Caçada ou Torre Elementar). A barra
+       tática fica EXATAMENTE ao lado direito da hotbar, sem menu pra abrir. -->
+  <div id="hotbar-hint">Clique direito num slot para configurar a ação · clique na mochila pro inventário completo</div>
+  <div id="footer-bar">
+    <!-- Vitals compactos (estilo Huntera: HP/Mana/Level ficam coladas na
+         hotbar, não mais numa janela solta no canto superior). -->
+    <div id="vitals-block" class="glass ornate">
+      <div class="bar-track"><div class="bar-fill hp" id="hp-bar" style="width:100%"></div><div class="bar-label" id="hp-label"></div></div>
+      <div class="bar-track"><div class="bar-fill mp" id="mp-bar" style="width:100%"></div><div class="bar-label" id="mp-label"></div></div>
+      <div class="bar-track"><div class="bar-fill stam" id="stam-bar" style="width:100%"></div><div class="bar-label" id="stam-label"></div></div>
+      <div id="hunt-status-line">Nenhuma caçada ativa.</div>
+      <button id="recharge-stamina-btn">⚡ Recarregar Stamina (Premium)</button>
+      <label style="display:flex;align-items:center;gap:5px;margin-top:5px;font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);">
+        <input type="checkbox" id="toggle-aura" checked style="accent-color:var(--gold);"> Aura equipada
+      </label>
+    </div>
+    <div id="hotbar-wrap">
+      <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)">🎒</div>
+      <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
+    </div>
+    <div id="tactics-bar" class="glass ornate">
+      <div class="tactics-group">
+        <span class="tactics-label">Postura</span>
+        <div class="tactics-row" id="posture-row"></div>
+      </div>
+      <div class="tactics-group">
+        <span class="tactics-label">Alvo</span>
+        <select id="target-mode-select"></select>
+      </div>
+      <div class="tactics-group">
+        <span class="tactics-label">SQM</span>
+        <div class="tactics-row" id="sqm-row"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CAÇADAS -->
+  <div id="hunts-modal" class="glass win">
+    <div id="hunts-tabs" class="win-drag">
+      <div class="hunts-tab active" data-tab="cacadas">Caçadas</div>
+      <div class="hunts-tab" data-tab="treino">Treino</div>
+      <div class="hunts-tab disabled" data-tab="quests">Quests</div>
+      <div class="hunts-tab disabled" data-tab="arena">Arena</div>
+      <div class="hunts-tab disabled" data-tab="bosses">Bosses</div>
+      <span id="party-mode-chip">👑 Modo Grupo — só o Líder pode clicar IR</span>
+      <div id="hunts-close">✕ Fechar</div>
+    </div>
+    <div id="hunts-body">
+      <div id="hunts-left">
+        <input id="hunts-search" placeholder="Buscar caçada...">
+        <div id="hunts-list"></div>
+      </div>
+      <div id="hunts-center"></div>
+      <div id="hunts-right"></div>
+      <div id="treino-body">
+        <div class="panel-title">Kit de Treino<span class="rule"></span></div>
+        <div id="treino-kit-status"></div>
+        <div class="panel-title">Bonecos de Treino (Cidade)<span class="rule"></span></div>
+        <div id="treino-dummy-status"></div>
+        <div id="treino-actions"></div>
+        <div class="panel-title">Banco de Pontos<span class="rule"></span></div>
+        <div id="treino-bank-status"></div>
+      </div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- MODAL "DETALHES DA CAÇADA" — aberto pelo pill da barra de ação, acima
+       da hotbar. Mostra o recorde da área, o bestiário com a fraqueza
+       elemental de cada monstro (revelada por um toggle) e o loot possível. -->
+  <div id="hunt-details-modal" class="glass win">
+    <div id="hd-header" class="win-drag">
+      <h2 id="hd-title">—</h2>
+      <div id="hd-close">✕ Fechar</div>
+    </div>
+    <div id="hd-body">
+      <div id="hd-record"></div>
+      <div class="panel-title">Bestiário — fraquezas elementais<span class="rule"></span></div>
+      <div class="hd-monster-grid" id="hd-monster-grid"></div>
+      <div class="panel-title">Loot possível<span class="rule"></span></div>
+      <div id="hd-loot-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE PERSONAGEM — abre pelo "Ver Personagem" no popover do retrato.
+       Aba Personagem: resumo, skills clássicas (banco único distribuído em
+       Atributos Livres) e o detalhamento do bônus de XP. Aba Outfit: galeria
+       de outfits/monturas + cor por parte do corpo. -->
+  <div id="character-modal" class="glass win">
+    <div id="char-tabs" class="win-drag">
+      <div class="char-tab active" data-ctab="personagem">Personagem</div>
+      <div class="char-tab" data-ctab="outfit">Outfit</div>
+      <div id="char-close">✕ Fechar</div>
+    </div>
+    <div id="char-body">
+      <div id="char-panel-personagem" class="char-panel">
+        <div id="char-summary"></div>
+        <div class="panel-title">Atributos e Skills<span class="rule"></span></div>
+        <div id="char-skills-list"></div>
+        <div class="panel-title">Progressão e Bônus<span class="rule"></span></div>
+        <div id="char-progress-box"></div>
+      </div>
+      <div id="char-panel-outfit" class="char-panel" style="display:none;">
+        <div id="outfit-subtabs">
+          <div class="outfit-subtab active" data-osub="outfits">Outfits</div>
+          <div class="outfit-subtab" data-osub="mounts">Monturas</div>
+        </div>
+        <div id="outfit-colors">
+          <div class="color-row"><span>Cabeça</span><div class="color-swatches" data-part-swatches="head"></div></div>
+          <div class="color-row"><span>Corpo</span><div class="color-swatches" data-part-swatches="body"></div></div>
+          <div class="color-row"><span>Pernas</span><div class="color-swatches" data-part-swatches="legs"></div></div>
+          <div class="color-row"><span>Pés</span><div class="color-swatches" data-part-swatches="feet"></div></div>
+        </div>
+        <div id="outfit-grid"></div>
+      </div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- MODAL DE GUILD — Minha Guild (Membros/Expedições/Gerenciar) + Lista de
+       Guilds pública. Sem guilda, "Minha Guild" vira uma tela de fundar. -->
+  <div id="guild-modal" class="glass win">
+    <div id="guild-tabs" class="win-drag">
+      <div class="guild-tab active" data-gtab="minha">Minha Guild</div>
+      <div class="guild-tab" data-gtab="lista">Lista de Guilds</div>
+      <div id="guild-close">✕ Fechar</div>
+    </div>
+    <div id="guild-body">
+      <div id="guild-panel-minha" class="guild-panel"></div>
+      <div id="guild-panel-lista" class="guild-panel" style="display:none;">
+        <div id="guild-list-body"></div>
+      </div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const now = () => performance.now();
+
+  /* =========================================================
+     0. 3 VARIÁVEIS GLOBAIS FIXAS — copiadas caractere por
+     caractere dos links oficiais do projeto. Nunca detectadas
+     por location.origin: o cliente é servido do GitHub Pages,
+     mas fala sempre com ESTE backend e busca assets SEMPRE
+     deste repositório, não importa de onde o HTML foi aberto.
+     ========================================================= */
+  const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/';
+  const API_BASE = 'https://elemental-server.onrender.com';
+  const WS_URL = API_BASE.replace(/^http/, 'ws') + '/ws';
+
+  // localStorage padronizado globalmente
+  const LS_TOKEN = 'elemental_token';
+  const LS_USERNAME = 'elemental_username';
+  const LS_CHARACTER = 'elemental_character';
+
+  /* =========================================================
+     CHARACTER MANAGEMENT — exige personagem selecionado
+     ========================================================= */
+  const AUTH_TOKEN = localStorage.getItem(LS_TOKEN);
+  const AUTH_USERNAME = localStorage.getItem(LS_USERNAME);
+  // Sem sessão nenhuma (nunca logou / deslogou) — manda pro login em vez de
+  // deixar o mundo abrir em "modo solo offline" sem o jogador saber por quê.
+  if (!AUTH_TOKEN || !AUTH_USERNAME) {
+    window.location.href = 'index.html';
+    return;
+  }
+  let SELECTED_CHARACTER = null;
+  try { SELECTED_CHARACTER = JSON.parse(localStorage.getItem(LS_CHARACTER) || 'null'); } catch (e) {}
+  if (AUTH_TOKEN && !SELECTED_CHARACTER) {
+    window.location.href = 'character-select.html';
+    return;
+  }
+  const PLAYER_NICK = SELECTED_CHARACTER ? SELECTED_CHARACTER.nick : 'Você';
+
+  /* =========================================================
+     1. DADOS DE CAÇADAS (espelham huntEngine.js do servidor —
+     usados só pra navegar/escolher no modal; o estado de combate
+     em si vem sempre do servidor quando online)
+     ========================================================= */
+  const HUNTS = [
+    { id:'halls_of_reaper', name:'Halls of the Reaper', level:'50-70', record:'1.204 mortos em 58min',
+      possibleLoot:[{id:'reaper_scythe',name:'Foice do Ceifador',rarity:'lendária'},{id:'soul_shard',name:'Fragmento de Alma',rarity:'épica'},{id:'bone_dust',name:'Pó de Osso',rarity:'comum'},{id:'dark_essence',name:'Essência Sombria',rarity:'rara'},{id:'tattered_cloth',name:'Pano Rasgado',rarity:'comum'}],
+      monsterTypes:[{name:'Ceifador Espectral',icon:'💀',weakTo:['Luz'],spriteId:1202},{name:'Alma Penada',icon:'👻',weakTo:['Luz','Fogo']}] },
+    { id:'hell_hub', name:'Hell Hub', level:'70-100', record:'2.910 mortos em 1h42',
+      possibleLoot:[{id:'demon_horn',name:'Chifre Demoníaco',rarity:'épica'},{id:'infernal_core',name:'Núcleo Infernal',rarity:'lendária'},{id:'brimstone',name:'Pedra-Enxofre',rarity:'incomum'},{id:'charred_bone',name:'Osso Carbonizado',rarity:'comum'}],
+      monsterTypes:[{name:'Demônio Menor',icon:'😈',weakTo:['Água'],spriteId:1206},{name:'Cão Infernal',icon:'🐺',weakTo:['Água','Terra']}] },
+    { id:'frozen_crypt', name:'Frozen Crypt', level:'30-50', record:'—', possibleLoot:[{id:'bone_dust',name:'Pó de Osso',rarity:'comum'},{id:'dark_essence',name:'Essência Sombria',rarity:'rara'}], monsterTypes:[{name:'Múmia Congelada',icon:'🧊',weakTo:['Fogo'],spriteId:1493},{name:'Elemental de Gelo',icon:'❄️',weakTo:['Fogo']}] },
+    { id:'sunken_temple', name:'Sunken Temple', level:'40-60', record:'—', possibleLoot:[{id:'dark_essence',name:'Essência Sombria',rarity:'rara'},{id:'soul_shard',name:'Fragmento de Alma',rarity:'épica'}], monsterTypes:[{name:'Sacerdote Afogado',icon:'🌊',weakTo:['Terra'],spriteId:1632},{name:'Naga Ancestral',icon:'🐍',weakTo:['Ar']}] },
+    { id:'ember_wastes', name:'Ember Wastes', level:'60-80', record:'—', possibleLoot:[{id:'soul_shard',name:'Fragmento de Alma',rarity:'épica'},{id:'ancient_relic',name:'Relíquia Antiga',rarity:'lendária'}], monsterTypes:[{name:'Salamandra de Lava',icon:'🦎',weakTo:['Água'],spriteId:1685},{name:'Elemental de Fogo',icon:'🔥',weakTo:['Água', 'Terra']}] },
+    { id:'shattered_spire', name:'Shattered Spire', level:'80-100', record:'—', possibleLoot:[{id:'ancient_relic',name:'Relíquia Antiga',rarity:'lendária'},{id:'bone_dust',name:'Pó de Osso',rarity:'comum'}], monsterTypes:[{name:'Golem de Cristal',icon:'🗿',weakTo:['Trevas'],spriteId:1705},{name:'Guardião Etéreo',icon:'✨',weakTo:['Trevas']}] },
+    { id:'whispering_bog', name:'Whispering Bog', level:'20-40', record:'—', possibleLoot:[{id:'bone_dust',name:'Pó de Osso',rarity:'comum'},{id:'tattered_cloth',name:'Pano Rasgado',rarity:'comum'}], monsterTypes:[{name:'Xamã do Pântano',icon:'🐸',weakTo:['Fogo'],spriteId:1752},{name:'Víbora Venenosa',icon:'🐍',weakTo:['Ar']}] },
+    { id:'obsidian_gate', name:'Obsidian Gate', level:'90-100', record:'—', possibleLoot:[{id:'tattered_cloth',name:'Pano Rasgado',rarity:'comum'},{id:'dark_essence',name:'Essência Sombria',rarity:'rara'}], monsterTypes:[{name:'Sentinela Obsidiana',icon:'🗿',weakTo:['Água', 'Luz'],spriteId:1777},{name:'Behemoth das Trevas',icon:'👹',weakTo:['Luz']}] },
+    { id:'coral_abyss', name:'Coral Abyss', level:'35-55', record:'—', possibleLoot:[{id:'dark_essence',name:'Essência Sombria',rarity:'rara'},{id:'soul_shard',name:'Fragmento de Alma',rarity:'épica'}], monsterTypes:[{name:'Kraken Jovem',icon:'🐙',weakTo:['Terra'],spriteId:1815},{name:'Sereia Amaldiçoada',icon:'🧜',weakTo:['Ar']}] },
+    { id:'ashen_ruins', name:'Ashen Ruins', level:'55-75', record:'—', possibleLoot:[{id:'soul_shard',name:'Fragmento de Alma',rarity:'épica'},{id:'ancient_relic',name:'Relíquia Antiga',rarity:'lendária'}], monsterTypes:[{name:'Espectro Cinzento',icon:'🌫️',weakTo:['Luz'],spriteId:2092},{name:'Fênix Caída',icon:'🔥',weakTo:['Água']}] },
+  ];
+  const DIFFICULTIES = {
+    cauteloso: { label:'Cauteloso', monstersPerLure:2,  xpBonus:0,    lootBonus:0    },
+    ousado:    { label:'Ousado',    monstersPerLure:5,  xpBonus:0.20, lootBonus:0.20 },
+    agressivo: { label:'Agressivo', monstersPerLure:8,  xpBonus:0.50, lootBonus:0.50 },
+  };
+  // Barra tática compacta: ícone + título via atributo (tooltip), sem
+  // texto grande — é isso que mantém a barra fininha ao lado da hotbar.
+  const POSTURES = [
+    { id:'escudo', icon:'🛡️', label:'Escudo (Defesa Total)' },
+    { id:'balanca', icon:'⚖️', label:'Balança (Equilibrado)' },
+    { id:'duasespadas', icon:'⚔️', label:'Duas Espadas (Ataque Total)' },
+  ];
+  // Base fixa do seletor de Alvo. As opções "Seguir <nick>" de cada membro
+  // da Party são adicionadas dinamicamente por renderTargetModeOptions() —
+  // nunca mais um texto genérico de "Assistir Líder".
+  const TARGET_MODE_BASE = [
+    { id:'closest', label:'Mais Próximo' },
+    { id:'lowestHp', label:'Menor HP' },
+    { id:'highestHp', label:'Maior HP' },
+  ];
+
+  /* =========================================================
+     ESTADO LOCAL — espelha o snapshot autoritativo do servidor.
+     Enquanto offline (sem token/servidor fora do ar), roda um
+     fallback simulado localmente só pra não travar o dev; assim
+     que o WebSocket conecta e o primeiro 'hunt:state' chega, o
+     servidor passa a mandar em tudo: HP/MP/Stamina/Ouro/Party/Trade.
+     ========================================================= */
+  const player = { x:80, y:520, hp:320, hpMax:320, mp:140, mpMax:140, gold:0, bankGold:0, xp:0, level:1 };
+  const CITY_POSITION = { x:80, y:520 };
+  let location = 'city'; // 'city' | 'dungeon'
+  const prestige = { bronzeStars:0, silverStars:0, goldStars:0, diamondRank:false };
+  let isPremium = false;
+  const training = { magia:0, defesa:0, esquiva:0, critico:0, sword:0, axe:0, club:0, distance:0 };
+  let trainingBank = 0;
+  let combatPosture = 'balanca';
+  let sqmDistance = 1;
+  let targetMode = 'closest';
+  let followUsername = null; // username sendo seguido quando targetMode==='followPartyMember'
+  let stamina = { current:6*3600*1000, max:6*3600*1000, rechargesUsedToday:0, maxRechargesPerDay:3, rechargeCost:500 };
+  let dispatch = { cooldownMs:60*60*1000, remainingMs:60*60*1000 };
+  let autoSellOnBagFull = true;
+  let bag = [], bagCapacity = 30;
+  let pouch = [], pouchCapacity = 20;
+  let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, ring:null, amulet:null };
+  let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
+  let party = null; // { id, leaderUsername, members:[...] }
+  let activeTradeId = null;
+  let currentTrade = null;
+  let fragments = 0; // Fragmentos do Altar — moeda do Reset de Estrela
+  let starEvolutionCost = null; // {gold,fragments} para a próxima estrela; null quando já é Diamante
+  let friends = []; // [{username, online}]
+  let npcShops = {}; // catálogo estático mandado uma vez no 'welcome'
+  let trainingDummies = []; // posições fixas dos bonecos na Cidade — vem no 'welcome'
+  let hasTrainingKit = false, canTrainAtDummy = false;
+  let trainingActive = null;        // { mode:'online', startedAt } — espelho do servidor
+  let offlineTrainingArmed = null;  // { repeat } — espelho do servidor
+  let bestiaryKilled = [];
+  let xpBonus = { bestiaryCount:0, bestiaryTotal:0, bestiaryPct:0, guildPct:0, premiumPct:0, levelPct:0, scrollPct:0, totalPct:0 };
+  let ownedOutfits = ['padrao'], ownedMounts = [];
+  let cosmeticColors = { head:0, body:0, legs:0, feet:0 };
+  let outfitCatalog = [], mountCatalog = [], colorPalette = [], bossCatalog = [];
+  // hairId (1-8, escolhido na criação de personagem) -> cor real disponível no
+  // repositório de sprites. Mirror do huntEngine.HAIR_COLORS — sobrescrito
+  // pelo valor de verdade assim que o 'welcome' chega, igual outfitCatalog.
+  let hairColors = ['black','blue','brown','green','purple','red','white','yellow'];
+  let guildId = null, guildSummary = null; // resumo leve (nome/tag/tier/bônus) — vem em todo snapshot
+  let guildDetail = null; // payload completo — só chega via 'guild:get' / 'guild:update'
+
+  const activeHunt = { running:false, huntId:null, huntName:null, difficulty:null, currentIndex:0, lurePoints:[] };
+  const remotePlayers = new Map(); // username -> {x,y,location}
+
+  const lootLog = [];
+  function logLoot(text){ lootLog.unshift(text); if(lootLog.length > 6) lootLog.pop(); }
+
+  /* =========================================================
+     CHAT — abas Global/Local/Guild/Sistema/Combate, ligado ao protocolo
+     real do servidor (type:'chat'/'system'/'welcome' já existentes em
+     server.js — nenhuma mudança de backend foi necessária pra isso).
+     ========================================================= */
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  const chatTabsData = {
+    sistema: { label:'Sistema', messages:[{ cls:'ch-sistema', text:'Conectando ao servidor...' }] },
+    global:  { label:'Global',  messages:[] },
+    local:   { label:'Local',   messages:[] },
+    guild:   { label:'Guild',   messages:[] },
+    combate: { label:'Combate', messages:[] },
+  };
+  const CHAT_SENDABLE = ['global','local','guild'];
+  let activeChatTab = 'sistema';
+  const chatTabsEl = document.getElementById('chat-tabs');
+  const chatMsgEl = document.getElementById('chat-messages');
+  function renderChatTabs(){
+    chatTabsEl.innerHTML = Object.keys(chatTabsData).map(id=>
+      `<div class="chat-tab${id===activeChatTab?' active':''}" data-id="${id}">${chatTabsData[id].label}</div>`
+    ).join('');
+    chatTabsEl.querySelectorAll('.chat-tab').forEach(el=>{
+      el.addEventListener('click', ()=>{ activeChatTab = el.dataset.id; renderChatTabs(); renderChatMessages(); });
+    });
+  }
+  function renderChatMessages(){
+    const t = chatTabsData[activeChatTab];
+    chatMsgEl.innerHTML = t.messages.map(m=>`<div class="${m.cls}">${m.text}</div>`).join('');
+    chatMsgEl.scrollTop = chatMsgEl.scrollHeight;
+  }
+  function logChat(channel, text, cls){
+    if(!chatTabsData[channel]) channel = 'sistema';
+    chatTabsData[channel].messages.push({ cls: cls || ('ch-'+channel), text });
+    if(chatTabsData[channel].messages.length > 150) chatTabsData[channel].messages.shift();
+    if(activeChatTab===channel) renderChatMessages();
+  }
+  renderChatTabs(); renderChatMessages();
+  document.getElementById('chat-input').addEventListener('keydown', e=>{
+    if(e.key !== 'Enter' || !e.target.value.trim()) return;
+    const text = e.target.value.trim();
+    if(CHAT_SENDABLE.includes(activeChatTab)){
+      sendWS({ type:'chat', channel:activeChatTab, text });
+    } else {
+      logChat('sistema', 'Este canal é só leitura — fale em Global, Local ou Guild.');
+    }
+    e.target.value = '';
+  });
+
+  function findHuntDef(id){ return HUNTS.find(h=>h.id===id); }
+
+  /* =========================================================
+     SPRITE MANAGER — assets sempre buscados de URL_BASE (fixo)
+     ========================================================= */
+  const SpriteManager = (function(){
+    const cache = {};
+    function load(key, relPath){
+      if(cache[key]) return cache[key];
+      const entry = { img:new Image(), loaded:false, failed:false };
+      entry.img.crossOrigin = 'anonymous';
+      entry.img.onload  = ()=> entry.loaded = true;
+      entry.img.onerror = ()=> entry.failed = true; // cai pro desenho procedural
+      entry.img.src = URL_BASE + relPath;
+      cache[key] = entry;
+      return entry;
+    }
+    function monsterSprite(id){ return load('m_'+id, `monsters/${id}.png`); }
+    function headSprite(genero, corCabelo){ return load('h_'+genero+'_'+corCabelo, `player/heads/${genero}/${corCabelo}.png`); }
+    function bodySprite(genero){ return load('b_'+genero, `player/bodies/${genero}/base.png`); }
+    function armorSprite(genero, outfitId){ return load('a_'+genero+'_'+outfitId, `player/armors/${genero}/${outfitId}.png`); }
+    function drawClippedFrame(targetCtx, entry, frameW, frameH, col, row, dx, dy, dw, dh){
+      if(!entry.loaded) return false;
+      targetCtx.drawImage(entry.img, col*frameW, row*frameH, frameW, frameH, dx, dy, dw, dh);
+      return true;
+    }
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, drawClippedFrame, URL_BASE };
+  })();
+
+  // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
+  // (o seu ou qualquer outro jogador remoto) — usado tanto pro jogador local
+  // quanto pra cada entrada de remotePlayers, já que agora 'positions' manda
+  // gender/hairId/outfit de todo mundo. Cai pro boneco procedural (elipse +
+  // círculo) sempre que faltar sprite carregado, sem nunca travar o desenho.
+  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, fallbackColor){
+    const genero = gender === 'female' ? 'female' : 'male';
+    let drewBody = false, drewHead = false;
+    const body = SpriteManager.bodySprite(genero);
+    drewBody = body.loaded && SpriteManager.drawClippedFrame(ctx, body, 64,64, 0,0, s.x-14, s.y-28+breathe, 28,28);
+    if(outfitId && outfitId !== 'padrao'){
+      const armor = SpriteManager.armorSprite(genero, outfitId);
+      if(armor.loaded) SpriteManager.drawClippedFrame(ctx, armor, 64,64, 0,0, s.x-14, s.y-28+breathe, 28,28);
+    }
+    const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
+    const headSprite = SpriteManager.headSprite(genero, corCabelo);
+    drewHead = headSprite.loaded && SpriteManager.drawClippedFrame(ctx, headSprite, 32,32, 0,0, s.x-10, s.y-27+breathe, 20,20);
+    if(!drewBody){ ctx.beginPath(); ctx.ellipse(s.x, s.y+breathe, 7, 10, 0, 0, Math.PI*2); ctx.fillStyle = fallbackColor || '#3a4a6a'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); }
+    if(!drewHead){ ctx.beginPath(); ctx.arc(s.x, s.y-9+breathe, 9, 0, Math.PI*2); ctx.fillStyle = '#d3ab54'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); }
+    return { drewBody, drewHead };
+  }
+
+  /* =========================================================
+     CANVAS + PROJEÇÃO ISOMÉTRICA 2.5D
+     ========================================================= */
+  const canvas = document.getElementById('world-canvas');
+  const ctx = canvas.getContext('2d');
+  function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+
+  /* =========================================================
+     MINIMAPA — projeção top-down simples (não-isométrica) das mesmas
+     coordenadas cartesianas do mundo, só pra dar noção de posição/rota;
+     não precisa ser pixel-perfect com o canvas principal.
+     ========================================================= */
+  const minimapCanvas = document.getElementById('minimap-canvas');
+  const mmCtx = minimapCanvas.getContext('2d');
+  function drawMinimap(){
+    if(minimapCanvas.width !== 130){ minimapCanvas.width = 130; minimapCanvas.height = 130; }
+    document.getElementById('mm-label').textContent = location==='city' ? 'Cidade Principal' : (activeHunt.huntName || 'Caçada');
+    mmCtx.fillStyle = '#0d0b09'; mmCtx.fillRect(0,0,130,130);
+
+    const pts = activeHunt.running && activeHunt.lurePoints.length
+      ? activeHunt.lurePoints
+      : [CITY_POSITION, {x:CITY_POSITION.x+300,y:CITY_POSITION.y-300}];
+    const minX = Math.min(...pts.map(p=>p.x))-150, maxX = Math.max(...pts.map(p=>p.x))+150;
+    const minY = Math.min(...pts.map(p=>p.y))-150, maxY = Math.max(...pts.map(p=>p.y))+150;
+    const scaleX = 130/(maxX-minX), scaleY = 130/(maxY-minY);
+    const toMM = (x,y)=>({ x:(x-minX)*scaleX, y:(y-minY)*scaleY });
+
+    if(activeHunt.running){
+      activeHunt.lurePoints.forEach(p=>{
+        const m = toMM(p.x,p.y);
+        mmCtx.fillStyle = 'rgba(191,161,95,.55)'; mmCtx.beginPath(); mmCtx.arc(m.x,m.y,3,0,Math.PI*2); mmCtx.fill();
+        p.monsters.forEach(mo=>{
+          const mp = toMM(mo.x ?? p.x, mo.y ?? p.y);
+          mmCtx.fillStyle = '#e2542b'; mmCtx.beginPath(); mmCtx.arc(mp.x,mp.y,1.6,0,Math.PI*2); mmCtx.fill();
+        });
+      });
+    }
+    remotePlayers.forEach((rp, uname)=>{
+      const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
+      if(!sameBucket) return;
+      const m = toMM(rp.x, rp.y);
+      mmCtx.fillStyle = (party && party.members.includes(uname)) ? '#6f8f4e' : '#5a6b8a';
+      mmCtx.beginPath(); mmCtx.arc(m.x,m.y,2.2,0,Math.PI*2); mmCtx.fill();
+    });
+    const sp = toMM(player.x, player.y);
+    mmCtx.fillStyle = '#fff'; mmCtx.beginPath(); mmCtx.arc(sp.x,sp.y,2.6,0,Math.PI*2); mmCtx.fill();
+  }
+
+  const ISO_SCALE = 0.72;
+  const TILE_STEP = 34;
+  function cartesianToIso(cartX, cartY){ return { x:(cartX-cartY)*ISO_SCALE, y:(cartX+cartY)*ISO_SCALE*0.5 }; }
+  function worldToScreen(cx, cy){ const off = getIsoOffset(); const p = cartesianToIso(cx,cy); return { x:p.x+off.x, y:p.y+off.y }; }
+  function screenToWorld(sx, sy){
+    const off = getIsoOffset();
+    const px = sx - off.x, py = sy - off.y, k = ISO_SCALE;
+    return { x: (px/k + py/(k*0.5)) / 2, y: (py/(k*0.5) - px/k) / 2 };
+  }
+  function getIsoOffset(){
+    const pts = activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : [CITY_POSITION, {x:CITY_POSITION.x+300,y:CITY_POSITION.y-300}];
+    const projected = pts.map(p=> cartesianToIso(p.x,p.y));
+    const minX = Math.min(...projected.map(p=>p.x)), maxX = Math.max(...projected.map(p=>p.x));
+    const minY = Math.min(...projected.map(p=>p.y)), maxY = Math.max(...projected.map(p=>p.y));
+    return { x:canvas.width/2 - (minX+maxX)/2, y:canvas.height/2 - (minY+maxY)/2 + 40 };
+  }
+  const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
+  const SCENERY_CITY = [ {type:'pilastra',x:CITY_POSITION.x-60,y:CITY_POSITION.y-40,h:90}, {type:'pilastra',x:CITY_POSITION.x+220,y:CITY_POSITION.y-40,h:90}, {type:'rocha',x:CITY_POSITION.x+80,y:CITY_POSITION.y+40,h:16} ];
+
+  const BLOCK_HW = 26, BLOCK_HH = 13;
+  function drawIsoBlock(sx, sy, height, topColor, sideColorL, sideColorR){
+    const hw = BLOCK_HW, hh = BLOCK_HH;
+    const N = {x:sx, y:sy-hh-height}, E = {x:sx+hw, y:sy-height}, S = {x:sx, y:sy+hh-height}, W = {x:sx-hw, y:sy-height};
+    const S0 = {x:sx, y:sy+hh}, E0 = {x:sx+hw, y:sy}, W0 = {x:sx-hw, y:sy};
+    ctx.beginPath(); ctx.moveTo(E.x,E.y); ctx.lineTo(S.x,S.y); ctx.lineTo(S0.x,S0.y); ctx.lineTo(E0.x,E0.y); ctx.closePath();
+    ctx.fillStyle = sideColorR; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W.x,W.y); ctx.lineTo(S.x,S.y); ctx.lineTo(S0.x,S0.y); ctx.lineTo(W0.x,W0.y); ctx.closePath();
+    ctx.fillStyle = sideColorL; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(N.x,N.y); ctx.lineTo(E.x,E.y); ctx.lineTo(S.x,S.y); ctx.lineTo(W.x,W.y); ctx.closePath();
+    ctx.fillStyle = topColor; ctx.fill(); ctx.strokeStyle='rgba(191,161,95,.5)'; ctx.stroke();
+  }
+  function drawFloorDiamond(sx, sy, fill){
+    const hw = TILE_STEP*ISO_SCALE*0.55, hh = hw*0.5;
+    ctx.beginPath(); ctx.moveTo(sx,sy-hh); ctx.lineTo(sx+hw,sy); ctx.lineTo(sx,sy+hh); ctx.lineTo(sx-hw,sy); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = 'rgba(191,161,95,.10)'; ctx.stroke();
+  }
+  function drawStarShape(cx,cy,r,color){
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+      const a1 = -Math.PI/2 + i*(Math.PI*2/5), a2 = a1 + Math.PI/5;
+      ctx.lineTo(cx+Math.cos(a1)*r, cy+Math.sin(a1)*r);
+      ctx.lineTo(cx+Math.cos(a2)*r*0.45, cy+Math.sin(a2)*r*0.45);
+    }
+    ctx.closePath(); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 6; ctx.fill(); ctx.shadowBlur = 0;
+  }
+  function drawRankIcon(cx,cy,size){
+    if(prestige.diamondRank){
+      const pulse = 0.5+0.5*Math.sin(now()/300);
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.PI/4);
+      ctx.fillStyle = `rgba(80,230,255,${0.65+0.35*pulse})`; ctx.shadowColor = '#50e6ff'; ctx.shadowBlur = 8+6*pulse;
+      ctx.fillRect(-size/2,-size/2,size,size); ctx.shadowBlur = 0; ctx.restore(); return;
+    }
+    let color = null;
+    if(prestige.goldStars>0) color = '#ffd54a'; else if(prestige.silverStars>0) color = '#c9d4e0'; else if(prestige.bronzeStars>0) color = '#cd7f32';
+    if(color) drawStarShape(cx,cy,size/2,color);
+  }
+  function drawNickAndStar(sx, headY, nick, dim){
+    const starSize = 10;
+    ctx.font = '10px "JetBrains Mono"';
+    const textW = ctx.measureText(nick).width;
+    const hasStar = !dim && (prestige.bronzeStars>0||prestige.silverStars>0||prestige.goldStars>0||prestige.diamondRank);
+    const totalW = textW + (hasStar?starSize+4:0);
+    if(hasStar) drawRankIcon(sx-totalW/2+starSize/2, headY-3, starSize);
+    ctx.textAlign = 'left';
+    const textX = sx-totalW/2+(hasStar?starSize+4:0);
+    ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.strokeText(nick, textX, headY);
+    ctx.fillStyle = dim ? '#bcd3ff' : '#fff'; ctx.fillText(nick, textX, headY);
+    ctx.textAlign = 'center';
+  }
+
+  const auraState = { equipped:true };
+  const auraParticles = [];
+  function spawnAuraParticles(dt){
+    if(!auraState.equipped) return;
+    const tier = prestige.diamondRank ? 'diamante' : prestige.goldStars>0 ? 'ouro' : prestige.silverStars>0 ? 'prata' : prestige.bronzeStars>0 ? 'bronze' : null;
+    if(!tier) return;
+    const rate = tier==='diamante' ? 26 : tier==='ouro' ? 20 : 14;
+    if(Math.random() < dt*rate){
+      auraParticles.push({ tier, x:player.x+(Math.random()-0.5)*16, y:player.y+(Math.random()-0.5)*8, born:now(), life:650+Math.random()*450, vy:-16-Math.random()*14, drift:(Math.random()-0.5)*8 });
+    }
+  }
+  function updateAndDrawAuraParticles(toScreen){
+    for(let i=auraParticles.length-1;i>=0;i--){
+      const p = auraParticles[i]; const age = now()-p.born;
+      if(age>p.life){ auraParticles.splice(i,1); continue; }
+      const t = age/p.life; const s = toScreen(p.x + p.drift*t, p.y);
+      const y = s.y + p.vy*(age/1000);
+      let color, size = 2+2*(1-t);
+      if(p.tier==='bronze') color = `rgba(205,127,50,${(1-t)*.9})`;
+      else if(p.tier==='prata') color = `rgba(215,230,245,${(1-t)*.9})`;
+      else if(p.tier==='ouro') color = `rgba(255,210,60,${(1-t)*.95})`;
+      else { const hue = (now()/6 + i*47) % 360; color = `hsla(${hue},95%,62%,${(1-t)*.95})`; }
+      ctx.beginPath(); ctx.arc(s.x, y, size, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+    }
+  }
+
+  const floatingTexts = [];
+  function spawnFloatingText(getAnchor, text, color){ floatingTexts.push({ getAnchor, text, color, bornAt: now() }); }
+  const FLOAT_LIFETIME_MS = 900;
+  let lastGold = 0, lastXp = 0, lastHp = player.hp;
+
+  function draw(){
+    ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    const toScreen = worldToScreen;
+
+    const bounds = activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : [CITY_POSITION, {x:CITY_POSITION.x+280,y:CITY_POSITION.y-260}];
+    const minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
+    const minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
+    for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
+      for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
+        const s = toScreen(gx,gy);
+        const even = ((gx+gy)/TILE_STEP)%2===0;
+        drawFloorDiamond(s.x, s.y, location==='city' ? (even?'#2a2013':'#241b10') : (even?'#1c1712':'#181310'));
+      }
+    }
+
+    if(activeHunt.running && activeHunt.lurePoints.length){
+      const pts = activeHunt.lurePoints;
+      ctx.strokeStyle = 'rgba(191,161,95,.35)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
+      ctx.beginPath();
+      pts.forEach((p,i)=>{ const s=toScreen(p.x,p.y); i===0?ctx.moveTo(s.x,s.y):ctx.lineTo(s.x,s.y); });
+      const s0 = toScreen(pts[0].x,pts[0].y); ctx.lineTo(s0.x,s0.y);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    const drawList = [];
+    const scenery = location==='city' ? SCENERY_CITY : SCENERY_DUNGEON;
+    scenery.forEach(s=> drawList.push({
+      baseCart:{x:s.x,y:s.y},
+      draw:()=>{ const sc = toScreen(s.x,s.y); if(s.type==='pilastra') drawIsoBlock(sc.x, sc.y, s.h, location==='city'?'#6a5a3a':'#4a3a24', '#241c14', '#2f2519'); else drawIsoBlock(sc.x, sc.y, s.h, '#5a5348', '#2c2820', '#3a352c'); }
+    }));
+
+    if(activeHunt.running){
+      activeHunt.lurePoints.forEach((p,i)=>{
+        const isCurrent = i===activeHunt.currentIndex;
+        const waitingCooldown = p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
+        drawList.push({ baseCart:{x:p.x,y:p.y}, draw:()=>{
+          const s = toScreen(p.x,p.y);
+          ctx.beginPath(); ctx.ellipse(s.x, s.y, BLOCK_HW*0.85, BLOCK_HH*0.85, 0, 0, Math.PI*2);
+          ctx.fillStyle = isCurrent ? 'rgba(240,211,138,.22)' : 'rgba(191,161,95,.08)'; ctx.fill();
+          ctx.lineWidth = isCurrent?2:1; ctx.strokeStyle = waitingCooldown ? '#5a7ac0' : '#bfa15f'; ctx.stroke();
+        }});
+        p.monsters.forEach(m=>{
+          drawList.push({ baseCart:{x:m.x,y:m.y}, draw:()=>{
+            const s = toScreen(m.x,m.y);
+            const sprite = m.spriteId ? SpriteManager.monsterSprite(m.spriteId) : null;
+            const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-16, s.y-32, 32,32);
+            if(!drew){
+              // sem sprite carregado ainda (ou espécie sem arte) — bolinha
+              // procedural com o ícone do bestiário por cima, nunca quebra.
+              ctx.beginPath(); ctx.arc(s.x, s.y-6, 6, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
+              if(m.icon){ ctx.font = '10px sans-serif'; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-3); }
+            }
+          }, headCart:{x:m.x,y:m.y}, headLift:16, hpPct:m.hp/m.hpMax, kind:'monster' });
+        });
+      });
+    }
+
+    const breathe = Math.sin(now()/1000*1.6)*1.4;
+
+    // outros jogadores conectados (Hub multiplayer na Cidade / companheiros de grupo na Dungeon)
+    // — sprite completo agora, igual ao jogador local: 'positions' manda o
+    // gender/hairId/outfit de cada um, então todo mundo é desenhado por camadas.
+    remotePlayers.forEach((rp, uname)=>{
+      const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
+      if(!sameBucket) return;
+      const isPartyMember = party && party.members.includes(uname);
+      drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
+        const s = toScreen(rp.x,rp.y);
+        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, isPartyMember ? '#6f8f4e' : '#5a6b8a');
+      }, headCart:{x:rp.x,y:rp.y}, headLift:18, nick:uname, dimNick:!isPartyMember });
+    });
+
+    drawList.push({ baseCart:{x:player.x,y:player.y}, draw:()=>{
+      const s = toScreen(player.x,player.y);
+      const genero = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
+      const hairId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
+      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, '#d3ab54');
+    }, headCart:{x:player.x,y:player.y}, headLift:22, isPlayer:true, nick:PLAYER_NICK });
+
+    drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
+    drawList.forEach(item=> item.draw());
+
+    updateAndDrawAuraParticles(toScreen);
+
+    drawList.forEach(item=>{
+      if(!item.headCart) return;
+      const s = toScreen(item.headCart.x, item.headCart.y);
+      const headY = s.y - item.headLift - (item.isPlayer?breathe:0);
+      ctx.textAlign = 'center';
+      if(item.nick) drawNickAndStar(s.x, headY-10, item.nick, item.dimNick);
+      if(item.kind==='monster' && item.hpPct!=null){
+        ctx.fillStyle='#000'; ctx.fillRect(s.x-8, headY-16, 16, 3);
+        ctx.fillStyle='#c94040'; ctx.fillRect(s.x-8, headY-16, 16*item.hpPct, 3);
+      }
+    });
+
+    for(let i=floatingTexts.length-1;i>=0;i--){
+      const ft = floatingTexts[i]; const age = now() - ft.bornAt;
+      if(age > FLOAT_LIFETIME_MS){ floatingTexts.splice(i,1); continue; }
+      const anchor = ft.getAnchor(); const s = toScreen(anchor.x, anchor.y);
+      const rise = (age/FLOAT_LIFETIME_MS) * 26; const alpha = 1 - age/FLOAT_LIFETIME_MS;
+      ctx.globalAlpha = Math.max(0,alpha); ctx.font = '11px "JetBrains Mono"'; ctx.textAlign='center';
+      ctx.fillStyle = ft.color; ctx.fillText(ft.text, s.x, s.y - 26 - rise); ctx.globalAlpha = 1;
+    }
+
+    if(activeHunt.running){
+      activeHunt.lurePoints.forEach((p,i)=>{
+        const s = toScreen(p.x,p.y);
+        const waitingCooldown = p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
+        ctx.font = '9px "JetBrains Mono"'; ctx.fillStyle='#a99872'; ctx.textAlign='center';
+        ctx.fillText(`Lure ${i+1}`, s.x, s.y-14);
+        if(waitingCooldown){
+          const remain = Math.max(0,(p.respawnCooldownUntil-Date.now())/1000).toFixed(1);
+          ctx.fillText(`respawn ${remain}s`, s.x, s.y+16);
+        }
+      });
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  /* =========================================================
+     MOVIMENTO LIVRE POR WASD/SETAS — só funciona na Cidade Principal;
+     dentro de uma Dungeon o servidor é o dono de x/y (motor de Bot
+     autoritativo), então as teclas são ignoradas nesse estado. O clique
+     no chão (mais abaixo) continua funcionando como atalho alternativo.
+     A posição resultante é enviada ao servidor pelo mesmo intervalo de
+     400ms que já existia (connectToServer), então nada muda no protocolo.
+     ========================================================= */
+  const WASD_SPEED_PX_S = 240;
+  const heldKeys = {};
+  window.addEventListener('keydown', e=>{
+    if(document.activeElement && document.activeElement.id === 'chat-input') return;
+    heldKeys[e.key.toLowerCase()] = true;
+  });
+  window.addEventListener('keyup', e=> heldKeys[e.key.toLowerCase()] = false);
+  function updateWasdMovement(dt){
+    if(location !== 'city') return; // Dungeon: movimento é 100% do Bot no servidor
+    let dx = 0, dy = 0;
+    if(heldKeys['w']||heldKeys['arrowup'])    dy -= 1;
+    if(heldKeys['s']||heldKeys['arrowdown'])  dy += 1;
+    if(heldKeys['a']||heldKeys['arrowleft'])  dx -= 1;
+    if(heldKeys['d']||heldKeys['arrowright']) dx += 1;
+    if(!dx && !dy) return;
+    const len = Math.hypot(dx,dy); dx/=len; dy/=len;
+    player.x += dx*WASD_SPEED_PX_S*dt;
+    player.y += dy*WASD_SPEED_PX_S*dt;
+  }
+
+  let lastT = now();
+  function loop(){
+    const t = now(); const dt = Math.min(.05,(t-lastT)/1000); lastT = t;
+    if(player.gold > lastGold) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.gold-lastGold} 🪙`, '#f0d38a');
+    if(player.xp > lastXp) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.xp-lastXp} XP`, '#f0d38a');
+    if(player.hp < lastHp) spawnFloatingText(()=>({x:player.x,y:player.y}), `-${Math.round(lastHp-player.hp)}`, '#ff5a5a');
+    lastGold = player.gold; lastXp = player.xp; lastHp = player.hp;
+    updateWasdMovement(dt);
+    spawnAuraParticles(dt);
+    updateStatusLine();
+    draw();
+    drawMinimap();
+  }
+  requestAnimationFrame(loop);
+
+  function fmtDuration(ms){
+    ms = Math.max(0, ms);
+    const totalSec = Math.floor(ms/1000);
+    const h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
+    return h>0 ? `${h}h${String(m).padStart(2,'0')}m` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function updateStatusLine(){
+    document.getElementById('hp-bar').style.width = Math.max(0,player.hp/player.hpMax*100)+'%';
+    document.getElementById('mp-bar').style.width = Math.max(0,player.mp/player.mpMax*100)+'%';
+    document.getElementById('hp-label').textContent = `${Math.round(player.hp)}/${player.hpMax}`;
+    document.getElementById('mp-label').textContent = `${Math.round(player.mp)}/${player.mpMax}`;
+    document.getElementById('stam-bar').style.width = Math.max(0,stamina.current/stamina.max*100)+'%';
+    document.getElementById('stam-label').textContent = fmtDuration(stamina.current);
+    document.body.classList.toggle('in-city', location==='city');
+    document.body.classList.toggle('in-dungeon', location==='dungeon');
+    document.getElementById('hunt-action-row').classList.toggle('show', location==='dungeon');
+    if(location !== 'dungeon' && typeof cancelExitCountdown === 'function') cancelExitCountdown();
+    document.getElementById('recharge-stamina-btn').classList.toggle('show', isPremium && stamina.rechargesUsedToday < stamina.maxRechargesPerDay);
+    document.getElementById('recharge-stamina-btn').textContent = `⚡ Recarregar +6h (${stamina.rechargesUsedToday}/${stamina.maxRechargesPerDay}) — ${stamina.rechargeCost} Gold`;
+    const badge = document.getElementById('premium-badge');
+    badge.textContent = isPremium ? 'PREMIUM' : 'FREE'; badge.classList.toggle('free', !isPremium);
+
+    document.getElementById('tb-nick').textContent = PLAYER_NICK;
+    document.getElementById('tb-level').textContent = `Nv. ${player.level}`;
+    document.getElementById('tb-gold').textContent = Math.round(player.gold).toLocaleString('pt-BR');
+    document.getElementById('tb-online').textContent = `${remotePlayers.size + 1} jogador${remotePlayers.size===0?'':'es'} online`;
+    document.getElementById('matchmaking-pill').style.display = matchmakingActive ? 'flex' : 'none';
+    document.getElementById('training-pill').style.display = trainingActive ? 'flex' : 'none';
+
+    const el = document.getElementById('hunt-status-line');
+    const econ = `🪙 ${Math.round(player.gold)} (banco 🏦 ${Math.round(player.bankGold)}) · ⭐ ${Math.round(player.xp)} XP · 🎒 ${bag.length}/${bagCapacity}`;
+    if(!activeHunt.running){ el.innerHTML = `${location==='city'?'Na Cidade Principal.':'Fora de caçada.'}<br>${econ}`; }
+    else {
+      const p = activeHunt.lurePoints[activeHunt.currentIndex];
+      el.innerHTML = `<b>${activeHunt.huntName}</b> · ${activeHunt.difficulty}<br>Lure ${activeHunt.currentIndex+1}/${activeHunt.lurePoints.length} · ${p?p.monsters.length:0} vivos<br>${econ}<br>${lootLog[0]||''}`;
+    }
+    updateDispatchPopover();
+  }
+
+  /* =========================================================
+     PROFILE POPOVER (hover)
+     ========================================================= */
+  const profileHover = document.getElementById('profile-hover');
+  const profilePopover = document.getElementById('profile-popover');
+  profileHover.addEventListener('mouseenter', ()=>{
+    document.getElementById('pf-level').textContent = player.level;
+    document.getElementById('pf-magia').textContent = Math.round(training.magia);
+    document.getElementById('pf-defesa').textContent = Math.round(training.defesa);
+    document.getElementById('pf-esquiva').textContent = Math.round(training.esquiva);
+    document.getElementById('pf-critico').textContent = Math.round(training.critico);
+    document.getElementById('pf-melee').textContent = `${Math.round(training.sword)}/${Math.round(training.axe)}/${Math.round(training.club)}`;
+    document.getElementById('pf-distance').textContent = Math.round(training.distance);
+    document.getElementById('pf-vip').textContent = isPremium ? 'Premium ativo' : 'Free';
+    profilePopover.classList.add('show');
+  });
+  profileHover.addEventListener('mouseleave', ()=> profilePopover.classList.remove('show'));
+
+  /* =========================================================
+     DISPATCH POPOVER (setinhas '>>' do despacho) — countdown regressivo
+     ========================================================= */
+  // Robô de Venda agora mora no pill "PRONTO EM XX:XX" da BARRA DE AÇÃO DA
+  // CAÇADA (acima da hotbar) — não mais escondido dentro do status-bar. O
+  // popover "Vender sozinho quando..." abre por HOVER, igual antes.
+  const dispatchPill = document.getElementById('dispatch-pill');
+  const dispatchPopover = document.getElementById('dispatch-popover');
+  dispatchPill.addEventListener('mouseenter', ()=> dispatchPopover.classList.add('show'));
+  dispatchPill.addEventListener('mouseleave', ()=> dispatchPopover.classList.remove('show'));
+  document.getElementById('dispatch-bagfull-cb').addEventListener('change', e=>{
+    autoSellOnBagFull = e.target.checked;
+    sendWS({ type:'hunt:configure', autoSellOnBagFull });
+  });
+  function updateDispatchPopover(){
+    document.getElementById('dispatch-bagfull-cb').checked = autoSellOnBagFull;
+    document.getElementById('dispatch-countdown').textContent = fmtDuration(dispatch.remainingMs);
+    // Rótulo sempre visível do pill: "Pronto" quando o robô já pode vender
+    // agora, ou a contagem regressiva exata até a próxima venda automática —
+    // essa é a correção pedida: o cronômetro reinicia do cooldown cheio
+    // (30/50/60min conforme Rank x Premium) assim que uma venda acontece,
+    // porque dispatch.remainingMs já vem certo do servidor (lastAutoSellAt
+    // é resetado no instante da venda) — o que faltava era mostrar isso aqui.
+    document.getElementById('dispatch-pill-label').textContent = dispatch.remainingMs > 0
+      ? `Pronto em ${fmtDuration(dispatch.remainingMs)}`
+      : 'Pronto';
+  }
+
+  /* =========================================================
+     WEBSOCKET — conexão real com o servidor (multiplayer/motor de jogo)
+     ========================================================= */
+  const netState = { ws:null, connected:false };
+  function sendWS(obj){
+    if(netState.ws && netState.ws.readyState === WebSocket.OPEN) netState.ws.send(JSON.stringify(obj));
+  }
+
+  function applyHuntSnapshot(msg){
+    player.x = msg.x; player.y = msg.y; player.hp = msg.hp; player.hpMax = msg.hpMax;
+    player.mp = msg.mp; player.mpMax = msg.mpMax; player.gold = msg.gold; player.bankGold = msg.bankGold;
+    player.xp = msg.xp; player.level = msg.level;
+    location = msg.location;
+    if(location === 'dungeon' && matchmakingActive){ matchmakingActive = false; matchmakingKey = null; } // saiu da fila (entrou em caçada por outro caminho)
+    bag = msg.bag; bagCapacity = msg.bagCapacity;
+    pouch = msg.pouch; pouchCapacity = msg.pouchCapacity;
+    equipment = msg.equipment; cosmetics = msg.cosmetics;
+    Object.assign(prestige, msg.prestige);
+    isPremium = msg.isPremium;
+    fragments = msg.fragments || 0;
+    starEvolutionCost = msg.starEvolutionCost || null;
+    friends = msg.friends || [];
+    Object.assign(training, msg.training); trainingBank = msg.trainingBank;
+    combatPosture = msg.combatPosture; sqmDistance = msg.sqmDistance;
+    targetMode = msg.targetMode; followUsername = msg.followUsername || null;
+    autoSellOnBagFull = msg.autoSellOnBagFull;
+    stamina = msg.stamina; dispatch = msg.dispatch;
+    party = msg.party; activeTradeId = msg.activeTradeId;
+    guildId = msg.guildId || null; guildSummary = msg.guild || null;
+    bestiaryKilled = msg.bestiaryKilled || [];
+    xpBonus = msg.xpBonus || xpBonus;
+    ownedOutfits = msg.ownedOutfits || ownedOutfits; ownedMounts = msg.ownedMounts || ownedMounts;
+    cosmeticColors = msg.cosmeticColors || cosmeticColors;
+    hasTrainingKit = !!msg.hasTrainingKit; canTrainAtDummy = !!msg.canTrainAtDummy;
+    trainingActive = msg.trainingActive || null; offlineTrainingArmed = msg.offlineTrainingArmed || null;
+    if(msg.hunt.running){
+      activeHunt.running = true; activeHunt.huntId = msg.hunt.huntId; activeHunt.huntName = msg.hunt.huntName;
+      activeHunt.difficulty = msg.hunt.difficulty; activeHunt.currentIndex = msg.hunt.currentIndex;
+      activeHunt.lurePoints = msg.hunt.lurePoints;
+    } else {
+      activeHunt.running = false; activeHunt.lurePoints = [];
+    }
+    renderTargetModeOptions();
+    refreshTacticsUI();
+    renderAttrs(); renderParty(); renderInventoryIfOpen(); renderAltar(); renderFriends(); renderShop();
+    if(currentTrade) renderTrade();
+    if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="treino"]').classList.contains('active')) renderTreinoTab();
+    if(typeof renderCharacterModalIfOpen === 'function') renderCharacterModalIfOpen();
+    if(typeof renderGuildModalIfOpen === 'function') renderGuildModalIfOpen();
+  }
+
+  function connectToServer(){
+    const statusEl = document.getElementById('ws-status');
+    if(!AUTH_TOKEN || !AUTH_USERNAME){ statusEl.textContent = '● sem login (modo solo offline)'; return; }
+    let ws;
+    try{ ws = new WebSocket(WS_URL); } catch(e){ statusEl.textContent = '● offline (falha ao conectar)'; return; }
+    netState.ws = ws;
+
+    ws.addEventListener('open', ()=>{
+      netState.connected = true;
+      statusEl.textContent = `● online — ${AUTH_USERNAME}`;
+      ws.send(JSON.stringify({ type:'join', token:AUTH_TOKEN, x:player.x, y:player.y, characterId: SELECTED_CHARACTER && SELECTED_CHARACTER.id, nick:PLAYER_NICK }));
+    });
+    ws.addEventListener('close', ()=>{ netState.connected = false; statusEl.textContent = '● offline (reconectando em breve)'; setTimeout(connectToServer, 3000); });
+    ws.addEventListener('error', ()=>{ statusEl.textContent = '● erro de conexão'; });
+
+    ws.addEventListener('message', ev=>{
+      let msg; try{ msg = JSON.parse(ev.data); } catch(e){ return; }
+      switch(msg.type){
+        case 'system': logChat('sistema', escapeHtml(msg.text)); break;
+        case 'welcome':
+          logChat('sistema', `Conectado. Jogadores no mundo: ${escapeHtml(msg.players.join(', ')||'só você')}.`);
+          npcShops = msg.npcShops || {};
+          trainingDummies = msg.trainingDummies || [];
+          outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || [];
+          colorPalette = msg.colorPalette || []; bossCatalog = msg.bossCatalog || [];
+          hairColors = msg.hairColors && msg.hairColors.length ? msg.hairColors : hairColors;
+          renderShop();
+          break;
+        case 'chat': logChat(msg.channel, `<b>${escapeHtml(msg.from)}</b>: ${escapeHtml(msg.text)}`); break;
+        case 'positions':
+          remotePlayers.clear();
+          msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
+          break;
+        case 'hunt:state': applyHuntSnapshot(msg); break;
+        case 'hunt:ack': handleAck(msg); break;
+        case 'party:invite': showPartyInviteToast(msg); break;
+        case 'party:declined': logLoot(`👥 <b>${escapeHtml(msg.by)}</b> recusou o convite pro grupo.`); break;
+        case 'matchmaking:matched': handleMatchmakingMatched(msg); break;
+        case 'training:offlineResult':
+          logLoot(`🏋️ Enquanto você estava fora, o treino offline rendeu <b>+${msg.gained}</b> ponto(s) pro banco.`);
+          break;
+        case 'guild:invite': showGuildInviteToast(msg); break;
+        case 'guild:declined': logLoot(`🛡️ <b>${escapeHtml(msg.by)}</b> recusou o convite pra guilda.`); break;
+        case 'guild:kicked':
+          logLoot(`🛡️ Você foi removido da guilda <b>${escapeHtml(msg.guildName)}</b> por ${escapeHtml(msg.by)}.`);
+          break;
+        case 'guild:disbanded':
+          logLoot(`🛡️ A guilda <b>${escapeHtml(msg.guildName)}</b> foi dissolvida por ${escapeHtml(msg.by)}.`);
+          break;
+        case 'guild:update':
+          guildDetail = msg.guild;
+          if(typeof renderGuildModalIfOpen === 'function') renderGuildModalIfOpen();
+          break;
+        case 'trade:invite': showTradeInviteToast(msg); break;
+        case 'trade:update': currentTrade = msg.trade; openTradeModal(); renderTrade(); break;
+        case 'trade:cancelled': logLoot(`🤝 ${msg.by} cancelou a troca.`); closeTradeModal(); break;
+        case 'error': logLoot(`⚠️ ${msg.error}`); break;
+      }
+    });
+
+    // envia posição periodicamente — só importa de fato na Cidade (Dungeon é o
+    // servidor quem move o Bot); mandar sempre é inofensivo, o servidor ignora
+    // 'move' quando location !== 'city'.
+    setInterval(()=>{
+      if(ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type:'move', x:player.x, y:player.y }));
+    }, 400);
+  }
+  connectToServer();
+
+  function handleAck(msg){
+    if(msg.forType === 'hunt:start' && !msg.ok) logLoot(`⚠️ Não foi possível iniciar: ${msg.reason}`);
+    if(msg.forType === 'party:go' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode clicar em IR.' : msg.reason}`);
+    if(msg.forType === 'matchmaking:join'){
+      if(msg.ok){
+        matchmakingActive = true; matchmakingKey = msg.queueKey;
+        logLoot(`🔎 Procurando time (posição ${msg.position} na fila)...`);
+      } else {
+        matchmakingActive = false; matchmakingKey = null;
+        logLoot(`⚠️ Não foi possível entrar na fila: ${msg.reason==='apenas_na_cidade_principal' ? 'só dá pra procurar time na Cidade.' : msg.reason}`);
+      }
+      if(document.getElementById('hunts-modal').classList.contains('open')) renderHuntCenter();
+    }
+    if(msg.forType === 'stamina:recharge'){
+      if(msg.ok) logLoot(`⚡ Stamina recarregada (+6h) por ${msg.cost} Gold.`);
+      else logLoot(`⚠️ Recarga falhou: ${msg.reason}`);
+    }
+    if(msg.forType === 'party:invite' && !msg.ok) logLoot(`⚠️ Convite falhou: ${msg.reason}`);
+    if(msg.forType === 'trade:request'){
+      if(msg.ok) logLoot('🤝 Pedido de troca enviado.'); else logLoot(`⚠️ Troca falhou: ${msg.reason}`);
+    }
+    if(msg.forType && msg.forType.startsWith('trade:') && msg.trade){ currentTrade = msg.trade; openTradeModal(); renderTrade(); }
+    if(msg.forType === 'trade:confirm' && msg.executed) { logLoot('✅ Troca concluída!'); closeTradeModal(); }
+
+    if(msg.forType === 'altar:evolve'){
+      if(msg.ok){
+        logLoot(`🔥 Reset de Estrela concluído! Novo rank: ${msg.rank}.`);
+        showRankUpOverlay();
+      } else if(msg.reason === 'apenas_na_cidade_principal'){
+        logLoot('⚠️ O Reset de Estrela só pode ser feito na Cidade Principal.');
+      } else if(msg.reason === 'ouro_insuficiente'){
+        logLoot('⚠️ Ouro insuficiente para o Reset de Estrela.');
+      } else if(msg.reason === 'fragmentos_insuficientes'){
+        logLoot('⚠️ Fragmentos insuficientes para o Reset de Estrela.');
+      } else if(msg.reason === 'rank_maximo_atingido'){
+        logLoot('✨ Você já atingiu o Rank máximo (Diamante).');
+      }
+    }
+    if(msg.forType === 'npc:buy'){
+      if(msg.ok) logLoot(`🛒 Comprou ${msg.qty}x ${msg.item.name} por ${msg.cost} Gold.`);
+      else if(msg.reason === 'apenas_na_cidade_principal') logLoot('⚠️ Só é possível comprar de NPCs na Cidade Principal.');
+      else if(msg.reason === 'ouro_insuficiente') logLoot('⚠️ Ouro insuficiente para essa compra.');
+      else logLoot(`⚠️ Compra falhou: ${msg.reason}`);
+    }
+    if(msg.forType === 'friend:add'){
+      if(msg.ok) logLoot('👤 Amigo adicionado.');
+      else logLoot(`⚠️ Não foi possível adicionar: ${msg.reason}`);
+    }
+
+    if(['training:start','training:stop','training:offline','training:cancelOffline'].includes(msg.forType) && !msg.ok){
+      const reasonMap = { apenas_na_cidade_principal:'só dá pra treinar na Cidade.', sem_kit_de_treino:'você precisa do Kit de Treino na mochila.', longe_do_boneco:'chegue mais perto de um boneco de treino.' };
+      logLoot(`⚠️ ${reasonMap[msg.reason] || msg.reason}`);
+    }
+
+    if(msg.forType === 'guild:create'){
+      if(msg.ok) logLoot('🛡️ Guilda fundada!');
+      else logLoot(`⚠️ Não foi possível fundar a guilda: ${msg.reason}`);
+      if(document.getElementById('guild-modal').classList.contains('open')) renderGuildModalIfOpen();
+    }
+    if(msg.forType === 'guild:invite' && !msg.ok) logLoot(`⚠️ Convite de guilda falhou: ${msg.reason}`);
+    if(msg.forType === 'guild:accept'){
+      if(msg.ok) logLoot('🛡️ Você entrou na guilda!');
+      else logLoot(`⚠️ Não foi possível entrar: ${msg.reason}`);
+    }
+    if(['guild:leave','guild:kick','guild:promote','guild:transferLeadership','guild:renameRank','guild:setMotd','guild:donate','guild:disband'].includes(msg.forType)){
+      if(!msg.ok) logLoot(`⚠️ ${msg.reason}`);
+      else if(msg.forType === 'guild:donate') logLoot('🛡️ Doação enviada pra guilda.');
+      if(document.getElementById('guild-modal').classList.contains('open')) sendWS({ type:'guild:get' });
+    }
+    if(msg.forType === 'guild:get' && msg.ok){ guildDetail = msg.guild; renderGuildModalIfOpen(); }
+    if(msg.forType === 'guild:list' && msg.ok){ renderGuildListTab(msg.guilds); }
+
+    if(['outfit:buy','mount:buy'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ Compra falhou: ${msg.reason}`);
+    if(['outfit:equip','mount:equip','cosmetic:color'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
+  }
+
+  function showRankUpOverlay(){
+    const overlay = document.getElementById('rankup-overlay');
+    overlay.classList.add('show');
+    setTimeout(()=> overlay.classList.remove('show'), 1800);
+  }
+
+  /* =========================================================
+     TÁTICA: Postura / Alvo / SQM — barra compacta persistente no rodapé.
+     ========================================================= */
+  function refreshTacticsUI(){
+    document.querySelectorAll('.posture-btn').forEach(b=> b.classList.toggle('active', b.dataset.posture===combatPosture));
+    document.querySelectorAll('.sqm-btn').forEach(b=> b.classList.toggle('active', Number(b.dataset.sqm)===sqmDistance));
+    const sel = document.getElementById('target-mode-select');
+    if(!sel) return;
+    const wanted = (targetMode==='followPartyMember' && followUsername) ? ('followPartyMember:'+followUsername) : targetMode;
+    if([...sel.options].some(o=>o.value===wanted)) sel.value = wanted;
+  }
+
+  // Reconstrói as <option> do seletor de Alvo com "Seguir <nick>" pra cada
+  // membro ATUAL da Party (exceto você mesmo) — só quando a composição do
+  // grupo realmente muda (comparando a chave), pra não ficar recriando o
+  // <select> a cada snapshot de 30Hz e atrapalhar quem está com ele aberto.
+  let lastTargetOptionsKey = null;
+  function renderTargetModeOptions(){
+    const sel = document.getElementById('target-mode-select');
+    if(!sel) return;
+    const members = (party ? party.members : []).filter(u=>u!==AUTH_USERNAME);
+    const key = members.join(',');
+    if(key === lastTargetOptionsKey) return;
+    lastTargetOptionsKey = key;
+    sel.innerHTML = '';
+    TARGET_MODE_BASE.forEach(m=>{ const opt = document.createElement('option'); opt.value=m.id; opt.textContent=m.label; sel.appendChild(opt); });
+    members.forEach(u=>{
+      const nick = (party && party.nicks && party.nicks[u]) || u;
+      const opt = document.createElement('option');
+      opt.value = 'followPartyMember:' + u;
+      opt.textContent = 'Seguir ' + nick;
+      sel.appendChild(opt);
+    });
+  }
+
+  /* =========================================================
+     2. UI DO PAINEL DE CAÇADAS + Tática + botão IR (party)
+     ========================================================= */
+  let selectedHunt = HUNTS[0];
+  let selectedDifficulty = 'cauteloso';
+  let matchmakingActive = false; // true enquanto está na fila de "Encontrar time"
+  let matchmakingKey = null;
+  function handleMatchmakingMatched(msg){
+    matchmakingActive = false; matchmakingKey = null;
+    document.getElementById('hunts-modal').classList.remove('open');
+    const n = msg.members.length;
+    if(msg.ok) logLoot(`⚔️ Time encontrado! Entrando na caçada com ${n} jogador${n===1?'':'es'}.`);
+    else logLoot(`⚠️ Time encontrado (${n} jogador${n===1?'':'es'}), mas a caçada não pôde iniciar — sem stamina.`);
+    renderHuntCenter();
+  }
+  const lootFilter = {};
+  HUNTS.forEach(h=> h.possibleLoot.forEach(it=> lootFilter[it.id] = (it.rarity!=='comum')));
+
+  const huntsModal = document.getElementById('hunts-modal');
+  document.getElementById('open-hunts-btn').addEventListener('click', ()=>{
+    huntsModal.classList.add('open');
+    document.getElementById('party-mode-chip').classList.toggle('show', !!(party && party.leaderUsername===AUTH_USERNAME));
+    renderHuntsList(); selectHunt(selectedHunt);
+  });
+  document.getElementById('hunts-close').addEventListener('click', ()=> huntsModal.classList.remove('open'));
+  document.querySelectorAll('.hunts-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      if(t.classList.contains('disabled')) return;
+      document.querySelectorAll('.hunts-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+      const tab = t.dataset.tab, isCacadas = tab === 'cacadas';
+      document.getElementById('hunts-left').style.display = isCacadas ? '' : 'none';
+      document.getElementById('hunts-center').style.display = isCacadas ? '' : 'none';
+      document.getElementById('hunts-right').style.display = isCacadas ? '' : 'none';
+      document.getElementById('treino-body').style.display = tab === 'treino' ? 'block' : 'none';
+      if(tab === 'treino') renderTreinoTab();
+    });
+  });
+
+  function renderTreinoTab(){
+    const kitEl = document.getElementById('treino-kit-status');
+    if(hasTrainingKit){
+      kitEl.innerHTML = `<div class="ok-line">✅ Você tem o Kit de Treino na mochila.</div>`;
+    } else {
+      kitEl.innerHTML = `<div class="missing-line">❌ Sem Kit de Treino — sem ele não dá pra treinar no boneco.</div><button class="treino-inline-btn" id="treino-buy-kit-btn">Comprar Kit de Treino (300 Gold)</button>`;
+      document.getElementById('treino-buy-kit-btn').addEventListener('click', ()=> sendWS({ type:'npc:buy', npcId:'ferreiro_bran', itemId:'kit_treino', qty:1 }));
+    }
+
+    document.getElementById('treino-dummy-status').innerHTML = canTrainAtDummy
+      ? `<div class="ok-line">✅ Você está perto de um boneco de treino.</div>`
+      : `<div class="missing-line">Ande até um dos ${trainingDummies.length||3} bonecos de treino da Cidade Principal pra habilitar as ações abaixo.</div>`;
+
+    const isOnline = trainingActive && trainingActive.mode === 'online';
+    const isOfflineArmed = !!offlineTrainingArmed;
+    const actionsEl = document.getElementById('treino-actions');
+    actionsEl.innerHTML = `
+      <button id="treino-online-btn" class="${isOnline?'stop':''}" ${(!canTrainAtDummy && !isOnline) || isOfflineArmed ? 'disabled':''}>${isOnline?'⏹ Parar Treino Online':'▶ Iniciar Treino Online (2x o ritmo de caçada)'}</button>
+      <div id="treino-offline-row">
+        <label class="opt-box"><input type="checkbox" id="treino-repeat-cb" ${isOfflineArmed && offlineTrainingArmed.repeat ? 'checked':''} ${isOfflineArmed?'disabled':''}> Repetir enquanto eu estiver fora (sem limite de 12h)</label>
+        <button id="treino-offline-btn" class="${isOfflineArmed?'stop':''}" ${(!canTrainAtDummy && !isOfflineArmed) || isOnline ? 'disabled':''}>${isOfflineArmed?'⏹ Cancelar Treino Offline':'🌙 Armar Treino Offline (rende ao desconectar, até 12h)'}</button>
+      </div>
+    `;
+    document.getElementById('treino-online-btn').addEventListener('click', ()=> sendWS({ type: isOnline ? 'training:stop' : 'training:start' }));
+    document.getElementById('treino-offline-btn').addEventListener('click', ()=>{
+      if(isOfflineArmed) sendWS({ type:'training:cancelOffline' });
+      else sendWS({ type:'training:offline', repeat: document.getElementById('treino-repeat-cb').checked });
+    });
+
+    document.getElementById('treino-bank-status').innerHTML =
+      `Banco de treino: <b>${Math.floor(trainingBank)}</b> ponto(s) esperando pra distribuir.<br><button class="treino-inline-btn" id="treino-open-attrs-btn" style="margin-top:8px;">Abrir Atributos Livres</button>`;
+    document.getElementById('treino-open-attrs-btn').addEventListener('click', ()=>{
+      document.getElementById('attrs-panel').classList.add('open'); renderAttrs();
+    });
+  }
+
+  function renderHuntsList(filter=''){
+    const listEl = document.getElementById('hunts-list');
+    listEl.innerHTML = '';
+    HUNTS.filter(h=> h.name.toLowerCase().includes(filter.toLowerCase())).forEach(h=>{
+      const el = document.createElement('div');
+      el.className = 'hunt-list-item' + (h.id===selectedHunt.id?' selected':'');
+      el.innerHTML = `${h.name}<span class="lvl">Nv. ${h.level}</span>`;
+      el.addEventListener('click', ()=> selectHunt(h));
+      listEl.appendChild(el);
+    });
+  }
+  document.getElementById('hunts-search').addEventListener('input', e=> renderHuntsList(e.target.value));
+
+  function selectHunt(huntDef){ selectedHunt = huntDef; renderHuntsList(document.getElementById('hunts-search').value); renderHuntCenter(); renderHuntLoot(); }
+
+  function isLeaderOfParty(){ return !!(party && party.leaderUsername === AUTH_USERNAME); }
+  function isNonLeaderMember(){ return !!(party && party.leaderUsername !== AUTH_USERNAME); }
+
+  function renderHuntCenter(){
+    const isRunning = activeHunt.running && activeHunt.huntId===selectedHunt.id;
+    const center = document.getElementById('hunts-center');
+    const goLabel = isLeaderOfParty() ? 'IR (Grupo)' : 'Iniciar Caçada';
+    const disabledForFollower = isNonLeaderMember();
+    center.innerHTML = `
+      <h2>${selectedHunt.name}</h2>
+      <div class="meta">Nível recomendado: <b>${selectedHunt.level}</b> · Recorde: <b>${selectedHunt.record}</b></div>
+      <div class="panel-title">Dificuldade<span class="rule"></span></div>
+      <div class="diff-picker" id="diff-picker"></div>
+      <div class="hunt-center-actions">
+        <button id="hunt-action-btn" class="${isRunning?'stop':''}" ${disabledForFollower && !isRunning ? 'disabled title="Aguarde o Líder clicar em IR"' : ''}>${isRunning?'Parar Caçada':goLabel}</button>
+        <button id="hunt-findteam-btn" type="button" class="${matchmakingActive?'searching':''}" title="${matchmakingActive?'Clique para cancelar a busca':'Entra numa fila real: assim que outro jogador procurar a mesma caçada+dificuldade, o time é formado e a caçada começa sozinha'}">${matchmakingActive?'Buscando... (cancelar)':'Encontrar time'}</button>
+      </div>
+      <div id="hunts-live-status"></div>
+    `;
+    document.getElementById('hunt-findteam-btn').addEventListener('click', ()=>{
+      if(matchmakingActive){
+        sendWS({ type:'matchmaking:leave' });
+        matchmakingActive = false; matchmakingKey = null;
+        logLoot('🔎 Busca por time cancelada.');
+        renderHuntCenter();
+        return;
+      }
+      sendWS({ type:'matchmaking:join', huntId:selectedHunt.id, difficulty:selectedDifficulty });
+    });
+    const diffPicker = document.getElementById('diff-picker');
+    Object.keys(DIFFICULTIES).forEach(key=>{
+      const d = DIFFICULTIES[key];
+      const btn = document.createElement('div');
+      btn.className = 'diff-btn' + (key===selectedDifficulty?' active':'');
+      btn.innerHTML = `<div class="name">${d.label}</div><div class="sub">${d.monstersPerLure}/lure · +${Math.round(d.xpBonus*100)}%</div>`;
+      btn.addEventListener('click', ()=>{ selectedDifficulty = key; renderHuntCenter(); });
+      diffPicker.appendChild(btn);
+    });
+    document.getElementById('hunt-action-btn').addEventListener('click', ()=>{
+      if(activeHunt.running && activeHunt.huntId===selectedHunt.id){
+        sendWS({ type:'hunt:stop' });
+      } else if(isLeaderOfParty()){
+        sendWS({ type:'party:go', huntId:selectedHunt.id, difficulty:selectedDifficulty });
+      } else {
+        sendWS({ type:'hunt:start', huntId:selectedHunt.id, difficulty:selectedDifficulty });
+      }
+    });
+    refreshLiveStatus();
+  }
+
+  /* =========================================================
+     BARRA TÁTICA PERSISTENTE — Postura / Alvo / SQM. Construída UMA
+     VEZ (não a cada abertura de modal, porque agora ela mora fixa na
+     HUD principal, visível o tempo todo em Cidade, Caçada ou Torre
+     Elementar) e sincronizada por refreshTacticsUI() a cada
+     hunt:state recebido do servidor.
+     ========================================================= */
+  function setupTacticsBar(){
+    const postureRow = document.getElementById('posture-row');
+    POSTURES.forEach(p=>{
+      const btn = document.createElement('button');
+      btn.type = 'button'; // elemento real de botão — clique sempre funciona, sem depender de nada além do listener
+      btn.className = 'posture-btn' + (p.id===combatPosture?' active':'');
+      btn.dataset.posture = p.id;
+      btn.title = p.label;
+      btn.textContent = p.icon;
+      btn.addEventListener('click', ()=>{
+        combatPosture = p.id; // resposta visual imediata; o servidor confirma no próximo hunt:state
+        refreshTacticsUI();
+        sendWS({ type:'hunt:posture', posture: p.id });
+      });
+      postureRow.appendChild(btn);
+    });
+
+    renderTargetModeOptions();
+    const targetSelect = document.getElementById('target-mode-select');
+    targetSelect.addEventListener('change', e=>{
+      const val = e.target.value;
+      if(val.startsWith('followPartyMember:')){
+        const followTarget = val.slice('followPartyMember:'.length);
+        targetMode = 'followPartyMember'; followUsername = followTarget;
+        sendWS({ type:'hunt:target', mode:'followPartyMember', followUsername: followTarget });
+      } else {
+        targetMode = val; followUsername = null;
+        sendWS({ type:'hunt:target', mode: val });
+      }
+    });
+
+    const sqmRow = document.getElementById('sqm-row');
+    [1,2,3,4].forEach(n=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sqm-btn' + (n===sqmDistance?' active':'');
+      btn.dataset.sqm = n;
+      btn.textContent = n;
+      btn.addEventListener('click', ()=>{
+        sqmDistance = n; // resposta visual imediata; o servidor confirma no próximo hunt:state
+        refreshTacticsUI();
+        sendWS({ type:'hunt:sqm', sqm:n });
+      });
+      sqmRow.appendChild(btn);
+    });
+
+    refreshTacticsUI();
+  }
+  setupTacticsBar();
+  function refreshLiveStatus(){
+    const el = document.getElementById('hunts-live-status');
+    if(!el) return;
+    if(activeHunt.running && activeHunt.huntId===selectedHunt.id){
+      const p = activeHunt.lurePoints[activeHunt.currentIndex];
+      el.innerHTML = `Circuito: <b>${activeHunt.lurePoints.length} pontos de lure</b><br>No momento: Lure <b>${activeHunt.currentIndex+1}</b> · ${p?p.monsters.length:0} monstro(s) vivo(s)<br>${lootLog.slice(0,3).join('<br>')}`;
+    } else {
+      el.textContent = isNonLeaderMember() ? 'Aguardando o Líder do grupo clicar em IR.' : 'Selecione a dificuldade e clique em Iniciar Caçada.';
+    }
+  }
+  setInterval(()=>{ if(huntsModal.classList.contains('open')) refreshLiveStatus(); }, 500);
+
+  function renderHuntLoot(){
+    const right = document.getElementById('hunts-right');
+    right.innerHTML = `<div class="panel-title">Loot possível<span class="rule"></span></div>`;
+    selectedHunt.possibleLoot.forEach(item=>{
+      const row = document.createElement('label');
+      row.className = 'loot-item';
+      row.innerHTML = `<input type="checkbox" data-item="${item.id}" ${lootFilter[item.id]?'checked':''}><span class="rarity-${item.rarity}">${item.name}</span>`;
+      row.querySelector('input').addEventListener('change', e=>{ lootFilter[item.id] = e.target.checked; });
+      right.appendChild(row);
+    });
+  }
+
+  /* =========================================================
+     RECARGA DE STAMINA PREMIUM — "Retornar à Cidade" virou o pill
+     "↩ Sair da Caçada" (ver BARRA DE AÇÃO DA CAÇADA mais abaixo).
+     ========================================================= */
+  document.getElementById('recharge-stamina-btn').addEventListener('click', ()=> sendWS({ type:'stamina:recharge' }));
+
+  /* =========================================================
+     PARTY — convite / aceitar / sair / IR (só Líder)
+     ========================================================= */
+  const partyPanel = document.getElementById('party-panel');
+  document.getElementById('btn-open-party').addEventListener('click', ()=>{ partyPanel.classList.toggle('open'); renderParty(); });
+  document.getElementById('matchmaking-pill').addEventListener('click', ()=>{
+    if(!matchmakingActive) return;
+    sendWS({ type:'matchmaking:leave' });
+    matchmakingActive = false; matchmakingKey = null;
+    logLoot('🔎 Busca por time cancelada.');
+    if(document.getElementById('hunts-modal').classList.contains('open')) renderHuntCenter();
+  });
+  document.getElementById('training-pill').addEventListener('click', ()=>{
+    if(!trainingActive) return;
+    sendWS({ type:'training:stop' });
+    logLoot('🏋️ Treino no boneco interrompido.');
+  });
+  document.getElementById('party-invite-btn').addEventListener('click', ()=>{
+    const targetUsername = document.getElementById('party-invite-input').value.trim();
+    if(!targetUsername) return;
+    sendWS({ type:'party:invite', targetUsername });
+    document.getElementById('party-invite-input').value = '';
+  });
+  document.getElementById('party-leave-btn').addEventListener('click', ()=> sendWS({ type:'party:leave' }));
+
+  function renderParty(){
+    if(!partyPanel.classList.contains('open')) return;
+    const list = document.getElementById('party-list');
+    if(!party){ list.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Você não está em um grupo. Convide alguém pelo nick abaixo.</div>`; return; }
+    list.innerHTML = party.members.map(u=>`
+      <div class="party-row"><span class="pname">${u===party.leaderUsername?'<span class="crown">👑</span> ':''}${u}${u===AUTH_USERNAME?' (você)':''}</span><span></span></div>
+    `).join('');
+  }
+
+  function showPartyInviteToast(msg){
+    const stack = document.getElementById('toast-stack');
+    const toast = document.createElement('div'); toast.className = 'toast glass';
+    toast.innerHTML = `<span>👥 <b>${msg.from}</b> convidou você pro grupo.</span>`;
+    const accept = document.createElement('button'); accept.textContent = 'Aceitar';
+    accept.addEventListener('click', ()=>{ sendWS({ type:'party:accept', partyId: msg.partyId }); stack.removeChild(toast); });
+    const decline = document.createElement('button'); decline.className='decline'; decline.textContent='Recusar';
+    decline.addEventListener('click', ()=>{ sendWS({ type:'party:decline', inviterUsername: msg.from }); stack.removeChild(toast); });
+    toast.appendChild(accept); toast.appendChild(decline); stack.appendChild(toast);
+    setTimeout(()=>{ if(toast.parentNode) stack.removeChild(toast); }, 20000);
+  }
+
+  function showGuildInviteToast(msg){
+    const stack = document.getElementById('toast-stack');
+    const toast = document.createElement('div'); toast.className = 'toast glass';
+    toast.innerHTML = `<span>🛡️ <b>${msg.from}</b> convidou você pra guilda <b>${msg.guildName}</b>.</span>`;
+    const accept = document.createElement('button'); accept.textContent = 'Aceitar';
+    accept.addEventListener('click', ()=>{ sendWS({ type:'guild:accept', guildId: msg.guildId }); stack.removeChild(toast); });
+    const decline = document.createElement('button'); decline.className='decline'; decline.textContent='Recusar';
+    decline.addEventListener('click', ()=>{ sendWS({ type:'guild:decline', inviterUsername: msg.from, guildId: msg.guildId }); stack.removeChild(toast); });
+    toast.appendChild(accept); toast.appendChild(decline); stack.appendChild(toast);
+    setTimeout(()=>{ if(toast.parentNode) stack.removeChild(toast); }, 20000);
+  }
+
+  /* =========================================================
+     MODAL DE PERSONAGEM — aba Personagem (resumo + skills + bônus de XP)
+     e aba Outfit (galeria de outfits/monturas + cor por parte do corpo).
+     ========================================================= */
+  const characterModal = document.getElementById('character-modal');
+  document.getElementById('pf-open-character-btn').addEventListener('click', ()=>{ characterModal.classList.add('open'); renderCharacterModal(); });
+  document.getElementById('char-close').addEventListener('click', ()=> characterModal.classList.remove('open'));
+  document.querySelectorAll('.char-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.char-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+      const tab = t.dataset.ctab;
+      document.getElementById('char-panel-personagem').style.display = tab === 'personagem' ? 'block' : 'none';
+      document.getElementById('char-panel-outfit').style.display = tab === 'outfit' ? 'block' : 'none';
+      renderCharacterModal();
+    });
+  });
+  function renderCharacterModalIfOpen(){ if(characterModal.classList.contains('open')) renderCharacterModal(); }
+  function renderCharacterModal(){
+    const tab = document.querySelector('.char-tab.active').dataset.ctab;
+    if(tab === 'personagem') renderCharPersonagem(); else renderCharOutfit();
+  }
+  const ATTR_LABELS = { magia:'Magic Level', defesa:'Defesa', esquiva:'Esquiva', critico:'Crítico', sword:'Sword Fighting', axe:'Axe Fighting', club:'Club Fighting', distance:'Distance Fighting' };
+  function renderCharPersonagem(){
+    const speed = 220 + Math.floor(player.level/2);
+    const capacity = 1000 + player.level*15;
+    const rankLabel = prestige.diamondRank ? 'Diamante' : prestige.goldStars>0 ? 'Ouro' : prestige.silverStars>0 ? 'Prata' : prestige.bronzeStars>0 ? 'Bronze' : 'Aventureiro';
+    document.getElementById('char-summary').innerHTML = `
+      <div class="cs-left">
+        <div style="font-family:var(--font-display);font-size:16px;color:var(--gold-bright);margin-bottom:4px;">${escapeHtml(PLAYER_NICK)}</div>
+        <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);margin-bottom:12px;">Level ${player.level} — ${rankLabel}</div>
+        <div class="char-bar-row"><span class="lbl">Pontos de vida</span><div class="char-bar-track"><div class="char-bar-fill hp" style="width:${Math.max(0,player.hp/player.hpMax*100)}%"></div></div><span class="val">${Math.round(player.hp)} / ${player.hpMax}</span></div>
+        <div class="char-bar-row"><span class="lbl">Mana</span><div class="char-bar-track"><div class="char-bar-fill mp" style="width:${Math.max(0,player.mp/player.mpMax*100)}%"></div></div><span class="val">${Math.round(player.mp)} / ${player.mpMax}</span></div>
+        <div class="char-bar-row"><span class="lbl">Experiência</span><div class="char-bar-track"><div class="char-bar-fill xp" style="width:${(Math.round(player.xp)%1000)/10}%"></div></div><span class="val">${Math.round(player.xp).toLocaleString('pt-BR')} XP</span></div>
+      </div>
+      <div class="cs-right">
+        <div class="row"><span>Velocidade</span><b>${speed}</b></div>
+        <div class="row"><span>Capacidade</span><b>${capacity.toLocaleString('pt-BR')} oz</b></div>
+        <div class="row"><span>Magic Level</span><b>${Math.round(training.magia)}</b></div>
+        <div class="row"><span>Regen. de vida</span><b>Só em caçadas</b></div>
+        <div class="row"><span>Regen. de mana</span><b>Só em caçadas</b></div>
+        <div class="row"><span>Stamina</span><b>${fmtDuration(stamina.current)}</b></div>
+      </div>
+    `;
+    const cap = getTrainingCap();
+    document.getElementById('char-skills-list').innerHTML = Object.keys(ATTR_LABELS).map(k=>{
+      const val = Math.round(training[k]);
+      return `<div class="skill-row"><span>${ATTR_LABELS[k]}</span><div class="skill-track"><div class="skill-fill" style="width:${(val/cap*100).toFixed(1)}%"></div></div><span>${val}/${cap} (${(val/cap*100).toFixed(0)}%)</span></div>`;
+    }).join('');
+    const b = xpBonus;
+    document.getElementById('char-progress-box').innerHTML = `
+      <div class="prog-row"><span>Progresso no Bestiário</span><b>${b.bestiaryCount} de ${b.bestiaryTotal} entradas (${b.bestiaryTotal ? Math.round(b.bestiaryCount/b.bestiaryTotal*100) : 0}%)</b></div>
+      <div class="prog-row"><span>Bônus — Progresso no Bestiário</span><b>${b.bestiaryPct ? '+'+b.bestiaryPct+'%' : '—'}</b></div>
+      <div class="prog-row"><span>Bônus — Experience Scroll</span><b>${b.scrollPct ? '+'+b.scrollPct+'%' : '—'}</b></div>
+      <div class="prog-row"><span>Bônus — Guilda</span><b>${b.guildPct ? '+'+b.guildPct+'%' : '—'}</b></div>
+      <div class="prog-row"><span>Bônus — Premium</span><b>${b.premiumPct ? '+'+b.premiumPct+'%' : '—'}</b></div>
+      <div class="prog-row"><span>Bônus — Nível</span><b>+${b.levelPct}%</b></div>
+      <div class="prog-row prog-total"><span>Bônus total de experiência</span><b>+${b.totalPct}%</b></div>
+    `;
+  }
+
+  let outfitSubTab = 'outfits';
+  document.querySelectorAll('.outfit-subtab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.outfit-subtab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+      outfitSubTab = t.dataset.osub; renderCharOutfit();
+    });
+  });
+  function renderCharOutfit(){
+    const swatchesEl = document.getElementById('outfit-colors');
+    swatchesEl.style.display = outfitSubTab === 'outfits' ? 'flex' : 'none';
+    ['head','body','legs','feet'].forEach(part=>{
+      const wrap = document.querySelector(`[data-part-swatches="${part}"]`);
+      wrap.innerHTML = (colorPalette.length ? colorPalette : ['#888']).map((hex,i)=>
+        `<div class="color-swatch${cosmeticColors[part]===i?' selected':''}" style="background:${hex}" data-part="${part}" data-idx="${i}"></div>`
+      ).join('');
+      wrap.querySelectorAll('.color-swatch').forEach(sw=>{
+        sw.addEventListener('click', ()=> sendWS({ type:'cosmetic:color', part, colorIndex: Number(sw.dataset.idx) }));
+      });
+    });
+
+    const grid = document.getElementById('outfit-grid');
+    if(outfitSubTab === 'outfits'){
+      grid.innerHTML = outfitCatalog.map(o=>{
+        const owned = ownedOutfits.includes(o.id);
+        const equipped = cosmetics.outfit === o.id;
+        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-outfit="${o.id}">
+          <div class="oc-icon">🧍</div>
+          <div class="oc-name">${escapeHtml(o.name)}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipado':'Adquirido — clique p/ vestir') : (o.cost>0?`${o.cost.toLocaleString('pt-BR')} Gold`:'Grátis')}</div>
+        </div>`;
+      }).join('');
+      grid.querySelectorAll('.outfit-card').forEach(card=>{
+        card.addEventListener('click', ()=>{
+          const id = card.dataset.outfit;
+          if(ownedOutfits.includes(id)) sendWS({ type:'outfit:equip', outfitId:id });
+          else sendWS({ type:'outfit:buy', outfitId:id });
+        });
+      });
+    } else {
+      const noneOwned = `<div class="outfit-card${!cosmetics.mount?' equipped':''}" data-mount="__none__"><div class="oc-icon">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.mount?'Equipada':'Clique p/ desmontar'}</div></div>`;
+      grid.innerHTML = noneOwned + mountCatalog.map(m=>{
+        const owned = ownedMounts.includes(m.id);
+        const equipped = cosmetics.mount === m.id;
+        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-mount="${m.id}">
+          <div class="oc-icon">🐎</div>
+          <div class="oc-name">${escapeHtml(m.name)}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipada':'Adquirida — clique p/ montar') : `${m.cost.toLocaleString('pt-BR')} Gold`}</div>
+        </div>`;
+      }).join('');
+      grid.querySelectorAll('[data-mount]').forEach(card=>{
+        card.addEventListener('click', ()=>{
+          const id = card.dataset.mount;
+          if(id === '__none__') { sendWS({ type:'mount:equip', mountId:null }); return; }
+          if(ownedMounts.includes(id)) sendWS({ type:'mount:equip', mountId:id });
+          else sendWS({ type:'mount:buy', mountId:id });
+        });
+      });
+    }
+  }
+
+  /* =========================================================
+     GUILD — Minha Guild (Membros/Expedições/Gerenciar) + Lista de Guilds
+     pública. members[]/expedições/histórico vêm sob demanda (guild:get),
+     nunca no snapshot de 30Hz — só o resumo leve (guildSummary) vem sempre.
+     ========================================================= */
+  function fmtAgo(ts, isFuture){
+    if(!ts) return '—';
+    const diffMs = Date.now() - ts;
+    const mins = Math.floor(diffMs/60000);
+    if(mins < 1) return 'agora mesmo';
+    if(mins < 60) return `${mins}min atrás`;
+    const hours = Math.floor(mins/60);
+    if(hours < 24) return `${hours}h atrás`;
+    return `${Math.floor(hours/24)}d atrás`;
+  }
+  const guildModal = document.getElementById('guild-modal');
+  let guildSubTab = 'membros';
+  document.getElementById('btn-open-guild').addEventListener('click', ()=>{
+    guildModal.classList.add('open');
+    document.querySelectorAll('.guild-tab').forEach(x=>x.classList.remove('active'));
+    document.querySelector('.guild-tab[data-gtab="minha"]').classList.add('active');
+    document.getElementById('guild-panel-minha').style.display = 'block';
+    document.getElementById('guild-panel-lista').style.display = 'none';
+    if(guildId) sendWS({ type:'guild:get' }); else renderGuildMinhaTab();
+  });
+  document.getElementById('guild-close').addEventListener('click', ()=> guildModal.classList.remove('open'));
+  document.querySelectorAll('.guild-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.guild-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+      const tab = t.dataset.gtab;
+      document.getElementById('guild-panel-minha').style.display = tab === 'minha' ? 'block' : 'none';
+      document.getElementById('guild-panel-lista').style.display = tab === 'lista' ? 'block' : 'none';
+      if(tab === 'minha'){ if(guildId) sendWS({ type:'guild:get' }); else renderGuildMinhaTab(); }
+      else sendWS({ type:'guild:list' });
+    });
+  });
+  function renderGuildModalIfOpen(){
+    if(!guildModal.classList.contains('open')) return;
+    if(document.querySelector('.guild-tab.active').dataset.gtab === 'minha') renderGuildMinhaTab();
+  }
+  function renderGuildMinhaTab(){
+    const panel = document.getElementById('guild-panel-minha');
+    if(!guildId || !guildDetail){
+      panel.innerHTML = `
+        <div id="guild-create-box">
+          <div class="panel-title">Fundar uma Guilda<span class="rule"></span></div>
+          <input type="text" id="guild-create-name" placeholder="Nome da guilda (3-30 caracteres)" maxlength="30">
+          <input type="text" id="guild-create-tag" placeholder="Tag (2-4 letras, opcional)" maxlength="4">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);margin-bottom:10px;">Custo: 10.000 Gold.</div>
+          <button class="treino-inline-btn" id="guild-create-btn">Fundar Guilda</button>
+        </div>`;
+      document.getElementById('guild-create-btn').addEventListener('click', ()=>{
+        const name = document.getElementById('guild-create-name').value.trim();
+        const tag = document.getElementById('guild-create-tag').value.trim();
+        if(!name) return;
+        sendWS({ type:'guild:create', name, tag });
+      });
+      return;
+    }
+    const g = guildDetail;
+    const myRank = (g.members.find(m=>m.username===AUTH_USERNAME)||{}).rank;
+    panel.innerHTML = `
+      <div id="guild-header-row">
+        <div>
+          <div class="gh-name">${escapeHtml(g.name)} <small style="color:var(--ink-dim);font-family:var(--font-mono);">[${escapeHtml(g.tag)}]</small></div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);margin-top:4px;">${g.motd ? escapeHtml(g.motd) : 'Sem mensagem do dia.'}</div>
+        </div>
+        <div class="gh-badges">
+          <div class="gh-badge">MEMBROS<b>${g.members.length}/${g.maxMembers}</b></div>
+          <div class="gh-badge">TIER<b>${g.tier}</b></div>
+          <div class="gh-badge">BÔNUS EXP<b>+${g.bonusPct}%</b></div>
+        </div>
+      </div>
+      <div id="guild-subtabs">
+        <div class="guild-subtab${guildSubTab==='membros'?' active':''}" data-gsub="membros">Membros</div>
+        <div class="guild-subtab${guildSubTab==='expedicoes'?' active':''}" data-gsub="expedicoes">Expedições</div>
+        <div class="guild-subtab${guildSubTab==='gerenciar'?' active':''}" data-gsub="gerenciar">Gerenciar</div>
+      </div>
+      <div id="guild-subpanel"></div>
+    `;
+    document.querySelectorAll('.guild-subtab').forEach(t=>{
+      t.addEventListener('click', ()=>{ guildSubTab = t.dataset.gsub; renderGuildMinhaTab(); });
+    });
+    const sub = document.getElementById('guild-subpanel');
+    if(guildSubTab === 'membros') renderGuildMembersSub(sub, g, myRank);
+    else if(guildSubTab === 'expedicoes') renderGuildExpeditionsSub(sub, g);
+    else renderGuildManageSub(sub, g, myRank);
+  }
+  function renderMemberActions(m, myRank){
+    if(m.username === AUTH_USERNAME) return '';
+    if(myRank === 'leader'){
+      const parts = [];
+      if(m.rank === 'member') parts.push(`<button class="party-btn" data-guild-action="promote" data-target="${m.username}">Promover</button>`);
+      if(m.rank === 'vice') parts.push(`<button class="party-btn" data-guild-action="demote" data-target="${m.username}">Rebaixar</button>`);
+      parts.push(`<button class="party-btn" data-guild-action="transfer" data-target="${m.username}">Tornar Líder</button>`);
+      parts.push(`<button class="party-btn danger" data-guild-action="kick" data-target="${m.username}">Expulsar</button>`);
+      return parts.join(' ');
+    }
+    if(myRank === 'vice' && m.rank === 'member') return `<button class="party-btn danger" data-guild-action="kick" data-target="${m.username}">Expulsar</button>`;
+    return '';
+  }
+  function renderGuildMembersSub(el, g, myRank){
+    el.innerHTML = `
+      <div style="margin-bottom:10px; display:flex; gap:8px;">
+        <input type="text" id="guild-invite-input" placeholder="Nick do jogador...">
+        <button class="party-btn primary" id="guild-invite-btn">Convidar</button>
+      </div>
+      <div style="overflow-x:auto;">
+      <table id="guild-members-table">
+        <thead><tr><th>Nome</th><th>Rank</th><th>Nível</th><th>Contribuição</th><th>Status</th><th>Entrou</th><th></th></tr></thead>
+        <tbody>${g.members.map(m=>`
+          <tr>
+            <td>${escapeHtml(m.username)}${m.username===AUTH_USERNAME?' (você)':''}</td>
+            <td>${escapeHtml(g.rankTitles[m.rank]||m.rank)}</td>
+            <td>${m.level ?? '—'}</td>
+            <td>${Math.round(m.contribution||0).toLocaleString('pt-BR')}</td>
+            <td><span class="online-dot${m.online?' online':''}"></span>${m.online?'Online':fmtAgo(m.disconnectedAt)}</td>
+            <td>${fmtAgo(m.joinedAt)}</td>
+            <td>${renderMemberActions(m, myRank)}</td>
+          </tr>`).join('')}</tbody>
+      </table>
+      </div>
+    `;
+    document.getElementById('guild-invite-btn').addEventListener('click', ()=>{
+      const targetUsername = document.getElementById('guild-invite-input').value.trim();
+      if(!targetUsername) return;
+      sendWS({ type:'guild:invite', targetUsername });
+      document.getElementById('guild-invite-input').value = '';
+    });
+    el.querySelectorAll('[data-guild-action]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const action = btn.dataset.guildAction, targetUsername = btn.dataset.target;
+        if(action === 'kick') sendWS({ type:'guild:kick', targetUsername });
+        else if(action === 'promote') sendWS({ type:'guild:promote', targetUsername, rank:'vice' });
+        else if(action === 'demote') sendWS({ type:'guild:promote', targetUsername, rank:'member' });
+        else if(action === 'transfer'){ if(confirm(`Transferir a liderança pra ${targetUsername}?`)) sendWS({ type:'guild:transferLeadership', targetUsername }); }
+      });
+    });
+  }
+  function renderGuildExpeditionsSub(el, g){
+    const exp = g.expeditions || { objectives: [] };
+    el.innerHTML = `
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);margin-bottom:12px;">Objetivos de hoje — o progresso de qualquer membro conta, em qualquer caçada. Reseta todo dia.</div>
+      ${(exp.objectives||[]).map(o=>{
+        const done = o.progress >= o.target;
+        return `<div class="guild-expedition-card${done?' done':''}">
+          <div class="ge-title"><span>${o.icon||'👹'} ${escapeHtml(o.label)}</span><span>${o.progress}/${o.target}${done?' ✅':''}</span></div>
+          <div class="ge-bar"><div class="ge-fill" style="width:${Math.min(100,o.progress/o.target*100)}%"></div></div>
+        </div>`;
+      }).join('') || '<div style="color:var(--ink-dim);font-family:var(--font-mono);font-size:10.5px;">Nenhuma expedição ativa.</div>'}
+      <div class="panel-title" style="margin-top:16px;">Próxima Vaga de Membro<span class="rule"></span></div>
+      <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">
+        Pontos de guilda: <b style="color:var(--gold-bright);">${g.points}/${g.nextSlot.points}</b><br>
+        Gold doado: <b style="color:var(--gold-bright);">${Math.round(g.donatedGoldTotal).toLocaleString('pt-BR')}/${g.nextSlot.gold.toLocaleString('pt-BR')}</b>
+      </div>
+    `;
+  }
+  function renderGuildManageSub(el, g, myRank){
+    const canManage = myRank === 'leader';
+    el.innerHTML = `
+      <div id="guild-manage-box">
+        <div class="panel-title">Doar Gold<span class="rule"></span></div>
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <input type="text" id="guild-donate-input" placeholder="Quantia de gold...">
+          <button class="party-btn primary" id="guild-donate-btn">Doar</button>
+        </div>
+        ${canManage ? `
+          <div class="panel-title">Mensagem do Dia<span class="rule"></span></div>
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <input type="text" id="guild-motd-input" value="${escapeHtml(g.motd||'')}" maxlength="140" style="flex:1;">
+            <button class="party-btn" id="guild-motd-btn">Salvar</button>
+          </div>
+          <div class="panel-title">Títulos dos Ranks<span class="rule"></span></div>
+          ${['leader','vice','member'].map(r=>`
+            <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
+              <span style="width:90px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim);">${r==='leader'?'Leader':r==='vice'?'Vice-Leader':'Member'}</span>
+              <input type="text" data-rank-title="${r}" value="${escapeHtml(g.rankTitles[r]||'')}" maxlength="24">
+              <button class="party-btn" data-rank-save="${r}">Renomear</button>
+            </div>`).join('')}
+          <div class="panel-title">Dissolver Guilda<span class="rule"></span></div>
+          <button class="party-btn danger" id="guild-disband-btn">Dissolver Guilda</button>
+        ` : `
+          <div class="panel-title">Sair da Guilda<span class="rule"></span></div>
+          <button class="party-btn danger" id="guild-leave-btn">Sair da Guilda</button>
+        `}
+        <div class="panel-title" style="margin-top:16px;">Histórico<span class="rule"></span></div>
+        <div id="guild-history-list">${(g.history||[]).map(h=>`<div class="guild-history-item">${fmtAgo(h.at)} — ${escapeHtml(h.text)}</div>`).join('') || '<div style="color:var(--ink-dim);font-family:var(--font-mono);font-size:10px;">Sem eventos ainda.</div>'}</div>
+      </div>
+    `;
+    document.getElementById('guild-donate-btn').addEventListener('click', ()=>{
+      const amount = Math.max(0, Math.floor(Number(document.getElementById('guild-donate-input').value)||0));
+      if(amount <= 0) return;
+      sendWS({ type:'guild:donate', amount });
+      document.getElementById('guild-donate-input').value = '';
+    });
+    if(canManage){
+      document.getElementById('guild-motd-btn').addEventListener('click', ()=> sendWS({ type:'guild:setMotd', motd: document.getElementById('guild-motd-input').value }));
+      el.querySelectorAll('[data-rank-save]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const rankKey = btn.dataset.rankSave;
+          const title = el.querySelector(`[data-rank-title="${rankKey}"]`).value.trim();
+          if(!title) return;
+          sendWS({ type:'guild:renameRank', rankKey, title });
+        });
+      });
+      document.getElementById('guild-disband-btn').addEventListener('click', ()=>{
+        if(confirm('Tem certeza que quer dissolver a guilda? Essa ação não pode ser desfeita.')) sendWS({ type:'guild:disband' });
+      });
+    } else {
+      document.getElementById('guild-leave-btn').addEventListener('click', ()=>{
+        if(confirm('Tem certeza que quer sair da guilda?')) sendWS({ type:'guild:leave' });
+      });
+    }
+  }
+  function renderGuildListTab(guilds){
+    const el = document.getElementById('guild-list-body');
+    if(!guilds || !guilds.length){ el.innerHTML = '<div style="color:var(--ink-dim);font-family:var(--font-mono);font-size:11px;">Nenhuma guilda fundada ainda. Que tal fundar a primeira?</div>'; return; }
+    el.innerHTML = guilds.map(g=>`
+      <div class="guild-list-row">
+        <span><b style="color:var(--gold-bright);">${escapeHtml(g.name)}</b> <small style="color:var(--ink-dim);">[${escapeHtml(g.tag)}]</small></span>
+        <span style="color:var(--ink-dim);">Tier ${g.tier} · ${g.memberCount}/${g.maxMembers} membros</span>
+      </div>
+    `).join('');
+  }
+
+  /* =========================================================
+     TRADE — pedido / convite / duas etapas (Travar + Confirmar)
+     ========================================================= */
+  const tradeModal = document.getElementById('trade-modal');
+  let tradePicks = { gold:0, items:[] };
+  function openTradeModal(){ tradeModal.classList.add('open'); }
+  function closeTradeModal(){ tradeModal.classList.remove('open'); currentTrade = null; tradePicks = { gold:0, items:[] }; }
+  document.getElementById('trade-cancel-btn').addEventListener('click', ()=>{
+    if(currentTrade) sendWS({ type:'trade:cancel', tradeId: currentTrade.id });
+    closeTradeModal();
+  });
+  document.getElementById('trade-my-gold').addEventListener('input', e=>{
+    tradePicks.gold = Math.max(0, Number(e.target.value)||0);
+    sendTradeOfferUpdate();
+  });
+  document.getElementById('trade-lock-btn').addEventListener('click', ()=>{
+    if(currentTrade) sendWS({ type:'trade:lock', tradeId: currentTrade.id });
+  });
+  document.getElementById('trade-confirm-btn').addEventListener('click', ()=>{
+    if(currentTrade) sendWS({ type:'trade:confirm', tradeId: currentTrade.id });
+  });
+  function sendTradeOfferUpdate(){
+    if(!currentTrade) return;
+    sendWS({ type:'trade:update', tradeId: currentTrade.id, gold: tradePicks.gold, items: tradePicks.items });
+  }
+  function showTradeInviteToast(msg){
+    const stack = document.getElementById('toast-stack');
+    const toast = document.createElement('div'); toast.className = 'toast glass';
+    toast.innerHTML = `<span>🤝 <b>${msg.from}</b> quer negociar com você.</span>`;
+    const accept = document.createElement('button'); accept.textContent = 'Aceitar';
+    accept.addEventListener('click', ()=>{
+      sendWS({ type:'trade:accept', tradeId: msg.tradeId });
+      currentTrade = { id: msg.tradeId, a: msg.from, b: AUTH_USERNAME, offers:{}, locked:{}, confirmed:{} };
+      openTradeModal(); stack.removeChild(toast);
+    });
+    const decline = document.createElement('button'); decline.className='decline'; decline.textContent='Recusar';
+    decline.addEventListener('click', ()=>{ sendWS({ type:'trade:cancel', tradeId: msg.tradeId }); stack.removeChild(toast); });
+    toast.appendChild(accept); toast.appendChild(decline); stack.appendChild(toast);
+    setTimeout(()=>{ if(toast.parentNode) stack.removeChild(toast); }, 20000);
+  }
+  function renderTrade(){
+    if(!currentTrade) return;
+    const other = currentTrade.a === AUTH_USERNAME ? currentTrade.b : currentTrade.a;
+    document.getElementById('trade-other-name').textContent = other;
+    document.getElementById('trade-their-label').textContent = `Oferta de ${other}`;
+    const myOffer = (currentTrade.offers && currentTrade.offers[AUTH_USERNAME]) || { gold:0, items:[] };
+    const theirOffer = (currentTrade.offers && currentTrade.offers[other]) || { gold:0, items:[] };
+    document.getElementById('trade-their-gold').textContent = `Ouro: ${theirOffer.gold||0}`;
+    document.getElementById('trade-their-items').innerHTML = (theirOffer.items||[]).map(it=>`<div class="trade-item-row"><span>${it.name||it.id}</span><span>${it.qty||1}x</span></div>`).join('') || '<div style="opacity:.5">vazio</div>';
+
+    const myItemsList = document.getElementById('trade-my-items');
+    const allMine = [...pouch.map(it=>({...it, source:'pouch'})), ...bag.map(it=>({...it, source:'bag'}))];
+    myItemsList.innerHTML = allMine.map(it=>{
+      const picked = tradePicks.items.find(p=>p.id===it.id && p.source===it.source);
+      return `<div class="trade-item-row ${picked?'picked':''}" data-pick-id="${it.id}" data-pick-source="${it.source}"><span>${it.name||it.id}</span><span>${it.qty||1}x</span></div>`;
+    }).join('') || '<div style="opacity:.5">vazio</div>';
+    myItemsList.querySelectorAll('[data-pick-id]').forEach(row=>{
+      row.addEventListener('click', ()=>{
+        const id = row.dataset.pickId, source = row.dataset.pickSource;
+        const idx = tradePicks.items.findIndex(p=>p.id===id && p.source===source);
+        if(idx===-1) tradePicks.items.push({ id, source, qty:1 }); else tradePicks.items.splice(idx,1);
+        sendTradeOfferUpdate(); renderTrade();
+      });
+    });
+
+    const lockedMine = !!(currentTrade.locked && currentTrade.locked[AUTH_USERNAME]);
+    const lockedTheirs = !!(currentTrade.locked && currentTrade.locked[other]);
+    document.getElementById('trade-side-mine').classList.toggle('locked', lockedMine);
+    document.getElementById('trade-side-theirs').classList.toggle('locked', lockedTheirs);
+    document.getElementById('trade-lock-btn').disabled = lockedMine;
+    document.getElementById('trade-confirm-btn').disabled = !(lockedMine && lockedTheirs);
+    document.getElementById('trade-status-line').textContent = lockedMine && lockedTheirs
+      ? 'Ambos travaram a oferta — clique em Confirmar pra concluir.'
+      : lockedMine ? 'Aguardando a outra parte travar a oferta...' : 'Monte sua oferta e trave quando estiver pronto.';
+  }
+
+  /* =========================================================
+     ATALHO DA MOCHILA — Inventário Dividido
+     ========================================================= */
+  const inventoryModal = document.getElementById('inventory-modal');
+  let invTab = 'bolsa';
+  document.getElementById('bag-shortcut').addEventListener('click', ()=>{ inventoryModal.classList.add('open'); renderInventory(); });
+  document.getElementById('inv-close').addEventListener('click', ()=> inventoryModal.classList.remove('open'));
+  document.querySelectorAll('.inv-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.inv-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+      invTab = t.dataset.invtab; renderInventory();
+    });
+  });
+  function renderInventoryIfOpen(){ if(inventoryModal.classList.contains('open')) renderInventory(); }
+  const RARITY_COLORS = { comum:'#a99872', incomum:'#6fae6f', rara:'#7fc6ff', 'épica':'#b98af0', 'lendária':'#f0d38a' };
+  function renderInventory(){
+    document.querySelectorAll('.equip-slot[data-equip]').forEach(el=>{
+      const key = el.dataset.equip; const item = equipment[key];
+      el.title = item ? item.name : el.querySelector('.slot-tag').textContent;
+    });
+    document.querySelectorAll('.equip-slot[data-cosmetic]').forEach(el=>{
+      const key = el.dataset.cosmetic; const item = cosmetics[key];
+      el.title = item ? item.name : el.querySelector('.slot-tag').textContent;
+    });
+    const grid = document.getElementById('inv-items-grid');
+    const cap = document.getElementById('inv-capacity-line');
+    const items = invTab === 'bolsa' ? pouch : bag;
+    const capMax = invTab === 'bolsa' ? pouchCapacity : bagCapacity;
+    cap.textContent = `${invTab === 'bolsa' ? 'Bolsa (consumíveis)' : 'Mochila (loot)'}: ${items.length}/${capMax}`;
+    grid.innerHTML = '';
+    items.forEach(it=>{
+      const slot = document.createElement('div'); slot.className = 'item-slot';
+      slot.innerHTML = `${invTab==='bolsa' ? '🧪' : '💎'}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}<span class="rarity-dot" style="background:${RARITY_COLORS[it.rarity]||'#a99872'}"></span>`;
+      slot.title = it.name || it.id;
+      grid.appendChild(slot);
+    });
+    for(let i=items.length;i<Math.min(capMax,30);i++){ const empty = document.createElement('div'); empty.className='item-slot'; empty.style.opacity='.35'; grid.appendChild(empty); }
+  }
+
+  /* =========================================================
+     HOTBAR UNIFICADA (magias + itens com condição de disparo).
+     Em modo online, o disparo em si é decidido pelo servidor
+     (poções automáticas por %); a hotbar aqui é a configuração
+     visual das condições — igual à barra expandida pedida.
+     ========================================================= */
+  const SKILLS = [
+    { id:'flecha_agua', icon:'💧', name:'Flecha de Água' },
+    { id:'bola_fogo',   icon:'🔥', name:'Bola de Fogo' },
+    { id:'punho_terra', icon:'🪨', name:'Punho de Terra' },
+    { id:'lamina_ar',   icon:'🌪️', name:'Lâmina de Ar' },
+  ];
+  const POTIONS = [
+    { id:'lesser_health', icon:'🧪', name:'Lesser Health', minLevel:1, kind:'health' },
+    { id:'strong_health', icon:'❤️', name:'Strong Health', minLevel:50, kind:'health' },
+    { id:'strong_mana',   icon:'💠', name:'Strong Mana',   minLevel:50, kind:'mana' },
+  ];
+  function canUsePotion(pot){ return player.level >= pot.minLevel; }
+  const CONDITION_TYPES = [
+    { id:'always', label:'Sempre que disponível' },
+    { id:'hpBelow', label:'HP do jogador menor que X%' },
+    { id:'manaBelow', label:'Mana do jogador menor que X%' },
+  ];
+  const HOTBAR_SIZE = 8;
+  const hotbar = Array.from({length:HOTBAR_SIZE}, ()=>({ kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 }));
+  hotbar[0] = { kind:'spell', id:'flecha_agua', condition:{type:'always',threshold:0}, cooldownUntil:0 };
+  hotbar[1] = { kind:'spell', id:'bola_fogo',   condition:{type:'always',threshold:0}, cooldownUntil:0 };
+  hotbar[2] = { kind:'spell', id:'punho_terra', condition:{type:'always',threshold:0}, cooldownUntil:0 };
+  hotbar[3] = { kind:'item',  id:'lesser_health',condition:{type:'hpBelow',threshold:50}, cooldownUntil:0 };
+  hotbar[4] = { kind:'item',  id:'strong_health',condition:{type:'hpBelow',threshold:30}, cooldownUntil:0 };
+  hotbar[5] = { kind:'item',  id:'strong_mana',  condition:{type:'manaBelow',threshold:30}, cooldownUntil:0 };
+
+  const hotbarEl = document.getElementById('hotbar');
+  let configuringSlotIndex = null;
+  function renderHotbar(){
+    hotbarEl.innerHTML = '<div class="corner-br"></div>';
+    hotbar.forEach((slot,i)=>{
+      const el = document.createElement('div');
+      let locked = false, icon = '';
+      if(slot.kind==='spell'){ icon = SKILLS.find(s=>s.id===slot.id).icon; }
+      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot.icon; locked = !canUsePotion(pot); }
+      el.className = 'slot' + (locked?' locked':'');
+      const cdPct = slot.kind && Date.now() < slot.cooldownUntil ? Math.round((slot.cooldownUntil-Date.now())/2200*100) : 0;
+      const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
+      el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>`;
+      el.addEventListener('contextmenu', e=>{ e.preventDefault(); openActionModal(i); });
+      hotbarEl.appendChild(el);
+    });
+  }
+  setInterval(renderHotbar, 500);
+
+  function openActionModal(slotIndex){ configuringSlotIndex = slotIndex; document.getElementById('action-modal').classList.add('open'); renderActionBody(); }
+  document.getElementById('action-close').addEventListener('click', ()=> document.getElementById('action-modal').classList.remove('open'));
+  document.querySelectorAll('.action-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{ document.querySelectorAll('.action-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); renderActionBody(); });
+  });
+  function renderActionBody(){
+    const body = document.getElementById('action-body');
+    const activeTab = document.querySelector('.action-tab.active').dataset.actiontab;
+    const slot = hotbar[configuringSlotIndex];
+    let html = '';
+    if(activeTab==='magias'){
+      SKILLS.forEach(s=>{ const selected = slot.kind==='spell' && slot.id===s.id;
+        html += `<div class="opt-row ${selected?'selected':''}" data-assign-spell="${s.id}">${s.icon} ${s.name}</div>`; });
+    } else {
+      POTIONS.forEach(p=>{
+        const unlocked = canUsePotion(p); const selected = slot.kind==='item' && slot.id===p.id;
+        html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''}>${p.icon} ${p.name} <span class="req">Nv.${p.minLevel}</span></div>`;
+      });
+    }
+    html += `<div style="margin-top:10px;">
+      <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Condição de disparo (ativação por % de HP/MP)</label>
+      <select class="cond-select" id="cond-type-select">${CONDITION_TYPES.map(c=>`<option value="${c.id}" ${slot.condition.type===c.id?'selected':''}>${c.label}</option>`).join('')}</select>
+      <input type="range" class="cond-threshold" id="cond-threshold-input" min="1" max="100" value="${slot.condition.threshold||50}">
+      <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);text-align:right;" id="cond-threshold-val">${slot.condition.threshold||50}%</div>
+    </div>`;
+    body.innerHTML = html;
+    body.querySelectorAll('[data-assign-spell]').forEach(el=> el.addEventListener('click', ()=>{ slot.kind='spell'; slot.id=el.dataset.assignSpell; renderActionBody(); renderHotbar(); }));
+    body.querySelectorAll('[data-assign-item]').forEach(el=> el.addEventListener('click', ()=>{
+      slot.kind='item'; slot.id=el.dataset.assignItem; renderActionBody(); renderHotbar();
+      const pot = POTIONS.find(p=>p.id===slot.id);
+      sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { enabled:true, thresholdPercent: slot.condition.threshold||50 } } });
+    }));
+    document.getElementById('cond-type-select').addEventListener('change', e=>{ slot.condition.type=e.target.value; renderHotbar(); });
+    document.getElementById('cond-threshold-input').addEventListener('input', e=>{
+      slot.condition.threshold = +e.target.value;
+      document.getElementById('cond-threshold-val').textContent = e.target.value+'%';
+      if(slot.kind==='item'){
+        const pot = POTIONS.find(p=>p.id===slot.id);
+        sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { thresholdPercent: +e.target.value } } });
+      }
+    });
+  }
+  renderHotbar();
+
+  /* =========================================================
+     JANELA ANALISADORA (estatísticas de sessão — cliente-side, cosmético)
+     ========================================================= */
+  const session = { startedAt: now() };
+  const analyzerPanel = document.getElementById('analyzer-panel');
+  document.getElementById('btn-open-analyzer').addEventListener('click', ()=>{ analyzerPanel.classList.toggle('open'); renderAnalyzer(); });
+  document.querySelectorAll('.analyzer-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{ document.querySelectorAll('.analyzer-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); renderAnalyzer(); });
+  });
+  function renderAnalyzer(){
+    if(!analyzerPanel.classList.contains('open')) return;
+    const body = document.getElementById('analyzer-body');
+    const activeTab = document.querySelector('.analyzer-tab.active').dataset.atab;
+    const elapsedH = Math.max(0.0003, (now()-session.startedAt)/1000/3600);
+    if(activeTab==='geral'){
+      body.innerHTML = `
+        <div class="analyzer-row"><span>Tempo de sessão</span><b>${fmtDuration(now()-session.startedAt)}</b></div>
+        <div class="analyzer-row"><span>EXP/h</span><b>${Math.round(player.xp/elapsedH).toLocaleString('pt-BR')}</b></div>
+        <div class="analyzer-row"><span>Ouro em mãos</span><b>${Math.round(player.gold)}</b></div>
+        <div class="analyzer-row"><span>Ouro no banco</span><b>${Math.round(player.bankGold)}</b></div>
+      `;
+    } else {
+      body.innerHTML = `
+        <div class="analyzer-row"><span>Postura</span><b>${combatPosture}</b></div>
+        <div class="analyzer-row"><span>SQM</span><b>${sqmDistance}</b></div>
+        <div class="analyzer-row"><span>Alvo</span><b>${targetMode}</b></div>
+        <div class="analyzer-row"><span>HP/MP</span><b>${Math.round(player.hp)}/${Math.round(player.mp)}</b></div>
+      `;
+    }
+  }
+  setInterval(renderAnalyzer, 1000);
+
+  /* =========================================================
+     PAINEL DE ATRIBUTOS LIVRES
+     ========================================================= */
+  const ATTR_DEFS = [
+    { key:'magia', label:'Magia' }, { key:'defesa', label:'Defesa' }, { key:'esquiva', label:'Esquiva' },
+    { key:'critico', label:'Crítico' }, { key:'sword', label:'Sword' }, { key:'axe', label:'Axe' },
+    { key:'club', label:'Club' }, { key:'distance', label:'Distance' },
+  ];
+  // Espelha huntEngine.getTrainingCap: 50 base, +10 por estrela (Bronze/Prata/Ouro), +50 fixo no Diamante.
+  function getTrainingCap(){ const s = prestige.bronzeStars+prestige.silverStars+prestige.goldStars; return 50 + s*10 + (prestige.diamondRank?50:0); }
+  const attrsPanel = document.getElementById('attrs-panel');
+  document.getElementById('btn-open-attrs').addEventListener('click', ()=>{ attrsPanel.classList.toggle('open'); renderAttrs(); });
+  function renderAttrs(){
+    if(!attrsPanel.classList.contains('open')) return;
+    const cap = getTrainingCap();
+    document.getElementById('attr-cap').textContent = cap;
+    document.getElementById('attr-bank').textContent = Math.floor(trainingBank);
+    const list = document.getElementById('attrs-list');
+    list.innerHTML = '';
+    ATTR_DEFS.forEach(a=>{
+      const val = Math.round(training[a.key]);
+      const row = document.createElement('div'); row.className = 'attr-row';
+      const canAdd = trainingBank>=1 && val<cap;
+      row.innerHTML = `<span class="name">${a.label}</span><div class="attr-track"><div class="attr-fill" style="width:${(val/cap*100).toFixed(1)}%"></div></div><span class="attr-val">${val}/${cap}</span><button class="attr-plus" ${canAdd?'':'disabled'}>+</button>`;
+      row.querySelector('.attr-plus').addEventListener('click', ()=> sendWS({ type:'hunt:train', attrKey:a.key }));
+      list.appendChild(row);
+    });
+  }
+
+  /* =========================================================
+     ALTAR DE EVOLUÇÃO — Reset de Estrela real: gasta Gold + Fragmentos
+     para avançar Bronze -> Prata -> Ouro -> Diamante (5 estrelas por
+     tier). O painel abre em QUALQUER mapa (Cidade, Caçadas, Torre
+     Elementar) igual aos outros — a única coisa que muda fora da
+     Cidade é que o botão fica desabilitado com um aviso, porque o
+     servidor (server.js) rejeita a ação física quando
+     state.location !== 'city'. O toggle de Premium (dev/teste) continua
+     disponível aqui embaixo, sem relação nenhuma com o Reset de Estrela.
+     ========================================================= */
+  const altarModal = document.getElementById('altar-modal');
+  document.getElementById('btn-open-altar').addEventListener('click', ()=>{ altarModal.classList.toggle('open'); renderAltar(); });
+  function renderAltar(){
+    if(!altarModal.classList.contains('open')) return;
+    const body = document.getElementById('altar-body');
+    const tierLabel = prestige.diamondRank ? 'Diamante (Rank máximo — teto de treino 200)' : `Bronze ${prestige.bronzeStars}/5 · Prata ${prestige.silverStars}/5 · Ouro ${prestige.goldStars}/5`;
+    const inCity = location === 'city';
+    const canAfford = starEvolutionCost && player.gold >= starEvolutionCost.gold && fragments >= starEvolutionCost.fragments;
+    const costLine = starEvolutionCost
+      ? `<div class="altar-req-row"><span>Custo da próxima estrela</span><span class="${canAfford?'ok':'missing'}">${starEvolutionCost.gold} Gold + ${starEvolutionCost.fragments} Fragmentos</span></div>`
+      : `<div class="altar-req-row"><span>Custo</span><span class="ok">Rank máximo atingido</span></div>`;
+    body.innerHTML = `
+      <div class="altar-rank-display">${tierLabel}</div>
+      <div class="altar-req-row"><span>Nível</span><span>${player.level}</span></div>
+      <div class="altar-req-row"><span>Teto de treino atual</span><span class="ok">${getTrainingCap()}</span></div>
+      <div class="altar-req-row"><span>Seu Ouro</span><span>${Math.floor(player.gold)}</span></div>
+      <div class="altar-req-row"><span>Seus Fragmentos</span><span>💠 ${fragments}</span></div>
+      ${costLine}
+      ${!inCity ? `<div class="altar-req-row" style="color:#ff9a80;">⚠️ Disponível apenas na Cidade Principal</div>` : ''}
+      <button id="altar-evolve-btn" ${(!inCity || !starEvolutionCost || !canAfford) ? 'disabled' : ''}>🔥 Realizar Reset de Estrela</button>
+      <div class="panel-title" style="margin-top:16px;font-size:11px;">Dev/teste</div>
+      <div class="altar-req-row"><span>Status</span><span>${isPremium?'Premium':'Free'}</span></div>
+      <button id="altar-confirm-btn">${isPremium?'Cancelar Premium (dev)':'Ativar Premium (dev)'}</button>
+    `;
+    document.getElementById('altar-evolve-btn').addEventListener('click', ()=> sendWS({ type:'altar:evolve' }));
+    document.getElementById('altar-confirm-btn').addEventListener('click', ()=>{
+      sendWS({ type:'hunt:configure', isPremium: !isPremium });
+    });
+  }
+
+  /* =========================================================
+     AMIGOS — abre em qualquer área do jogo, igual aos outros
+     painéis. Status online vem pronto do servidor a cada snapshot.
+     ========================================================= */
+  const friendsPanel = document.getElementById('friends-panel');
+  document.getElementById('btn-open-friends').addEventListener('click', ()=>{ friendsPanel.classList.toggle('open'); renderFriends(); });
+  document.getElementById('friends-add-btn').addEventListener('click', ()=>{
+    const targetUsername = document.getElementById('friends-add-input').value.trim();
+    if(!targetUsername) return;
+    sendWS({ type:'friend:add', targetUsername });
+    document.getElementById('friends-add-input').value = '';
+  });
+  function renderFriends(){
+    if(!friendsPanel.classList.contains('open')) return;
+    const list = document.getElementById('friends-list');
+    if(!friends.length){ list.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum amigo adicionado ainda.</div>`; return; }
+    list.innerHTML = friends.map(f=>`
+      <div class="friend-row"><span><span class="fdot ${f.online?'online':''}"></span>${f.username}</span><button class="party-btn danger" data-remove-friend="${f.username}">Remover</button></div>
+    `).join('');
+    list.querySelectorAll('[data-remove-friend]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'friend:remove', targetUsername: btn.dataset.removeFriend }));
+    });
+  }
+
+  /* =========================================================
+     LOJA DO FERREIRO BRAN — compra em NPC. Abre em qualquer mapa;
+     o servidor só executa a compra de fato quando location==='city'
+     (mesma restrição do Reset de Estrela do Altar).
+     ========================================================= */
+  const shopModal = document.getElementById('shop-modal');
+  const SHOP_NPC_ID = 'ferreiro_bran';
+  document.getElementById('btn-open-shop').addEventListener('click', ()=>{ shopModal.classList.toggle('open'); renderShop(); });
+  function renderShop(){
+    if(!shopModal.classList.contains('open')) return;
+    const shop = npcShops[SHOP_NPC_ID];
+    document.getElementById('shop-city-warning').style.display = location==='city' ? 'none' : 'block';
+    const list = document.getElementById('shop-items-list');
+    if(!shop){ list.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Carregando catálogo...</div>`; return; }
+    document.getElementById('shop-npc-name').textContent = shop.npcName;
+    list.innerHTML = shop.items.map(it=>`
+      <div class="shop-item-row"><span class="sname">${it.name}</span><span class="scost">${it.cost} Gold</span><button class="party-btn primary" data-buy-item="${it.id}">Comprar</button></div>
+    `).join('');
+    list.querySelectorAll('[data-buy-item]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'npc:buy', npcId: SHOP_NPC_ID, itemId: btn.dataset.buyItem, qty: 1 }));
+    });
+  }
+
+  /* =========================================================
+     RENDER — 3 CHECKBOXES DE SAÍDA AUTOMÁTICA (estilo Huntera:
+     "Sair sozinho quando..." dentro do popover do pill "Sair da Caçada")
+     ========================================================= */
+  const autoExit = {
+    outOfGold:{ enabled:true, label:'Acabar o Gold' },
+    bagFull:{ enabled:true, label:'Acabar a capacidade (mochila cheia)' },
+    partyMemberLeft:{ enabled:true, label:'Alguém do grupo sair' },
+  };
+  function renderExitChecks(){
+    const wrap = document.getElementById('exit-checks');
+    wrap.innerHTML = Object.keys(autoExit).map(key=>`<label><input type="checkbox" data-exit="${key}" ${autoExit[key].enabled?'checked':''}> ${autoExit[key].label}</label>`).join('');
+    wrap.querySelectorAll('input[data-exit]').forEach(cb=>{
+      cb.addEventListener('change', e=>{
+        autoExit[e.target.dataset.exit].enabled = e.target.checked;
+        sendWS({ type:'hunt:configure', autoExit: { [e.target.dataset.exit]: e.target.checked } });
+      });
+    });
+  }
+  renderExitChecks();
+
+  // Clicar no pill "↩ Sair da Caçada" em si (fora do popover/checkboxes que
+  // ficam dentro dele) inicia a mesma saída de 5 segundos do Huntera — dá
+  // tempo do jogador se arrepender antes do Bot realmente sair. Clicar de
+  // novo durante a contagem cancela.
+  let exitCountdownTimer = null;
+  const exitHuntLabel = document.getElementById('exit-hunt-label');
+  function cancelExitCountdown(){
+    if(!exitCountdownTimer) return;
+    clearInterval(exitCountdownTimer); exitCountdownTimer = null;
+    exitHuntLabel.textContent = '↩ Sair da Caçada';
+  }
+  document.getElementById('exit-hunt-pill').addEventListener('click', e=>{
+    if(e.target.closest('.popover')) return; // clique dentro do popover não conta
+    if(exitCountdownTimer){ cancelExitCountdown(); return; }
+    let remaining = 5;
+    exitHuntLabel.textContent = `↩ Saindo em ${remaining}s (clique p/ cancelar)`;
+    exitCountdownTimer = setInterval(()=>{
+      remaining--;
+      if(remaining <= 0){
+        cancelExitCountdown();
+        sendWS({ type:'hunt:returnToCity' });
+        return;
+      }
+      exitHuntLabel.textContent = `↩ Saindo em ${remaining}s (clique p/ cancelar)`;
+    }, 1000);
+  });
+
+  /* =========================================================
+     MODAL "DETALHES DA CAÇADA" — recorde, bestiário com fraqueza
+     elemental de cada monstro e loot possível. Usa a caçada ativa quando
+     o Bot já está numa Dungeon, ou a selecionada no menu de Caçadas.
+     ========================================================= */
+  function openHuntDetailsModal(){
+    const huntId = (activeHunt && activeHunt.running) ? activeHunt.huntId : (selectedHunt && selectedHunt.id);
+    const def = HUNTS.find(h=>h.id===huntId) || selectedHunt;
+    if(!def) return;
+    document.getElementById('hd-title').textContent = `${def.name} · Nível ${def.level}`;
+    document.getElementById('hd-record').innerHTML = `Seu recorde: <b>${def.record || '—'}</b>`;
+    const grid = document.getElementById('hd-monster-grid');
+    grid.innerHTML = '';
+    (def.monsterTypes||[]).forEach(mt=>{
+      const card = document.createElement('div');
+      card.className = 'hd-monster-card';
+      const weakHtml = (mt.weakTo||[]).map(w=>`<span class="elem-chip">${w}</span>`).join('') || '<span class="elem-chip">Nenhuma</span>';
+      card.innerHTML = `<div class="hd-monster-icon">${mt.icon}</div><div class="hd-monster-name">${mt.name}</div><div class="hd-monster-toggle">Detalhes ▾</div><div class="hd-monster-weak">Fraco contra:<br>${weakHtml}</div>`;
+      const toggle = card.querySelector('.hd-monster-toggle');
+      const weakBox = card.querySelector('.hd-monster-weak');
+      toggle.addEventListener('click', ()=>{
+        const show = weakBox.classList.toggle('show');
+        toggle.textContent = show ? 'Detalhes ▴' : 'Detalhes ▾';
+      });
+      grid.appendChild(card);
+    });
+    const boss = bossCatalog.find(b=>b.huntId===def.id);
+    if(boss){
+      const card = document.createElement('div');
+      card.className = 'hd-monster-card';
+      card.innerHTML = `<div class="hd-monster-icon">👑${boss.icon}</div><div class="hd-monster-name">${boss.name}</div><div class="hd-monster-weak show">Chefe da área (em breve — hoje só visual).</div>`;
+      grid.appendChild(card);
+    }
+    const lootWrap = document.getElementById('hd-loot-list');
+    lootWrap.innerHTML = (def.possibleLoot||[]).map(item=>`<div class="loot-item"><span class="rarity-${item.rarity}">${item.name}</span></div>`).join('');
+    document.getElementById('hunt-details-modal').classList.add('open');
+  }
+  document.getElementById('hunt-details-btn').addEventListener('click', openHuntDetailsModal);
+  document.getElementById('hd-close').addEventListener('click', ()=> document.getElementById('hunt-details-modal').classList.remove('open'));
+
+  /* =========================================================
+     JANELAS MOVÍVEIS E REDIMENSIONÁVEIS — aplica a todo .win
+     ========================================================= */
+  function makeWinDraggable(win, handle){
+    let dragging=false, offX=0, offY=0;
+    handle.addEventListener('mousedown', e=>{
+      if(e.target.closest('.win-resize')) return;
+      dragging = true; const r = win.getBoundingClientRect(); offX = e.clientX-r.left; offY = e.clientY-r.top;
+      win.style.left=r.left+'px'; win.style.top=r.top+'px'; win.style.right='auto'; win.style.bottom='auto'; win.style.transform='none';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e=>{ if(!dragging) return;
+      win.style.left = Math.max(0, Math.min(window.innerWidth-40, e.clientX-offX))+'px';
+      win.style.top  = Math.max(0, Math.min(window.innerHeight-40, e.clientY-offY))+'px'; });
+    window.addEventListener('mouseup', ()=> dragging=false);
+  }
+  function makeWinResizable(win, handle){
+    let resizing=false, startX=0,startY=0,startW=0,startH=0;
+    handle.addEventListener('mousedown', e=>{ resizing=true; startX=e.clientX; startY=e.clientY; const r=win.getBoundingClientRect(); startW=r.width; startH=r.height; e.stopPropagation(); e.preventDefault(); });
+    window.addEventListener('mousemove', e=>{ if(!resizing) return; win.style.width = Math.max(180, startW+(e.clientX-startX))+'px'; win.style.height = Math.max(80, startH+(e.clientY-startY))+'px'; });
+    window.addEventListener('mouseup', ()=> resizing=false);
+  }
+  document.querySelectorAll('.win').forEach(win=>{
+    const dragHandle = win.querySelector('.win-drag'); const resizeHandle = win.querySelector('.win-resize');
+    if(dragHandle) makeWinDraggable(win, dragHandle);
+    if(resizeHandle) makeWinResizable(win, resizeHandle);
+  });
+
+  document.getElementById('toggle-aura').addEventListener('change', e=> auraState.equipped = e.target.checked);
+
+  /* =========================================================
+     MOVIMENTO LIVRE NA CIDADE (Hub multiplayer) — clique no chão
+     move o herói; Ghost Walk: nenhuma checagem de colisão contra
+     outros jogadores é feita aqui, então dá pra passar um por
+     dentro do outro livremente. Em Dungeon o Bot é quem manda.
+     ========================================================= */
+  /* =========================================================
+     MENU RÁPIDO DE JOGADOR — clicar num jogador remoto (Cidade/Hub
+     ou companheiro de grupo em Dungeon) abre "Convidar pro Grupo" /
+     "Propor Troca", em vez de mover o herói pro chão clicado.
+     ========================================================= */
+  const playerMenu = document.createElement('div');
+  playerMenu.className = 'glass'; playerMenu.style.cssText = 'position:absolute;display:none;z-index:45;padding:6px;flex-direction:column;gap:4px;';
+  document.getElementById('stage').appendChild(playerMenu);
+  function showPlayerMenu(username, screenX, screenY){
+    playerMenu.innerHTML = '';
+    const inviteBtn = document.createElement('button'); inviteBtn.className='party-btn primary'; inviteBtn.textContent = `Convidar ${username} pro Grupo`;
+    inviteBtn.addEventListener('click', ()=>{ sendWS({ type:'party:invite', targetUsername: username }); playerMenu.style.display='none'; });
+    const tradeBtn = document.createElement('button'); tradeBtn.className='party-btn'; tradeBtn.textContent = `Propor Troca com ${username}`;
+    tradeBtn.addEventListener('click', ()=>{ sendWS({ type:'trade:request', targetUsername: username }); playerMenu.style.display='none'; });
+    playerMenu.appendChild(inviteBtn); playerMenu.appendChild(tradeBtn);
+    playerMenu.style.left = screenX+'px'; playerMenu.style.top = screenY+'px'; playerMenu.style.display = 'flex';
+  }
+  window.addEventListener('click', (e)=>{ if(!playerMenu.contains(e.target)) playerMenu.style.display = 'none'; });
+
+  canvas.addEventListener('click', (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
+
+    // hit-test contra jogadores remotos visíveis no bucket atual (mesma regra do draw())
+    let hitUsername = null;
+    for(const [uname, rp] of remotePlayers){
+      const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
+      if(!sameBucket) continue;
+      const s = worldToScreen(rp.x, rp.y);
+      if(Math.hypot(clickX-s.x, clickY-(s.y-18)) < 16){ hitUsername = uname; break; }
+    }
+    if(hitUsername){ showPlayerMenu(hitUsername, e.clientX, e.clientY); return; }
+
+    if(location !== 'city') return; // na Dungeon o movimento é 100% do Bot autoritativo do servidor
+    const world = screenToWorld(clickX, clickY);
+    player.x = world.x; player.y = world.y; // resposta visual imediata; o servidor confirma no próximo snapshot
+  });
+
+})();
+</script>
+</body>
+</html>
