@@ -257,6 +257,10 @@
         function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
         function rowHas(y){ for(let x=0;x<w;x++){ if(!isBg(x,y)) return true; } return false; }
         function colHas(x,y0,y1){ for(let y=y0;y<y1;y++){ if(!isBg(x,y)) return true; } return false; }
+        // largura de conteúdo (nº de colunas não-fundo) da linha y, restrita a
+        // [x0,x1) — usada abaixo pra achar o "queixo" de cada penteado (ver
+        // comentário perto de chinY mais embaixo).
+        function rowWidth(y,x0,x1){ let n=0; for(let x=x0;x<x1;x++){ if(!isBg(x,y)) n++; } return n; }
         const bands=[]; let y=0;
         while(y<h){ if(rowHas(y)){ const y0=y; let y1=y; while(y1<h && rowHas(y1)) y1++; bands.push([y0,y1]); y=y1; } else y++; }
         const pad=3;
@@ -264,8 +268,23 @@
           let x0=-1; for(let x=0;x<w;x++){ if(colHas(x,y0,y1)){ x0=x; break; } }
           if(x0<0) return null;
           let x1=x0; for(let x=x0;x<w;x++){ if(colHas(x,y0,y1)) x1=x; else break; } x1++;
+          // O bbox bruto (y0..y1) inclui fiapo de cabelo/enfeite que desça
+          // bem abaixo do rosto (mecha solta, pingente) — cada penteado tem
+          // uma proporção diferente disso, então usar o fundo do bbox como
+          // referência de encaixe (como era antes) deixa o rosto flutuando
+          // bem mais alto em penteados com fiapo comprido do que nos sem.
+          // Em vez disso achamos a última linha "larga" (bochecha/queixo, a
+          // parte grossa da cabeça, >=40% da largura máxima) — é ela
+          // (chinY) que encosta no corpo; o fiapo fino abaixo continua
+          // desenhado por cima do pescoço (efeito certo de cabelo caindo no
+          // ombro), só não serve de referência de altura.
+          let maxRowW=0;
+          for(let yy=y0; yy<y1; yy++){ const rw=rowWidth(yy,x0,x1); if(rw>maxRowW) maxRowW=rw; }
+          const thresh = maxRowW*0.4;
+          let chinY = y1-1;
+          for(let yy=y1-1; yy>=y0; yy--){ if(rowWidth(yy,x0,x1) >= thresh){ chinY=yy; break; } }
           const sx=Math.max(0,x0-pad), sy=Math.max(0,y0-pad);
-          return { sx, sy, sw:Math.min(w-sx,(x1-x0)+pad*2), sh:Math.min(h-sy,(y1-y0)+pad*2) };
+          return { sx, sy, sw:Math.min(w-sx,(x1-x0)+pad*2), sh:Math.min(h-sy,(y1-y0)+pad*2), chinY };
         }).filter(Boolean);
       }catch(e){ return []; }
     }
@@ -307,7 +326,14 @@
       const f = getHeadStyleFrame(entry, styleId);
       if(!f) return null;
       const scale = Math.min(maxW/f.sw, maxH/f.sh);
-      const dw=f.sw*scale, dh=f.sh*scale, dx=cx-dw/2, dy=bottomY-dh;
+      const dw=f.sw*scale, dh=f.sh*scale, dx=cx-dw/2;
+      // Ancora pelo QUEIXO (f.chinY, calculado em computeHeadStyleFrames),
+      // não pelo fundo bruto do recorte — ver comentário grandão lá em cima.
+      // Frames sem chinY (fallback de computeAutoFrame, só usado se o atlas
+      // de penteados ainda não carregou as 19 linhas) caem de volta na base
+      // do recorte, igual era antes.
+      const chinOffset = (f.chinY != null ? (f.chinY - f.sy) : f.sh) * scale;
+      const dy = bottomY - chinOffset;
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       return { dw, dh, dx, dy, topY:dy };
     }
