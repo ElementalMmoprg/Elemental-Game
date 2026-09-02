@@ -420,7 +420,13 @@
   #attrs-panel.open{ display:block; }
 
   /* ===== ÁRVORE DE HABILIDADES ELEMENTAL ===== */
-  #skilltree-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:460px; max-width:94vw; height:560px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  /* Layout "treliça" (referência: árvore de passivas estilo grade, raiz à
+     esquerda abrindo em 3 trilhas — Defesa/Suporte/Ataque — que se cruzam em
+     zigue-zague seguindo a cadeia real de dependência do servidor (cada nó só
+     depende do anterior; o zigue-zague é só o desenho, a trava continua 100%
+     linear) até convergir no marco Semi Ultimate e, na 2ª metade, na Ultimate
+     ("Marco Final"). Ver cálculo de x/y em renderSkillTree(). */
+  #skilltree-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:800px; max-width:96vw; height:480px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
   #skilltree-panel.open{ display:flex; }
   #skilltree-panel .panel-title{ flex-shrink:0; }
   .skilltree-body{ flex:1; display:flex; flex-direction:column; overflow:hidden; padding:0 14px 14px; }
@@ -429,11 +435,7 @@
   .skill-tab.active{ color:var(--gold-bright); border-color:var(--gold-bright); }
   .skill-points-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:6px; flex-shrink:0; }
   .skill-points-row b{ color:var(--gold-bright); }
-  /* Árvore em constelação (estilo PoE2): nós circulares pequenos ligados por
-     linhas finas dentro de #skill-list-wrap (que vira a "tela" relativa onde
-     o SVG de linhas + os nós absolutos são posicionados); os detalhes/
-     controles de quem foi clicado vivem em #skill-node-detail, logo abaixo. */
-  #skill-list-wrap{ flex:1; overflow-y:auto; overflow-x:hidden; border:1px solid var(--gold-deep); border-radius:6px; background:#0a0805; position:relative; }
+  #skill-list-wrap{ flex:1; overflow-x:auto; overflow-y:hidden; border:1px solid var(--gold-deep); border-radius:6px; background:radial-gradient(circle at 50% 40%, #16110b, #0a0805 72%); position:relative; }
   .skill-node{
     position:absolute; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(circle at 35% 30%, #2c2114, #0b0805);
@@ -448,6 +450,7 @@
   .skill-node.milestone{ border-width:2px; }
   .skill-node.milestone.invested{ border-color:#c99bff; color:#c99bff;
     box-shadow:0 0 12px 3px rgba(201,155,255,.65), inset 0 0 6px rgba(201,155,255,.4); }
+  .skill-node-anchor-label{ position:absolute; transform:translate(-50%,0); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); white-space:nowrap; pointer-events:none; }
   .skill-node.selected{ outline:2px solid #fff; outline-offset:2px; }
   #skill-node-detail{ flex-shrink:0; margin-top:8px; padding:8px 10px; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); font-family:var(--font-mono); font-size:10.5px; min-height:20px; }
   #skill-node-detail .detail-name{ color:var(--gold-bright); font-weight:600; display:block; margin-bottom:3px; }
@@ -1131,6 +1134,8 @@
         <div id="outfit-subtabs">
           <div class="outfit-subtab active" data-osub="outfits">Outfits</div>
           <div class="outfit-subtab" data-osub="mounts">Monturas</div>
+          <div class="outfit-subtab" data-osub="wings">Asas</div>
+          <div class="outfit-subtab" data-osub="auras">Auras</div>
         </div>
         <div id="outfit-grid"></div>
       </div>
@@ -1291,9 +1296,9 @@
   let offlineTrainingArmed = null;  // { repeat } — espelho do servidor
   let bestiaryKilled = [];
   let xpBonus = { bestiaryCount:0, bestiaryTotal:0, bestiaryPct:0, guildPct:0, premiumPct:0, levelPct:0, scrollPct:0, totalPct:0 };
-  let ownedOutfits = ['padrao'], ownedMounts = [];
+  let ownedOutfits = ['padrao'], ownedMounts = [], ownedWings = [], ownedAuras = [];
   let cosmeticColors = { head:0, body:0, legs:0, feet:0 };
-  let outfitCatalog = [], mountCatalog = [], colorPalette = [], bossCatalog = [];
+  let outfitCatalog = [], mountCatalog = [], wingCatalog = [], auraCatalog = [], colorPalette = [], bossCatalog = [];
   // hairId (1-8, escolhido na criação de personagem) -> cor real disponível no
   // repositório de sprites. Mirror do huntEngine.HAIR_COLORS — sobrescrito
   // pelo valor de verdade assim que o 'welcome' chega, igual outfitCatalog.
@@ -1431,6 +1436,14 @@
     // não "base.png" — confirmado na listagem real do repositório.
     function bodySprite(genero){ return load('b_'+genero, `player/bodies ${genero}/${genero}_base.png`); }
     function armorSprite(genero, outfitId){ return load('a_'+genero+'_'+outfitId, `player/armors ${genero}/${outfitId}.png`); }
+    // Asas não têm variação por gênero (arte simétrica, cosmético "acima do
+    // Elmo") — 1 arquivo só por id do WING_CATALOG, igual convenção de outfit.
+    function wingSprite(wingId){ return load('w_'+wingId, `wings/${wingId}.png`); }
+    // Auras são ANIMADAS (4 quadros soltos, não um atlas) — cada quadro é um
+    // arquivo próprio em assets/auras/<auraId>/f00.png..f03.png; quem escolhe
+    // o quadro atual é drawCharacterLayers (timer por Date.now()), aqui só
+    // carrega o quadro pedido (com cache, igual todo o resto do SpriteManager).
+    function auraFrame(auraId, frameIdx){ return load('au_'+auraId+'_'+frameIdx, `auras/${auraId}/f${String(frameIdx).padStart(2,'0')}.png`); }
     function drawClippedFrame(targetCtx, entry, frameW, frameH, col, row, dx, dy, dw, dh){
       if(!entry.loaded) return false;
       const f = entry.frame;
@@ -1438,7 +1451,7 @@
       else targetCtx.drawImage(entry.img, col*frameW, row*frameH, frameW, frameH, dx, dy, dw, dh);
       return true;
     }
-    return { load, monsterSprite, headSprite, bodySprite, armorSprite, drawClippedFrame, URL_BASE };
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -1446,7 +1459,11 @@
   // quanto pra cada entrada de remotePlayers, já que agora 'positions' manda
   // gender/hairId/outfit de todo mundo. Cai pro boneco procedural (elipse +
   // círculo) sempre que faltar sprite carregado, sem nunca travar o desenho.
-  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, fallbackColor, targetCtx){
+  // Quantos quadros cada aura tem — hoje só existe 1 aura (4 quadros); se no
+  // futuro cada uma tiver sua própria contagem, isso pode vir do auraCatalog
+  // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
+  const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
+  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx){
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
     // sempre; com ele, desenha em QUALQUER outro canvas (usado pelo retrato
     // do personagem no Inventário, que reaproveita esse mesmo desenhista em
@@ -1454,6 +1471,14 @@
     const tctx = targetCtx || ctx;
     const genero = gender === 'female' ? 'female' : 'male';
     let drewBody = false, drewHead = false;
+    // Asas desenham ANTES do corpo (ficam atrás do personagem) — sem
+    // fallback procedural: se o sprite ainda não carregou/não existe pra
+    // esse id, simplesmente não aparece nada (cosmético puro, não deve
+    // desenhar um boneco de emergência no lugar).
+    if(wingId){
+      const wing = SpriteManager.wingSprite(wingId);
+      if(wing.loaded) SpriteManager.drawClippedFrame(tctx, wing, 64,64, 0,0, s.x-30, s.y-46+breathe, 60,52);
+    }
     const body = SpriteManager.bodySprite(genero);
     drewBody = body.loaded && SpriteManager.drawClippedFrame(tctx, body, 64,64, 0,0, s.x-21, s.y-42+breathe, 42,42);
     if(outfitId && outfitId !== 'padrao'){
@@ -1465,6 +1490,20 @@
     drewHead = headSprite.loaded && SpriteManager.drawClippedFrame(tctx, headSprite, 32,32, 0,0, s.x-15, s.y-40+breathe, 30,30);
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
+    // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
+    // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
+    // jogador vê a MESMA animação em sincronia, sem precisar coordenar via rede.
+    if(auraId){
+      const frameIdx = Math.floor(Date.now()/AURA_FRAME_MS) % AURA_FRAME_COUNT;
+      const aura = SpriteManager.auraFrame(auraId, frameIdx);
+      if(aura.loaded){
+        const iw = aura.img.naturalWidth, ih = aura.img.naturalHeight;
+        const box = 84;
+        const scale = Math.min(box/iw, box/ih);
+        const dw = iw*scale, dh = ih*scale;
+        tctx.drawImage(aura.img, s.x-dw/2, s.y-18+breathe-dh/2, dw, dh);
+      }
+    }
     return { drewBody, drewHead };
   }
 
@@ -1654,7 +1693,7 @@
       // ninguém está mais controlando aquele personagem ativamente.
       drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
         const s = toScreen(rp.x,rp.y);
-        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a');
+        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a');
       }, headCart:{x:rp.x,y:rp.y}, headLift:27, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
@@ -1662,7 +1701,7 @@
       const s = toScreen(player.x,player.y);
       const genero = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
       const hairId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
-      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, '#d3ab54');
+      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54');
     }, headCart:{x:player.x,y:player.y}, headLift:33, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
@@ -1873,7 +1912,7 @@
     guildId = msg.guildId || null; guildSummary = msg.guild || null;
     bestiaryKilled = msg.bestiaryKilled || [];
     xpBonus = msg.xpBonus || xpBonus;
-    ownedOutfits = msg.ownedOutfits || ownedOutfits; ownedMounts = msg.ownedMounts || ownedMounts;
+    ownedOutfits = msg.ownedOutfits || ownedOutfits; ownedMounts = msg.ownedMounts || ownedMounts; ownedWings = msg.ownedWings || ownedWings; ownedAuras = msg.ownedAuras || ownedAuras;
     cosmeticColors = msg.cosmeticColors || cosmeticColors;
     hasTrainingKit = !!msg.hasTrainingKit; canTrainAtDummy = !!msg.canTrainAtDummy;
     trainingActive = msg.trainingActive || null; offlineTrainingArmed = msg.offlineTrainingArmed || null;
@@ -1939,7 +1978,7 @@
           logChat('sistema', `Conectado. Jogadores no mundo: ${escapeHtml(msg.players.join(', ')||'só você')}.`);
           npcShops = msg.npcShops || {};
           trainingDummies = msg.trainingDummies || [];
-          outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || [];
+          outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || []; wingCatalog = msg.wingCatalog || []; auraCatalog = msg.auraCatalog || [];
           colorPalette = msg.colorPalette || []; bossCatalog = msg.bossCatalog || [];
           hairColors = msg.hairColors && msg.hairColors.length ? msg.hairColors : hairColors;
           renderShop();
@@ -2067,8 +2106,8 @@
     if(msg.forType === 'guild:get' && msg.ok){ guildDetail = msg.guild; renderGuildModalIfOpen(); }
     if(msg.forType === 'guild:list' && msg.ok){ renderGuildListTab(msg.guilds); }
 
-    if(['outfit:buy','mount:buy'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ Compra falhou: ${msg.reason}`);
-    if(['outfit:equip','mount:equip','cosmetic:color'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
+    if(['outfit:buy','mount:buy','wing:buy','aura:buy'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ Compra falhou: ${msg.reason}`);
+    if(['outfit:equip','mount:equip','wing:equip','aura:equip','cosmetic:color'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
     if(['equip:item','equip:remove'].includes(msg.forType)){
       if(!msg.ok) logLoot(`⚠️ ${msg.reason}`);
       renderInventoryIfOpen();
@@ -2548,8 +2587,9 @@
   });
   function renderCharOutfit(){
     // Sem paleta de cor: o cabelo é escolhido na criação do personagem (fixo
-    // depois disso) e cada outfit já tem uma cor própria definida na arte —
-    // nada aqui é recolorável, então não existe seletor de cor por partes.
+    // depois disso) e cada outfit/asas já tem uma cor própria definida na
+    // arte — nada aqui é recolorável, então não existe seletor de cor por
+    // partes.
     const grid = document.getElementById('outfit-grid');
     if(outfitSubTab === 'outfits'){
       grid.innerHTML = outfitCatalog.map(o=>{
@@ -2568,7 +2608,7 @@
           else sendWS({ type:'outfit:buy', outfitId:id });
         });
       });
-    } else {
+    } else if(outfitSubTab === 'mounts'){
       const noneOwned = `<div class="outfit-card${!cosmetics.mount?' equipped':''}" data-mount="__none__"><div class="oc-icon">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.mount?'Equipada':'Clique p/ desmontar'}</div></div>`;
       grid.innerHTML = noneOwned + mountCatalog.map(m=>{
         const owned = ownedMounts.includes(m.id);
@@ -2585,6 +2625,49 @@
           if(id === '__none__') { sendWS({ type:'mount:equip', mountId:null }); return; }
           if(ownedMounts.includes(id)) sendWS({ type:'mount:equip', mountId:id });
           else sendWS({ type:'mount:buy', mountId:id });
+        });
+      });
+    } else if(outfitSubTab === 'wings'){
+      // Asas — cosmético "acima do Elmo" (paperdoll), renderiza atrás do
+      // corpo no mapa/retrato (ver SpriteManager.wingSprite + drawCharacterLayers).
+      const noneOwned = `<div class="outfit-card${!cosmetics.wings?' equipped':''}" data-wing="__none__"><div class="oc-icon">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.wings?'Equipadas':'Clique p/ remover'}</div></div>`;
+      grid.innerHTML = noneOwned + wingCatalog.map(w=>{
+        const owned = ownedWings.includes(w.id);
+        const equipped = cosmetics.wings === w.id;
+        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-wing="${w.id}">
+          <div class="oc-icon">🪽</div>
+          <div class="oc-name">${escapeHtml(w.name)}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipadas':'Adquiridas — clique p/ vestir') : `${w.cost.toLocaleString('pt-BR')} Gold`}</div>
+        </div>`;
+      }).join('');
+      grid.querySelectorAll('[data-wing]').forEach(card=>{
+        card.addEventListener('click', ()=>{
+          const id = card.dataset.wing;
+          if(id === '__none__') { sendWS({ type:'wing:equip', wingId:null }); return; }
+          if(ownedWings.includes(id)) sendWS({ type:'wing:equip', wingId:id });
+          else sendWS({ type:'wing:buy', wingId:id });
+        });
+      });
+    } else {
+      // Auras — cosmético ANIMADO (4 quadros em loop, ver AURA_CATALOG no
+      // servidor + AuraManager no cliente); envolve o personagem, desenhado
+      // por cima do corpo (ver drawCharacterLayers).
+      const noneOwned = `<div class="outfit-card${!cosmetics.aura?' equipped':''}" data-aura="__none__"><div class="oc-icon">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.aura?'Equipada':'Clique p/ remover'}</div></div>`;
+      grid.innerHTML = noneOwned + auraCatalog.map(a=>{
+        const owned = ownedAuras.includes(a.id);
+        const equipped = cosmetics.aura === a.id;
+        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-aura="${a.id}">
+          <div class="oc-icon"><img src="${URL_BASE}items/icons/${a.id}.png" style="width:28px;height:28px;object-fit:contain;" /></div>
+          <div class="oc-name">${escapeHtml(a.name)}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipada':'Adquirida — clique p/ vestir') : `${a.cost.toLocaleString('pt-BR')} Gold`}</div>
+        </div>`;
+      }).join('');
+      grid.querySelectorAll('[data-aura]').forEach(card=>{
+        card.addEventListener('click', ()=>{
+          const id = card.dataset.aura;
+          if(id === '__none__') { sendWS({ type:'aura:equip', auraId:null }); return; }
+          if(ownedAuras.includes(id)) sendWS({ type:'aura:equip', auraId:id });
+          else sendWS({ type:'aura:buy', auraId:id });
         });
       });
     }
@@ -2921,6 +3004,17 @@
   };
   const POTION_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M10 2v5l-4 8a4 4 0 0 0 4 6h4a4 4 0 0 0 4-6l-4-8V2"/><path d="M8 15h8"/></svg>';
   const MATERIAL_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 5-2 10-6 5-6-5L4 7l8-5z"/></svg>';
+  // Gemas Elementais — dropadas por monstro (ver monsterElementFromWeakTo no
+  // servidor), vendem por Gold como qualquer loot. Usam arte real (PNG) em
+  // vez de SVG genérico — a "chave" pro arquivo é o próprio id do item.
+  const GEM_ICON_URL = {
+    gema_fogo:   URL_BASE + 'items/gems/gema_fogo.png',
+    gema_agua:   URL_BASE + 'items/gems/gema_agua.png',
+    gema_terra:  URL_BASE + 'items/gems/gema_terra.png',
+    gema_ar:     URL_BASE + 'items/gems/gema_ar.png',
+    gema_luz:    URL_BASE + 'items/gems/gema_luz.png',
+    gema_trevas: URL_BASE + 'items/gems/gema_trevas.png',
+  };
   // Preenche os 7 ícones do boneco de equipamento uma vez só (são sempre os
   // mesmos 7 slots fixos no DOM, só o conteúdo do slot muda com o tempo).
   document.querySelectorAll('.equip-slot[data-icon-slot]').forEach(el=>{
@@ -2945,9 +3039,13 @@
       el.querySelector('.slot-icon').style.color = item ? (RARITY_COLORS[item.rarity]||'#a99872') : '';
     });
     document.querySelectorAll('.equip-slot[data-cosmetic]').forEach(el=>{
-      const key = el.dataset.cosmetic; const item = cosmetics[key];
-      el.classList.toggle('filled', !!item);
-      el.title = item ? item.name : el.querySelector('.slot-tag').textContent;
+      // cosmetics[key] guarda só o ID do catálogo (não um item de bag como os
+      // slots de equipamento acima) — resolve o nome de exibição no catálogo certo.
+      const key = el.dataset.cosmetic; const id = cosmetics[key];
+      const catalog = key==='outfit' ? outfitCatalog : key==='wings' ? wingCatalog : key==='aura' ? auraCatalog : null;
+      const def = catalog && id ? catalog.find(d=>d.id===id) : null;
+      el.classList.toggle('filled', !!id);
+      el.title = id ? (def ? def.name : id) : el.querySelector('.slot-tag').textContent;
     });
 
     // STATS (referência "Morgan Hearson") — valores reais: Vida/Mana do
@@ -2967,7 +3065,7 @@
     pctx.clearRect(0, 0, portraitCanvas.width, portraitCanvas.height);
     const generoPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
     const hairIdPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
-    drawCharacterLayers({ x: portraitCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, '#d3ab54', pctx);
+    drawCharacterLayers({ x: portraitCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', pctx);
 
     const grid = document.getElementById('inv-items-grid');
     const cap = document.getElementById('inv-capacity-line');
@@ -2977,10 +3075,13 @@
     grid.innerHTML = '';
     items.forEach((it,i)=>{
       const slot = document.createElement('div'); slot.className = 'item-slot';
-      const iconSvg = invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG);
+      const gemIconUrl = GEM_ICON_URL[it.id];
       const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
       slot.style.borderColor = rarityColor;
-      slot.innerHTML = `<span class="item-icon" style="color:${rarityColor};">${iconSvg}</span>${it.qty>1?`<span class="qty">${it.qty}</span>`:''}`;
+      const iconHtml = gemIconUrl
+        ? `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`
+        : `<span class="item-icon" style="color:${rarityColor};">${invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
+      slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}`;
       // só itens da Mochila com "slot" definido (arma/elmo/etc) são equipáveis —
       // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
       if(invTab==='mochila' && it.slot){
@@ -3129,10 +3230,15 @@
     return list;
   }
 
+  // Catálogo de 6 tiers (espelha huntEngine.js POTION_CATALOG — nomes/custo/
+  // nível mínimo têm que bater com o servidor, que é quem valida de verdade).
   const POTIONS = [
-    { id:'lesser_health', icon:'🧪', name:'Lesser Health', minLevel:1, kind:'health' },
-    { id:'strong_health', icon:'❤️', name:'Strong Health', minLevel:50, kind:'health' },
-    { id:'strong_mana',   icon:'💠', name:'Strong Mana',   minLevel:50, kind:'mana' },
+    { id:'lesser_health', icon: URL_BASE+'items/potions/lesser_health.png', name:'Lesser Health', minLevel:1,  kind:'health', cost:5 },
+    { id:'medium_health', icon: URL_BASE+'items/potions/medium_health.png', name:'Medium Health', minLevel:25, kind:'health', cost:12 },
+    { id:'strong_health', icon: URL_BASE+'items/potions/strong_health.png', name:'Strong Health', minLevel:50, kind:'health', cost:22 },
+    { id:'lesser_mana',   icon: URL_BASE+'items/potions/lesser_mana.png',   name:'Lesser Mana',   minLevel:1,  kind:'mana',   cost:5 },
+    { id:'medium_mana',   icon: URL_BASE+'items/potions/medium_mana.png',   name:'Medium Mana',   minLevel:25, kind:'mana',   cost:12 },
+    { id:'strong_mana',   icon: URL_BASE+'items/potions/strong_mana.png',   name:'Strong Mana',   minLevel:50, kind:'mana',   cost:22 },
   ];
   function canUsePotion(pot){ return player.level >= pot.minLevel; }
   const CONDITION_TYPES = [
@@ -3157,7 +3263,7 @@
       const el = document.createElement('div');
       let locked = false, icon = '';
       if(slot.kind==='spell'){ const sp = getUnlockedSpells().find(s=>s.id===slot.id); icon = sp ? sp.icon : '❔'; }
-      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot.icon; locked = !canUsePotion(pot); }
+      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:20px;height:20px;object-fit:contain;" />` : '❔'; locked = pot ? !canUsePotion(pot) : false; }
       el.className = 'slot' + (locked?' locked':'');
       const cdPct = slot.kind && Date.now() < slot.cooldownUntil ? Math.round((slot.cooldownUntil-Date.now())/2200*100) : 0;
       const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
@@ -3196,7 +3302,7 @@
     } else {
       POTIONS.forEach(p=>{
         const unlocked = canUsePotion(p); const selected = slot.kind==='item' && slot.id===p.id;
-        html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''}>${p.icon} ${p.name} <span class="req">Nv.${p.minLevel}</span></div>`;
+        html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''}><img src="${p.icon}" style="width:16px;height:16px;vertical-align:middle;object-fit:contain;margin-right:4px;" /> ${p.name} <span class="req">Nv.${p.minLevel} · ${p.cost}g</span></div>`;
       });
     }
     html += `<div style="margin-top:10px;">
@@ -3216,7 +3322,7 @@
     body.querySelectorAll('[data-assign-item]').forEach(el=> el.addEventListener('click', ()=>{
       slot.kind='item'; slot.id=el.dataset.assignItem; renderActionBody(); renderHotbar();
       const pot = POTIONS.find(p=>p.id===slot.id);
-      sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { enabled:true, thresholdPercent: slot.condition.threshold||50 } } });
+      sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { enabled:true, thresholdPercent: slot.condition.threshold||50, potionId: pot.id } } });
     }));
     document.getElementById('cond-type-select').addEventListener('change', e=>{ slot.condition.type=e.target.value; renderHotbar(); });
     document.getElementById('cond-threshold-input').addEventListener('input', e=>{
@@ -3224,7 +3330,7 @@
       document.getElementById('cond-threshold-val').textContent = e.target.value+'%';
       if(slot.kind==='item'){
         const pot = POTIONS.find(p=>p.id===slot.id);
-        sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { thresholdPercent: +e.target.value } } });
+        sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { thresholdPercent: +e.target.value, potionId: pot.id } } });
       }
     });
   }
@@ -3367,53 +3473,83 @@
     document.getElementById('skill-points-total').textContent = (skillPoints && skillPoints.total) || 0;
     document.getElementById('skill-points-available').textContent = Math.max(0, available);
 
-    // ===== Layout em "constelação" (estilo árvore de passivas de PoE2) =====
-    // Nosso grafo é uma corrente linear de 30 nós (cada um depende só do
-    // anterior), então em vez da lista vertical de texto de antes, a gente
-    // desenha essa corrente como um "galho" serpenteando de cima pra baixo —
-    // nós pequenos e circulares ligados por linhas finas, nó investido brilha
-    // (dourado), nó marco (Semi Ultimate/Ultimate) vem maior com brilho
-    // roxo, e nó ainda não escolhido/bloqueado fica apagado/cinza — igual ao
-    // visual de referência que o jogador mandou. O clique num nó abre os
-    // detalhes/controles (+/-, escolha de natureza) na barra fixa abaixo da
-    // árvore, e passar o mouse continua mostrando a tooltip flutuante.
+    // ===== Layout em "treliça" (estilo grade de passivas da referência) =====
+    // Nosso grafo continua sendo a mesma corrente linear de 30 nós que o
+    // servidor gera (cada nó só depende do anterior — a trava/desbloqueio
+    // não muda em nada aqui) — só o DESENHO muda: em vez do galho
+    // serpenteando livre de cima pra baixo, agora a corrente é organizada em
+    // 3 "trilhas" horizontais fixas (Defesa/Suporte/Ataque) e a sequência
+    // real vai IZ-zagueando entre as trilhas coluna a coluna (defesa1 →
+    // suporte1 → ataque1 → defesa2 → ...), igual à referência mas fiel à
+    // dependência real (a linha SVG sempre liga um nó só ao seu dep real,
+    // então o zigue-zague É a corrente verdadeira, não um efeito falso). A
+    // Raiz (e1) fica sozinha à esquerda, centralizada nas 3 trilhas, e cada
+    // marco (Semi Ultimate e15 / Ultimate e30 = "Marco Final") fica numa
+    // coluna própria também centralizada, maior e com brilho, exatamente
+    // como o nó "Marco Final" da referência.
     const wrap = document.getElementById('skill-list-wrap');
     wrap.innerHTML = '';
-    const COL_CENTER = wrap.clientWidth ? wrap.clientWidth/2 : 210;
-    const AMPLITUDE = Math.max(60, COL_CENTER - 50);
-    const ROW_H = 42, TOP_PAD = 26;
+    const LANE_ORDER = ['defense','support','attack'];
+    const ROW_H = 66, COL_W = 62, LEFT_PAD = 40, TOP_PAD = 36;
+    const tierCount = { defense:0, support:0, attack:0 };
+    let segmentBaseCol = 0;
     const nodeInfos = nodes.map((n, idx)=>{
       const isMilestone = n.category==='semiUltimate' || n.category==='ultimate';
+      const isRoot = idx===0;
       const display = isMilestone ? resolveMilestoneDisplay(elementId, n.category, chosenKind) : n;
       const committedLvl = committed[n.id] || 0;
       const pendingLvl = draft[n.id] || 0;
       const prevOk = n.deps.length===0 || (draft[n.deps[0]]||0) > 0;
-      const locked = !prevOk;
+      const locked = !isRoot && !prevOk;
       const needsChoice = n.category==='semiUltimate' && !chosenKind; // e15 sem escolha ainda feita
       const dirty = pendingLvl !== committedLvl;
-      const x = COL_CENTER + Math.sin(idx*0.75) * AMPLITUDE * (isMilestone ? 0 : 1);
-      const y = TOP_PAD + idx*ROW_H;
-      const size = isMilestone ? 30 : 17;
-      return { n, idx, isMilestone, display, committedLvl, pendingLvl, locked, needsChoice, dirty, x, y, size };
+      let col, laneIdx;
+      if(isRoot){ col = 0; laneIdx = 1; }
+      else if(isMilestone){
+        col = segmentBaseCol + Math.max(tierCount.defense, tierCount.support, tierCount.attack) + 1;
+        laneIdx = 1;
+        segmentBaseCol = col; tierCount.defense = tierCount.support = tierCount.attack = 0;
+      } else {
+        tierCount[n.category]++;
+        col = segmentBaseCol + tierCount[n.category];
+        laneIdx = LANE_ORDER.indexOf(n.category);
+      }
+      const x = LEFT_PAD + col*COL_W;
+      const y = TOP_PAD + laneIdx*ROW_H;
+      const size = isMilestone ? 32 : (isRoot ? 26 : 17);
+      return { n, idx, isMilestone, isRoot, display, committedLvl, pendingLvl, locked, needsChoice, dirty, x, y, size, col };
     });
-    wrap.style.height = (TOP_PAD*2 + (nodes.length-1)*ROW_H) + 'px';
+    const maxCol = nodeInfos.reduce((m,i)=>Math.max(m,i.col), 0);
+    wrap.style.height = (TOP_PAD*2 + ROW_H*2) + 'px';
+    const canvasW = LEFT_PAD*2 + maxCol*COL_W;
 
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('width', '100%');
+    svg.setAttribute('width', canvasW);
     svg.setAttribute('height', wrap.style.height);
     svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
-    for(let i=1;i<nodeInfos.length;i++){
-      const a = nodeInfos[i-1], b = nodeInfos[i];
-      const line = document.createElementNS(svgNS, 'line');
-      line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
-      line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
-      const lit = b.committedLvl > 0;
-      line.setAttribute('stroke', lit ? 'rgba(240,211,138,.8)' : 'rgba(191,161,95,.2)');
-      line.setAttribute('stroke-width', lit ? 2.2 : 1.4);
-      svg.appendChild(line);
-    }
-    wrap.appendChild(svg);
+    const byId = {}; nodeInfos.forEach(i=> byId[i.n.id] = i);
+    nodeInfos.forEach(b=>{
+      b.n.deps.forEach(depId=>{
+        const a = byId[depId];
+        if(!a) return;
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+        line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+        const lit = b.committedLvl > 0;
+        line.setAttribute('stroke', lit ? 'rgba(240,211,138,.8)' : 'rgba(191,161,95,.25)');
+        line.setAttribute('stroke-width', lit ? 2.2 : 1.4);
+        svg.appendChild(line);
+      });
+    });
+    // canvas interno com a largura REAL da árvore (pode passar da largura
+    // visível do painel) — é ele que rola dentro de #skill-list-wrap
+    // (overflow-x:auto), e não o wrap em si, senão os nós das colunas finais
+    // (2º milestone em diante) ficam cortados fora da área visível.
+    const canvas = document.createElement('div');
+    canvas.style.cssText = `position:relative; width:${canvasW}px; height:${wrap.style.height}; min-width:100%;`;
+    canvas.appendChild(svg);
+    wrap.appendChild(canvas);
 
     const detail = document.getElementById('skill-node-detail');
     function markSelected(info){
@@ -3444,13 +3580,13 @@
     }
 
     nodeInfos.forEach(info=>{
-      const { n, isMilestone, display, committedLvl, locked, dirty, x, y, size } = info;
+      const { n, isMilestone, isRoot, display, committedLvl, locked, dirty, x, y, size } = info;
       const el = document.createElement('div');
       el.className = 'skill-node' + (isMilestone?' milestone':'') + (committedLvl>0?' invested':'') + (locked?' locked':'') + (dirty?' dirty':'');
       el.dataset.nodeId = n.id;
       el.style.width = size+'px'; el.style.height = size+'px';
       el.style.left = (x - size/2)+'px'; el.style.top = (y - size/2)+'px';
-      el.style.fontSize = (isMilestone ? 15 : 9)+'px';
+      el.style.fontSize = (isMilestone||isRoot ? 15 : 9)+'px';
       el.textContent = CATEGORY_ICON[n.category];
       if(committedLvl>0){
         el.draggable = true;
@@ -3463,7 +3599,17 @@
       el.addEventListener('mousemove', e=>{ skillTip.style.left = (e.clientX+14)+'px'; skillTip.style.top = (e.clientY+14)+'px'; });
       el.addEventListener('mouseleave', ()=>{ skillTip.style.display = 'none'; });
       el.addEventListener('click', ()=>{ markSelected(info); renderDetail(info); });
-      wrap.appendChild(el);
+      canvas.appendChild(el);
+      // labels fixas "Raiz" / "Marco Final" embaixo das duas âncoras da
+      // trilha, igual à referência (as demais ficam só com tooltip, senão
+      // 30 labels por elemento poluem a grade).
+      if(isRoot || n.category==='ultimate'){
+        const lbl = document.createElement('div');
+        lbl.className = 'skill-node-anchor-label';
+        lbl.style.left = x+'px'; lbl.style.top = (y + size/2 + 4)+'px';
+        lbl.textContent = isRoot ? 'Raiz' : 'Marco Final';
+        canvas.appendChild(lbl);
+      }
     });
 
     let sel = nodeInfos.find(i=> i.n.id === selectedSkillNodeId[elementId]) || nodeInfos.find(i=> !i.locked) || nodeInfos[0];
