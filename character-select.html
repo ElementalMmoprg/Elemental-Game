@@ -34,55 +34,90 @@
 
   h1.title{ font-family:var(--font-display); font-size:20px; letter-spacing:.1em; color:var(--gold-bright); text-transform:uppercase; text-align:center; margin:0 0 22px; text-shadow:0 0 14px rgba(240,211,138,.3); }
 
-  /* ---------- Lista / card de personagem existente ---------- */
-  #char-select-view{ width:420px; padding:28px 30px; }
-  .char-card{
-    display:flex; gap:16px; align-items:center; padding:16px; border-radius:8px;
-    border:1px solid var(--gold-deep); background:rgba(0,0,0,.25); margin-bottom:18px; cursor:pointer;
+  /* ---------- Seleção de personagem (estilo Ragnarok: slots em carrossel + painel de status) ---------- */
+  #char-select-view{ width:640px; padding:28px 30px; }
+  .char-slots-row{ display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:20px; }
+  .slot-arrow{ width:36px; height:36px; border-radius:50%; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--gold-bright); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .slot-arrow:hover{ border-color:var(--gold-bright); }
+  .slot-arrow:disabled{ opacity:.25; cursor:not-allowed; }
+  .char-slots{ display:flex; gap:12px; }
+  .char-slot{
+    width:110px; height:150px; border-radius:8px; border:1px solid var(--gold-deep);
+    background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end; position:relative;
+    transition:border-color .15s, transform .15s; opacity:.6;
   }
-  .char-card:hover{ border-color:var(--gold-bright); }
-  .char-card.selected{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright) inset; }
-  .char-card canvas{ width:72px; height:90px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:5px; }
-  .char-card .info .nick{ font-family:var(--font-display); font-size:15px; color:var(--gold-bright); }
-  .char-card .info .lvl{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); margin-top:4px; }
+  .char-slot:hover{ opacity:.85; }
+  .char-slot.selected{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright) inset, 0 0 14px rgba(240,211,138,.25); opacity:1; transform:translateY(-4px); }
+  .char-slot .select-tag{ position:absolute; top:6px; left:50%; transform:translateX(-50%); font-family:var(--font-mono); font-size:9px; letter-spacing:.08em; color:var(--gold-bright); background:rgba(0,0,0,.5); padding:2px 7px; border-radius:9px; display:none; }
+  .char-slot.selected .select-tag{ display:block; }
+  .char-slot .slot-nick{ font-family:var(--font-display); font-size:11.5px; color:var(--ink); padding:5px 0; text-align:center; width:100%; background:rgba(0,0,0,.35); }
+  .char-slot.empty{ cursor:default; display:flex; align-items:center; justify-content:center; opacity:.35; }
+  .char-slot.empty .plus{ font-size:26px; color:var(--ink-dim); }
+
+  .status-panel{ display:flex; gap:0; border:1px solid var(--gold-deep); border-radius:8px; overflow:hidden; background:rgba(0,0,0,.22); }
+  .status-col{ flex:1; padding:12px 16px; }
+  .status-col + .status-col{ border-left:1px solid rgba(191,161,95,.25); }
+  .status-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px; padding:3px 0; }
+  .status-row span:first-child{ color:var(--ink-dim); }
+  .status-row span:last-child{ color:var(--gold-bright); }
+  .status-row.big span:last-child{ font-family:var(--font-display); font-size:14px; color:var(--gold-bright); }
+
   #connect-btn{
-    width:100%; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
+    width:100%; margin-top:16px; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
     background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display);
     font-size:14px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
   }
   #connect-btn:hover{ filter:brightness(1.15); }
+  #connect-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  #new-char-link{ display:block; text-align:center; margin-top:12px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); cursor:pointer; text-decoration:underline; }
+  #new-char-link:hover{ color:var(--gold-bright); }
 
-  /* ---------- Criação de personagem ---------- */
-  #char-create-view{ width:460px; padding:28px 30px; display:none; }
-  .field{ margin-bottom:16px; }
-  .field label{ display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:6px; letter-spacing:.03em; }
+  /* ---------- Criação de personagem (estilo Ragnarok: grade de penteados + paleta de cor) ---------- */
+  #char-create-view{ width:640px; padding:26px 30px; display:none; }
+  .create-layout{ display:flex; gap:22px; }
+  .create-left{ width:170px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  #create-preview{ width:150px; height:190px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
+  .toggle-row{ display:flex; gap:8px; width:100%; }
+  .toggle-btn{
+    flex:1; padding:9px; text-align:center; border-radius:6px; border:1px solid var(--gold-deep);
+    background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-display); font-size:11px;
+    letter-spacing:.04em; cursor:pointer; text-transform:uppercase;
+  }
+  .toggle-btn.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); box-shadow:0 0 10px rgba(240,211,138,.2); }
+  .field{ width:100%; }
+  .field label{ display:block; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin-bottom:5px; letter-spacing:.03em; }
   .field input{
     width:100%; background:#140f0a; border:1px solid #3a2f1f; border-radius:5px; color:var(--ink);
-    padding:10px 11px; font-family:var(--font-body); font-size:13.5px; outline:none;
+    padding:9px 10px; font-family:var(--font-body); font-size:13px; outline:none;
   }
   .field input:focus{ border-color:var(--gold-bright); }
 
-  .toggle-row{ display:flex; gap:10px; }
-  .toggle-btn{
-    flex:1; padding:11px; text-align:center; border-radius:6px; border:1px solid var(--gold-deep);
-    background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-display); font-size:12px;
-    letter-spacing:.05em; cursor:pointer; text-transform:uppercase;
+  .create-right{ flex:1; min-width:0; }
+  .section-label{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); letter-spacing:.04em; margin:0 0 7px; text-transform:uppercase; }
+  #hair-style-grid{
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:7px; max-height:198px; overflow-y:auto;
+    padding:3px; margin-bottom:14px;
   }
-  .toggle-btn.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); box-shadow:0 0 10px rgba(240,211,138,.2); }
-
-  .hair-picker{ display:flex; align-items:center; justify-content:center; gap:18px; }
-  .hair-arrow{ width:34px; height:34px; border-radius:50%; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--gold-bright); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  .hair-arrow:hover{ border-color:var(--gold-bright); }
-  #hair-preview-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-  #hair-preview{ width:96px; height:120px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:6px; }
-  #hair-preview-label{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .hair-style-cell{
+    aspect-ratio:1; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .hair-style-cell canvas{ image-rendering:pixelated; }
+  .hair-style-cell:hover{ border-color:var(--gold-bright); }
+  .hair-style-cell.active{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright) inset, 0 0 8px rgba(240,211,138,.3); }
+  #hair-color-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .hair-color-dot{ width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.4); }
+  .hair-color-dot.active{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright), 0 0 8px rgba(240,211,138,.5); }
 
   #create-btn{
-    width:100%; margin-top:20px; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
+    width:100%; margin-top:6px; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
     background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display);
     font-size:14px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
   }
   #create-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  #back-to-select-link{ display:block; text-align:center; margin-top:10px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); cursor:pointer; text-decoration:underline; }
+  #back-to-select-link:hover{ color:var(--gold-bright); }
 
   .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:14px; display:none; }
   .msg.show{ display:block; }
@@ -101,44 +136,45 @@
 
 <div id="loading-view">Carregando personagens...</div>
 
-<!-- TEM PERSONAGEM: mostra o card + CONECTAR -->
+<!-- TEM PERSONAGEM: carrossel de slots + painel de status, estilo Ragnarok -->
 <div id="char-select-view" class="glass" style="display:none;">
   <h1 class="title">Seleção de Personagem</h1>
-  <div id="char-list"></div>
+  <div class="char-slots-row">
+    <button class="slot-arrow" id="slots-prev">◀</button>
+    <div class="char-slots" id="char-slots"></div>
+    <button class="slot-arrow" id="slots-next">▶</button>
+  </div>
+  <div class="status-panel" id="status-panel"></div>
   <button id="connect-btn" disabled>Conectar</button>
+  <div id="new-char-link">+ Criar novo herói</div>
 </div>
 
-<!-- SEM PERSONAGEM: painel de criação -->
+<!-- SEM PERSONAGEM (ou criando um novo): grade de penteados + paleta de cor, estilo Ragnarok -->
 <div id="char-create-view" class="glass">
   <h1 class="title">Criação de Personagem</h1>
   <div class="msg" id="create-msg"></div>
 
-  <div class="field">
-    <label>Nick (apelido único do herói)</label>
-    <input type="text" id="nick-input" maxlength="20" placeholder="Ex: Kael">
-  </div>
-
-  <div class="field">
-    <label>Sexo</label>
-    <div class="toggle-row" id="gender-toggle">
-      <div class="toggle-btn active" data-gender="male">Masculino</div>
-      <div class="toggle-btn" data-gender="female">Feminino</div>
-    </div>
-  </div>
-
-  <div class="field">
-    <label style="text-align:center;">Estilo de Cabelo</label>
-    <div class="hair-picker">
-      <div class="hair-arrow" id="hair-prev">◀</div>
-      <div id="hair-preview-wrap">
-        <canvas id="hair-preview" width="96" height="120"></canvas>
-        <div id="hair-preview-label">Cabelo Tipo 1</div>
+  <div class="create-layout">
+    <div class="create-left">
+      <canvas id="create-preview" width="150" height="190"></canvas>
+      <div class="toggle-row" id="gender-toggle">
+        <div class="toggle-btn active" data-gender="male">♂ Masc.</div>
+        <div class="toggle-btn" data-gender="female">♀ Fem.</div>
       </div>
-      <div class="hair-arrow" id="hair-next">▶</div>
+      <div class="field">
+        <label>Nick (apelido único do herói)</label>
+        <input type="text" id="nick-input" maxlength="20" placeholder="Ex: Kael">
+      </div>
+    </div>
+    <div class="create-right">
+      <div class="section-label">Penteado</div>
+      <div id="hair-style-grid"></div>
+      <div class="section-label">Cor do Cabelo</div>
+      <div id="hair-color-row"></div>
+      <button id="create-btn">Criar Personagem</button>
+      <div id="back-to-select-link" style="display:none;">← Voltar pra seleção</div>
     </div>
   </div>
-
-  <button id="create-btn">Criar Personagem</button>
 </div>
 
 <script>
@@ -146,13 +182,9 @@
   "use strict";
   // Backend oficial no Render — fixo, não detectado por location.origin.
   const API_BASE = 'https://elemental-server.onrender.com';
-  // Repositório oficial de artes/sprites no GitHub Pages — fixo character por character.
-  // O repo publica a pasta "assets/" na raiz (assets/player/..., assets/monsters/...),
-  // então a URL pública precisa desse prefixo — sem ele, todo load cai em 404 e o
-  // avatar procedural (fallback) é tudo que aparece, mesmo com os PNGs já existindo.
+  // Repositório oficial de artes/sprites no GitHub Pages — fixo character by character.
   const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/';
 
-  // localStorage padronizado globalmente (index.html, character-select.html, world-prototype.html)
   const LS_TOKEN = 'elemental_token';
   const LS_USERNAME = 'elemental_username';
   const LS_CHARACTER = 'elemental_character';
@@ -179,45 +211,162 @@
   }
 
   /* =========================================================
-     PREVIEW EM CANVAS — mesma lógica de camadas do draw2DAvatar,
-     só que cor/estilo varia com gênero + cabelo escolhidos (sem
-     depender de asset real, igual ao fallback do SpriteManager).
+     SPRITE MANAGER — mesma técnica de world-prototype.html (mirror
+     reduzido: só corpo + cabeça, é tudo que essa tela precisa).
+     ver comentários grandões lá pra explicação completa de cada peça.
      ========================================================= */
-  // hairId (1-8) é o índice em HAIR_COLOR_NAMES — mesma ordem/mesmo arquivo
-  // que huntEngine.HAIR_COLORS no servidor (mirror, igual HUNTS/DIFFICULTIES
-  // já são espelhados no world-prototype.html). Repositório hoje só tem 1
-  // estilo por cor, então o fallback procedural também não varia mais o
-  // formato — só a cor —, pra bater com o que o sprite real vai mostrar.
+  // 8 cores "lógicas" (mirror de huntEngine.HAIR_COLORS) e 19 penteados reais
+  // (mirror de huntEngine.HAIR_STYLE_COUNT — linhas do atlas heads */black.png).
   const HAIR_COLOR_NAMES = ['black','blue','brown','green','purple','red','white','yellow'];
-  const HAIR_COLOR_HEX = { black:'#2a2118', blue:'#2e5fa0', brown:'#8a5a2a', green:'#3f9b4a', purple:'#7a3fa0', red:'#c94040', white:'#e8e2d0', yellow:'#d8c23a' };
+  const HAIR_COLOR_RGB = { black:[42,33,24], blue:[58,95,160], brown:[138,90,42], green:[63,155,74], purple:[122,63,160], red:[201,64,64], white:[232,226,208], yellow:[216,194,58] };
   const HAIR_COLOR_LABEL = { black:'Preto', blue:'Azul', brown:'Castanho', green:'Verde', purple:'Roxo', red:'Vermelho', white:'Branco', yellow:'Loiro' };
-  function drawMiniAvatar(canvas, gender, hairId){
+  const HAIR_STYLE_COUNT = 19;
+
+  const SpriteManager = (function(){
+    const cache = {};
+    function computeAutoFrame(img){
+      try{
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if(!w || !h) return null;
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        const cx = c.getContext('2d'); cx.drawImage(img,0,0);
+        const data = cx.getImageData(0,0,w,h).data;
+        function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
+        function rowHas(y,x0,x1){ for(let x=x0;x<x1;x++){ if(!isBg(x,y)) return true; } return false; }
+        function colHas(x,y0,y1){ for(let y=y0;y<y1;y++){ if(!isBg(x,y)) return true; } return false; }
+        let y0=-1; for(let y=0;y<h;y++){ if(rowHas(y,0,w)){ y0=y; break; } }
+        if(y0<0) return null;
+        let y1=y0; for(let y=y0;y<h;y++){ if(rowHas(y,0,w)) y1=y; else break; } y1++;
+        let x0=-1; for(let x=0;x<w;x++){ if(colHas(x,y0,y1)){ x0=x; break; } }
+        if(x0<0) return null;
+        let x1=x0; for(let x=x0;x<w;x++){ if(colHas(x,y0,y1)) x1=x; else break; } x1++;
+        const pad=3, sx=Math.max(0,x0-pad), sy=Math.max(0,y0-pad);
+        return { sx, sy, sw:Math.min(w-sx,(x1-x0)+pad*2), sh:Math.min(h-sy,(y1-y0)+pad*2) };
+      }catch(e){ return null; }
+    }
+    function computeHeadStyleFrames(img){
+      try{
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if(!w||!h) return [];
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        const cx = c.getContext('2d'); cx.drawImage(img,0,0);
+        const data = cx.getImageData(0,0,w,h).data;
+        function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
+        function rowHas(y){ for(let x=0;x<w;x++){ if(!isBg(x,y)) return true; } return false; }
+        function colHas(x,y0,y1){ for(let y=y0;y<y1;y++){ if(!isBg(x,y)) return true; } return false; }
+        const bands=[]; let y=0;
+        while(y<h){ if(rowHas(y)){ const y0=y; let y1=y; while(y1<h && rowHas(y1)) y1++; bands.push([y0,y1]); y=y1; } else y++; }
+        const pad=3;
+        return bands.map(([y0,y1])=>{
+          let x0=-1; for(let x=0;x<w;x++){ if(colHas(x,y0,y1)){ x0=x; break; } }
+          if(x0<0) return null;
+          let x1=x0; for(let x=x0;x<w;x++){ if(colHas(x,y0,y1)) x1=x; else break; } x1++;
+          const sx=Math.max(0,x0-pad), sy=Math.max(0,y0-pad);
+          return { sx, sy, sw:Math.min(w-sx,(x1-x0)+pad*2), sh:Math.min(h-sy,(y1-y0)+pad*2) };
+        }).filter(Boolean);
+      }catch(e){ return []; }
+    }
+    function load(key, relPath){
+      if(cache[key]) return cache[key];
+      const entry = { img:new Image(), loaded:false, failed:false, frame:null, styleFrames:null };
+      entry.img.crossOrigin = 'anonymous';
+      entry.img.onload = ()=>{ entry.loaded=true; entry.frame=computeAutoFrame(entry.img); if(key.indexOf('h_')===0) entry.styleFrames=computeHeadStyleFrames(entry.img); };
+      entry.img.onerror = ()=> entry.failed = true;
+      entry.img.src = URL_BASE + relPath;
+      cache[key] = entry;
+      return entry;
+    }
+    function bodySprite(gender){ return load('b_'+gender, `player/bodies ${gender}/${gender}_base.png`); }
+    // Só existe "heads male/black.png" no repositório hoje — não existe
+    // "heads female/*" nenhum ainda. Pra feminino, isso 404 até esse arquivo
+    // ser adicionado (de propósito não reaproveitamos a cabeça masculina).
+    function headSprite(gender){ return load('h_'+gender, `player/heads ${gender}/black.png`); }
+    function getHeadStyleFrame(entry, styleId){
+      if(!entry.loaded) return null;
+      const frames = entry.styleFrames;
+      if(!frames || !frames.length) return entry.frame;
+      const idx = ((Math.floor(Number(styleId)||1)-1) % frames.length + frames.length) % frames.length;
+      return frames[idx];
+    }
+    const tintCache = {};
+    function getTintedHeadCanvas(entry, styleId, colorName){
+      const frame = getHeadStyleFrame(entry, styleId);
+      if(!frame) return null;
+      const key = entry.img.src+'|'+styleId+'|'+colorName;
+      if(tintCache[key]) return tintCache[key];
+      const c = document.createElement('canvas'); c.width=frame.sw; c.height=frame.sh;
+      const cctx = c.getContext('2d');
+      cctx.drawImage(entry.img, frame.sx, frame.sy, frame.sw, frame.sh, 0, 0, frame.sw, frame.sh);
+      const rgb = HAIR_COLOR_RGB[colorName] || HAIR_COLOR_RGB.black;
+      if(colorName !== 'black'){
+        const imgData = cctx.getImageData(0,0,frame.sw,frame.sh);
+        const d = imgData.data;
+        for(let i=0;i<d.length;i+=4){
+          if(d[i+3]===0) continue;
+          const lum = (0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])/255;
+          const factor = Math.min(1.6, 0.35+1.3*lum*(1-0.35));
+          d[i]=Math.min(255,rgb[0]*factor); d[i+1]=Math.min(255,rgb[1]*factor); d[i+2]=Math.min(255,rgb[2]*factor);
+        }
+        cctx.putImageData(imgData,0,0);
+      }
+      const result = { canvas:c, sw:frame.sw, sh:frame.sh };
+      tintCache[key] = result;
+      return result;
+    }
+    function drawFrameContainFit(targetCtx, entry, cx, bottomY, maxW, maxH){
+      if(!entry.loaded || !entry.frame) return null;
+      const f = entry.frame;
+      const scale = Math.min(maxW/f.sw, maxH/f.sh);
+      const dw=f.sw*scale, dh=f.sh*scale, dx=cx-dw/2, dy=bottomY-dh;
+      targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+      return { dw, dh, dx, dy, topY:dy };
+    }
+    function drawHeadStyleContainFit(targetCtx, entry, styleId, colorName, cx, bottomY, maxW, maxH){
+      if(!entry.loaded) return null;
+      const tinted = getTintedHeadCanvas(entry, styleId, colorName);
+      if(!tinted) return null;
+      const scale = Math.min(maxW/tinted.sw, maxH/tinted.sh);
+      const dw=tinted.sw*scale, dh=tinted.sh*scale, dx=cx-dw/2, dy=bottomY-dh;
+      targetCtx.drawImage(tinted.canvas, 0, 0, tinted.sw, tinted.sh, dx, dy, dw, dh);
+      return { dw, dh, dx, dy, topY:dy };
+    }
+    return { bodySprite, headSprite, getHeadStyleFrame, getTintedHeadCanvas, drawFrameContainFit, drawHeadStyleContainFit };
+  })();
+
+  // Composita corpo+cabeça num canvas qualquer (retrato da criação, thumbnail
+  // do slot de seleção, etc.) — mesma lógica de drawCharacterLayers do
+  // world-prototype.html, só sem outfit/asa/aura (não existem antes de entrar
+  // no mundo). Cai num boneco procedural simples se o sprite ainda não
+  // carregou/não existe (ex.: cabeça feminina, ver comentário em headSprite).
+  function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId){
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0,0,w,h);
-    const cx = w/2, groundY = h-14;
-    const corCabelo = HAIR_COLOR_NAMES[(Number(hairId)||1)-1] || 'black';
-    ctx.beginPath(); ctx.ellipse(cx, groundY+8, 20, 5, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
-    // pernas/botas
-    ctx.fillStyle = '#caa06f'; ctx.fillRect(cx-8, groundY-30, 7,26); ctx.fillRect(cx+1, groundY-30, 7,26);
-    ctx.fillStyle = '#3a2a1c'; ctx.fillRect(cx-9, groundY-6, 8,7); ctx.fillRect(cx+1, groundY-6, 8,7);
-    // torso — cor varia sutilmente por gênero, só pra diferenciar visualmente sem asset real
-    ctx.fillStyle = gender==='female' ? '#8a4a6a' : '#5a6b8a';
-    ctx.fillRect(cx-10, groundY-52, 20,22);
-    // cabeça
-    ctx.beginPath(); ctx.arc(cx, groundY-62, 9,0,Math.PI*2); ctx.fillStyle='#e0b98a'; ctx.fill();
-    // cabelo — cor por tipo escolhido
-    ctx.fillStyle = HAIR_COLOR_HEX[corCabelo] || HAIR_COLOR_HEX.black;
-    ctx.beginPath(); ctx.arc(cx, groundY-66, 9.5, Math.PI, Math.PI*2); ctx.fill();
-
-    // tenta sobrepor o sprite REAL da cabeça (repositório de assets no GitHub Pages);
-    // se o arquivo ainda não existir lá (404) ou a rede falhar, o avatar procedural
-    // acima já ficou desenhado — a troca só acontece se o load funcionar.
-    const realHead = new Image();
-    realHead.crossOrigin = 'anonymous';
-    realHead.onload = () => { ctx.drawImage(realHead, cx-11, groundY-78, 22, 22); };
-    realHead.src = URL_BASE + `player/heads ${gender}/${corCabelo}.png`;
+    const cx = w/2, feetY = h-14;
+    ctx.beginPath(); ctx.ellipse(cx, feetY+6, w*0.22, 5, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
+    const body = SpriteManager.bodySprite(gender);
+    const bodyDraw = SpriteManager.drawFrameContainFit(ctx, body, cx, feetY, w*0.34, h*0.46);
+    const corCabelo = HAIR_COLOR_NAMES[(Number(hairColorId)||1)-1] || 'black';
+    const head = SpriteManager.headSprite(gender);
+    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - h*0.30) + h*0.045;
+    const headDraw = SpriteManager.drawHeadStyleContainFit(ctx, head, hairStyleId||1, corCabelo, cx, headBottomY, w*0.26, w*0.26);
+    if(!bodyDraw){
+      ctx.fillStyle = gender==='female' ? '#8a4a6a' : '#5a6b8a';
+      ctx.fillRect(cx-w*0.1, feetY-h*0.32, w*0.2, h*0.2);
+      ctx.fillRect(cx-w*0.08, feetY-h*0.14, w*0.06,h*0.14); ctx.fillRect(cx+w*0.02, feetY-h*0.14, w*0.06,h*0.14);
+    }
+    if(!headDraw){
+      ctx.beginPath(); ctx.arc(cx, headBottomY - w*0.09, w*0.09, 0, Math.PI*2); ctx.fillStyle='#e0b98a'; ctx.fill();
+      ctx.fillStyle = HAIR_COLOR_RGB[corCabelo] ? `rgb(${HAIR_COLOR_RGB[corCabelo].join(',')})` : '#2a2118';
+      ctx.beginPath(); ctx.arc(cx, headBottomY - w*0.11, w*0.095, Math.PI, Math.PI*2); ctx.fill();
+    }
   }
+  // Redesenha qualquer canvas que ainda dependa de um sprite que não tinha
+  // carregado a tempo do primeiro desenho (load() é assíncrono) — cada
+  // chamador registra sua própria função de redesenho aqui.
+  const pendingRedraws = [];
+  function scheduleRedraw(fn){ pendingRedraws.push(fn); }
+  setInterval(()=>{ pendingRedraws.forEach(fn=>fn()); }, 300);
 
   /* =========================================================
      CARREGA OS PERSONAGENS DA CONTA
@@ -225,81 +374,180 @@
   async function loadCharacters(){
     const data = await api('/api/characters');
     document.getElementById('loading-view').style.display = 'none';
-    if(!data.ok){
-      // sem servidor/erro: melhor deixar seguir pra criação do que travar o jogador
+    if(!data.ok || !data.characters || data.characters.length === 0){
       document.getElementById('char-create-view').style.display = 'block';
-      setupCreateView();
+      setupCreateView(false);
       return;
     }
-    if(data.characters && data.characters.length > 0){
-      setupSelectView(data.characters);
-    } else {
-      document.getElementById('char-create-view').style.display = 'block';
-      setupCreateView();
-    }
+    setupSelectView(data.characters);
   }
 
+  /* =========================================================
+     SELEÇÃO — carrossel de slots (estilo Ragnarok) + painel de status
+     ========================================================= */
   function setupSelectView(characters){
     const view = document.getElementById('char-select-view');
     view.style.display = 'block';
-    const list = document.getElementById('char-list');
-    let selected = characters[0];
-    list.innerHTML = '';
-    characters.forEach((c,i)=>{
-      const card = document.createElement('div');
-      card.className = 'char-card' + (i===0?' selected':'');
-      card.innerHTML = `
-        <canvas width="72" height="90"></canvas>
-        <div class="info"><div class="nick">${c.nick}</div><div class="lvl">Nível ${c.level||1} · ${c.gender==='female'?'Feminino':'Masculino'}</div></div>
+    const slotsWrap = document.getElementById('char-slots');
+    const statusPanel = document.getElementById('status-panel');
+    const VISIBLE = 3;
+    let windowStart = 0;
+    let selectedIdx = 0;
+
+    function fmtPct(cur, max){ return max ? Math.round(cur/max*100) : 0; }
+
+    function renderStatus(c){
+      const p = c.progress || {};
+      const stars = (p.prestige && (p.prestige.bronzeStars+p.prestige.silverStars+p.prestige.goldStars)) || 0;
+      statusPanel.innerHTML = `
+        <div class="status-col">
+          <div class="status-row big"><span>Nome</span><span>${c.nick}</span></div>
+          <div class="status-row"><span>Gênero</span><span>${c.gender==='female'?'Feminino':'Masculino'}</span></div>
+          <div class="status-row"><span>Nível</span><span>${c.level||1}</span></div>
+          <div class="status-row"><span>Estrelas</span><span>${'★'.repeat(stars)||'—'}</span></div>
+        </div>
+        <div class="status-col">
+          <div class="status-row"><span>HP</span><span>${p.hp!=null?`${Math.floor(p.hp)}/${p.hpMax}`:'—'}</span></div>
+          <div class="status-row"><span>MP</span><span>${p.mp!=null?`${Math.floor(p.mp)}/${p.mpMax}`:'—'}</span></div>
+          <div class="status-row"><span>Gold</span><span>${p.gold!=null?p.gold.toLocaleString('pt-BR'):'—'}</span></div>
+          <div class="status-row"><span>XP</span><span>${p.xp!=null?p.xp.toLocaleString('pt-BR'):'—'}</span></div>
+        </div>
       `;
-      card.addEventListener('click', ()=>{
-        document.querySelectorAll('.char-card').forEach(el=>el.classList.remove('selected'));
-        card.classList.add('selected');
-        selected = c;
+    }
+
+    function renderSlots(){
+      slotsWrap.innerHTML = '';
+      const visibleChars = characters.slice(windowStart, windowStart+VISIBLE);
+      visibleChars.forEach((c, i)=>{
+        const realIdx = windowStart+i;
+        const slot = document.createElement('div');
+        slot.className = 'char-slot' + (realIdx===selectedIdx ? ' selected' : '');
+        slot.innerHTML = `<span class="select-tag">Select</span><canvas width="90" height="115"></canvas><div class="slot-nick">${c.nick}</div>`;
+        slot.addEventListener('click', ()=>{ selectedIdx = realIdx; renderSlots(); renderStatus(characters[selectedIdx]); });
+        slotsWrap.appendChild(slot);
+        const canvas = slot.querySelector('canvas');
+        const draw = ()=> drawCharacterPreview(canvas, c.gender, c.hairId, c.hairStyleId);
+        draw(); scheduleRedraw(draw);
       });
-      list.appendChild(card);
-      drawMiniAvatar(card.querySelector('canvas'), c.gender, c.hairId);
-    });
+      // preenche slots vazios até completar VISIBLE, igual à referência (3 caixas fixas)
+      for(let i=visibleChars.length; i<VISIBLE; i++){
+        const slot = document.createElement('div');
+        slot.className = 'char-slot empty';
+        slot.innerHTML = `<span class="plus">+</span>`;
+        slotsWrap.appendChild(slot);
+      }
+      document.getElementById('slots-prev').disabled = windowStart <= 0;
+      document.getElementById('slots-next').disabled = windowStart+VISIBLE >= characters.length;
+    }
+
+    document.getElementById('slots-prev').addEventListener('click', ()=>{ windowStart = Math.max(0, windowStart-VISIBLE); renderSlots(); });
+    document.getElementById('slots-next').addEventListener('click', ()=>{ if(windowStart+VISIBLE < characters.length){ windowStart += VISIBLE; renderSlots(); } });
+
+    renderSlots();
+    renderStatus(characters[selectedIdx]);
+
     document.getElementById('connect-btn').disabled = false;
     document.getElementById('connect-btn').addEventListener('click', ()=>{
-      localStorage.setItem(LS_CHARACTER, JSON.stringify(selected));
+      localStorage.setItem(LS_CHARACTER, JSON.stringify(characters[selectedIdx]));
       window.location.href = 'world-prototype.html';
+    });
+    document.getElementById('new-char-link').addEventListener('click', ()=>{
+      view.style.display = 'none';
+      document.getElementById('char-create-view').style.display = 'block';
+      document.getElementById('back-to-select-link').style.display = 'block';
+      setupCreateView(true);
     });
   }
 
   /* =========================================================
-     CRIAÇÃO DE PERSONAGEM
+     CRIAÇÃO — grade real de 19 penteados (recortados do atlas ao vivo) +
+     paleta de 8 cores (tingidas em tempo real), estilo Ragnarok.
      ========================================================= */
-  function setupCreateView(){
-    let gender = 'male';
-    let hairIndex = 0;
-    const HAIR_IDS = HAIR_COLOR_NAMES.map((_,i)=>i+1); // 1..8, mesma ordem de HAIR_COLOR_NAMES
+  let createViewInitialized = false;
+  function setupCreateView(cameFromSelect){
+    document.getElementById('back-to-select-link').style.display = cameFromSelect ? 'block' : 'none';
+    if(createViewInitialized) return; // listeners já ligados — só a visibilidade muda ao ir/voltar
+    createViewInitialized = true;
 
+    let gender = 'male';
+    let hairStyleId = 1;
+    let hairColorId = 1;
+
+    const previewCanvas = document.getElementById('create-preview');
     function refreshPreview(){
-      drawMiniAvatar(document.getElementById('hair-preview'), gender, HAIR_IDS[hairIndex]);
-      document.getElementById('hair-preview-label').textContent = `Cabelo ${HAIR_COLOR_LABEL[HAIR_COLOR_NAMES[hairIndex]]}`;
+      drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId);
     }
-    refreshPreview();
+    scheduleRedraw(refreshPreview);
+
+    // Grade de penteados: 1 canvas por estilo (1-19), mostrando o recorte
+    // real do atlas já tingido na cor atualmente selecionada — clicar troca
+    // o penteado escolhido.
+    const grid = document.getElementById('hair-style-grid');
+    const styleCells = [];
+    for(let styleId=1; styleId<=HAIR_STYLE_COUNT; styleId++){
+      const cell = document.createElement('div');
+      cell.className = 'hair-style-cell' + (styleId===1?' active':'');
+      const c = document.createElement('canvas'); c.width=40; c.height=40;
+      cell.appendChild(c);
+      cell.addEventListener('click', ()=>{
+        hairStyleId = styleId;
+        styleCells.forEach(x=>x.cell.classList.remove('active'));
+        cell.classList.add('active');
+        refreshPreview();
+      });
+      grid.appendChild(cell);
+      styleCells.push({ cell, canvas:c, styleId });
+    }
+    function refreshStyleGrid(){
+      const head = SpriteManager.headSprite(gender);
+      const corCabelo = HAIR_COLOR_NAMES[hairColorId-1] || 'black';
+      styleCells.forEach(({canvas, styleId})=>{
+        const cctx = canvas.getContext('2d');
+        cctx.clearRect(0,0,40,40);
+        SpriteManager.drawHeadStyleContainFit(cctx, head, styleId, corCabelo, 20, 34, 32, 32);
+      });
+    }
+    scheduleRedraw(refreshStyleGrid);
+
+    // Paleta de cor: 8 bolinhas na cor de destino (RGB real usado no
+    // tingimento) — clicar re-tinge a grade inteira + o retrato.
+    const colorRow = document.getElementById('hair-color-row');
+    HAIR_COLOR_NAMES.forEach((name, i)=>{
+      const id = i+1;
+      const dot = document.createElement('div');
+      dot.className = 'hair-color-dot' + (id===1?' active':'');
+      dot.style.background = `rgb(${HAIR_COLOR_RGB[name].join(',')})`;
+      dot.title = HAIR_COLOR_LABEL[name];
+      dot.addEventListener('click', ()=>{
+        hairColorId = id;
+        colorRow.querySelectorAll('.hair-color-dot').forEach(d=>d.classList.remove('active'));
+        dot.classList.add('active');
+        refreshStyleGrid();
+        refreshPreview();
+      });
+      colorRow.appendChild(dot);
+    });
 
     document.querySelectorAll('#gender-toggle .toggle-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         document.querySelectorAll('#gender-toggle .toggle-btn').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         gender = btn.dataset.gender;
+        refreshStyleGrid();
         refreshPreview();
       });
     });
-    document.getElementById('hair-prev').addEventListener('click', ()=>{
-      hairIndex = (hairIndex-1+HAIR_IDS.length)%HAIR_IDS.length; refreshPreview();
-    });
-    document.getElementById('hair-next').addEventListener('click', ()=>{
-      hairIndex = (hairIndex+1)%HAIR_IDS.length; refreshPreview();
+
+    document.getElementById('back-to-select-link').addEventListener('click', ()=>{
+      document.getElementById('char-create-view').style.display = 'none';
+      document.getElementById('char-select-view').style.display = 'block';
     });
 
     const ERROR_LABELS = {
       nick_invalido:'Nick precisa ter ao menos 3 caracteres.',
       genero_invalido:'Escolha um gênero válido.',
-      cabelo_invalido:'Escolha um estilo de cabelo válido.',
+      cabelo_invalido:'Escolha uma cor de cabelo válida.',
+      penteado_invalido:'Escolha um penteado válido.',
       nick_em_uso:'Esse nick já está em uso — escolha outro.',
       token_invalido:'Sessão expirada. Faça login novamente.',
       erro_interno:'Erro no servidor. Tente novamente.',
@@ -314,7 +562,7 @@
 
       const data = await api('/api/characters/create', {
         method:'POST',
-        body: JSON.stringify({ nick, gender, hairId: HAIR_IDS[hairIndex] }),
+        body: JSON.stringify({ nick, gender, hairId: hairColorId, hairStyleId }),
       });
       if(!data.ok){
         msgEl.textContent = ERROR_LABELS[data.error] || 'Não foi possível criar o personagem.';

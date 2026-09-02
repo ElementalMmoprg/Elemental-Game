@@ -1420,19 +1420,140 @@
     }
     function load(key, relPath){
       if(cache[key]) return cache[key];
-      const entry = { img:new Image(), loaded:false, failed:false, frame:null };
+      const entry = { img:new Image(), loaded:false, failed:false, frame:null, styleFrames:null };
       entry.img.crossOrigin = 'anonymous';
-      entry.img.onload  = ()=>{ entry.loaded = true; entry.frame = computeAutoFrame(entry.img); };
+      entry.img.onload  = ()=>{
+        entry.loaded = true;
+        entry.frame = computeAutoFrame(entry.img);
+        // 'h_' = atlas de cabeça (ver headSprite) — só esses têm grade de
+        // vários penteados empilhados; os demais (corpo/armadura/monstro/asa)
+        // continuam sendo só o recorte único de computeAutoFrame acima.
+        if(key.charAt(0)==='h' && key.charAt(1)==='_') entry.styleFrames = computeHeadStyleFrames(entry.img);
+      };
       entry.img.onerror = ()=> entry.failed = true; // cai pro desenho procedural
       entry.img.src = URL_BASE + relPath;
       cache[key] = entry;
       return entry;
     }
     function monsterSprite(id){ return load('m_'+id, `monsters/${id}.png`); }
-    // pasta é "heads female"/"heads male" (um nome só, com espaço) — não
-    // "heads/female" aninhado — pra bater com a estrutura real do repositório
-    // de assets (armors female/armors male, bodies female/bodies male, etc.).
-    function headSprite(genero, corCabelo){ return load('h_'+genero+'_'+corCabelo, `player/heads ${genero}/${corCabelo}.png`); }
+    // ---- CABEÇA/CABELO: 1 atlas com 19 PENTEADOS, cor sintetizada em tempo real ----
+    // O repositório de assets hoje só tem UM arquivo real de cabeça por gênero
+    // (player/heads <gênero>/black.png) — mas esse arquivo NÃO é um penteado
+    // só: é uma grade de 19 linhas, cada linha um penteado diferente (mesma
+    // ideia de "folha/atlas" do comentário grandão acima, só que em vez de UM
+    // recorte útil, tem 19 lado a lado verticalmente). hairStyleId (1-19,
+    // ver huntEngine.HAIR_STYLE_COUNT) escolhe a LINHA; a "cor" (hairId,
+    // huntEngine.HAIR_COLORS) nunca existiu como arquivo separado pras outras
+    // 7 cores — é aplicada por cima via tingimento por luminância (ver
+    // getTintedHeadCanvas), a mesma técnica que uma folha de sprite indexada
+    // faria com troca de paleta, só que num PNG comum sem paleta.
+    // IMPORTANTE (limitação atual, não bug): só existe "heads male/black.png"
+    // no repositório — não existe "heads female/*" nenhum ainda. Pra
+    // personagem feminino, load() abaixo vai falhar (404) até esse arquivo
+    // ser adicionado, e o boneco procedural (fallback já existente) desenha
+    // no lugar — de propósito: não reaproveitamos a cabeça masculina pra não
+    // misturar o rosto errado num personagem feminino.
+    function headSprite(genero){ return load('h_'+genero, `player/heads ${genero}/black.png`); }
+    // Acha TODAS as linhas de conteúdo do atlas (não só a primeira, como
+    // computeAutoFrame) e, dentro de cada linha, o primeiro bloco de coluna —
+    // ou seja, o "quadro parado" de cada um dos 19 penteados. Roda uma vez só
+    // por imagem carregada (cache em entry.styleFrames, preenchido no onload
+    // do load() acima igual ao entry.frame single-frame já existente).
+    function computeHeadStyleFrames(img){
+      try{
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if(!w || !h) return [];
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const cx = c.getContext('2d');
+        cx.drawImage(img, 0, 0);
+        const data = cx.getImageData(0, 0, w, h).data;
+        function isBg(x, y){
+          const i = (y*w+x)*4, a = data[i+3];
+          if(a < 10) return true;
+          const r=data[i], g=data[i+1], b=data[i+2];
+          return (r>235 && g>235 && b>235);
+        }
+        function rowHasContent(y){ for(let x=0;x<w;x++){ if(!isBg(x,y)) return true; } return false; }
+        function colHasContent(x, y0, y1){ for(let y=y0;y<y1;y++){ if(!isBg(x,y)) return true; } return false; }
+        const rowBands = [];
+        let y = 0;
+        while(y < h){
+          if(rowHasContent(y)){
+            const y0 = y;
+            let y1 = y;
+            while(y1 < h && rowHasContent(y1)) y1++;
+            rowBands.push([y0, y1]);
+            y = y1;
+          } else y++;
+        }
+        const pad = 3;
+        return rowBands.map(([y0,y1])=>{
+          let x0 = -1;
+          for(let x=0; x<w; x++){ if(colHasContent(x, y0, y1)){ x0 = x; break; } }
+          if(x0 < 0) return null;
+          let x1 = x0;
+          for(let x=x0; x<w; x++){ if(colHasContent(x, y0, y1)) x1 = x; else break; }
+          x1++;
+          const sx = Math.max(0, x0-pad), sy = Math.max(0, y0-pad);
+          const sw = Math.min(w-sx, (x1-x0)+pad*2), sh = Math.min(h-sy, (y1-y0)+pad*2);
+          return { sx, sy, sw, sh };
+        }).filter(Boolean);
+      }catch(e){ return []; }
+    }
+    function getHeadStyleFrame(entry, styleId){
+      if(!entry.loaded) return null;
+      const frames = entry.styleFrames;
+      if(!frames || !frames.length) return entry.frame; // ainda não processou linhas / atlas sem grade — cai no recorte único
+      const idx = ((Math.floor(Number(styleId)||1) - 1) % frames.length + frames.length) % frames.length;
+      return frames[idx];
+    }
+    // Tinge (por luminância, não por hue-rotate — funciona mesmo a partir de
+    // um cabelo preto/quase-sem-saturação) o recorte do penteado escolhido
+    // pra cor pedida, preservando luz/sombra do desenho original. Cacheia o
+    // canvas resultado por (imagem, estilo, cor) — sem isso, recolorir pixel
+    // a pixel a cada frame do loop de 60fps pra cada jogador em tela custaria
+    // caro à toa, já que o resultado nunca muda depois de calculado uma vez.
+    const tintCache = {};
+    const HAIR_COLOR_RGB = { black:[42,33,24], blue:[58,95,160], brown:[138,90,42], green:[63,155,74], purple:[122,63,160], red:[201,64,64], white:[232,226,208], yellow:[216,194,58] };
+    function getTintedHeadCanvas(entry, styleId, colorName){
+      const frame = getHeadStyleFrame(entry, styleId);
+      if(!frame) return null;
+      const key = entry.img.src+'|'+styleId+'|'+colorName;
+      const hit = tintCache[key];
+      if(hit) return hit;
+      const c = document.createElement('canvas');
+      c.width = frame.sw; c.height = frame.sh;
+      const cctx = c.getContext('2d');
+      cctx.drawImage(entry.img, frame.sx, frame.sy, frame.sw, frame.sh, 0, 0, frame.sw, frame.sh);
+      const rgb = HAIR_COLOR_RGB[colorName] || HAIR_COLOR_RGB.black;
+      if(colorName !== 'black'){
+        const imgData = cctx.getImageData(0, 0, frame.sw, frame.sh);
+        const d = imgData.data;
+        for(let i=0; i<d.length; i+=4){
+          if(d[i+3] === 0) continue;
+          const lum = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255;
+          const factor = Math.min(1.6, 0.35 + 1.3*lum*(1-0.35));
+          d[i]   = Math.min(255, rgb[0]*factor);
+          d[i+1] = Math.min(255, rgb[1]*factor);
+          d[i+2] = Math.min(255, rgb[2]*factor);
+        }
+        cctx.putImageData(imgData, 0, 0);
+      }
+      const result = { canvas:c, sw:frame.sw, sh:frame.sh };
+      tintCache[key] = result;
+      return result;
+    }
+    function drawHeadStyleContainFit(targetCtx, entry, styleId, colorName, cx, bottomY, maxW, maxH){
+      if(!entry.loaded) return null;
+      const tinted = getTintedHeadCanvas(entry, styleId, colorName);
+      if(!tinted) return null;
+      const scale = Math.min(maxW/tinted.sw, maxH/tinted.sh);
+      const dw = tinted.sw*scale, dh = tinted.sh*scale;
+      const dx = cx - dw/2, dy = bottomY - dh;
+      targetCtx.drawImage(tinted.canvas, 0, 0, tinted.sw, tinted.sh, dx, dy, dw, dh);
+      return { dw, dh, dx, dy, topY: dy };
+    }
     // arquivo real é "{genero}_base.png" (ex.: male_base.png, female_base.png),
     // não "base.png" — confirmado na listagem real do repositório.
     function bodySprite(genero){ return load('b_'+genero, `player/bodies ${genero}/${genero}_base.png`); }
@@ -1472,7 +1593,7 @@
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       return { dw, dh, dx, dy, topY: dy };
     }
-    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, URL_BASE };
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawHeadStyleContainFit, getHeadStyleFrame, HAIR_COLOR_RGB, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -1484,7 +1605,7 @@
   // futuro cada uma tiver sua própria contagem, isso pode vir do auraCatalog
   // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
   const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
-  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx){
+  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId){
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
     // sempre; com ele, desenha em QUALQUER outro canvas (usado pelo retrato
     // do personagem no Inventário, que reaproveita esse mesmo desenhista em
@@ -1515,12 +1636,16 @@
       SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34, 46);
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
-    const headSprite = SpriteManager.headSprite(genero, corCabelo);
+    const headAtlas = SpriteManager.headSprite(genero);
     // Cabeça senta em cima do topo real do corpo desenhado (com uma pequena
     // sobreposição de "pescoço"); se o corpo não carregou, cai pro topo
     // aproximado que o boneco procedural já usava.
     const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30) + 8;
-    const headDraw = SpriteManager.drawFrameContainFit(tctx, headSprite, s.x, headBottomY, 26, 26);
+    // hairStyleId escolhe QUAL das 19 linhas do atlas (ver comentário grandão
+    // em SpriteManager.headSprite); corCabelo tinge por cima. Sem
+    // hairStyleId (chamadores antigos/retrato ainda não atualizados) cai no
+    // estilo 1, igual ao default do servidor pra personagens antigos.
+    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, corCabelo, s.x, headBottomY, 26, 26);
     drewHead = !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
@@ -1727,7 +1852,7 @@
       // ninguém está mais controlando aquele personagem ativamente.
       drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
         const s = toScreen(rp.x,rp.y);
-        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a');
+        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId);
       }, headCart:{x:rp.x,y:rp.y}, headLift:27, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
@@ -1735,7 +1860,8 @@
       const s = toScreen(player.x,player.y);
       const genero = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
       const hairId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
-      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54');
+      const hairStyleId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1;
+      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId);
     }, headCart:{x:player.x,y:player.y}, headLift:33, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
@@ -1923,6 +2049,12 @@
     if(netState.ws && netState.ws.readyState === WebSocket.OPEN) netState.ws.send(JSON.stringify(obj));
   }
 
+  // Ver comentário grandão dentro de applyHuntSnapshot: reconstruir os
+  // painéis (skill tree, loja, torres, battle pass, etc.) a cada snapshot
+  // de 30Hz destruía o botão embaixo do dedo do jogador no meio do clique.
+  let lastPanelRenderAt = 0;
+  const PANEL_RENDER_THROTTLE_MS = 250;
+
   function applyHuntSnapshot(msg){
     player.x = msg.x; player.y = msg.y; player.hp = msg.hp; player.hpMax = msg.hpMax;
     player.mp = msg.mp; player.mpMax = msg.mpMax; player.gold = msg.gold; player.bankGold = msg.bankGold;
@@ -1969,9 +2101,7 @@
         if(slot.kind==='spell') hotbar[i] = { kind:'spell', id:slot.id, condition:{type:'always',threshold:0}, cooldownUntil:0 };
         else if(hotbar[i].kind==='spell') hotbar[i] = { kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 };
       });
-      renderHotbar();
     }
-    renderSkillTreeIfOpen(); renderTowersIfOpen();
     if(msg.hunt.running){
       activeHunt.running = true; activeHunt.huntId = msg.hunt.huntId; activeHunt.huntName = msg.hunt.huntName;
       activeHunt.difficulty = msg.hunt.difficulty; activeHunt.currentIndex = msg.hunt.currentIndex;
@@ -1979,15 +2109,44 @@
     } else {
       activeHunt.running = false; activeHunt.lurePoints = [];
     }
-    renderTargetModeOptions();
-    refreshTacticsUI();
-    renderAttrs(); renderParty(); renderInventoryIfOpen(); renderAltar(); renderFriends(); renderShop();
-    renderCoinShopIfOpen(); renderEnchantIfOpen(); updateRankPill();
-    renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen();
-    if(currentTrade) renderTrade();
-    if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="treino"]').classList.contains('active')) renderTreinoTab();
-    if(typeof renderCharacterModalIfOpen === 'function') renderCharacterModalIfOpen();
-    if(typeof renderGuildModalIfOpen === 'function') renderGuildModalIfOpen();
+    // ---- RENDER DE PAINÉIS — por que isso é THROTTLED e não roda a cada
+    // snapshot (os dados acima SEMPRE atualizam a 30Hz, isso aqui é só o DOM) ----
+    // O servidor manda um snapshot completo pra CADA jogador 30x/segundo (ver
+    // huntEngine.startGameLoop). Toda essa leva de render*() reconstrói o
+    // HTML de dentro pra fora (innerHTML='' + recriar elementos + reanexar
+    // addEventListener) sempre que roda. Rodando isso a cada ~33ms, qualquer
+    // botão comum (skill tree, loja do NPC, torres, battle pass, atributos,
+    // etc.) tem uma chance real de ser DESTRUÍDO E RECRIADO entre o
+    // mousedown e o mouseup do jogador clicando nele — e como o alvo original
+    // some do DOM no meio do clique, o navegador simplesmente NÃO dispara o
+    // evento 'click' (ele não "erra o alvo", ele não dispara nada). Era
+    // exatamente isso que fazia parecer que "nenhum botão funciona": não é
+    // 1 bug por painel, é 1 bug estrutural que atinge TODOS os painéis que
+    // ficam abertos enquanto os snapshots continuam chegando. O hotbar não
+    // sofria o mesmo tanto porque usa contextmenu/drag-drop (o navegador
+    // re-mira o alvo pela posição do mouse em tempo real, não por uma
+    // referência presa ao elemento antigo) — só o clique comum sofre.
+    // Fix: só reconstruir esses painéis no máximo ~4x/segundo. Isso ainda
+    // reflete qualquer mudança quase instantaneamente pro olho humano, mas
+    // deixa cada versão do DOM viva por ~250ms — bem mais que o tempo de um
+    // clique real (~100-150ms) — então o alvo do clique sobrevive até o
+    // mouseup na esmagadora maioria das vezes.
+    const nowForPanels = Date.now();
+    const shouldRenderPanels = (nowForPanels - lastPanelRenderAt) >= PANEL_RENDER_THROTTLE_MS;
+    if(shouldRenderPanels){
+      lastPanelRenderAt = nowForPanels;
+      renderHotbar();
+      renderSkillTreeIfOpen(); renderTowersIfOpen();
+      renderTargetModeOptions();
+      refreshTacticsUI();
+      renderAttrs(); renderParty(); renderInventoryIfOpen(); renderAltar(); renderFriends(); renderShop();
+      renderCoinShopIfOpen(); renderEnchantIfOpen(); updateRankPill();
+      renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen();
+      if(currentTrade) renderTrade();
+      if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="treino"]').classList.contains('active')) renderTreinoTab();
+      if(typeof renderCharacterModalIfOpen === 'function') renderCharacterModalIfOpen();
+      if(typeof renderGuildModalIfOpen === 'function') renderGuildModalIfOpen();
+    }
   }
 
   function connectToServer(){
@@ -3106,7 +3265,8 @@
     pctx.clearRect(0, 0, portraitCanvas.width, portraitCanvas.height);
     const generoPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
     const hairIdPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
-    drawCharacterLayers({ x: portraitCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', pctx);
+    const hairStyleIdPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1;
+    drawCharacterLayers({ x: portraitCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', pctx, hairStyleIdPortrait);
 
     const grid = document.getElementById('inv-items-grid');
     const cap = document.getElementById('inv-capacity-line');
