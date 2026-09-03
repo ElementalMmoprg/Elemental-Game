@@ -448,6 +448,10 @@
   .skill-node.dirty{ border-color:#8fd17a; box-shadow:0 0 8px 2px rgba(143,209,122,.55); }
   .skill-node.locked{ filter:grayscale(1) brightness(.35); cursor:not-allowed; }
   .skill-node.milestone{ border-width:2px; }
+  /* Nó ATIVO (vira magia real, vai pra hotbar) — círculo maior (definido
+     inline via size) + borda um pouco mais grossa, pra diferenciar dos
+     passivos (só bônus permanente) de relance na árvore. */
+  .skill-node.active-skill{ border-width:2px; }
   .skill-node.milestone.invested{ border-color:#c99bff; color:#c99bff;
     box-shadow:0 0 12px 3px rgba(201,155,255,.65), inset 0 0 6px rgba(201,155,255,.4); }
   .skill-node-anchor-label{ position:absolute; transform:translate(-50%,0); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); white-space:nowrap; pointer-events:none; }
@@ -556,6 +560,19 @@
   #tower-climb-banner.boss .line1{ font-size:28px; color:#ff3b30; font-weight:bold; }
   #tower-climb-banner .line2{ font-size:12px; color:var(--ink-dim); margin-top:6px; }
   #tower-climb-banner.boss .line2{ color:#ff9a80; }
+
+  /* ============ MODAL DE CONFIRMAÇÃO (substitui o confirm() nativo do
+     navegador, que aparecia com a cara de um alerta do Windows) ============ */
+  #confirm-modal-backdrop{ top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.6); z-index:200; display:none; align-items:center; justify-content:center; }
+  #confirm-modal-backdrop.show{ display:flex; }
+  #confirm-modal{ width:380px; max-width:88vw; }
+  #confirm-modal .cm-body{ padding:14px 16px; font-family:var(--font-mono); font-size:11.5px; line-height:1.6; color:var(--ink); }
+  #confirm-modal .cm-btns{ display:flex; gap:10px; padding:0 16px 16px; }
+  #confirm-modal .cm-btns button{ flex:1; padding:9px; border-radius:6px; cursor:pointer; font-family:var(--font-mono); font-size:11px; }
+  #confirm-modal .cm-ok{ border:1px solid var(--gold-bright); background:rgba(191,161,95,.18); color:var(--gold-bright); }
+  #confirm-modal .cm-ok:hover{ box-shadow:0 0 10px rgba(240,211,138,.25); }
+  #confirm-modal .cm-cancel{ border:1px solid var(--ink-dim); background:rgba(255,255,255,.04); color:var(--ink-dim); }
+  #confirm-modal .cm-cancel:hover{ color:var(--ink); border-color:var(--ink); }
 
   /* ============ REBIRTH / ALTAR ============ */
   #altar-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:340px; display:none; z-index:15; }
@@ -699,6 +716,17 @@
   <div id="tower-climb-banner">
     <div class="line1"></div>
     <div class="line2"></div>
+  </div>
+
+  <div id="confirm-modal-backdrop">
+    <div id="confirm-modal" class="glass ornate">
+      <div class="panel-title" style="padding:12px 14px 0;">⚠️ Confirmação<span class="rule"></span></div>
+      <div class="cm-body" id="confirm-modal-body"></div>
+      <div class="cm-btns">
+        <button class="cm-cancel" id="confirm-modal-cancel">Cancelar</button>
+        <button class="cm-ok" id="confirm-modal-ok">Confirmar</button>
+      </div>
+    </div>
   </div>
 
   <!-- BARRA SUPERIOR ÚNICA (estilo Huntera) — retrato/nome/level, ouro, Loja,
@@ -1271,6 +1299,9 @@
      servidor passa a mandar em tudo: HP/MP/Stamina/Ouro/Party/Trade.
      ========================================================= */
   const player = { x:80, y:520, hp:320, hpMax:320, mp:140, mpMax:140, gold:0, bankGold:0, xp:0, level:1 };
+  // Ver applyHuntSnapshot: na Cidade o cliente é dono de x/y (WASD/clique);
+  // este flag marca se já aceitamos ao menos 1 posição do servidor (spawn).
+  let wasdPositionSynced = false;
   const CITY_POSITION = { x:80, y:520 };
   let location = 'city'; // 'city' | 'dungeon'
   const prestige = { bronzeStars:0, silverStars:0, goldStars:0, diamondRank:false };
@@ -1837,9 +1868,12 @@
     { type:'predio', x:CT.x+310, y:CT.y-80,  h:110 },
     { type:'predio', x:CT.x+30,  y:CT.y-5,   h:90 },
     { type:'predio', x:CT.x+250, y:CT.y+35,  h:100 },
-    // pilares decorativos flanqueando o portão sul (os 2 originais)
+    // pilares decorativos flanqueando o portão sul (os 2 originais) — o da
+    // direita foi afastado dos 3 bonecos de treino (ver TRAINING_DUMMIES em
+    // huntEngine.js, em CT.x+220/280/340, y-40) pra não ficar desenhado em
+    // cima de um deles.
     { type:'pilastra', x:CT.x-60,  y:CT.y-40, h:90 },
-    { type:'pilastra', x:CT.x+220, y:CT.y-40, h:90 },
+    { type:'pilastra', x:CT.x+180, y:CT.y-110, h:90 },
     // árvores e rochas de decoração
     { type:'arvore', x:CT.x+40,  y:CT.y-140, h:34 },
     { type:'arvore', x:CT.x+200, y:CT.y-150, h:30 },
@@ -2126,7 +2160,15 @@
       const genero = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
       const hairId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
       const hairStyleId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1;
-      const anim = updateWalkAnim('__player__', s.x, s.y);
+      // NÃO usa `s` (toScreen) aqui: a câmera sempre recentraliza no próprio
+      // jogador local (getIsoOffset), então toScreen(player.x,player.y) é
+      // SEMPRE o mesmo ponto (o centro do canvas) — a cada frame, mesmo
+      // andando. Isso fazia dx/dy dar sempre ~0 e a perna nunca animar (o
+      // personagem "deslizava" parado). cartesianToIso (sem o offset da
+      // câmera) dá a mesma orientação de tela, só que sem esse cancelamento,
+      // então o movimento de verdade aparece pro detector de direção/frame.
+      const animRef = cartesianToIso(player.x, player.y);
+      const anim = updateWalkAnim('__player__', animRef.x, animRef.y);
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, anim);
     }, headCart:{x:player.x,y:player.y}, headLift:33, isPlayer:true, nick:PLAYER_NICK });
 
@@ -2190,10 +2232,19 @@
   function updateWasdMovement(dt){
     if(location !== 'city') return; // Dungeon: movimento é 100% do Bot no servidor
     let dx = 0, dy = 0;
-    if(heldKeys['w']||heldKeys['arrowup'])    dy -= 1;
-    if(heldKeys['s']||heldKeys['arrowdown'])  dy += 1;
-    if(heldKeys['a']||heldKeys['arrowleft'])  dx -= 1;
-    if(heldKeys['d']||heldKeys['arrowright']) dx += 1;
+    // Mapeamento pensado pro mundo ISOMÉTRICO (cartesianToIso: screenX=(x-y)*k,
+    // screenY=(x+y)*k*0.5) — W/A/S/D precisam mexer nos DOIS eixos cartesianos
+    // ao mesmo tempo pra resultar em cima/baixo/esquerda/direita RETOS NA TELA
+    // (que é o que o jogador vê e espera ao apertar cada tecla). O código
+    // antigo tratava W/S como só ±Y e A/D como só ±X, como um jogo top-down
+    // comum — isso faz cada tecla andar na DIAGONAL errada num mundo
+    // isométrico (era a "troca" de WASD reportada). Segurar 2 teclas ao
+    // mesmo tempo (ex.: W+D) soma os vetores abaixo e dá a diagonal correta
+    // sozinho, sem precisar de nenhum caso especial pra diagonal.
+    if(heldKeys['w']||heldKeys['arrowup'])    { dx -= 1; dy -= 1; } // cima na tela
+    if(heldKeys['s']||heldKeys['arrowdown'])  { dx += 1; dy += 1; } // baixo na tela
+    if(heldKeys['a']||heldKeys['arrowleft'])  { dx -= 1; dy += 1; } // esquerda na tela
+    if(heldKeys['d']||heldKeys['arrowright']) { dx += 1; dy -= 1; } // direita na tela
     if(!dx && !dy) return;
     const len = Math.hypot(dx,dy); dx/=len; dy/=len;
     player.x += dx*WASD_SPEED_PX_S*dt;
@@ -2327,7 +2378,21 @@
   const PANEL_RENDER_THROTTLE_MS = 250;
 
   function applyHuntSnapshot(msg){
-    player.x = msg.x; player.y = msg.y; player.hp = msg.hp; player.hpMax = msg.hpMax;
+    // Cidade = o cliente já é dono da posição (WASD/clique — ver
+    // updateWasdMovement); o servidor só ecoa de volta o que o próprio
+    // cliente mandou em 'move', até 400ms desatualizado (ver
+    // connectToServer). Aceitar esse eco a cada snapshot (~30Hz) brigava
+    // frame a frame com a predição local do WASD e fazia a tela "vibrar"
+    // ao segurar uma tecla de movimento. Agora só aceita a posição do
+    // servidor na 1ª vez (spawn) ou quando muda de área (entrar/sair de
+    // Dungeon, Torre, morte, retorno à Cidade etc.) — fora disso, andando
+    // livremente dentro da Cidade, o cliente mantém sua própria posição.
+    const prevLocation = location;
+    if(!wasdPositionSynced || msg.location !== prevLocation || msg.location !== 'city'){
+      player.x = msg.x; player.y = msg.y;
+    }
+    wasdPositionSynced = true;
+    player.hp = msg.hp; player.hpMax = msg.hpMax;
     player.mp = msg.mp; player.mpMax = msg.mpMax; player.gold = msg.gold; player.bankGold = msg.bankGold;
     player.xp = msg.xp; player.level = msg.level;
     location = msg.location;
@@ -2588,7 +2653,15 @@
     if(msg.forType === 'skill:save'){
       if(msg.ok){
         logLoot(`🌳 Árvore de ${ELEMENT_LABEL[pendingSaveElement]||''} salva!`);
-        pendingSkillLevels[pendingSaveElement] = null; // resincroniza com o commited na próxima renderização
+        // NÃO zera pendingSkillLevels aqui: o snapshot 'hunt:state' com o
+        // skillTree já persistido no servidor ainda não chegou nesse exato
+        // instante (chega no próximo tick, alguns ms depois). Zerar na hora
+        // fazia o rascunho ser reconstruído a partir do skillTree ainda
+        // DESATUALIZADO (pré-save) — a árvore "perdia" os pontos/skills por
+        // um instante logo após salvar. Deixando o rascunho como está (já é
+        // exatamente o que acabou de ser salvo), a tela não pisca nada, e
+        // draftIsDirty já volta sozinho a false assim que o snapshot real
+        // alcançar o mesmo valor.
       } else {
         const reasonMap = { cadeia_invalida:'existe uma lacuna na corrente de nós.', pontos_insuficientes:'você não tem pontos suficientes pra esse plano.' };
         logLoot(`⚠️ Não foi possível salvar: ${reasonMap[msg.reason] || msg.reason}`);
@@ -2596,7 +2669,13 @@
       renderSkillTreeIfOpen();
     }
     if(msg.forType === 'skill:reset'){
-      if(msg.ok){ logLoot('♻️ Árvore resetada — pontos devolvidos.'); pendingSkillLevels[activeSkillElementTab] = null; }
+      if(msg.ok){
+        logLoot('♻️ Árvore resetada — pontos devolvidos.');
+        // Mesmo motivo do save acima: aplica o resultado JÁ CONHECIDO (zerado)
+        // direto no rascunho, em vez de anular e esperar o próximo snapshot —
+        // evita mostrar por um instante os pontos antigos "voltando".
+        pendingSkillLevels[activeSkillElementTab] = {};
+      }
       else if(msg.reason === 'moedas_insuficientes') logLoot(`⚠️ Você precisa de ${ELEMENTAL_COIN_RESET_COST} Elemental Coin pra resetar.`);
       else logLoot(`⚠️ Reset falhou: ${msg.reason}`);
       renderSkillTreeIfOpen();
@@ -3668,6 +3747,16 @@
     if(chosenKind && pool[chosenKind]) return pool[chosenKind];
     return { name: category==='semiUltimate' ? 'Semi Ultimate' : 'Ultimate', desc: 'Escolha entre Ataque, Defesa' + (elementId==='luz' ? ' ou Cura' : '') + ' ao investir o 1º ponto neste nó.' };
   }
+  // Espelha huntEngine.nodeKindForIndex no servidor: exatamente 10 nós
+  // "ativos" (viram magia de verdade, arrastável pra hotbar) por árvore —
+  // e1,e5,e9,e13 / e15 (Semi Ultimate) / e16,e20,e24,e28 / e30 (Ultimate) —
+  // os outros 20 são "passivos" (só bônus permanente, nunca vão pra hotbar).
+  function nodeKindForIndexClient(index){
+    if(index===15 || index===30) return 'active';
+    if(index>=1 && index<=14) return (index-1)%4===0 ? 'active' : 'passive';
+    if(index>=16 && index<=29) return (index-16)%4===0 ? 'active' : 'passive';
+    return 'passive';
+  }
   // Gera os mesmos 30 nós lineares que huntEngine.buildSkillTreeGraph gera no
   // servidor (e1..e30, semi-ultimate no 15, ultimate no 30). e15/e30 levam um
   // nome placeholder aqui — renderSkillTree resolve o nome real por jogador.
@@ -3682,26 +3771,28 @@
     }
     function pushRegular(index, category){
       let name = category==='attack' ? wb.attack[atkI++] : category==='defense' ? wb.defense[defI++] : wb.support[supI++];
-      nodes.push({ id:`e${index}`, index, category, deps:[`e${index-1}`], name, desc:descFor(category) });
+      nodes.push({ id:`e${index}`, index, category, kind:nodeKindForIndexClient(index), deps:[`e${index-1}`], name, desc:descFor(category) });
     }
-    nodes.push({ id:'e1', index:1, category:'attack', deps:[], name:wb.starter, desc:`Ataque básico de ${label}${wb.appliesState?`, aplica ${wb.appliesState}`:''}.` });
+    nodes.push({ id:'e1', index:1, category:'attack', kind:nodeKindForIndexClient(1), deps:[], name:wb.starter, desc:`Ataque básico de ${label}${wb.appliesState?`, aplica ${wb.appliesState}`:''}.` });
     for(let i=2;i<=14;i++) pushRegular(i, ['defense','support','attack'][(i-2)%3]);
-    nodes.push({ id:'e15', index:15, category:'semiUltimate', deps:['e14'] });
+    nodes.push({ id:'e15', index:15, category:'semiUltimate', kind:'active', deps:['e14'] });
     for(let i=16;i<=29;i++) pushRegular(i, ['defense','support','attack'][(i-16)%3]);
-    nodes.push({ id:'e30', index:30, category:'ultimate', deps:['e29'] });
+    nodes.push({ id:'e30', index:30, category:'ultimate', kind:'active', deps:['e29'] });
     return nodes;
   }
   const SKILL_TREE_GRAPH_CLIENT = {};
   ELEMENT_IDS.forEach(id=>{ SKILL_TREE_GRAPH_CLIENT[id] = buildSkillTreeGraphClient(id); });
   function spellIdFor(elementId, nodeId){ return `${elementId}_${nodeId}`; }
   function getUnlockedSpells(){
-    // hotbar só pode receber magias com pelo menos 1 ponto investido (nível > 0)
+    // hotbar só pode receber NÓS ATIVOS com pelo menos 1 ponto investido —
+    // nó passivo (n.kind==='passive') nunca aparece aqui, ele só soma bônus
+    // permanente (ver computeSkillTreeBonuses no servidor) e não é uma magia.
     const list = [];
     ELEMENT_IDS.forEach(elementId=>{
       const levels = (skillTree.levels && skillTree.levels[elementId]) || {};
       const chosenKind = skillTree.ultimateChoice && skillTree.ultimateChoice[elementId];
       SKILL_TREE_GRAPH_CLIENT[elementId].forEach(n=>{
-        if((levels[n.id]||0) <= 0) return;
+        if((levels[n.id]||0) <= 0 || n.kind !== 'active') return;
         const isMilestone = n.category==='semiUltimate' || n.category==='ultimate';
         const name = isMilestone ? resolveMilestoneDisplay(elementId, n.category, chosenKind).name : n.name;
         list.push({ id:spellIdFor(elementId,n.id), name, icon:SPELL_ICON[elementId], element:elementId, node:n });
@@ -3882,6 +3973,34 @@
      ficam antes da HOTBAR, logo acima, porque renderHotbar já precisa
      deles no primeiro render síncrono da página).
      ========================================================= */
+  /* Modal de confirmação próprio (troca o confirm() nativo do navegador,
+     que aparece com a cara de um alerta de sistema do Windows, por um
+     popup no mesmo estilo visual do resto do jogo). Uso: `if(!await
+     showConfirmModal('texto')) return;` dentro de uma função async. */
+  const confirmModalBackdrop = document.getElementById('confirm-modal-backdrop');
+  const confirmModalBody = document.getElementById('confirm-modal-body');
+  const confirmModalOkBtn = document.getElementById('confirm-modal-ok');
+  const confirmModalCancelBtn = document.getElementById('confirm-modal-cancel');
+  function showConfirmModal(message){
+    return new Promise(resolve=>{
+      confirmModalBody.textContent = message;
+      confirmModalBackdrop.classList.add('show');
+      function cleanup(result){
+        confirmModalBackdrop.classList.remove('show');
+        confirmModalOkBtn.removeEventListener('click', onOk);
+        confirmModalCancelBtn.removeEventListener('click', onCancel);
+        confirmModalBackdrop.removeEventListener('click', onBackdropClick);
+        resolve(result);
+      }
+      function onOk(){ cleanup(true); }
+      function onCancel(){ cleanup(false); }
+      function onBackdropClick(e){ if(e.target === confirmModalBackdrop) cleanup(false); }
+      confirmModalOkBtn.addEventListener('click', onOk);
+      confirmModalCancelBtn.addEventListener('click', onCancel);
+      confirmModalBackdrop.addEventListener('click', onBackdropClick);
+    });
+  }
+
   let activeSkillElementTab = 'fogo';
   // Rascunho local por elemento — níveis-alvo (absolutos, não deltas) que o
   // jogador está planejando. null = ainda não inicializado nesta sessão de
@@ -3912,9 +4031,12 @@
 
   const skilltreePanel = document.getElementById('skilltree-panel');
   document.getElementById('btn-open-skilltree').addEventListener('click', ()=>{ skilltreePanel.classList.toggle('open'); renderSkillTabs(); renderSkillTree(); });
-  function switchSkillTab(id){
+  async function switchSkillTab(id){
     if(id===activeSkillElementTab) return;
-    if(draftIsDirty(activeSkillElementTab) && !confirm('Você tem alterações não salvas nessa árvore. Trocar de elemento vai descartá-las. Continuar?')) return;
+    if(draftIsDirty(activeSkillElementTab)){
+      const ok = await showConfirmModal('Você tem alterações não salvas nessa árvore. Trocar de elemento vai descartá-las. Continuar?');
+      if(!ok) return;
+    }
     pendingSkillLevels[activeSkillElementTab] = null;
     activeSkillElementTab = id; renderSkillTabs(); renderSkillTree();
   }
@@ -3996,8 +4118,14 @@
       }
       const x = LEFT_PAD + col*COL_W;
       const y = TOP_PAD + laneIdx*ROW_H;
-      const size = isMilestone ? 32 : (isRoot ? 26 : 17);
-      return { n, idx, isMilestone, isRoot, display, committedLvl, pendingLvl, locked, needsChoice, dirty, x, y, size, col };
+      const isActiveSkill = n.kind === 'active';
+      // Nó ativo (vira magia de verdade, vai pra hotbar) desenha com um
+      // círculo maior que os passivos, pra dar pra diferenciar de relance —
+      // a Raiz e os 2 Marcos (sempre ativos) já eram os maiores de qualquer
+      // forma; só os ativos "do meio da corrente" (e5/e9/e13/e16/e20/e24/e28)
+      // precisavam de um tamanho intermediário novo entre eles e as passivas.
+      const size = isMilestone ? 32 : (isRoot ? 26 : (isActiveSkill ? 22 : 17));
+      return { n, idx, isMilestone, isRoot, isActiveSkill, display, committedLvl, pendingLvl, locked, needsChoice, dirty, x, y, size, col };
     });
     const maxCol = nodeInfos.reduce((m,i)=>Math.max(m,i.col), 0);
     wrap.style.height = (TOP_PAD*2 + ROW_H*2) + 'px';
@@ -4060,20 +4188,26 @@
     }
 
     nodeInfos.forEach(info=>{
-      const { n, isMilestone, isRoot, display, committedLvl, locked, dirty, x, y, size } = info;
+      const { n, isMilestone, isRoot, isActiveSkill, display, committedLvl, locked, dirty, x, y, size } = info;
       const el = document.createElement('div');
-      el.className = 'skill-node' + (isMilestone?' milestone':'') + (committedLvl>0?' invested':'') + (locked?' locked':'') + (dirty?' dirty':'');
+      el.className = 'skill-node' + (isMilestone?' milestone':'') + (isActiveSkill?' active-skill':'') + (committedLvl>0?' invested':'') + (locked?' locked':'') + (dirty?' dirty':'');
       el.dataset.nodeId = n.id;
       el.style.width = size+'px'; el.style.height = size+'px';
       el.style.left = (x - size/2)+'px'; el.style.top = (y - size/2)+'px';
       el.style.fontSize = (isMilestone||isRoot ? 15 : 9)+'px';
       el.textContent = CATEGORY_ICON[n.category];
-      if(committedLvl>0){
+      // Só nó ATIVO com pelo menos 1 ponto investido vai pra hotbar — nó
+      // passivo nunca é arrastável, ele só contribui bônus permanente (ver
+      // computeSkillTreeBonuses no servidor), nunca é uma magia de verdade.
+      if(committedLvl>0 && isActiveSkill){
         el.draggable = true;
         el.addEventListener('dragstart', e=> e.dataTransfer.setData('text/spell-id', spellIdFor(elementId, n.id)));
       }
       el.addEventListener('mouseenter', ()=>{
-        skillTip.innerHTML = `<b>${display.name}</b>${display.desc}${locked?'<span class="hint" style="color:#ff9a80;">Requer o nó anterior investido</span>':''}${committedLvl>0?'<span class="hint">Arraste pra um slot da hotbar</span>':''}`;
+        const kindHint = isActiveSkill
+          ? (committedLvl>0 ? '<span class="hint">✦ Ativa — arraste pra um slot da hotbar</span>' : '<span class="hint">✦ Ativa — vira magia ao investir</span>')
+          : '<span class="hint" style="color:#9ac7e0;">◆ Passiva — só bônus permanente, não vai pra hotbar</span>';
+        skillTip.innerHTML = `<b>${display.name}</b>${display.desc}${locked?'<span class="hint" style="color:#ff9a80;">Requer o nó anterior investido</span>':''}${kindHint}`;
         skillTip.style.display = 'block';
       });
       el.addEventListener('mousemove', e=>{ skillTip.style.left = (e.clientX+14)+'px'; skillTip.style.top = (e.clientY+14)+'px'; });
@@ -4100,20 +4234,22 @@
     const resetCost = usedFreeSkillReset ? ELEMENTAL_COIN_RESET_COST : 0;
     const saveBtn = document.getElementById('skill-save-btn');
     saveBtn.disabled = !dirty;
-    saveBtn.onclick = ()=>{
+    saveBtn.onclick = async ()=>{
       if(!dirty) return;
-      if(!confirm(`Tem certeza que quer salvar a Árvore de ${ELEMENT_LABEL[elementId]}? Depois de salvar, a única forma de reorganizar os pontos é resetando essa árvore${usedFreeSkillReset ? ` por ${ELEMENTAL_COIN_RESET_COST} Elemental Coin` : ' (1º reset da conta é grátis)'}.`)) return;
+      const ok = await showConfirmModal(`Tem certeza que quer salvar a Árvore de ${ELEMENT_LABEL[elementId]}? Depois de salvar, a única forma de reorganizar os pontos é resetando essa árvore${usedFreeSkillReset ? ` por ${ELEMENTAL_COIN_RESET_COST} Elemental Coin` : ' (1º reset da conta é grátis)'}.`);
+      if(!ok) return;
       pendingSaveElement = elementId;
       sendWS({ type:'skill:save', elementId, levels: draft });
     };
     const resetBtn = document.getElementById('skill-reset-btn');
     resetBtn.textContent = resetCost ? `♻️ Resetar (${resetCost} 💎)` : '♻️ Resetar (1º grátis)';
     resetBtn.disabled = resetCost > elementalCoins;
-    resetBtn.onclick = ()=>{
+    resetBtn.onclick = async ()=>{
       if(resetCost > elementalCoins) return;
       const msg = resetCost ? `Resetar a Árvore de ${ELEMENT_LABEL[elementId]} vai devolver todos os pontos investidos nela e custa ${resetCost} Elemental Coin. Continuar?`
         : `Resetar a Árvore de ${ELEMENT_LABEL[elementId]} vai devolver todos os pontos investidos nela. Este é o seu 1º reset e é GRÁTIS. Continuar?`;
-      if(!confirm(msg)) return;
+      const ok = await showConfirmModal(msg);
+      if(!ok) return;
       sendWS({ type:'skill:reset', elementId });
     };
   }
