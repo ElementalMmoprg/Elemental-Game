@@ -1507,10 +1507,24 @@
     // ARQUIVOS carregar (a cor já vem pronta da arte, sem tingir nada aqui).
     function headSprite(genero, corCabelo){ return load('h_'+genero+'_'+corCabelo, `player/heads ${genero}/${corCabelo}.png`); }
     // Acha TODAS as linhas de conteúdo do atlas (não só a primeira, como
-    // computeAutoFrame) e, dentro de cada linha, o primeiro bloco de coluna —
-    // ou seja, o "quadro parado" de cada um dos 19 penteados. Roda uma vez só
-    // por imagem carregada (cache em entry.styleFrames, preenchido no onload
-    // do load() acima igual ao entry.frame single-frame já existente).
+    // computeAutoFrame) e, dentro de cada linha, TODOS os blocos de coluna —
+    // cada linha é 1 penteado, e cada bloco é um QUADRO daquele penteado
+    // "girando" (o atlas real tem ~15 quadros por linha: de rosto de frente
+    // até nuca/parte de trás e voltando). Roda uma vez só por imagem
+    // carregada (cache em entry.styleFrames, preenchido no onload do load()
+    // acima igual ao entry.frame single-frame já existente).
+    //
+    // Antes disso só o 1º bloco (rosto de frente) era usado pra QUALQUER
+    // direção que o corpo estivesse andando — corpo virava (tem arte de
+    // verdade pras 4 direções, ver computeBodyDirFrames) mas a cabeça ficava
+    // sempre olhando de frente pra câmera, seja o corpo andando de costas,
+    // de lado ou pra cima ("a cabeça não acompanha o corpo", bug relatado).
+    // Esse atlas não tem perfil de lado de verdade (ver comentário grandão
+    // no fim desta função), então em vez de inventar um ângulo que não
+    // existe, escolhemos aqui, POR PENTEADO, o quadro que mostra a
+    // parte de trás da cabeça (nuca/cabelo, sem rosto) — dá pra usar esse
+    // pra 'up'/'left'/'right' e reservar o rosto de frente só pra 'down',
+    // que é honesto com a arte que realmente existe.
     function computeHeadStyleFrames(img){
       try{
         const w = img.naturalWidth, h = img.naturalHeight;
@@ -1526,10 +1540,21 @@
           const r=data[i], g=data[i+1], b=data[i+2];
           return (r>235 && g>235 && b>235);
         }
+        // Pele (rosto) tem tom quente característico (r>g>b, avermelhado)
+        // que o cabelo raramente reproduz mesmo em cores claras/loiras —
+        // usado só de forma RELATIVA (o quadro com MENOS pixels assim
+        // dentro da própria linha), não como limiar absoluto, então
+        // funciona igual pra qualquer uma das 8 cores de cabelo.
+        function isSkinish(x, y){
+          const i = (y*w+x)*4;
+          if(data[i+3] < 10) return false;
+          const r=data[i], g=data[i+1], b=data[i+2];
+          return r>190 && g>140 && g<230 && b>120 && b<210 && r>g && g>b*0.9;
+        }
         function rowHasContent(y){ for(let x=0;x<w;x++){ if(!isBg(x,y)) return true; } return false; }
         function colHasContent(x, y0, y1){ for(let y=y0;y<y1;y++){ if(!isBg(x,y)) return true; } return false; }
         // largura de conteúdo (nº de colunas não-fundo) da linha y, restrita a
-        // [x0,x1) — usada abaixo pra achar o "queixo" de cada penteado (ver
+        // [x0,x1) — usada abaixo pra achar o "queixo" de cada quadro (ver
         // comentário perto de chinY mais embaixo).
         function rowWidth(y, x0, x1){ let n=0; for(let x=x0;x<x1;x++){ if(!isBg(x,y)) n++; } return n; }
         const rowBands = [];
@@ -1544,13 +1569,7 @@
           } else y++;
         }
         const pad = 3;
-        return rowBands.map(([y0,y1])=>{
-          let x0 = -1;
-          for(let x=0; x<w; x++){ if(colHasContent(x, y0, y1)){ x0 = x; break; } }
-          if(x0 < 0) return null;
-          let x1 = x0;
-          for(let x=x0; x<w; x++){ if(colHasContent(x, y0, y1)) x1 = x; else break; }
-          x1++;
+        function buildFrame(x0, x1, y0, y1){
           // O bbox bruto (y0..y1) inclui qualquer fiapo de cabelo/enfeite que
           // desça bem abaixo do rosto (mecha solta, pingente, rabo-de-cavalo)
           // — cada penteado tem uma proporção diferente de "fiapo fino" vs.
@@ -1559,7 +1578,7 @@
           // do corpo em penteados com fiapo comprido do que em penteados sem.
           // Em vez disso achamos aqui a última linha "larga" (bochecha/queixo,
           // a parte grossa da cabeça, >=40% da largura máxima daquele
-          // penteado) — é essa linha (chinY) que drawHeadStyleContainFit
+          // quadro) — é essa linha (chinY) que drawHeadStyleContainFit
           // encosta no topo do corpo; o fiapo fino abaixo dela só continua
           // sendo desenhado por cima do pescoço, o que é o efeito visual
           // certo (cabelo caindo sobre o ombro), não a referência de encaixe.
@@ -1571,22 +1590,59 @@
           const sx = Math.max(0, x0-pad), sy = Math.max(0, y0-pad);
           const sw = Math.min(w-sx, (x1-x0)+pad*2), sh = Math.min(h-sy, (y1-y0)+pad*2);
           return { sx, sy, sw, sh, chinY };
+        }
+        return rowBands.map(([y0,y1])=>{
+          const blocks = [];
+          let x = 0;
+          while(x < w){
+            if(colHasContent(x, y0, y1)){
+              const x0 = x; let x1 = x;
+              while(x1 < w && colHasContent(x1, y0, y1)) x1++;
+              blocks.push([x0, x1]);
+              x = x1;
+            } else x++;
+          }
+          if(!blocks.length) return null;
+          const front = buildFrame(blocks[0][0], blocks[0][1], y0, y1);
+          // "Nuca" = o quadro, dentro da faixa central da sequência (evita
+          // pegar um quadro perto das pontas, que ainda é quase-de-frente),
+          // com MENOS pixels de tom de pele — é o ponto em que o penteado
+          // girou o bastante pra cobrir o rosto inteiro (ver comentário
+          // grandão da função). Empate/único quadro cai de volta no front.
+          const lo = Math.max(1, Math.floor(blocks.length*0.35));
+          const hi = Math.min(blocks.length-1, Math.ceil(blocks.length*0.72));
+          let backIdx = -1, backScore = Infinity;
+          for(let i=lo; i<=hi; i++){
+            const [bx0,bx1] = blocks[i];
+            let skin = 0;
+            for(let yy=y0; yy<y1; yy++) for(let xx=bx0; xx<bx1; xx++){ if(isSkinish(xx,yy)) skin++; }
+            if(skin < backScore){ backScore = skin; backIdx = i; }
+          }
+          const back = backIdx>=0 ? buildFrame(blocks[backIdx][0], blocks[backIdx][1], y0, y1) : front;
+          return { front, back };
         }).filter(Boolean);
       }catch(e){ return []; }
     }
-    function getHeadStyleFrame(entry, styleId){
+    // dir escolhe front (rosto, 'down') ou back (nuca/cabelo, qualquer outra
+    // direção) — ver comentário grandão de computeHeadStyleFrames pra
+    // entender por que só essas 2 poses (o atlas não tem perfil de lado).
+    function getHeadStyleFrame(entry, styleId, dir){
       if(!entry.loaded) return null;
       const frames = entry.styleFrames;
       if(!frames || !frames.length) return entry.frame; // ainda não processou linhas / atlas sem grade — cai no recorte único
       const idx = ((Math.floor(Number(styleId)||1) - 1) % frames.length + frames.length) % frames.length;
-      return frames[idx];
+      const pair = frames[idx];
+      if(!pair) return entry.frame;
+      return (dir && dir !== 'down') ? pair.back : pair.front;
     }
     // Desenha o penteado (linha hairStyleId do atlas JÁ na cor certa — ver
     // headSprite acima) preservando a proporção real, igual drawFrameContainFit,
-    // só que recortando a linha certa em vez do único frame de computeAutoFrame.
-    function drawHeadStyleContainFit(targetCtx, entry, styleId, cx, bottomY, maxW, maxH){
+    // só que recortando a linha/quadro certo em vez do único frame de
+    // computeAutoFrame. dir (opcional, ver getHeadStyleFrame) escolhe entre
+    // rosto de frente ('down'/ausente) e nuca (qualquer outra direção).
+    function drawHeadStyleContainFit(targetCtx, entry, styleId, cx, bottomY, maxW, maxH, dir){
       if(!entry.loaded) return null;
-      const f = getHeadStyleFrame(entry, styleId);
+      const f = getHeadStyleFrame(entry, styleId, dir);
       if(!f) return null;
       // A ESCALA usa a altura "núcleo" (do topo do recorte até o queixo,
       // f.chinY-f.sy), não a altura crua do recorte inteiro (f.sh) — sh
@@ -1791,7 +1847,7 @@
     // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
     // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
     // igual ao default do servidor pra personagens antigos.
-    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26, 26);
+    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26, 26, walkAnim && walkAnim.dir);
     drewHead = !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
@@ -2231,22 +2287,38 @@
   window.addEventListener('keyup', e=> heldKeys[e.key.toLowerCase()] = false);
   function updateWasdMovement(dt){
     if(location !== 'city') return; // Dungeon: movimento é 100% do Bot no servidor
-    let dx = 0, dy = 0;
-    // Mapeamento pensado pro mundo ISOMÉTRICO (cartesianToIso: screenX=(x-y)*k,
-    // screenY=(x+y)*k*0.5) — W/A/S/D precisam mexer nos DOIS eixos cartesianos
-    // ao mesmo tempo pra resultar em cima/baixo/esquerda/direita RETOS NA TELA
-    // (que é o que o jogador vê e espera ao apertar cada tecla). O código
-    // antigo tratava W/S como só ±Y e A/D como só ±X, como um jogo top-down
-    // comum — isso faz cada tecla andar na DIAGONAL errada num mundo
-    // isométrico (era a "troca" de WASD reportada). Segurar 2 teclas ao
-    // mesmo tempo (ex.: W+D) soma os vetores abaixo e dá a diagonal correta
-    // sozinho, sem precisar de nenhum caso especial pra diagonal.
-    if(heldKeys['w']||heldKeys['arrowup'])    { dx -= 1; dy -= 1; } // cima na tela
-    if(heldKeys['s']||heldKeys['arrowdown'])  { dx += 1; dy += 1; } // baixo na tela
-    if(heldKeys['a']||heldKeys['arrowleft'])  { dx -= 1; dy += 1; } // esquerda na tela
-    if(heldKeys['d']||heldKeys['arrowright']) { dx += 1; dy -= 1; } // direita na tela
-    if(!dx && !dy) return;
-    const len = Math.hypot(dx,dy); dx/=len; dy/=len;
+    // A direção desejada é pensada NA TELA (é o que o jogador vê e espera ao
+    // apertar cada tecla: W sobe na tela, D vai pra direita na tela, etc.) —
+    // por isso somamos/normalizamos os vetores AQUI, em espaço de tela, e só
+    // DEPOIS convertemos pro delta cartesiano equivalente (inverso exato de
+    // cartesianToIso, derivado abaixo). Isso corrige dois problemas que a
+    // versão anterior tinha (que somava/normalizava em espaço CARTESIANO,
+    // antes de projetar pra tela):
+    //  1) diagonal torta: segurar W+D não resultava numa diagonal de
+    //     45° na tela — a soma cartesiana normalizada, ao passar pela
+    //     projeção isométrica, virava um ângulo raso (quase reto pra
+    //     direita, subindo pouco) em vez de subir-e-direita em partes iguais;
+    //  2) velocidade desigual por direção: andar na horizontal (A/D) saía DO
+    //     DOBRO da velocidade NA TELA de andar na vertical (W/S) pro mesmo
+    //     WASD_SPEED_PX_S — a projeção isométrica comprime o eixo Y da tela
+    //     pela metade (proporção 2:1 do losango), e normalizar em cartesiano
+    //     antes não compensa essa diferença de escala entre os eixos.
+    let sx = 0, sy = 0;
+    if(heldKeys['w']||heldKeys['arrowup'])    sy -= 1; // tela: cima
+    if(heldKeys['s']||heldKeys['arrowdown'])  sy += 1; // tela: baixo
+    if(heldKeys['a']||heldKeys['arrowleft'])  sx -= 1; // tela: esquerda
+    if(heldKeys['d']||heldKeys['arrowright']) sx += 1; // tela: direita
+    if(!sx && !sy) return;
+    const slen = Math.hypot(sx,sy); sx/=slen; sy/=slen; // vetor de tela UNITÁRIO — garante a mesma velocidade aparente em qualquer uma das 8 direções, incluindo as diagonais
+    // Inverso de cartesianToIso (x:(cx-cy)*k, y:(cx+cy)*k*0.5): dado um vetor
+    // de tela (sx,sy), acha o delta cartesiano (dx,dy) tal que projetar esse
+    // delta de volta reproduz exatamente (sx,sy) — álgebra simples resolvendo
+    // o sistema linear de 2 equações. Como (sx,sy) já é unitário, o
+    // resultado projetado de volta na tela sai unitário também, então dá pra
+    // aplicar WASD_SPEED_PX_S diretamente sem normalizar de novo.
+    const k = ISO_SCALE;
+    const dx = (sx + 2*sy) / (2*k);
+    const dy = (2*sy - sx) / (2*k);
     player.x += dx*WASD_SPEED_PX_S*dt;
     player.y += dy*WASD_SPEED_PX_S*dt;
   }
