@@ -1812,7 +1812,20 @@
       const dw = f.sw*scale, dh = f.sh*scale;
       const dx = cx - dw/2, dy = bottomY - dh;
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
-      return { dw, dh, dx, dy, topY: dy };
+      // topY NÃO é o topo do quadro atualmente desenhado (dy) — é o topo do
+      // quadro DE REFERÊNCIA (parado), na mesma lógica de "escala fixa" do
+      // comentário acima: cada quadro do ciclo de andar tem seu próprio
+      // recorte de conteúdo (auto-detectado por bounding box), então braço
+      // levantado/perna aberta em alguns quadros MUDA a altura detectada
+      // (f.sh) sem o tronco/pescoço realmente ter subido ou descido. Se a
+      // cabeça fosse ancorada em `dy` (topo do quadro ATUAL), ela pularia
+      // pra cima/baixo a cada troca de quadro só por causa dessa variação
+      // incidental — exatamente o "cabeça afunda no corpo ou se separa ao
+      // andar" reportado. Ancorando sempre no topo do quadro DE REFERÊNCIA
+      // (parado, mesmo em todas as direções/frames), a cabeça fica travada
+      // no pescoço e anda junto do corpo como uma peça só.
+      const stableTopY = bottomY - (ref.sh*scale);
+      return { dw, dh, dx, dy, topY: stableTopY };
     }
     return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, drawHeadStyleContainFit, getHeadStyleFrame, URL_BASE };
   })();
@@ -1834,6 +1847,20 @@
     const tctx = targetCtx || ctx;
     const genero = gender === 'female' ? 'female' : 'male';
     let drewBody = false, drewHead = false;
+    // Truque estilo Tibia: o atlas de corpo só tem 3 recortes realmente úteis
+    // pro ciclo de andar (Sul/frente, Norte/costas, Leste/perfil — ver
+    // decisão em updateWalkAnim). "Esquerda" não usa a linha real da
+    // esquerda do atlas: é o MESMO quadro de Leste espelhado horizontalmente
+    // (ctx.scale(-1,1)). O espelhamento envolve TUDO — asa, corpo, armadura
+    // e cabeça — dentro de um ÚNICO ctx.save/translate/scale/restore
+    // ancorado em s.x (o pé do personagem), então as camadas viram juntas
+    // como se fossem um objeto 3D só, sem chance de uma camada espelhar e
+    // outra não (era esse desalinhamento entre corpo e cabeça, cada um
+    // resolvendo sua própria posição sem um pivô compartilhado, que causava
+    // a separação/afundamento reportado).
+    const mirror = !!(walkAnim && walkAnim.dir === 'left');
+    const drawWalkAnim = mirror ? { dir:'right', frameIdx: walkAnim.frameIdx } : walkAnim;
+    if(mirror){ tctx.save(); tctx.translate(s.x, 0); tctx.scale(-1, 1); tctx.translate(-s.x, 0); }
     // Asas desenham ANTES do corpo (ficam atrás do personagem) — sem
     // fallback procedural: se o sprite ainda não carregou/não existe pra
     // esse id, simplesmente não aparece nada (cosmético puro, não deve
@@ -1845,13 +1872,13 @@
     // Pés fixos em (s.x, feetY); corpo cresce PRA CIMA a partir daí mantendo
     // a proporção real do recorte (ver drawFrameContainFit) — nada de
     // esticar num quadrado fixo, que era a causa da cabeça gigante/corpo
-    // espremido. walkAnim ({dir,frameIdx}, ver updateWalkAnim) escolhe QUAL
-    // quadro do ciclo de andar usar — sem ele (retrato do Inventário, por
-    // exemplo, que não se move) cai no "parado de pé" de sempre.
+    // espremido. drawWalkAnim ({dir,frameIdx}, ver updateWalkAnim) escolhe
+    // QUAL quadro do ciclo de andar usar — sem ele (retrato do Inventário,
+    // por exemplo, que não se move) cai no "parado de pé" de sempre.
     const feetY = s.y + breathe;
     const body = SpriteManager.bodySprite(genero);
-    const bodyDraw = walkAnim
-      ? SpriteManager.drawBodyDirFrame(tctx, body, walkAnim.dir, walkAnim.frameIdx, s.x, feetY, 34, 46)
+    const bodyDraw = drawWalkAnim
+      ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34, 46)
       : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34, 46);
     drewBody = !!bodyDraw;
     if(outfitId && outfitId !== 'padrao'){
@@ -1862,18 +1889,24 @@
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
     const headAtlas = SpriteManager.headSprite(genero, corCabelo);
-    // Cabeça senta em cima do topo real do corpo desenhado (com uma pequena
-    // sobreposição de "pescoço"); se o corpo não carregou, cai pro topo
-    // aproximado que o boneco procedural já usava.
+    // Cabeça senta em cima do topo ESTÁVEL do corpo (ver comentário de
+    // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
+    // corpo não carregou, cai pro topo aproximado que o boneco procedural já
+    // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
+    // usada tanto pro corpo quanto pra cabeça, é o pivô único que a
+    // transformação isométrica (translate pra s.x,s.y projetado) já move
+    // como um objeto rígido — corpo e cabeça não têm posições independentes,
+    // as duas derivam do MESMO s.x/feetY.
     const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30) + 8;
     // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
     // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
     // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
     // igual ao default do servidor pra personagens antigos.
-    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26, 26, walkAnim && walkAnim.dir);
+    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26, 26, drawWalkAnim && drawWalkAnim.dir);
     drewHead = !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
+    if(mirror){ tctx.restore(); }
     // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
     // jogador vê a MESMA animação em sincronia, sem precisar coordenar via rede.
@@ -2112,9 +2145,18 @@
     const dt = Math.max(0, tsNow - st.lastTs);
     const moving = Math.hypot(dx,dy) > WALK_ANIM_MOVE_EPS;
     if(moving){
-      // eixo com maior deslocamento decide a direção — igual a qualquer RPG
-      // 2D de 4 direções (evita "tremer" entre direções na diagonal).
-      st.dir = Math.abs(dx) > Math.abs(dy) ? (dx>0 ? 'right' : 'left') : (dy>0 ? 'down' : 'up');
+      // Estilo Tibia: o atlas só tem 4 direções reais (baixo/cima/direita/
+      // esquerda) e o mapa é isométrico, então qualquer diagonal do teclado
+      // (W+D, S+A etc.) formaria um "losango" de posições — pra decidir QUAL
+      // sprite mostrar, a regra pedida é: qualquer movimento com componente
+      // horizontal (Nordeste/Sudeste/Sudoeste/Noroeste, e claro Leste/Oeste
+      // puros) usa o sprite de perfil (direita, espelhado pra esquerda — ver
+      // drawCharacterLayers); SÓ o movimento puramente vertical (sem NENHUM
+      // componente horizontal) usa Norte/Sul. Isso evita a mistura estranha
+      // de "quase de lado, quase de frente" que o eixo-dominante antigo
+      // podia produzir, e casa com o corpo só ter esses 3 recortes úteis.
+      const HORIZ_EPS = 0.25; // px de tela — abaixo disso, sem componente horizontal real
+      st.dir = (Math.abs(dx) < HORIZ_EPS) ? (dy>0 ? 'down' : 'up') : (dx>0 ? 'right' : 'left');
       st.clock += dt;
       if(st.clock >= WALK_ANIM_FRAME_MS){ st.frameIdx++; st.clock = 0; }
     } else {
