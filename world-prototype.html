@@ -18,6 +18,19 @@
     --font-display:'Cinzel', serif; --font-body:'Spectral', serif; --font-mono:'JetBrains Mono', monospace;
   }
   *{ box-sizing:border-box; }
+  /* Feedback visual INSTANTÂNEO ao apertar qualquer botão (ver o listener
+     global de pointerdown perto do WASD, mais abaixo, que aplica esta classe)
+     — sem transition NENHUMA na entrada, de propósito: precisa aparecer no
+     exato frame do pointerdown, não alguns ms depois. A saída (remoção da
+     classe) sim tem uma transition curta, só pra não "cortar seco" quando
+     solta o botão. */
+  .press-fx{ filter:brightness(1.45) saturate(1.15) !important; transform:scale(.94) !important; }
+  /* Selector SOZINHO (não ".press-fx.press-fx-releasing") de propósito: o
+     listener remove .press-fx (volta ao normal) enquanto ESTA classe ainda
+     está no elemento — se a transition dependesse das duas juntas, ela
+     desapareceria no exato instante em que .press-fx sai e a animação nunca
+     rodaria. */
+  .press-fx-releasing{ transition:filter .12s ease-out, transform .12s ease-out; }
   html,body{ margin:0; height:100%; font-family:var(--font-body); color:var(--ink); overflow:hidden; }
   body{ background:
       radial-gradient(ellipse 900px 600px at 22% 18%, rgba(191,161,95,.10), transparent 60%),
@@ -2269,6 +2282,50 @@
 
     requestAnimationFrame(loop);
   }
+
+  /* =========================================================
+     FEEDBACK VISUAL INSTANTÂNEO DE CLIQUE — investigando a reclamação de
+     "parece que tem uma trava" ao apertar botão: NENHUM botão do jogo tinha
+     um estado de "pressionado" (só :hover, que o mouse já deixa ligado
+     antes do clique). Toda ação que depende do servidor (comprar item,
+     salvar skill, treinar, etc.) só muda a tela depois da ida-e-volta pro
+     backend + broadcast — e o painel só é redesenhado a cada
+     PANEL_RENDER_THROTTLE_MS (ver applyHuntSnapshot lá em cima). Nesse
+     intervalo, sem nenhum feedback, a tela fica "parada" e PARECE travada
+     mesmo quando o clique foi recebido normalmente. Este listener cobre
+     QUALQUER elemento clicável do jogo (todos declaram cursor:pointer no
+     CSS, incluindo os criados dinamicamente depois) e dá um pulso visual
+     (escurece/encolhe) no exato instante do pointerdown — sem esperar o
+     clique completar, sem esperar o servidor, sem esperar o próximo
+     redesenho do painel.
+     ========================================================= */
+  (function setupPressFeedback(){
+    let pressedEl = null;
+    function findClickable(el){
+      let hops = 0;
+      while(el && el !== document.body && hops++ < 12){
+        if(getComputedStyle(el).cursor === 'pointer') return el;
+        el = el.parentElement;
+      }
+      return null;
+    }
+    function release(){
+      if(!pressedEl) return;
+      const el = pressedEl; pressedEl = null;
+      el.classList.add('press-fx-releasing');
+      requestAnimationFrame(()=>{
+        el.classList.remove('press-fx');
+        setTimeout(()=> el.classList.remove('press-fx-releasing'), 150);
+      });
+    }
+    document.addEventListener('pointerdown', e=>{
+      if(e.button !== undefined && e.button !== 0) return; // só botão esquerdo/toque
+      const el = findClickable(e.target);
+      if(el){ if(pressedEl && pressedEl!==el) release(); pressedEl = el; el.classList.remove('press-fx-releasing'); el.classList.add('press-fx'); }
+    }, true);
+    document.addEventListener('pointerup', release, true);
+    document.addEventListener('pointercancel', release, true);
+  })();
 
   /* =========================================================
      MOVIMENTO LIVRE POR WASD/SETAS — só funciona na Cidade Principal;
