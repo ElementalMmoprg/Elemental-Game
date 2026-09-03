@@ -325,7 +325,18 @@
       if(!entry.loaded) return null;
       const f = getHeadStyleFrame(entry, styleId);
       if(!f) return null;
-      const scale = Math.min(maxW/f.sw, maxH/f.sh);
+      // A ESCALA usa a altura "núcleo" (do topo do recorte até o queixo,
+      // f.chinY-f.sy), não a altura crua do recorte inteiro (f.sh) — sh
+      // inclui qualquer fiapo/rabo-de-cavalo que desça bem abaixo do
+      // queixo, e cada penteado tem uma proporção diferente disso. Medindo
+      // a escala pelo sh cru, penteados com fiapo comprido encolhiam a
+      // CABEÇA INTEIRA mais que os outros só pra caber o fiapo no mesmo
+      // espaço — é exatamente o "cabeça pequena fora do padrão" reportado.
+      // Usando só o núcleo (cabeça+cabelo até o queixo), o tamanho aparente
+      // da cabeça fica igual pra todo penteado; o fiapo, se sobrar, só
+      // desenha mais pra baixo por cima do pescoço/ombro do corpo.
+      const coreH = (f.chinY != null ? Math.max(1, f.chinY - f.sy) : f.sh);
+      const scale = Math.min(maxW/f.sw, maxH/coreH);
       const dw=f.sw*scale, dh=f.sh*scale, dx=cx-dw/2;
       // Ancora pelo QUEIXO (f.chinY, calculado em computeHeadStyleFrames),
       // não pelo fundo bruto do recorte — ver comentário grandão lá em cima.

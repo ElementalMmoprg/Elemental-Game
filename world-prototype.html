@@ -1420,7 +1420,7 @@
     }
     function load(key, relPath){
       if(cache[key]) return cache[key];
-      const entry = { img:new Image(), loaded:false, failed:false, frame:null, styleFrames:null };
+      const entry = { img:new Image(), loaded:false, failed:false, frame:null, styleFrames:null, dirFrames:null };
       entry.img.crossOrigin = 'anonymous';
       entry.img.onload  = ()=>{
         entry.loaded = true;
@@ -1429,6 +1429,12 @@
         // vários penteados empilhados; os demais (corpo/armadura/monstro/asa)
         // continuam sendo só o recorte único de computeAutoFrame acima.
         if(key.charAt(0)==='h' && key.charAt(1)==='_') entry.styleFrames = computeHeadStyleFrames(entry.img);
+        // 'b_' = atlas de corpo (ver bodySprite) — linhas 0-3 têm o ciclo de
+        // andar em cada direção (ver computeBodyDirFrames). entry.frame acima
+        // já é a linha 0 coluna 0 (o mesmo "parado de pé" de sempre), então
+        // nada muda pra quem ainda não usa animação — dirFrames é só um
+        // extra pro drawBodyDirFrame usar.
+        if(key.charAt(0)==='b' && key.charAt(1)==='_') entry.dirFrames = computeBodyDirFrames(entry.img);
       };
       entry.img.onerror = ()=> entry.failed = true; // cai pro desenho procedural
       entry.img.src = URL_BASE + relPath;
@@ -1528,7 +1534,18 @@
       if(!entry.loaded) return null;
       const f = getHeadStyleFrame(entry, styleId);
       if(!f) return null;
-      const scale = Math.min(maxW/f.sw, maxH/f.sh);
+      // A ESCALA usa a altura "núcleo" (do topo do recorte até o queixo,
+      // f.chinY-f.sy), não a altura crua do recorte inteiro (f.sh) — sh
+      // inclui qualquer fiapo/rabo-de-cavalo que desça bem abaixo do
+      // queixo, e cada penteado tem uma proporção diferente disso. Medindo
+      // a escala pelo sh cru, penteados com fiapo comprido encolhiam a
+      // CABEÇA INTEIRA mais que os outros só pra caber o fiapo no mesmo
+      // espaço — é exatamente o "cabeça pequena fora do padrão" reportado.
+      // Usando só o núcleo (cabeça+cabelo até o queixo), o tamanho aparente
+      // da cabeça fica igual pra todo penteado; o fiapo, se sobrar, só
+      // desenha mais pra baixo por cima do pescoço/ombro do corpo.
+      const coreH = (f.chinY != null ? Math.max(1, f.chinY - f.sy) : f.sh);
+      const scale = Math.min(maxW/f.sw, maxH/coreH);
       const dw = f.sw*scale, dh = f.sh*scale;
       const dx = cx - dw/2;
       // Ancora pelo QUEIXO (f.chinY, calculado em computeHeadStyleFrames),
@@ -1582,7 +1599,89 @@
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       return { dw, dh, dx, dy, topY: dy };
     }
-    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawHeadStyleContainFit, getHeadStyleFrame, URL_BASE };
+    // O atlas de corpo (bodies */<gênero>_base.png) é uma grade de 9 "linhas"
+    // (mesma técnica de detecção por faixas de linha/coluna de
+    // computeHeadStyleFrames) — cada linha é uma direção ou grupo de ações;
+    // só as 4 primeiras interessam pro ciclo de andar:
+    //   linha 0 = de frente (baixo)    linha 1 = de costas (cima)
+    //   linha 2 = de lado, direita     linha 3 = de lado, esquerda
+    // (linhas 4-8 são outras ações — sentado, ataque, nocaute — não usadas
+    // aqui). Dentro de cada linha, cada "coluna" é um quadro do ciclo.
+    // Confirmado visualmente (macho E fêmea): linhas 2/3 têm uma passada de
+    // vários quadros limpa e alternada; linha 1 (de costas) também é
+    // consistente por vários quadros; linha 0 (de frente) só os 2 primeiros
+    // quadros são uma variação seguras de "parado" — a partir do 3º quadro a
+    // arte vira pose de habilidade/susto (mão levantada, brilho) e depois
+    // cai sentado/nocauteado — ver BODY_WALK_SAFE_FRAMES abaixo.
+    function computeBodyDirFrames(img){
+      try{
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if(!w || !h) return null;
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        const cx = c.getContext('2d'); cx.drawImage(img,0,0);
+        const data = cx.getImageData(0,0,w,h).data;
+        function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
+        function rowHas(y){ for(let x=0;x<w;x++){ if(!isBg(x,y)) return true; } return false; }
+        function colHas(x,y0,y1){ for(let y=y0;y<y1;y++){ if(!isBg(x,y)) return true; } return false; }
+        const rowBands = []; let y=0;
+        while(y<h){ if(rowHas(y)){ const y0=y; let y1=y; while(y1<h && rowHas(y1)) y1++; rowBands.push([y0,y1]); y=y1; } else y++; }
+        // só as 4 primeiras linhas (direções de andar) — o resto (ações)
+        // fica de fora do resultado, ninguém usa.
+        const dirNames = ['down','up','right','left'];
+        const out = {};
+        dirNames.forEach((name, rowIdx)=>{
+          if(rowIdx >= rowBands.length){ out[name] = []; return; }
+          const [y0,y1] = rowBands[rowIdx];
+          const pad = 3;
+          const frames = [];
+          let x = 0;
+          while(x < w){
+            if(colHas(x,y0,y1)){
+              const x0 = x; let x1 = x;
+              while(x1 < w && colHas(x1,y0,y1)) x1++;
+              const sx = Math.max(0,x0-pad), sy = Math.max(0,y0-pad);
+              frames.push({ sx, sy, sw: Math.min(w-sx,(x1-x0)+pad*2), sh: Math.min(h-sy,(y1-y0)+pad*2) });
+              x = x1;
+            } else x++;
+          }
+          out[name] = frames;
+        });
+        return out;
+      }catch(e){ return null; }
+    }
+    // Quantos quadros do começo de cada linha são seguros pra ciclo de andar
+    // (ver comentário grandão de computeBodyDirFrames) — além disso a arte
+    // deixa de ser passo-de-caminhada e vira outra pose (habilidade/sentado).
+    const BODY_WALK_SAFE_FRAMES = { down:2, up:6, right:6, left:6 };
+    function getBodyDirFrame(entry, dir, frameIdx){
+      if(!entry.loaded) return entry.frame;
+      const all = entry.dirFrames && entry.dirFrames[dir];
+      if(!all || !all.length) return entry.frame;
+      const cap = Math.max(1, Math.min(all.length, BODY_WALK_SAFE_FRAMES[dir] || all.length));
+      const idx = ((Math.floor(Number(frameIdx)||0) % cap) + cap) % cap;
+      return all[idx] || entry.frame;
+    }
+    // Desenha o corpo na direção/quadro do ciclo de andar (dir + frameIdx,
+    // ver updateWalkAnim mais abaixo) preservando a proporção real, igual
+    // drawFrameContainFit — mas com uma diferença importante: a ESCALA é
+    // calculada UMA VEZ a partir do quadro "parado" de referência
+    // (entry.frame, linha 0 coluna 0 — o mesmo tamanho que o jogo sempre
+    // usou), não recalculada a cada quadro do ciclo. Se cada quadro fosse
+    // reescalado pro mesmo maxW/maxH (contain-fit puro), a perna abrindo
+    // durante a passada mudaria sw/sh e faria o personagem inteiro "pulsar"
+    // de tamanho a cada passo — com escala fixa, só a pose muda, o tamanho
+    // fica estável.
+    function drawBodyDirFrame(targetCtx, entry, dir, frameIdx, cx, bottomY, maxW, maxH){
+      if(!entry.loaded || !entry.frame) return null;
+      const ref = entry.frame;
+      const scale = Math.min(maxW/ref.sw, maxH/ref.sh);
+      const f = getBodyDirFrame(entry, dir, frameIdx) || ref;
+      const dw = f.sw*scale, dh = f.sh*scale;
+      const dx = cx - dw/2, dy = bottomY - dh;
+      targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+      return { dw, dh, dx, dy, topY: dy };
+    }
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, drawHeadStyleContainFit, getHeadStyleFrame, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -1594,7 +1693,7 @@
   // futuro cada uma tiver sua própria contagem, isso pode vir do auraCatalog
   // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
   const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
-  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId){
+  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim){
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
     // sempre; com ele, desenha em QUALQUER outro canvas (usado pelo retrato
     // do personagem no Inventário, que reaproveita esse mesmo desenhista em
@@ -1613,10 +1712,14 @@
     // Pés fixos em (s.x, feetY); corpo cresce PRA CIMA a partir daí mantendo
     // a proporção real do recorte (ver drawFrameContainFit) — nada de
     // esticar num quadrado fixo, que era a causa da cabeça gigante/corpo
-    // espremido.
+    // espremido. walkAnim ({dir,frameIdx}, ver updateWalkAnim) escolhe QUAL
+    // quadro do ciclo de andar usar — sem ele (retrato do Inventário, por
+    // exemplo, que não se move) cai no "parado de pé" de sempre.
     const feetY = s.y + breathe;
     const body = SpriteManager.bodySprite(genero);
-    const bodyDraw = SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34, 46);
+    const bodyDraw = walkAnim
+      ? SpriteManager.drawBodyDirFrame(tctx, body, walkAnim.dir, walkAnim.frameIdx, s.x, feetY, 34, 46)
+      : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34, 46);
     drewBody = !!bodyDraw;
     if(outfitId && outfitId !== 'padrao'){
       const armor = SpriteManager.armorSprite(genero, outfitId);
@@ -1684,11 +1787,66 @@
     return { x: canvas.width/2 - p.x, y: canvas.height/2 - p.y + 40 };
   }
   const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
-  const SCENERY_CITY = [ {type:'pilastra',x:CITY_POSITION.x-60,y:CITY_POSITION.y-40,h:90}, {type:'pilastra',x:CITY_POSITION.x+220,y:CITY_POSITION.y-40,h:90}, {type:'rocha',x:CITY_POSITION.x+80,y:CITY_POSITION.y+40,h:16} ];
-
+  // Praça da Cidade Principal — mesma técnica de sempre (blocos isométricos
+  // procedurais via drawIsoBlock, sem nenhuma imagem nova), só que agora com
+  // bem mais peças e tipos (muro/prédio/fonte/árvore, ver SCENERY_STYLE logo
+  // abaixo) pra parecer uma cidade de verdade em vez de só 2 pilares soltos.
+  // Tudo posicionado em volta de CITY_POSITION (onde o jogador nasce, ver
+  // `player` acima) com uma folga livre no meio — ninguém nasce em cima de
+  // parede ou prédio — e duas aberturas na muralha (sul e leste) servindo de
+  // "portão" de entrada/saída.
+  const CT = CITY_POSITION;
+  const SCENERY_CITY = [
+    // fonte central da praça
+    { type:'fonte', x:CT.x+140, y:CT.y-120, h:16 },
+    // muralha em volta (retângulo com cantos, aberto ao sul e a leste)
+    { type:'muro', x:CT.x-40,  y:CT.y-260, h:60 },
+    { type:'muro', x:CT.x+60,  y:CT.y-280, h:60 },
+    { type:'muro', x:CT.x+220, y:CT.y-280, h:60 },
+    { type:'muro', x:CT.x+320, y:CT.y-260, h:60 },
+    { type:'muro', x:CT.x+360, y:CT.y-160, h:60 },
+    { type:'muro', x:CT.x-80,  y:CT.y-160, h:60 },
+    { type:'muro', x:CT.x-80,  y:CT.y-40,  h:60 },
+    // prédios (casas) espalhados dentro da praça, alturas variadas
+    { type:'predio', x:CT.x-30,  y:CT.y-215, h:100 },
+    { type:'predio', x:CT.x+130, y:CT.y-250, h:120 },
+    { type:'predio', x:CT.x+280, y:CT.y-210, h:95 },
+    { type:'predio', x:CT.x+310, y:CT.y-80,  h:110 },
+    { type:'predio', x:CT.x+30,  y:CT.y-5,   h:90 },
+    { type:'predio', x:CT.x+250, y:CT.y+35,  h:100 },
+    // pilares decorativos flanqueando o portão sul (os 2 originais)
+    { type:'pilastra', x:CT.x-60,  y:CT.y-40, h:90 },
+    { type:'pilastra', x:CT.x+220, y:CT.y-40, h:90 },
+    // árvores e rochas de decoração
+    { type:'arvore', x:CT.x+40,  y:CT.y-140, h:34 },
+    { type:'arvore', x:CT.x+200, y:CT.y-150, h:30 },
+    { type:'arvore', x:CT.x+150, y:CT.y-60,  h:32 },
+    { type:'arvore', x:CT.x-30,  y:CT.y-90,  h:28 },
+    { type:'rocha', x:CT.x+80, y:CT.y+40, h:16 },
+    { type:'rocha', x:CT.x+180, y:CT.y+50, h:14 },
+  ];
+  // Extensão da praça pra calcular até onde desenhar o chão (ver `bounds` em
+  // draw()) — cada peça nova (muro/prédio/etc.) empurra esse retângulo, então
+  // o piso sempre cobre a cidade inteira sem precisar ajustar isso à mão toda
+  // vez que SCENERY_CITY mudar.
+  const CITY_BOUNDS_POINTS = [ CITY_POSITION, ...SCENERY_CITY ];
   const BLOCK_HW = 39, BLOCK_HH = 20;
-  function drawIsoBlock(sx, sy, height, topColor, sideColorL, sideColorR){
-    const hw = BLOCK_HW, hh = BLOCK_HH;
+  // Paleta + "pé" (footprint isométrico) por tipo de peça da praça — mesmo
+  // desenho de sempre (drawIsoBlock), só variando cor e tamanho da base pra
+  // dar a sensação de muro/prédio/fonte/árvore sem precisar de nenhuma arte
+  // nova. 'pilastra' e 'rocha' mantêm exatamente a cor/tamanho que já
+  // existiam (nada muda pra Dungeon, que só usa esses dois tipos); hw/hh
+  // ausente cai no footprint padrão (BLOCK_HW/BLOCK_HH) dentro de drawIsoBlock.
+  const SCENERY_STYLE = {
+    pilastra: { top:'#6a5a3a', topDungeon:'#4a3a24', l:'#241c14', r:'#2f2519' },
+    rocha:    { top:'#5a5348', l:'#2c2820', r:'#3a352c', hw:BLOCK_HW*0.6, hh:BLOCK_HH*0.6 },
+    muro:     { top:'#8a7a52', l:'#332818', r:'#443019', hw:BLOCK_HW*1.7, hh:BLOCK_HH*0.5 },
+    predio:   { top:'#a4895a', l:'#3a2c1a', r:'#4f3c22', hw:BLOCK_HW*1.3, hh:BLOCK_HH*1.3 },
+    fonte:    { top:'#5f88a8', l:'#20343f', r:'#2a4450', hw:BLOCK_HW*0.75, hh:BLOCK_HH*0.75 },
+    arvore:   { top:'#3f6b34', l:'#2a2015', r:'#352718', hw:BLOCK_HW*0.35, hh:BLOCK_HH*0.35 },
+  };
+  function drawIsoBlock(sx, sy, height, topColor, sideColorL, sideColorR, hw, hh){
+    hw = hw || BLOCK_HW; hh = hh || BLOCK_HH;
     const N = {x:sx, y:sy-hh-height}, E = {x:sx+hw, y:sy-height}, S = {x:sx, y:sy+hh-height}, W = {x:sx-hw, y:sy-height};
     const S0 = {x:sx, y:sy+hh}, E0 = {x:sx+hw, y:sy}, W0 = {x:sx-hw, y:sy};
     ctx.beginPath(); ctx.moveTo(E.x,E.y); ctx.lineTo(S.x,S.y); ctx.lineTo(S0.x,S0.y); ctx.lineTo(E0.x,E0.y); ctx.closePath();
@@ -1768,12 +1926,50 @@
   const FLOAT_LIFETIME_MS = 900;
   let lastGold = 0, lastXp = 0, lastHp = player.hp;
 
+  // Animação de andar: acompanha, por personagem (jogador local + cada
+  // remoto, indexados por uma chave estável — ver chamadores), pra ONDE ele
+  // está indo e há quanto tempo — sem isso, drawCharacterLayers não tem como
+  // saber se/pra que lado o personagem está se movendo neste frame.
+  // Usa a posição JÁ PROJETADA em tela (toScreen), não a cartesiana crua —
+  // é isso que o jogador vê se mexer, e como o corpo só tem 4 direções
+  // simples (baixo/cima/direita/esquerda, não 8 "isométricas"), decidir pela
+  // tela em vez do mundo dá o resultado visual mais natural.
+  const walkAnimStates = new Map();
+  const WALK_ANIM_FRAME_MS = 130; // troca de quadro do ciclo enquanto anda
+  const WALK_ANIM_MOVE_EPS = 0.6; // px de tela/frame abaixo disso = "parado" (não tremer com jitter de rede)
+  function updateWalkAnim(id, sx, sy){
+    const tsNow = Date.now();
+    let st = walkAnimStates.get(id);
+    if(!st){
+      st = { sx, sy, dir:'down', frameIdx:0, clock:0, lastTs:tsNow };
+      walkAnimStates.set(id, st);
+      return st;
+    }
+    const dx = sx - st.sx, dy = sy - st.sy;
+    const dt = Math.max(0, tsNow - st.lastTs);
+    const moving = Math.hypot(dx,dy) > WALK_ANIM_MOVE_EPS;
+    if(moving){
+      // eixo com maior deslocamento decide a direção — igual a qualquer RPG
+      // 2D de 4 direções (evita "tremer" entre direções na diagonal).
+      st.dir = Math.abs(dx) > Math.abs(dy) ? (dx>0 ? 'right' : 'left') : (dy>0 ? 'down' : 'up');
+      st.clock += dt;
+      if(st.clock >= WALK_ANIM_FRAME_MS){ st.frameIdx++; st.clock = 0; }
+    } else {
+      // parado: volta pro primeiro quadro (pose de pé) da última direção
+      // encarada — não reseta a direção, senão o personagem "vira de
+      // frente" toda vez que para de andar.
+      st.frameIdx = 0; st.clock = 0;
+    }
+    st.sx = sx; st.sy = sy; st.lastTs = tsNow;
+    return st;
+  }
+
   function draw(){
     ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
     ctx.fillRect(0,0,canvas.width,canvas.height);
     const toScreen = worldToScreen;
 
-    const bounds = activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : [CITY_POSITION, {x:CITY_POSITION.x+280,y:CITY_POSITION.y-260}];
+    const bounds = activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS;
     const minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
     const minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
     for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
@@ -1797,7 +1993,24 @@
     const scenery = location==='city' ? SCENERY_CITY : SCENERY_DUNGEON;
     scenery.forEach(s=> drawList.push({
       baseCart:{x:s.x,y:s.y},
-      draw:()=>{ const sc = toScreen(s.x,s.y); if(s.type==='pilastra') drawIsoBlock(sc.x, sc.y, s.h, location==='city'?'#6a5a3a':'#4a3a24', '#241c14', '#2f2519'); else drawIsoBlock(sc.x, sc.y, s.h, '#5a5348', '#2c2820', '#3a352c'); }
+      draw:()=>{
+        const sc = toScreen(s.x,s.y);
+        const style = SCENERY_STYLE[s.type] || SCENERY_STYLE.pilastra;
+        const top = (s.type==='pilastra' && location==='dungeon') ? style.topDungeon : style.top;
+        drawIsoBlock(sc.x, sc.y, s.h, top, style.l, style.r, style.hw, style.hh);
+        // Copa da árvore e espelho d'água da fonte são só um desenho a mais
+        // por cima do mesmo bloco (nenhum sprite novo) — dão silhueta de
+        // árvore/fonte sem precisar de arte externa.
+        const topY = sc.y - (style.hh || BLOCK_HH) - s.h;
+        if(s.type==='arvore'){
+          ctx.beginPath(); ctx.ellipse(sc.x, topY-7, 15, 10, 0, 0, Math.PI*2);
+          ctx.fillStyle = '#4a7a3a'; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.stroke();
+        } else if(s.type==='fonte'){
+          const hw2 = (style.hw||BLOCK_HW)*0.68, hh2 = (style.hh||BLOCK_HH)*0.68;
+          ctx.beginPath(); ctx.ellipse(sc.x, topY, hw2, hh2, 0, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(150,210,230,.55)'; ctx.fill(); ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.stroke();
+        }
+      }
     }));
 
     if(activeHunt.running){
@@ -1841,7 +2054,8 @@
       // ninguém está mais controlando aquele personagem ativamente.
       drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
         const s = toScreen(rp.x,rp.y);
-        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId);
+        const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
+        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim);
       }, headCart:{x:rp.x,y:rp.y}, headLift:27, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
@@ -1850,7 +2064,8 @@
       const genero = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
       const hairId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
       const hairStyleId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1;
-      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId);
+      const anim = updateWalkAnim('__player__', s.x, s.y);
+      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, anim);
     }, headCart:{x:player.x,y:player.y}, headLift:33, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
