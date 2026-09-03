@@ -545,6 +545,18 @@
   .toast button{ padding:4px 10px; border-radius:4px; border:1px solid var(--gold-bright); background:rgba(191,161,95,.15); color:var(--gold-bright); font-family:var(--font-mono); font-size:10px; cursor:pointer; }
   .toast button.decline{ border-color:var(--danger); color:#ff9a80; background:rgba(226,84,43,.1); }
 
+  /* ============ TORRE — banner de "subindo de andar" / aviso de Boss ============ */
+  #tower-climb-banner{
+    position:absolute; top:38%; left:50%; transform:translate(-50%,-50%);
+    z-index:45; display:none; text-align:center; pointer-events:none;
+    font-family:var(--font-mono); text-shadow:0 2px 6px rgba(0,0,0,.85);
+  }
+  #tower-climb-banner.show{ display:block; }
+  #tower-climb-banner .line1{ font-size:22px; letter-spacing:1px; color:var(--gold-bright); }
+  #tower-climb-banner.boss .line1{ font-size:28px; color:#ff3b30; font-weight:bold; }
+  #tower-climb-banner .line2{ font-size:12px; color:var(--ink-dim); margin-top:6px; }
+  #tower-climb-banner.boss .line2{ color:#ff9a80; }
+
   /* ============ REBIRTH / ALTAR ============ */
   #altar-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:340px; display:none; z-index:15; }
   #altar-modal.open{ display:block; }
@@ -683,6 +695,11 @@
   <canvas id="world-canvas"></canvas>
 
   <div id="toast-stack"></div>
+
+  <div id="tower-climb-banner">
+    <div class="line1"></div>
+    <div class="line2"></div>
+  </div>
 
   <!-- BARRA SUPERIOR ÚNICA (estilo Huntera) — retrato/nome/level, ouro, Loja,
        jogadores online e a fileira de ícones de menu, tudo numa faixa só no
@@ -1307,7 +1324,13 @@
   let guildId = null, guildSummary = null; // resumo leve (nome/tag/tier/bônus) — vem em todo snapshot
   let guildDetail = null; // payload completo — só chega via 'guild:get' / 'guild:update'
 
-  const activeHunt = { running:false, huntId:null, huntName:null, difficulty:null, currentIndex:0, lurePoints:[] };
+  const activeHunt = {
+    running:false, huntId:null, huntName:null, difficulty:null, currentIndex:0, lurePoints:[],
+    // campos de Torre Elemental (só valem quando isTower===true) — ver
+    // huntEngine.js enterTower/completeTowerRun e serializeHuntSnapshot no servidor.
+    isTower:false, towerId:null, towerMode:null, climbFloor:null,
+    climbCountdownUntil:0, climbNextFloor:null, climbNextFloorIsBoss:false,
+  };
   const remotePlayers = new Map(); // username -> {x,y,location}
 
   const lootLog = [];
@@ -1844,7 +1867,34 @@
     predio:   { top:'#a4895a', l:'#3a2c1a', r:'#4f3c22', hw:BLOCK_HW*1.3, hh:BLOCK_HH*1.3 },
     fonte:    { top:'#5f88a8', l:'#20343f', r:'#2a4450', hw:BLOCK_HW*0.75, hh:BLOCK_HH*0.75 },
     arvore:   { top:'#3f6b34', l:'#2a2015', r:'#352718', hw:BLOCK_HW*0.35, hh:BLOCK_HH*0.35 },
+    // Pilar decorativo das arenas de Torre — a cor de verdade vem de
+    // s.color (definido por elemento em buildTowerArenaScenery), esta
+    // entrada só fornece o footprint/lados neutros de fallback.
+    arenaPilar: { top:'#6a5a3a', l:'#171310', r:'#221c17', hw:BLOCK_HW*0.55, hh:BLOCK_HH*0.55 },
   };
+  // Escurece/clareia uma cor hex por um fator (0-1 escurece, >1 clareia) —
+  // usado pra variar o tom do piso e dos pilares de cada arena de Torre
+  // sem precisar de uma paleta hardcoded por elemento.
+  function shadeHexColor(hex, factor){
+    const h = hex.replace('#','');
+    const r = Math.max(0,Math.min(255,Math.round(parseInt(h.substr(0,2),16)*factor)));
+    const g = Math.max(0,Math.min(255,Math.round(parseInt(h.substr(2,2),16)*factor)));
+    const b = Math.max(0,Math.min(255,Math.round(parseInt(h.substr(4,2),16)*factor)));
+    return `rgb(${r},${g},${b})`;
+  }
+  // Monta os 4 pilares que marcam os cantos da "área quadrada" de uma Torre
+  // (um por elemento, incluindo a Central) — mesma técnica de sempre
+  // (drawIsoBlock procedural), só trocando a cor pela do elemento da Torre.
+  function buildTowerArenaScenery(point, tower){
+    if(!point) return [];
+    const R = 170, color = tower ? tower.color : '#bfa15f';
+    return [
+      { type:'arenaPilar', x:point.x-R, y:point.y,       h:64, color },
+      { type:'arenaPilar', x:point.x+R, y:point.y,       h:64, color },
+      { type:'arenaPilar', x:point.x,   y:point.y-R*0.55, h:64, color },
+      { type:'arenaPilar', x:point.x,   y:point.y+R*0.55, h:64, color },
+    ];
+  }
   function drawIsoBlock(sx, sy, height, topColor, sideColorL, sideColorR, hw, hh){
     hw = hw || BLOCK_HW; hh = hh || BLOCK_HH;
     const N = {x:sx, y:sy-hh-height}, E = {x:sx+hw, y:sy-height}, S = {x:sx, y:sy+hh-height}, W = {x:sx-hw, y:sy-height};
@@ -1969,14 +2019,26 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     const toScreen = worldToScreen;
 
-    const bounds = activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS;
+    // Torre Elemental: cada torre tem sua própria "área quadrada" (pedido do
+    // jogador) — piso e pilares tingidos pela cor do elemento em vez do chão
+    // genérico de Dungeon, e o quadrado é justamente esse laço de piso preso
+    // a um raio fixo em volta do único lurePoint da arena.
+    const isTowerArena = activeHunt.running && activeHunt.isTower;
+    const arenaTower = isTowerArena ? TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId) : null;
+    const arenaColor = arenaTower ? arenaTower.color : '#bfa15f';
+    const bounds = isTowerArena
+      ? [ { x: activeHunt.lurePoints[0].x-220, y: activeHunt.lurePoints[0].y-220 }, { x: activeHunt.lurePoints[0].x+220, y: activeHunt.lurePoints[0].y+220 } ]
+      : (activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS);
     const minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
     const minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
     for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
       for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
         const s = toScreen(gx,gy);
         const even = ((gx+gy)/TILE_STEP)%2===0;
-        drawFloorDiamond(s.x, s.y, location==='city' ? (even?'#2a2013':'#241b10') : (even?'#1c1712':'#181310'));
+        const fill = isTowerArena
+          ? shadeHexColor(arenaColor, even?0.30:0.22)
+          : (location==='city' ? (even?'#2a2013':'#241b10') : (even?'#1c1712':'#181310'));
+        drawFloorDiamond(s.x, s.y, fill);
       }
     }
 
@@ -1990,13 +2052,13 @@
     }
 
     const drawList = [];
-    const scenery = location==='city' ? SCENERY_CITY : SCENERY_DUNGEON;
+    const scenery = isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower) : (location==='city' ? SCENERY_CITY : SCENERY_DUNGEON);
     scenery.forEach(s=> drawList.push({
       baseCart:{x:s.x,y:s.y},
       draw:()=>{
         const sc = toScreen(s.x,s.y);
         const style = SCENERY_STYLE[s.type] || SCENERY_STYLE.pilastra;
-        const top = (s.type==='pilastra' && location==='dungeon') ? style.topDungeon : style.top;
+        const top = s.color || ((s.type==='pilastra' && location==='dungeon') ? style.topDungeon : style.top);
         drawIsoBlock(sc.x, sc.y, s.h, top, style.l, style.r, style.hw, style.hh);
         // Copa da árvore e espelho d'água da fonte são só um desenho a mais
         // por cima do mesmo bloco (nenhum sprite novo) — dão silhueta de
@@ -2192,6 +2254,11 @@
     const el = document.getElementById('hunt-status-line');
     const econ = `🪙 ${Math.round(player.gold)} (banco 🏦 ${Math.round(player.bankGold)}) · ⭐ ${Math.round(player.xp)} XP · 🎒 ${bag.length}/${bagCapacity}`;
     if(!activeHunt.running){ el.innerHTML = `${location==='city'?'Na Cidade Principal.':'Fora de caçada.'}<br>${econ}`; }
+    else if(activeHunt.isTower && activeHunt.towerMode==='boss'){
+      const p = activeHunt.lurePoints[0];
+      const tower = TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId);
+      el.innerHTML = `<b>🗼 ${tower?tower.name:'Torre'}</b> · Escalada — andar ${activeHunt.climbFloor}/100<br>${p?p.monsters.length:0} vivo(s)<br>${econ}<br>${lootLog[0]||''}`;
+    }
     else {
       const p = activeHunt.lurePoints[activeHunt.currentIndex];
       el.innerHTML = `<b>${activeHunt.huntName}</b> · ${activeHunt.difficulty}<br>Lure ${activeHunt.currentIndex+1}/${activeHunt.lurePoints.length} · ${p?p.monsters.length:0} vivos<br>${econ}<br>${lootLog[0]||''}`;
@@ -2310,9 +2377,17 @@
       activeHunt.running = true; activeHunt.huntId = msg.hunt.huntId; activeHunt.huntName = msg.hunt.huntName;
       activeHunt.difficulty = msg.hunt.difficulty; activeHunt.currentIndex = msg.hunt.currentIndex;
       activeHunt.lurePoints = msg.hunt.lurePoints;
+      activeHunt.isTower = !!msg.hunt.isTower; activeHunt.towerId = msg.hunt.towerId; activeHunt.towerMode = msg.hunt.towerMode;
+      activeHunt.climbFloor = msg.hunt.climbFloor;
+      activeHunt.climbCountdownUntil = msg.hunt.climbCountdownUntil || 0;
+      activeHunt.climbNextFloor = msg.hunt.climbNextFloor;
+      activeHunt.climbNextFloorIsBoss = !!msg.hunt.climbNextFloorIsBoss;
     } else {
       activeHunt.running = false; activeHunt.lurePoints = [];
+      activeHunt.isTower = false; activeHunt.towerId = null; activeHunt.towerMode = null; activeHunt.climbFloor = null;
+      activeHunt.climbCountdownUntil = 0; activeHunt.climbNextFloor = null; activeHunt.climbNextFloorIsBoss = false;
     }
+    updateTowerClimbBanner();
     // ---- RENDER DE PAINÉIS — por que isso é THROTTLED e não roda a cada
     // snapshot (os dados acima SEMPRE atualizam a 30Hz, isso aqui é só o DOM) ----
     // O servidor manda um snapshot completo pra CADA jogador 30x/segundo (ver
@@ -4047,10 +4122,13 @@
   /* =========================================================
      TORRES ELEMENTAIS
      ========================================================= */
+  // 'color' aqui é usado tanto no botão do painel quanto na plataforma
+  // quadrada da arena (drawTowerArena, no motor de render) — cada Torre
+  // (inclusive a Central) tem sua própria área/cor, como pedido.
   const TOWERS_CATALOG_CLIENT = [
-    { id:'central', name:'Torre Central', icon:'🏛️' }, { id:'fogo', name:'Torre do Fogo', icon:'🔥' },
-    { id:'agua', name:'Torre da Água', icon:'💧' }, { id:'terra', name:'Torre da Terra', icon:'🪨' },
-    { id:'ar', name:'Torre do Ar', icon:'🌪️' }, { id:'luz', name:'Torre da Luz', icon:'✨' }, { id:'trevas', name:'Torre das Trevas', icon:'🌑' },
+    { id:'central', name:'Torre Central', icon:'🏛️', color:'#bfa15f' }, { id:'fogo', name:'Torre do Fogo', icon:'🔥', color:'#c94a2c' },
+    { id:'agua', name:'Torre da Água', icon:'💧', color:'#3d7fa8' }, { id:'terra', name:'Torre da Terra', icon:'🪨', color:'#7a5a34' },
+    { id:'ar', name:'Torre do Ar', icon:'🌪️', color:'#bcd6d0' }, { id:'luz', name:'Torre da Luz', icon:'✨', color:'#e8d98a' }, { id:'trevas', name:'Torre das Trevas', icon:'🌑', color:'#4a3560' },
   ];
   const towersPanel = document.getElementById('towers-panel');
   document.getElementById('btn-open-towers').addEventListener('click', ()=>{ towersPanel.classList.toggle('open'); renderTowers(); });
@@ -4059,12 +4137,17 @@
     const body = document.getElementById('towers-body');
     body.innerHTML = TOWERS_CATALOG_CLIENT.map(t=>{
       const floor = (towers && towers[t.id]) || 0;
+      const climbing = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && activeHunt.towerId===t.id;
+      const statusLine = climbing
+        ? `<div class="floor" style="color:var(--gold-bright);">⛰️ Escalando agora — andar ${activeHunt.climbFloor}/100</div>`
+        : '';
       return `<div class="tower-row">
-        <div class="top"><h3>${t.icon} ${t.name}</h3><span class="floor">Andar ${floor}/100</span></div>
+        <div class="top"><h3>${t.icon} ${t.name}</h3><span class="floor">Andar salvo: ${floor}/100</span></div>
         <div class="tower-bar-track"><div class="tower-bar-fill" style="width:${floor}%"></div></div>
+        ${statusLine}
         <div class="tower-btns">
-          <button data-tower="${t.id}" data-mode="dungeon" ${activeHunt.running?'disabled':''}>Entrar na Torre</button>
-          <button data-tower="${t.id}" data-mode="boss" ${activeHunt.running?'disabled':''}>Entrar no Boss</button>
+          <button data-tower="${t.id}" data-mode="dungeon" ${activeHunt.running?'disabled':''}>Treino (Sentinelas)</button>
+          <button data-tower="${t.id}" data-mode="boss" ${activeHunt.running?'disabled':''}>${floor>0?'Continuar Escalada':'Subir a Torre'}</button>
         </div>
       </div>`;
     }).join('');
@@ -4073,6 +4156,30 @@
     });
   }
   function renderTowersIfOpen(){ if(towersPanel.classList.contains('open')) renderTowers(); }
+
+  /* ---- Banner central de "Subindo para o andar N" / aviso vermelho de
+     Boss — puramente reativo ao que o servidor manda em activeHunt
+     (climbCountdownUntil/climbNextFloor/climbNextFloorIsBoss); o servidor
+     é dono do relógio, o cliente só reflete o que já chegou no snapshot. ---- */
+  const towerClimbBannerEl = document.getElementById('tower-climb-banner');
+  function updateTowerClimbBanner(){
+    const active = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && activeHunt.climbCountdownUntil > Date.now();
+    if(!active){ towerClimbBannerEl.classList.remove('show','boss'); return; }
+    const tower = TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId);
+    const secsLeft = Math.max(0, Math.ceil((activeHunt.climbCountdownUntil - Date.now())/1000));
+    towerClimbBannerEl.classList.add('show');
+    towerClimbBannerEl.classList.toggle('boss', !!activeHunt.climbNextFloorIsBoss);
+    const line1 = towerClimbBannerEl.querySelector('.line1');
+    const line2 = towerClimbBannerEl.querySelector('.line2');
+    if(activeHunt.climbNextFloorIsBoss){
+      line1.textContent = '⚠️ CUIDADO: BOSS! ⚠️';
+      line2.textContent = `${tower?tower.name:'Torre'} · andar ${activeHunt.climbNextFloor} em ${secsLeft}s`;
+    } else {
+      line1.textContent = `Subindo para o andar ${activeHunt.climbNextFloor}...`;
+      line2.textContent = `${tower?tower.name:'Torre'} · ${secsLeft}s`;
+    }
+  }
+  setInterval(updateTowerClimbBanner, 200);
 
   /* =========================================================
      ALTAR DE EVOLUÇÃO — Reset de Estrela real: gasta Gold + Fragmentos
