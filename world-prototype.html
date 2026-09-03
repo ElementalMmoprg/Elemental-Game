@@ -1893,10 +1893,10 @@
     // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
     // corpo não carregou, cai pro topo aproximado que o boneco procedural já
     // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
-    // usada tanto pro corpo quanto pra cabeça, é o pivô único que a
-    // transformação isométrica (translate pra s.x,s.y projetado) já move
-    // como um objeto rígido — corpo e cabeça não têm posições independentes,
-    // as duas derivam do MESMO s.x/feetY.
+    // usada tanto pro corpo quanto pra cabeça, é o pivô único que a projeção
+    // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
+    // já move como um objeto rígido — corpo e cabeça não têm posições
+    // independentes, as duas derivam do MESMO s.x/feetY.
     const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30) + 8;
     // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
     // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
@@ -1932,29 +1932,44 @@
   function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
   window.addEventListener('resize', resize); resize();
 
-  const ISO_SCALE = 1.08; // zoom da câmera — era 0.72 (jogador/monstro ficavam minúsculos e distantes demais)
-  const TILE_STEP = 34;
-  function cartesianToIso(cartX, cartY){ return { x:(cartX-cartY)*ISO_SCALE, y:(cartX+cartY)*ISO_SCALE*0.5 }; }
-  function worldToScreen(cx, cy){ const off = getIsoOffset(); const p = cartesianToIso(cx,cy); return { x:p.x+off.x, y:p.y+off.y }; }
+  // ==========================================================================
+  // GRADE RETA (ESTILO TIBIA) — 2026-09: o jogo era isométrico (chão em
+  // losango, cartX/cartY projetados com um cisalhamento tipo (x-y, x+y)/2).
+  // Migração oficial pra Top-Down Ortogonal plano, igual Tibia clássico/
+  // Huntera: SEM cisalhamento nenhum, só uma escala uniforme + o deslocamento
+  // de câmera. Isso elimina de vez a origem de vários bugs visuais que a
+  // projeção isométrica trazia (WASD "em losango", cabeça/corpo com
+  // proporção de eixo diferente, chão em diamante em vez de quadrado) — a
+  // partir daqui, posição de mundo e posição de tela diferem só por escala e
+  // deslocamento, nunca por um ângulo.
+  // WORLD_SCALE faz o papel que ISO_SCALE fazia (zoom da câmera), só que sem
+  // nenhum cisalhamento — mantive o mesmo valor (1.08) pra não precisar
+  // reajustar tamanho de sprite/UI que já estava calibrado em cima dele.
+  const WORLD_SCALE = 1.08;
+  const TILE_STEP = 34; // tamanho de 1 tile do chão, em unidades de mundo
+  // Escala pura, sem deslocamento de câmera — serve tanto pra montar
+  // worldToScreen (que soma o offset) quanto pra qualquer lugar que precise
+  // de uma função monotônica e estável da posição de mundo SEM o
+  // recentramento da câmera (ver updateWalkAnim mais abaixo: a câmera sempre
+  // recentraliza no próprio jogador, então worldToScreen(player.x,player.y)
+  // dá sempre o mesmo ponto — pra detectar movimento de verdade, precisa de
+  // uma projeção que não cancele o próprio deslocamento).
+  function worldToScreenRaw(cx, cy){ return { x: cx*WORLD_SCALE, y: cy*WORLD_SCALE }; }
+  function worldToScreen(cx, cy){ const off = getCameraOffset(); const p = worldToScreenRaw(cx,cy); return { x:p.x+off.x, y:p.y+off.y }; }
   function screenToWorld(sx, sy){
-    const off = getIsoOffset();
-    const px = sx - off.x, py = sy - off.y, k = ISO_SCALE;
-    return { x: (px/k + py/(k*0.5)) / 2, y: (py/(k*0.5) - px/k) / 2 };
+    const off = getCameraOffset();
+    return { x: (sx-off.x)/WORLD_SCALE, y: (sy-off.y)/WORLD_SCALE };
   }
-  // Câmera segue o personagem: antes o offset era calculado a partir de uma
-  // caixa fixa (pontos de lure da caçada, ou uma área fixa perto da cidade),
-  // então o personagem se movia livremente pela tela e podia sair quase
-  // inteiro da área visível em vez de ficar centralizado — era isso o "andar
-  // do personagem bugado". Agora o offset centraliza sempre a posição atual
-  // de player.x/player.y (atualizada pelo servidor e, de forma otimista, pelo
-  // clique de movimento) no meio do canvas.
-  function getIsoOffset(){
-    const p = cartesianToIso(player.x, player.y);
+  // Câmera segue o personagem: o offset centraliza sempre a posição atual de
+  // player.x/player.y (atualizada pelo servidor e, de forma otimista, pelo
+  // clique de movimento/WASD) no meio do canvas.
+  function getCameraOffset(){
+    const p = worldToScreenRaw(player.x, player.y);
     return { x: canvas.width/2 - p.x, y: canvas.height/2 - p.y + 40 };
   }
   const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
-  // Praça da Cidade Principal — mesma técnica de sempre (blocos isométricos
-  // procedurais via drawIsoBlock, sem nenhuma imagem nova), só que agora com
+  // Praça da Cidade Principal — mesma técnica de sempre (blocos de cenário
+  // procedurais via drawSceneryBlock, sem nenhuma imagem nova), só que agora com
   // bem mais peças e tipos (muro/prédio/fonte/árvore, ver SCENERY_STYLE logo
   // abaixo) pra parecer uma cidade de verdade em vez de só 2 pilares soltos.
   // Tudo posicionado em volta de CITY_POSITION (onde o jogador nasce, ver
@@ -2000,12 +2015,12 @@
   // vez que SCENERY_CITY mudar.
   const CITY_BOUNDS_POINTS = [ CITY_POSITION, ...SCENERY_CITY ];
   const BLOCK_HW = 39, BLOCK_HH = 20;
-  // Paleta + "pé" (footprint isométrico) por tipo de peça da praça — mesmo
-  // desenho de sempre (drawIsoBlock), só variando cor e tamanho da base pra
-  // dar a sensação de muro/prédio/fonte/árvore sem precisar de nenhuma arte
-  // nova. 'pilastra' e 'rocha' mantêm exatamente a cor/tamanho que já
+  // Paleta + "pé" (footprint no chão) por tipo de peça da praça — mesmo
+  // desenho de sempre (drawSceneryBlock), só variando cor e tamanho da base
+  // pra dar a sensação de muro/prédio/fonte/árvore sem precisar de nenhuma
+  // arte nova. 'pilastra' e 'rocha' mantêm exatamente a cor/tamanho que já
   // existiam (nada muda pra Dungeon, que só usa esses dois tipos); hw/hh
-  // ausente cai no footprint padrão (BLOCK_HW/BLOCK_HH) dentro de drawIsoBlock.
+  // ausente cai no footprint padrão (BLOCK_HW/BLOCK_HH) dentro de drawSceneryBlock.
   const SCENERY_STYLE = {
     pilastra: { top:'#6a5a3a', topDungeon:'#4a3a24', l:'#241c14', r:'#2f2519' },
     rocha:    { top:'#5a5348', l:'#2c2820', r:'#3a352c', hw:BLOCK_HW*0.6, hh:BLOCK_HH*0.6 },
@@ -2030,7 +2045,7 @@
   }
   // Monta os 4 pilares que marcam os cantos da "área quadrada" de uma Torre
   // (um por elemento, incluindo a Central) — mesma técnica de sempre
-  // (drawIsoBlock procedural), só trocando a cor pela do elemento da Torre.
+  // (drawSceneryBlock procedural), só trocando a cor pela do elemento da Torre.
   function buildTowerArenaScenery(point, tower){
     if(!point) return [];
     const R = 170, color = tower ? tower.color : '#bfa15f';
@@ -2041,21 +2056,36 @@
       { type:'arenaPilar', x:point.x,   y:point.y+R*0.55, h:64, color },
     ];
   }
-  function drawIsoBlock(sx, sy, height, topColor, sideColorL, sideColorR, hw, hh){
+  // Bloco de cenário (parede/prédio/árvore/pilar) em grade reta: um retângulo
+  // de "base" (o footprint do objeto no chão, visto de cima) e um retângulo
+  // mais claro por cima simulando a face/altura do objeto — sem nenhum
+  // bisel/losango isométrico. hw/hh continuam sendo a meia-largura/altura do
+  // footprint (mesmos valores de SCENERY_STYLE, não precisou mudar).
+  function drawSceneryBlock(sx, sy, height, topColor, sideColorL, sideColorR, hw, hh){
     hw = hw || BLOCK_HW; hh = hh || BLOCK_HH;
-    const N = {x:sx, y:sy-hh-height}, E = {x:sx+hw, y:sy-height}, S = {x:sx, y:sy+hh-height}, W = {x:sx-hw, y:sy-height};
-    const S0 = {x:sx, y:sy+hh}, E0 = {x:sx+hw, y:sy}, W0 = {x:sx-hw, y:sy};
-    ctx.beginPath(); ctx.moveTo(E.x,E.y); ctx.lineTo(S.x,S.y); ctx.lineTo(S0.x,S0.y); ctx.lineTo(E0.x,E0.y); ctx.closePath();
-    ctx.fillStyle = sideColorR; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(W.x,W.y); ctx.lineTo(S.x,S.y); ctx.lineTo(S0.x,S0.y); ctx.lineTo(W0.x,W0.y); ctx.closePath();
-    ctx.fillStyle = sideColorL; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(N.x,N.y); ctx.lineTo(E.x,E.y); ctx.lineTo(S.x,S.y); ctx.lineTo(W.x,W.y); ctx.closePath();
-    ctx.fillStyle = topColor; ctx.fill(); ctx.strokeStyle='rgba(191,161,95,.5)'; ctx.stroke();
+    // sombra/base no chão (footprint real do objeto na grade)
+    ctx.fillStyle = sideColorL;
+    ctx.fillRect(sx-hw, sy-hh, hw*2, hh*2);
+    ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.strokeRect(sx-hw, sy-hh, hw*2, hh*2);
+    // "corpo" do objeto subindo a partir do footprint (top-down: desenhado
+    // como um retângulo mais alto por cima da base, não uma face 3D real —
+    // suficiente pra dar noção de volume num visual reto tipo Tibia).
+    ctx.fillStyle = sideColorR;
+    ctx.fillRect(sx-hw, sy-hh-height, hw*2, height);
+    ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.strokeRect(sx-hw, sy-hh-height, hw*2, height);
+    // topo (telhado/copa/tampo)
+    ctx.fillStyle = topColor;
+    ctx.fillRect(sx-hw, sy-hh-height, hw*2, hh*0.9);
+    ctx.strokeStyle = 'rgba(191,161,95,.5)'; ctx.strokeRect(sx-hw, sy-hh-height, hw*2, hh*0.9);
   }
-  function drawFloorDiamond(sx, sy, fill){
-    const hw = TILE_STEP*ISO_SCALE*0.55, hh = hw*0.5;
-    ctx.beginPath(); ctx.moveTo(sx,sy-hh); ctx.lineTo(sx+hw,sy); ctx.lineTo(sx,sy+hh); ctx.lineTo(sx-hw,sy); ctx.closePath();
-    ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = 'rgba(191,161,95,.10)'; ctx.stroke();
+  // Tile de chão em grade reta: um quadrado simples (lado = 1 tile em
+  // pixels de tela, já com WORLD_SCALE aplicado), sem nenhum diamante.
+  function drawFloorSquare(sx, sy, fill){
+    const half = (TILE_STEP*WORLD_SCALE)/2;
+    ctx.fillStyle = fill;
+    ctx.fillRect(sx-half, sy-half, half*2, half*2);
+    ctx.strokeStyle = 'rgba(191,161,95,.10)';
+    ctx.strokeRect(sx-half, sy-half, half*2, half*2);
   }
   function drawStarShape(cx,cy,r,color){
     ctx.beginPath();
@@ -2126,10 +2156,10 @@
   // remoto, indexados por uma chave estável — ver chamadores), pra ONDE ele
   // está indo e há quanto tempo — sem isso, drawCharacterLayers não tem como
   // saber se/pra que lado o personagem está se movendo neste frame.
-  // Usa a posição JÁ PROJETADA em tela (toScreen), não a cartesiana crua —
-  // é isso que o jogador vê se mexer, e como o corpo só tem 4 direções
-  // simples (baixo/cima/direita/esquerda, não 8 "isométricas"), decidir pela
-  // tela em vez do mundo dá o resultado visual mais natural.
+  // Usa a posição JÁ PROJETADA em tela (toScreen), não a de mundo crua — é
+  // isso que o jogador vê se mexer, e como o corpo só tem 4 direções simples
+  // (baixo/cima/direita/esquerda, não 8), decidir pela tela em vez do mundo
+  // dá o resultado visual mais natural.
   const walkAnimStates = new Map();
   const WALK_ANIM_FRAME_MS = 130; // troca de quadro do ciclo enquanto anda
   const WALK_ANIM_MOVE_EPS = 0.6; // px de tela/frame abaixo disso = "parado" (não tremer com jitter de rede)
@@ -2146,9 +2176,9 @@
     const moving = Math.hypot(dx,dy) > WALK_ANIM_MOVE_EPS;
     if(moving){
       // Estilo Tibia: o atlas só tem 4 direções reais (baixo/cima/direita/
-      // esquerda) e o mapa é isométrico, então qualquer diagonal do teclado
-      // (W+D, S+A etc.) formaria um "losango" de posições — pra decidir QUAL
-      // sprite mostrar, a regra pedida é: qualquer movimento com componente
+      // esquerda), então mesmo numa grade reta (sem cisalhamento nenhum) uma
+      // diagonal de teclado (W+D, S+A etc.) não tem sprite próprio — pra
+      // decidir QUAL sprite mostrar, a regra pedida é: qualquer movimento com componente
       // horizontal (Nordeste/Sudeste/Sudoeste/Noroeste, e claro Leste/Oeste
       // puros) usa o sprite de perfil (direita, espelhado pra esquerda — ver
       // drawCharacterLayers); SÓ o movimento puramente vertical (sem NENHUM
@@ -2193,7 +2223,7 @@
         const fill = isTowerArena
           ? shadeHexColor(arenaColor, even?0.30:0.22)
           : (location==='city' ? (even?'#2a2013':'#241b10') : (even?'#1c1712':'#181310'));
-        drawFloorDiamond(s.x, s.y, fill);
+        drawFloorSquare(s.x, s.y, fill);
       }
     }
 
@@ -2214,7 +2244,7 @@
         const sc = toScreen(s.x,s.y);
         const style = SCENERY_STYLE[s.type] || SCENERY_STYLE.pilastra;
         const top = s.color || ((s.type==='pilastra' && location==='dungeon') ? style.topDungeon : style.top);
-        drawIsoBlock(sc.x, sc.y, s.h, top, style.l, style.r, style.hw, style.hh);
+        drawSceneryBlock(sc.x, sc.y, s.h, top, style.l, style.r, style.hw, style.hh);
         // Copa da árvore e espelho d'água da fonte são só um desenho a mais
         // por cima do mesmo bloco (nenhum sprite novo) — dão silhueta de
         // árvore/fonte sem precisar de arte externa.
@@ -2241,17 +2271,27 @@
           ctx.lineWidth = isCurrent?2:1; ctx.strokeStyle = waitingCooldown ? '#5a7ac0' : '#bfa15f'; ctx.stroke();
         }});
         p.monsters.forEach(m=>{
+          // Fase de "respiração" própria por monstro (fixada uma vez no
+          // objeto — server-side ele persiste enquanto o monstro está vivo),
+          // pra não ficarem todos boiando em sincronia perfeita como
+          // estátuas idênticas. Não é um walk cycle de verdade (a arte de
+          // monstro hoje é 1 PNG estático só, sem grade de quadros — pra
+          // isso ter frames de verdade precisaria de spritesheet animada por
+          // monstro, que ainda não existe no projeto), mas já tira o efeito
+          // "parado feito estátua" enquanto esperam o combate.
+          if(m._bobPhase == null) m._bobPhase = Math.random()*Math.PI*2;
           drawList.push({ baseCart:{x:m.x,y:m.y}, draw:()=>{
+            const bob = Math.sin(now()/1000*1.6 + m._bobPhase)*1.6;
             const s = toScreen(m.x,m.y);
             const sprite = m.spriteId ? SpriteManager.monsterSprite(m.spriteId) : null;
-            const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-24, s.y-48, 48,48);
+            const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-24, s.y-48+bob, 48,48);
             if(!drew){
               // sem sprite carregado ainda (ou espécie sem arte) — bolinha
               // procedural com o ícone do bestiário por cima, nunca quebra.
-              ctx.beginPath(); ctx.arc(s.x, s.y-9, 9, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
-              if(m.icon){ ctx.font = '15px sans-serif'; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-5); }
+              ctx.beginPath(); ctx.arc(s.x, s.y-9+bob, 9, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
+              if(m.icon){ ctx.font = '15px sans-serif'; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-5+bob); }
             }
-          }, headCart:{x:m.x,y:m.y}, headLift:24, hpPct:m.hp/m.hpMax, kind:'monster' });
+          }, headCart:{x:m.x,y:m.y}, headLift:24, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster' });
         });
       });
     }
@@ -2282,13 +2322,13 @@
       const hairId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
       const hairStyleId = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1;
       // NÃO usa `s` (toScreen) aqui: a câmera sempre recentraliza no próprio
-      // jogador local (getIsoOffset), então toScreen(player.x,player.y) é
+      // jogador local (getCameraOffset), então toScreen(player.x,player.y) é
       // SEMPRE o mesmo ponto (o centro do canvas) — a cada frame, mesmo
       // andando. Isso fazia dx/dy dar sempre ~0 e a perna nunca animar (o
-      // personagem "deslizava" parado). cartesianToIso (sem o offset da
-      // câmera) dá a mesma orientação de tela, só que sem esse cancelamento,
+      // personagem "deslizava" parado). worldToScreenRaw (sem o offset da
+      // câmera) dá a mesma escala de tela, só que sem esse cancelamento,
       // então o movimento de verdade aparece pro detector de direção/frame.
-      const animRef = cartesianToIso(player.x, player.y);
+      const animRef = worldToScreenRaw(player.x, player.y);
       const anim = updateWalkAnim('__player__', animRef.x, animRef.y);
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, anim);
     }, headCart:{x:player.x,y:player.y}, headLift:33, isPlayer:true, nick:PLAYER_NICK });
@@ -2301,7 +2341,7 @@
     drawList.forEach(item=>{
       if(!item.headCart) return;
       const s = toScreen(item.headCart.x, item.headCart.y);
-      const headY = s.y - item.headLift - (item.isPlayer?breathe:0);
+      const headY = s.y - item.headLift - (item.isPlayer?breathe:0) - (item.bobOffset ? item.bobOffset() : 0);
       ctx.textAlign = 'center';
       if(item.nick) drawNickAndStar(s.x, headY-10, item.nick, item.dimNick);
       if(item.kind==='monster' && item.hpPct!=null){
@@ -2396,38 +2436,22 @@
   window.addEventListener('keyup', e=> heldKeys[e.key.toLowerCase()] = false);
   function updateWasdMovement(dt){
     if(location !== 'city') return; // Dungeon: movimento é 100% do Bot no servidor
-    // A direção desejada é pensada NA TELA (é o que o jogador vê e espera ao
-    // apertar cada tecla: W sobe na tela, D vai pra direita na tela, etc.) —
-    // por isso somamos/normalizamos os vetores AQUI, em espaço de tela, e só
-    // DEPOIS convertemos pro delta cartesiano equivalente (inverso exato de
-    // cartesianToIso, derivado abaixo). Isso corrige dois problemas que a
-    // versão anterior tinha (que somava/normalizava em espaço CARTESIANO,
-    // antes de projetar pra tela):
-    //  1) diagonal torta: segurar W+D não resultava numa diagonal de
-    //     45° na tela — a soma cartesiana normalizada, ao passar pela
-    //     projeção isométrica, virava um ângulo raso (quase reto pra
-    //     direita, subindo pouco) em vez de subir-e-direita em partes iguais;
-    //  2) velocidade desigual por direção: andar na horizontal (A/D) saía DO
-    //     DOBRO da velocidade NA TELA de andar na vertical (W/S) pro mesmo
-    //     WASD_SPEED_PX_S — a projeção isométrica comprime o eixo Y da tela
-    //     pela metade (proporção 2:1 do losango), e normalizar em cartesiano
-    //     antes não compensa essa diferença de escala entre os eixos.
+    // Grade reta = mundo e tela só diferem por escala (WORLD_SCALE), nunca
+    // por ângulo — então o vetor de tela desejado (sx,sy) já É o vetor de
+    // mundo (dx,dy), só dividido pela escala. Antes, na projeção isométrica,
+    // essa conversão precisava de uma álgebra de inverso de matriz (ver
+    // histórico) porque o cisalhamento (x-y, x+y)/2 tornava diagonal e
+    // velocidade por eixo desiguais; sem cisalhamento nenhum desses dois
+    // problemas existe mais — W+D já dá 45° de verdade em qualquer espaço.
     let sx = 0, sy = 0;
     if(heldKeys['w']||heldKeys['arrowup'])    sy -= 1; // tela: cima
     if(heldKeys['s']||heldKeys['arrowdown'])  sy += 1; // tela: baixo
     if(heldKeys['a']||heldKeys['arrowleft'])  sx -= 1; // tela: esquerda
     if(heldKeys['d']||heldKeys['arrowright']) sx += 1; // tela: direita
     if(!sx && !sy) return;
-    const slen = Math.hypot(sx,sy); sx/=slen; sy/=slen; // vetor de tela UNITÁRIO — garante a mesma velocidade aparente em qualquer uma das 8 direções, incluindo as diagonais
-    // Inverso de cartesianToIso (x:(cx-cy)*k, y:(cx+cy)*k*0.5): dado um vetor
-    // de tela (sx,sy), acha o delta cartesiano (dx,dy) tal que projetar esse
-    // delta de volta reproduz exatamente (sx,sy) — álgebra simples resolvendo
-    // o sistema linear de 2 equações. Como (sx,sy) já é unitário, o
-    // resultado projetado de volta na tela sai unitário também, então dá pra
-    // aplicar WASD_SPEED_PX_S diretamente sem normalizar de novo.
-    const k = ISO_SCALE;
-    const dx = (sx + 2*sy) / (2*k);
-    const dy = (2*sy - sx) / (2*k);
+    const slen = Math.hypot(sx,sy); sx/=slen; sy/=slen; // vetor UNITÁRIO — mesma velocidade aparente em qualquer uma das 8 direções, incluindo diagonais
+    const dx = sx / WORLD_SCALE;
+    const dy = sy / WORLD_SCALE;
     player.x += dx*WASD_SPEED_PX_S*dt;
     player.y += dy*WASD_SPEED_PX_S*dt;
   }
