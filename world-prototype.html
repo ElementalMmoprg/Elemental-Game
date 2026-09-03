@@ -1311,11 +1311,25 @@
      que o WebSocket conecta e o primeiro 'hunt:state' chega, o
      servidor passa a mandar em tudo: HP/MP/Stamina/Ouro/Party/Trade.
      ========================================================= */
-  const player = { x:80, y:520, hp:320, hpMax:320, mp:140, mpMax:140, gold:0, bankGold:0, xp:0, level:1 };
+  // Cidade Elemental: mapa real (town.otbm) — ver assets/city/city_elemental.json
+  // e assets/city/README.md no repo Elemental_assets pra entender a origem
+  // desses números. CITY_TILE_ORIGIN é o canto (minX,minY) do bounding box
+  // do mapa (z=5); TEMPLE_SPAWN_TILE é o tile preto no centro do templo
+  // (onde o jogador nasce) e TELEPORT_TILE é o teleporte azul (3 tiles ao
+  // norte do templo) que leva às caçadas. TILE_STEP (34, definido mais
+  // abaixo perto de WORLD_SCALE) é o tamanho de 1 tile em unidades de
+  // mundo — como esta constante precisa existir ANTES de TILE_STEP no
+  // arquivo, o valor já vem calculado (tile - origem) * 34 em vez de
+  // chamar uma função.
+  const CITY_TILE_ORIGIN = { minX:988, minY:1008 };
+  const TEMPLE_SPAWN_TILE = { x:1044, y:1051 };
+  const TELEPORT_TILE = { x:1044, y:1048 };
+  const CITY_POSITION = { x:(TEMPLE_SPAWN_TILE.x-CITY_TILE_ORIGIN.minX)*34, y:(TEMPLE_SPAWN_TILE.y-CITY_TILE_ORIGIN.minY)*34 };
+  const TELEPORT_WORLD_POS = { x:(TELEPORT_TILE.x-CITY_TILE_ORIGIN.minX)*34, y:(TELEPORT_TILE.y-CITY_TILE_ORIGIN.minY)*34 };
+  const player = { x:CITY_POSITION.x, y:CITY_POSITION.y, hp:320, hpMax:320, mp:140, mpMax:140, gold:0, bankGold:0, xp:0, level:1 };
   // Ver applyHuntSnapshot: na Cidade o cliente é dono de x/y (WASD/clique);
   // este flag marca se já aceitamos ao menos 1 posição do servidor (spawn).
   let wasdPositionSynced = false;
-  const CITY_POSITION = { x:80, y:520 };
   let location = 'city'; // 'city' | 'dungeon'
   const prestige = { bronzeStars:0, silverStars:0, goldStars:0, diamondRank:false };
   let isPremium = false;
@@ -1977,6 +1991,76 @@
   // parede ou prédio — e duas aberturas na muralha (sul e leste) servindo de
   // "portão" de entrada/saída.
   const CT = CITY_POSITION;
+
+  /* =========================================================
+     CIDADE ELEMENTAL — tiles reais do town.otbm (ver assets/city/ no repo
+     Elemental_assets). Carregado assíncrono via fetch; enquanto não chega
+     (ou se falhar), a Cidade continua desenhando o piso xadrez + cenário
+     procedural de sempre (SCENERY_CITY logo abaixo) — nada quebra.
+     CITY_TILES: Map "tx,ty" -> tile ({g,d,b,s}); CITY_TILE_RECTS: cache de
+     retângulo (dentro do atlas) por sprite id, já lido do manifest.
+     ========================================================= */
+  let CITY_TILES = null; // Map "tx,ty" -> tile, preenchido quando o fetch termina
+  let CITY_ATLAS_IMG = null;
+  let CITY_ATLAS_MANIFEST = null;
+  let CITY_BLOCKED = null; // Set "tx,ty" dos tiles bloqueados (pilares do templo etc.)
+  (function loadCityTiles(){
+    fetch(URL_BASE + 'city/city_elemental.json').then(r=>r.json()).then(data=>{
+      const map = new Map();
+      const blocked = new Set();
+      data.tiles.forEach(t=>{
+        const key = t.x+','+t.y;
+        map.set(key, t);
+        if(t.b) blocked.add(key);
+      });
+      CITY_TILES = map;
+      CITY_BLOCKED = blocked;
+      return fetch(URL_BASE + 'tilesets/tibia_tileset_atlas_manifest.json');
+    }).then(r=>r.json()).then(manifest=>{
+      CITY_ATLAS_MANIFEST = manifest;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = ()=>{ CITY_ATLAS_IMG = img; };
+      img.src = URL_BASE + 'tilesets/tibia_tileset_atlas.png';
+    }).catch(()=>{ /* offline/404: fica no cenário procedural de sempre */ });
+  })();
+  function cityTileToWorld(tx, ty){ return { x:(tx-CITY_TILE_ORIGIN.minX)*TILE_STEP, y:(ty-CITY_TILE_ORIGIN.minY)*TILE_STEP }; }
+  function cityRectFor(spriteId){
+    if(!CITY_ATLAS_MANIFEST) return null;
+    return CITY_ATLAS_MANIFEST[spriteId] || CITY_ATLAS_MANIFEST[spriteId+'_v0'] || null;
+  }
+  // Tile (em coordenadas de MUNDO, não de tile-grid) sob um ponto qualquer —
+  // usado tanto pra colisão do WASD quanto pra detectar "jogador em cima do
+  // teleporte". Arredonda pro tile mais próximo do grid do town.otbm.
+  function cityTileAtWorld(wx, wy){
+    const tx = Math.round(wx/TILE_STEP) + CITY_TILE_ORIGIN.minX;
+    const ty = Math.round(wy/TILE_STEP) + CITY_TILE_ORIGIN.minY;
+    return { tx, ty, key: tx+','+ty };
+  }
+  function isCityWorldPosBlocked(wx, wy){
+    if(!CITY_BLOCKED) return false; // sem dados ainda: não bloqueia nada (fallback seguro)
+    return CITY_BLOCKED.has(cityTileAtWorld(wx,wy).key);
+  }
+  function drawCityTiles(toScreen){
+    if(!CITY_TILES || !CITY_ATLAS_IMG || !CITY_ATLAS_MANIFEST) return false;
+    const half = TILE_STEP/2;
+    CITY_TILES.forEach(t=>{
+      const w = cityTileToWorld(t.x, t.y);
+      const s = toScreen(w.x, w.y);
+      const draw1 = (spriteId)=>{
+        const r = cityRectFor(spriteId);
+        if(!r) return;
+        // sprites de origem 32x32 escalados pro tamanho de tile do mundo
+        // (TILE_STEP), ancorados no canto inferior-direito igual o resto do
+        // atlas Tibia (ver README do atlas em Elemental_assets).
+        const dw = r.w * (TILE_STEP/32), dh = r.h * (TILE_STEP/32);
+        ctx.drawImage(CITY_ATLAS_IMG, r.x, r.y, r.w, r.h, s.x-half-(dw-TILE_STEP), s.y-half-(dh-TILE_STEP), dw, dh);
+      };
+      draw1(t.g);
+      if(t.d) t.d.forEach(draw1);
+    });
+    return true;
+  }
   const SCENERY_CITY = [
     // fonte central da praça
     { type:'fonte', x:CT.x+140, y:CT.y-120, h:16 },
@@ -2216,14 +2300,21 @@
       : (activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS);
     const minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
     const minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
-    for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
-      for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
-        const s = toScreen(gx,gy);
-        const even = ((gx+gy)/TILE_STEP)%2===0;
-        const fill = isTowerArena
-          ? shadeHexColor(arenaColor, even?0.30:0.22)
-          : (location==='city' ? (even?'#2a2013':'#241b10') : (even?'#1c1712':'#181310'));
-        drawFloorSquare(s.x, s.y, fill);
+    // Cidade Elemental: se os tiles reais do town.otbm já carregaram, desenha
+    // eles (chão + decoração real do mapa) em vez do piso xadrez genérico.
+    // Sem eles ainda (fetch em andamento ou falhou), cai no piso xadrez de
+    // sempre — mesmo fallback de antes, nada quebra.
+    const cityTilesDrawn = location==='city' && !isTowerArena && drawCityTiles(toScreen);
+    if(!cityTilesDrawn){
+      for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
+        for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
+          const s = toScreen(gx,gy);
+          const even = ((gx+gy)/TILE_STEP)%2===0;
+          const fill = isTowerArena
+            ? shadeHexColor(arenaColor, even?0.30:0.22)
+            : (location==='city' ? (even?'#2a2013':'#241b10') : (even?'#1c1712':'#181310'));
+          drawFloorSquare(s.x, s.y, fill);
+        }
       }
     }
 
@@ -2237,7 +2328,11 @@
     }
 
     const drawList = [];
-    const scenery = isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower) : (location==='city' ? SCENERY_CITY : SCENERY_DUNGEON);
+    // Com os tiles reais desenhados (pilares/tochas do templo já vêm deles,
+    // ver drawCityTiles), o cenário procedural antigo (muro/prédio/fonte de
+    // caixinha colorida) ficaria por cima do mapa de verdade sem fazer
+    // sentido — só entra quando ainda não há tiles reais carregados.
+    const scenery = isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower) : (location==='city' ? (cityTilesDrawn ? [] : SCENERY_CITY) : SCENERY_DUNGEON);
     scenery.forEach(s=> drawList.push({
       baseCart:{x:s.x,y:s.y},
       draw:()=>{
@@ -2434,8 +2529,41 @@
     heldKeys[e.key.toLowerCase()] = true;
   });
   window.addEventListener('keyup', e=> heldKeys[e.key.toLowerCase()] = false);
+
+  /* =========================================================
+     TELEPORTE AZUL — auto-walk: ao escolher uma hunt (solo ou depois que o
+     grupo inteiro aceita o convite, ver hunt:approachStart), o personagem
+     anda SOZINHO até TELEPORT_WORLD_POS (mesma autoridade de posição que o
+     WASD já tem na Cidade — ver connectToServer/'move'). Ao chegar, avisa o
+     servidor (hunt:arrivedAtTeleport); sozinho começa na hora, em grupo
+     espera o resto (ver hunt:approachProgress).
+     ========================================================= */
+  let autoWalk = null; // { target:{x,y}, onArrive }
+  const AUTO_WALK_ARRIVE_PX = 6;
+  // target opcional — sem ele, anda pro teleporte azul (uso mais comum: início de caçada)
+  function startAutoWalkToTeleport(onArrive){ autoWalk = { target: TELEPORT_WORLD_POS, onArrive }; }
+  function startAutoWalkToPos(target, onArrive){ autoWalk = { target, onArrive }; }
+  function nearestTrainingDummy(){
+    if(!trainingDummies.length) return null;
+    let best = trainingDummies[0], bestD = Infinity;
+    trainingDummies.forEach(d=>{ const dd = Math.hypot(d.x-player.x, d.y-player.y); if(dd<bestD){ bestD=dd; best=d; } });
+    return best;
+  }
+  function cancelAutoWalk(){ autoWalk = null; }
+  function updateAutoWalk(dt){
+    if(!autoWalk) return;
+    const dx = autoWalk.target.x - player.x, dy = autoWalk.target.y - player.y;
+    const dist = Math.hypot(dx, dy);
+    if(dist <= AUTO_WALK_ARRIVE_PX){
+      const cb = autoWalk.onArrive; autoWalk = null; if(cb) cb();
+      return;
+    }
+    player.x += (dx/dist) * WASD_SPEED_PX_S * dt;
+    player.y += (dy/dist) * WASD_SPEED_PX_S * dt;
+  }
   function updateWasdMovement(dt){
     if(location !== 'city') return; // Dungeon: movimento é 100% do Bot no servidor
+    if(autoWalk) return; // andando sozinho até o teleporte — ignora WASD até chegar
     // Grade reta = mundo e tela só diferem por escala (WORLD_SCALE), nunca
     // por ângulo — então o vetor de tela desejado (sx,sy) já É o vetor de
     // mundo (dx,dy), só dividido pela escala. Antes, na projeção isométrica,
@@ -2452,8 +2580,14 @@
     const slen = Math.hypot(sx,sy); sx/=slen; sy/=slen; // vetor UNITÁRIO — mesma velocidade aparente em qualquer uma das 8 direções, incluindo diagonais
     const dx = sx / WORLD_SCALE;
     const dy = sy / WORLD_SCALE;
-    player.x += dx*WASD_SPEED_PX_S*dt;
-    player.y += dy*WASD_SPEED_PX_S*dt;
+    const nx = player.x + dx*WASD_SPEED_PX_S*dt;
+    const ny = player.y + dy*WASD_SPEED_PX_S*dt;
+    // Colisão com os tiles reais da Cidade Elemental (pilares do templo etc.
+    // — ver CITY_BLOCKED/isCityWorldPosBlocked). Testa cada eixo separado
+    // (em vez do ponto (nx,ny) direto) pra poder "deslizar" na parede em vez
+    // de travar de vez quando só uma direção da diagonal está bloqueada.
+    if(!isCityWorldPosBlocked(nx, player.y)) player.x = nx;
+    if(!isCityWorldPosBlocked(player.x, ny)) player.y = ny;
   }
 
   let lastT = now();
@@ -2464,6 +2598,7 @@
     if(player.hp < lastHp) spawnFloatingText(()=>({x:player.x,y:player.y}), `-${Math.round(lastHp-player.hp)}`, '#ff5a5a');
     lastGold = player.gold; lastXp = player.xp; lastHp = player.hp;
     updateWasdMovement(dt);
+    updateAutoWalk(dt);
     spawnAuraParticles(dt);
     updateStatusLine();
     draw();
@@ -2597,6 +2732,11 @@
       player.x = msg.x; player.y = msg.y;
     }
     wasdPositionSynced = true;
+    // Se a caçada já começou de verdade (location virou 'dungeon') por
+    // qualquer caminho, nenhum modal/auto-walk de teleporte faz mais
+    // sentido — fecha tudo por segurança (cobre desde o caso normal até
+    // qualquer corrida de mensagens/reconexão).
+    if(msg.location === 'dungeon'){ closeHuntPartyModal(); closeHuntInviteAcceptModal(); cancelAutoWalk(); }
     player.hp = msg.hp; player.hpMax = msg.hpMax;
     player.mp = msg.mp; player.mpMax = msg.mpMax; player.gold = msg.gold; player.bankGold = msg.bankGold;
     player.xp = msg.xp; player.level = msg.level;
@@ -2735,6 +2875,20 @@
         case 'hunt:ack': handleAck(msg); break;
         case 'party:invite': showPartyInviteToast(msg); break;
         case 'party:declined': logLoot(`👥 <b>${escapeHtml(msg.by)}</b> recusou o convite pro grupo.`); break;
+        case 'hunt:invite': showHuntInviteAcceptModal(msg); break;
+        case 'hunt:inviteProgress': showHuntPartyModal('convite', msg.partyId, msg.accepted, msg.total); break;
+        case 'hunt:inviteCancelled':
+          closeHuntPartyModal(); closeHuntInviteAcceptModal(); cancelAutoWalk();
+          logLoot(`🏹 <b>${escapeHtml(msg.by)}</b> recusou a caçada em grupo — convite cancelado.`);
+          break;
+        case 'hunt:approachStart':
+          closeHuntPartyModal(); closeHuntInviteAcceptModal();
+          startAutoWalkToTeleport(()=> sendWS({ type:'hunt:arrivedAtTeleport' }));
+          break;
+        case 'hunt:approachProgress':
+          if(msg.arrived.length < msg.total.length) showHuntPartyModal('teleporte', msg.partyId, msg.arrived, msg.total);
+          else closeHuntPartyModal();
+          break;
         case 'matchmaking:matched': handleMatchmakingMatched(msg); break;
         case 'training:offlineResult':
           logLoot(`🏋️ Enquanto você estava fora, o treino offline rendeu <b>+${msg.gained}</b> ponto(s) pro banco.`);
@@ -2769,7 +2923,16 @@
   connectToServer();
 
   function handleAck(msg){
-    if(msg.forType === 'hunt:start' && !msg.ok) logLoot(`⚠️ Não foi possível iniciar: ${msg.reason}`);
+    if(msg.forType === 'hunt:start'){
+      if(msg.ok){
+        // solo: personagem anda sozinho até o teleporte azul; ao chegar,
+        // avisa o servidor e a caçada começa (ver hunt:arrivedAtTeleport).
+        startAutoWalkToTeleport(()=> sendWS({ type:'hunt:arrivedAtTeleport' }));
+      } else {
+        logLoot(`⚠️ Não foi possível iniciar: ${msg.reason}`);
+      }
+    }
+    if(msg.forType === 'party:huntInvite' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode iniciar com o time.' : msg.reason}`);
     if(msg.forType === 'party:go' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode clicar em IR.' : msg.reason}`);
     if(msg.forType === 'matchmaking:join'){
       if(msg.ok){
@@ -3035,22 +3198,33 @@
 
     document.getElementById('treino-dummy-status').innerHTML = canTrainAtDummy
       ? `<div class="ok-line">✅ Você está perto de um boneco de treino.</div>`
-      : `<div class="missing-line">Ande até um dos ${trainingDummies.length||3} bonecos de treino da Cidade Principal pra habilitar as ações abaixo.</div>`;
+      : `<div class="missing-line">Ao clicar em treinar, seu personagem anda sozinho até um dos ${trainingDummies.length||3} bonecos de treino da Cidade Principal.</div>`;
 
     const isOnline = trainingActive && trainingActive.mode === 'online';
     const isOfflineArmed = !!offlineTrainingArmed;
     const actionsEl = document.getElementById('treino-actions');
     actionsEl.innerHTML = `
-      <button id="treino-online-btn" class="${isOnline?'stop':''}" ${(!canTrainAtDummy && !isOnline) || isOfflineArmed ? 'disabled':''}>${isOnline?'⏹ Parar Treino Online':'▶ Iniciar Treino Online (2x o ritmo de caçada)'}</button>
+      <button id="treino-online-btn" class="${isOnline?'stop':''}" ${(!hasTrainingKit && !isOnline) || isOfflineArmed ? 'disabled':''}>${isOnline?'⏹ Parar Treino Online':'▶ Iniciar Treino Online (2x o ritmo de caçada)'}</button>
       <div id="treino-offline-row">
         <label class="opt-box"><input type="checkbox" id="treino-repeat-cb" ${isOfflineArmed && offlineTrainingArmed.repeat ? 'checked':''} ${isOfflineArmed?'disabled':''}> Repetir enquanto eu estiver fora (sem limite de 12h)</label>
-        <button id="treino-offline-btn" class="${isOfflineArmed?'stop':''}" ${(!canTrainAtDummy && !isOfflineArmed) || isOnline ? 'disabled':''}>${isOfflineArmed?'⏹ Cancelar Treino Offline':'🌙 Armar Treino Offline (rende ao desconectar, até 12h)'}</button>
+        <button id="treino-offline-btn" class="${isOfflineArmed?'stop':''}" ${(!hasTrainingKit && !isOfflineArmed) || isOnline ? 'disabled':''}>${isOfflineArmed?'⏹ Cancelar Treino Offline':'🌙 Armar Treino Offline (rende ao desconectar, até 12h)'}</button>
       </div>
     `;
-    document.getElementById('treino-online-btn').addEventListener('click', ()=> sendWS({ type: isOnline ? 'training:stop' : 'training:start' }));
+    // Clicou em treinar sem estar perto de um boneco: anda sozinho até o mais
+    // próximo primeiro (mesma ideia do teleporte azul — ver startAutoWalkToPos)
+    // e só manda o comando de verdade quando chegar; já perto, manda na hora.
+    document.getElementById('treino-online-btn').addEventListener('click', ()=>{
+      if(isOnline){ sendWS({ type:'training:stop' }); return; }
+      const go = ()=> sendWS({ type:'training:start' });
+      if(canTrainAtDummy || !trainingDummies.length) go();
+      else startAutoWalkToPos(nearestTrainingDummy(), go);
+    });
     document.getElementById('treino-offline-btn').addEventListener('click', ()=>{
-      if(isOfflineArmed) sendWS({ type:'training:cancelOffline' });
-      else sendWS({ type:'training:offline', repeat: document.getElementById('treino-repeat-cb').checked });
+      if(isOfflineArmed){ sendWS({ type:'training:cancelOffline' }); return; }
+      const repeat = document.getElementById('treino-repeat-cb').checked;
+      const go = ()=> sendWS({ type:'training:offline', repeat });
+      if(canTrainAtDummy || !trainingDummies.length) go();
+      else startAutoWalkToPos(nearestTrainingDummy(), go);
     });
 
     document.getElementById('treino-bank-status').innerHTML =
@@ -3117,7 +3291,10 @@
       if(activeHunt.running && activeHunt.huntId===selectedHunt.id){
         sendWS({ type:'hunt:stop' });
       } else if(isLeaderOfParty()){
-        sendWS({ type:'party:go', huntId:selectedHunt.id, difficulty:selectedDifficulty });
+        // Não teleporta na hora — manda o convite pro resto do grupo (modal de
+        // aceite) primeiro; só depois que TODOS aceitarem é que todo mundo
+        // anda até o teleporte junto (ver hunt:approachStart mais abaixo).
+        sendWS({ type:'party:huntInvite', huntId:selectedHunt.id, difficulty:selectedDifficulty });
       } else {
         sendWS({ type:'hunt:start', huntId:selectedHunt.id, difficulty:selectedDifficulty });
       }
@@ -3267,6 +3444,68 @@
     decline.addEventListener('click', ()=>{ sendWS({ type:'party:decline', inviterUsername: msg.from }); stack.removeChild(toast); });
     toast.appendChild(accept); toast.appendChild(decline); stack.appendChild(toast);
     setTimeout(()=>{ if(toast.parentNode) stack.removeChild(toast); }, 20000);
+  }
+
+  /* =========================================================
+     CONVITE DE CAÇADA EM GRUPO — 2 modais:
+     1) showHuntInviteAcceptModal: aparece pros MEMBROS quando o líder clica
+        em "Iniciar com o time" (ACEITAR/RECUSAR).
+     2) showHuntPartyModal: aparece pra TODO MUNDO (líder incluso) mostrando
+        quem já aceitou/chegou, com um ✓ por nome — reaproveitado nas duas
+        fases (aceite do convite E chegada no teleporte azul) só trocando o
+        título, pra não duplicar praticamente o mesmo modal duas vezes.
+     ========================================================= */
+  let huntInviteAcceptEl = null;
+  function closeHuntInviteAcceptModal(){
+    if(huntInviteAcceptEl && huntInviteAcceptEl.parentNode) huntInviteAcceptEl.parentNode.removeChild(huntInviteAcceptEl);
+    huntInviteAcceptEl = null;
+  }
+  function showHuntInviteAcceptModal(msg){
+    closeHuntInviteAcceptModal();
+    const huntDef = findHuntDef(msg.huntId);
+    const diff = DIFFICULTIES[msg.difficulty];
+    const el = document.createElement('div');
+    el.className = 'glass ornate';
+    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:80;padding:18px 22px;min-width:280px;text-align:center;';
+    el.innerHTML = `
+      <div class="panel-title" style="padding:0 0 10px;">⚔️ Convite de Caçada em Grupo<span class="rule"></span></div>
+      <div style="font-family:var(--font-mono);font-size:12px;margin-bottom:14px;">
+        <b>${escapeHtml(msg.from)}</b> quer levar o grupo pra<br>
+        <b>${escapeHtml(huntDef ? huntDef.name : msg.huntId)}</b> (${escapeHtml(diff ? diff.label : msg.difficulty)}).
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="hunt-invite-accept-btn">Aceitar</button>
+        <button id="hunt-invite-decline-btn" class="decline">Recusar</button>
+      </div>`;
+    document.body.appendChild(el);
+    huntInviteAcceptEl = el;
+    el.querySelector('#hunt-invite-accept-btn').addEventListener('click', ()=>{
+      sendWS({ type:'party:huntInviteAccept', partyId: msg.partyId });
+      closeHuntInviteAcceptModal();
+    });
+    el.querySelector('#hunt-invite-decline-btn').addEventListener('click', ()=>{
+      sendWS({ type:'party:huntInviteDecline', partyId: msg.partyId });
+      closeHuntInviteAcceptModal();
+    });
+  }
+
+  let huntPartyModalEl = null;
+  function closeHuntPartyModal(){
+    if(huntPartyModalEl && huntPartyModalEl.parentNode) huntPartyModalEl.parentNode.removeChild(huntPartyModalEl);
+    huntPartyModalEl = null;
+  }
+  // phase: 'convite' (esperando aceitarem) | 'teleporte' (esperando todo mundo chegar no teleporte azul)
+  function showHuntPartyModal(phase, partyId, doneList, totalList){
+    if(!huntPartyModalEl){
+      const el = document.createElement('div');
+      el.className = 'glass ornate';
+      el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:80;padding:18px 22px;min-width:240px;text-align:center;';
+      document.body.appendChild(el);
+      huntPartyModalEl = el;
+    }
+    const title = phase === 'convite' ? 'Aguardando o grupo aceitar…' : 'Aguardando o grupo chegar no teleporte…';
+    const rows = totalList.map(u=> `<div style="text-align:left;font-family:var(--font-mono);font-size:12px;padding:2px 0;">${doneList.includes(u) ? '✅' : '⏳'} ${escapeHtml(u)}</div>`).join('');
+    huntPartyModalEl.innerHTML = `<div class="panel-title" style="padding:0 0 10px;">🏹 ${title}<span class="rule"></span></div>${rows}`;
   }
 
   function showGuildInviteToast(msg){
