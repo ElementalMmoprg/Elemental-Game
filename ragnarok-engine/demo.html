@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Ragnarok-style Renderer — Demo/Calibração</title>
+<style>
+  body { background:#1a1a1a; color:#ddd; font-family: monospace; display:flex; gap:20px; padding:20px; }
+  canvas { background:#2c2c2c; image-rendering: pixelated; border:1px solid #555; }
+  #hud { white-space:pre; font-size:13px; line-height:1.5; }
+  #hud b { color:#7fd0ff; }
+  .hint { color:#888; max-width:420px; }
+</style>
+</head>
+<body>
+  <div>
+    <canvas id="game" width="360" height="360"></canvas>
+    <p class="hint">
+      WASD ou setas pra mover (8 direções, incluindo diagonais).<br/>
+      Tecla <b>G</b> liga/desliga a grade de debug (âncora + retângulo da cabeça).<br/>
+      Tecla <b>P</b> liga/desliga "pausa" (fica parado num frame pra você olhar com calma).<br/>
+      Abra o DevTools (F12) e calibre ao vivo, ex:<br/>
+      <code>RagnarokRenderer.config.HEAD_BASE_OFFSET.y = -8</code>
+    </p>
+  </div>
+  <div id="hud"></div>
+
+  <script src="character-renderer.js"></script>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const hud = document.getElementById('hud');
+
+    const bodyImg = new Image();
+    const headImg = new Image();
+    let assetsLoaded = 0;
+    function onAssetLoad() {
+      assetsLoaded++;
+      if (assetsLoaded === 2) requestAnimationFrame(loop);
+    }
+    bodyImg.onload = onAssetLoad;
+    headImg.onload = onAssetLoad;
+    // --- TROQUE ESTES DOIS CAMINHOS PELOS SEUS SPRITESHEETS REAIS ---
+    bodyImg.src = 'placeholder_body.png';
+    headImg.src = 'placeholder_head.png';
+    // Exposto em window só pra facilitar teste automatizado (Playwright);
+    // não é necessário pro funcionamento normal do jogo.
+    window.__bodyImg = bodyImg;
+    window.__headImg = headImg;
+
+    const character = new RagnarokRenderer.AnimatedCharacter({ x: 180, y: 200, dir: 'S' });
+
+    const input = { up: false, down: false, left: false, right: false };
+    const KEY_MAP = {
+      w: 'up', arrowup: 'up',
+      s: 'down', arrowdown: 'down',
+      a: 'left', arrowleft: 'left',
+      d: 'right', arrowright: 'right',
+    };
+    let debug = true;
+    let paused = false;
+
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'g') { debug = !debug; return; }
+      if (k === 'p') { paused = !paused; return; }
+      if (KEY_MAP[k]) { input[KEY_MAP[k]] = true; e.preventDefault(); }
+    });
+    window.addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      if (KEY_MAP[k]) { input[KEY_MAP[k]] = false; e.preventDefault(); }
+    });
+
+    // Exposto só pra teste automatizado (Playwright) poder pausar o loop
+    // interno e desenhar frames arbitrários sem correr contra o rAF normal.
+    window.__character = character;
+    let __rafId = null;
+    window.__stopLoop = () => { if (__rafId) cancelAnimationFrame(__rafId); };
+
+    let lastT = performance.now();
+    function loop(t) {
+      __rafId = requestAnimationFrame(loop);
+      const dt = Math.min(0.05, (t - lastT) / 1000);
+      lastT = t;
+
+      if (!paused) character.update(dt, input);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // grade de referência (linhas a cada 32px) pra dar noção de escala
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      for (let gx = 0; gx < canvas.width; gx += 32) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke(); }
+      for (let gy = 0; gy < canvas.height; gy += 32) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke(); }
+
+      RagnarokRenderer.drawCharacter(ctx, character, bodyImg, headImg, { debug });
+
+      const cfg = RagnarokRenderer.config;
+      const b = (s) => `<span style="color:#7fd0ff">${s}</span>`;
+      hud.innerHTML =
+        `${b('dir')}: ${character.dir}\n` +
+        `${b('frame')}: ${character.frameIndex}\n` +
+        `${b('moving')}: ${character.moving}\n` +
+        `${b('x,y')}: ${character.x.toFixed(1)}, ${character.y.toFixed(1)}\n` +
+        `${b('debug (G)')}: ${debug}   ${b('pausado (P)')}: ${paused}\n\n` +
+        `HEAD_BASE_OFFSET: ${JSON.stringify(cfg.HEAD_BASE_OFFSET)}\n` +
+        `bob atual: ${JSON.stringify((cfg.HEAD_WALK_OFFSETS[cfg.DIRECTION_INFO[character.dir].row]||[])[character.frameIndex])}`;
+    }
+  </script>
+</body>
+</html>

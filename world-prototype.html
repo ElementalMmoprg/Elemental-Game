@@ -1535,9 +1535,11 @@
     // Esse atlas não tem perfil de lado de verdade (ver comentário grandão
     // no fim desta função), então em vez de inventar um ângulo que não
     // existe, escolhemos aqui, POR PENTEADO, o quadro que mostra a
-    // parte de trás da cabeça (nuca/cabelo, sem rosto) — dá pra usar esse
-    // pra 'up'/'left'/'right' e reservar o rosto de frente só pra 'down',
-    // que é honesto com a arte que realmente existe.
+    // parte de trás da cabeça (nuca/cabelo, sem rosto) — usado só pra 'up'
+    // (onde o CORPO também mostra as costas, ver getHeadStyleFrame abaixo:
+    // usar a nuca também em 'left'/'right' foi tentado e piorou o resultado
+    // — corpo de perfil + cabeça sem rosto nenhum lê como "andando de
+    // costas", pior que o rosto de frente simplificado que já existia).
     function computeHeadStyleFrames(img){
       try{
         const w = img.naturalWidth, h = img.naturalHeight;
@@ -1636,9 +1638,17 @@
         }).filter(Boolean);
       }catch(e){ return []; }
     }
-    // dir escolhe front (rosto, 'down') ou back (nuca/cabelo, qualquer outra
-    // direção) — ver comentário grandão de computeHeadStyleFrames pra
-    // entender por que só essas 2 poses (o atlas não tem perfil de lado).
+    // dir escolhe front (rosto) ou back (nuca/cabelo) — mas SÓ 'up' usa a
+    // nuca. Primeira versão disso usava a nuca pra 'up'/'left'/'right'
+    // (qualquer direção que não fosse 'down'), pensando em "pelo menos não
+    // fica olhando pra câmera com o corpo de lado". Na prática, jogado de
+    // verdade, deu um resultado PIOR do que o problema original: bola de
+    // cabelo sem rosto nenhum + corpo em perfil andando pro lado LÊ COMO
+    // "personagem andando de costas" — muito mais estranho do que rosto de
+    // frente com o corpo de lado (que é uma simplificação comum em jogo 2D
+    // com poucos quadros, e não passa a impressão errada de "de costas").
+    // 'up' continua usando a nuca porque ali o CORPO também mostra as costas
+    // (linha 'up' de computeBodyDirFrames) — cabeça e corpo concordam.
     function getHeadStyleFrame(entry, styleId, dir){
       if(!entry.loaded) return null;
       const frames = entry.styleFrames;
@@ -1646,7 +1656,7 @@
       const idx = ((Math.floor(Number(styleId)||1) - 1) % frames.length + frames.length) % frames.length;
       const pair = frames[idx];
       if(!pair) return entry.frame;
-      return (dir && dir !== 'down') ? pair.back : pair.front;
+      return (dir === 'up') ? pair.back : pair.front;
     }
     // Desenha o penteado (linha hairStyleId do atlas JÁ na cor certa — ver
     // headSprite acima) preservando a proporção real, igual drawFrameContainFit,
