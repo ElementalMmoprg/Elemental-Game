@@ -1235,7 +1235,7 @@
   // então a URL pública precisa desse prefixo — sem ele, todo sprite real cai em 404 e
   // só o desenho procedural (fallback) aparece, mesmo com os PNGs já existindo no repo.
   const URL_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/';
-  const API_BASE = 'https://elemental-server.onrender.com';
+  const API_BASE = (/^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(location.hostname)) ? `http://${location.hostname}:8787` : 'https://elemental-server.onrender.com';
   const WS_URL = API_BASE.replace(/^http/, 'ws') + '/ws';
 
   // localStorage padronizado globalmente
