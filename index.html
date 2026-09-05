@@ -182,7 +182,7 @@
 (function(){
   "use strict";
   // Backend oficial no Render — fixo, não detectado por location.origin.
-  const API_BASE = (/^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(location.hostname)) ? `http://${location.hostname}:8787` : 'https://elemental-server.onrender.com';
+  const API_BASE = (/^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(window.location.hostname)) ? `http://${window.location.hostname}:8787` : 'https://elemental-server.onrender.com';
 
   // localStorage padronizado globalmente (index.html, character-select.html, hunt-engine.html)
   const LS_TOKEN = 'elemental_token';
