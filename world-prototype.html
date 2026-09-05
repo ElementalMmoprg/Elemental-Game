@@ -445,58 +445,88 @@
   #attrs-panel{ top:60px; right:250px; width:230px; display:none; z-index:6; }
   #attrs-panel.open{ display:block; }
 
-  /* ===== ÁRVORE DE HABILIDADES ELEMENTAL ===== */
-  /* Layout "treliça" (referência: árvore de passivas estilo grade, raiz à
-     esquerda abrindo em 3 trilhas — Defesa/Suporte/Ataque — que se cruzam em
-     zigue-zague seguindo a cadeia real de dependência do servidor (cada nó só
-     depende do anterior; o zigue-zague é só o desenho, a trava continua 100%
-     linear) até convergir no marco Semi Ultimate e, na 2ª metade, na Ultimate
-     ("Marco Final"). Ver cálculo de x/y em renderSkillTree(). */
-  #skilltree-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:800px; max-width:96vw; height:480px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  /* ===== ÁRVORE DE HABILIDADES — 10 ARQUÉTIPOS REAIS DE RAVENDAWN ===== */
+  /* Layout em CARDS agrupados por linha (ver huntEngine.js: cada arquétipo
+     tem uma progressão real de linhas — 2 Ativas por linha, uma linha só
+     destrava depois de 1 ponto investido numa Ativa da linha anterior — e
+     um bloco de Legacy/Ultimate no topo e Passivas no fim, todos com nível
+     e custo crescentes reais). */
+  #skilltree-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:800px; max-width:96vw; height:560px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
   #skilltree-panel.open{ display:flex; }
   #skilltree-panel .panel-title{ flex-shrink:0; }
-  .skilltree-body{ flex:1; display:flex; flex-direction:column; overflow:hidden; padding:0 14px 14px; }
+  .skilltree-body{ flex:1; display:flex; flex-direction:column; overflow:hidden; padding:0 14px 14px; position:relative; }
+
+  /* Seletor dos 3 slots de arquétipo (progressivo: nível efetivo 1/7/15) */
+  .archetype-picker{ display:flex; gap:8px; justify-content:center; margin-bottom:6px; flex-shrink:0; }
+  .archetype-slot{ width:64px; height:64px; border:1.5px solid var(--gold-deep); border-radius:8px; background:rgba(0,0,0,.3); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; text-align:center; padding:2px; }
+  .archetype-slot.filled{ border-color:var(--gold-bright); background:rgba(240,211,138,.08); }
+  .archetype-slot.locked{ opacity:.4; cursor:not-allowed; }
+  .archetype-slot-lock{ font-size:16px; }
+  .archetype-slot-plus{ font-size:20px; color:var(--gold-bright); line-height:1; }
+  .archetype-slot-label{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); margin-top:2px; line-height:1.2; }
+  .skilltree-archname{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); margin-bottom:6px; flex-shrink:0; }
+  .skilltree-archname .hint{ color:var(--ink-dim); font-weight:400; }
+
+  /* Menu popup pra escolher/trocar arquétipo num slot */
+  .archetype-pick-menu{ position:absolute; top:60px; left:50%; transform:translateX(-50%); z-index:20; background:rgba(9,7,5,.97); border:1px solid var(--gold-bright); border-radius:8px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; max-width:520px; }
+  .archetype-pick-option{ display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10px; padding:5px 8px; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .archetype-pick-option:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .archetype-pick-option.current{ border-color:#7fbf6a; color:#7fbf6a; }
+  .archetype-pick-option.cancel{ color:#ff9a80; border-color:#ff9a80; }
+
+  /* Sub-abas Habilidades / Status */
+  .skilltree-subnav{ display:flex; border-bottom:1px solid var(--gold-deep); margin-bottom:8px; flex-shrink:0; }
+  .skilltree-subnav-tab{ flex:1; text-align:center; padding:6px; font-family:var(--font-display); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
+  .skilltree-subnav-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); }
+
+  #skilltree-skills-section{ flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
   .skill-tabs{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; flex-shrink:0; }
   .skill-tab{ font-family:var(--font-mono); font-size:10.5px; padding:4px 10px; border:1px solid var(--gold-deep); border-radius:12px; cursor:pointer; color:var(--ink-dim); background:rgba(0,0,0,.25); }
   .skill-tab.active{ color:var(--gold-bright); border-color:var(--gold-bright); }
+  .skill-tab.dirty{ border-color:#8fd17a; color:#8fd17a; }
   .skill-points-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:6px; flex-shrink:0; }
   .skill-points-row b{ color:var(--gold-bright); }
-  #skill-list-wrap{ flex:1; overflow-x:auto; overflow-y:hidden; border:1px solid var(--gold-deep); border-radius:6px; background:radial-gradient(circle at 50% 40%, #16110b, #0a0805 72%); position:relative; }
-  .skill-node{
-    position:absolute; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(circle at 35% 30%, #2c2114, #0b0805);
-    border:1.5px solid rgba(191,161,95,.35); color:rgba(191,161,95,.55); cursor:pointer;
-    filter:grayscale(1) brightness(.6); transition:filter .15s, box-shadow .15s, border-color .15s, transform .1s, color .15s;
-  }
-  .skill-node:hover{ transform:scale(1.25); z-index:2; }
-  .skill-node.invested{ filter:none; border-color:var(--gold-bright); color:var(--gold-bright);
-    box-shadow:0 0 8px 2px rgba(240,211,138,.6), inset 0 0 5px rgba(240,211,138,.4); }
-  .skill-node.dirty{ border-color:#8fd17a; box-shadow:0 0 8px 2px rgba(143,209,122,.55); }
-  .skill-node.locked{ filter:grayscale(1) brightness(.35); cursor:not-allowed; }
-  .skill-node.milestone{ border-width:2px; }
-  /* Nó ATIVO (vira magia real, vai pra hotbar) — círculo maior (definido
-     inline via size) + borda um pouco mais grossa, pra diferenciar dos
-     passivos (só bônus permanente) de relance na árvore. */
-  .skill-node.active-skill{ border-width:2px; }
-  .skill-node.milestone.invested{ border-color:#c99bff; color:#c99bff;
-    box-shadow:0 0 12px 3px rgba(201,155,255,.65), inset 0 0 6px rgba(201,155,255,.4); }
-  .skill-node-anchor-label{ position:absolute; transform:translate(-50%,0); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); white-space:nowrap; pointer-events:none; }
-  .skill-node.selected{ outline:2px solid #fff; outline-offset:2px; }
-  #skill-node-detail{ flex-shrink:0; margin-top:8px; padding:8px 10px; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); font-family:var(--font-mono); font-size:10.5px; min-height:20px; }
-  #skill-node-detail .detail-name{ color:var(--gold-bright); font-weight:600; display:block; margin-bottom:3px; }
-  #skill-node-detail .detail-desc{ color:var(--ink-dim); display:block; margin-bottom:6px; }
-  #skill-node-detail .detail-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  #skill-node-detail .detail-level{ color:var(--ink-dim); }
-  #skill-node-detail .detail-level b{ color:var(--gold-bright); }
-  #skill-node-detail button{ font-family:var(--font-mono); font-size:12px; width:22px; height:22px; padding:0; border:1px solid var(--gold-deep); border-radius:4px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
-  #skill-node-detail button:hover:not(:disabled){ border-color:var(--gold-bright); color:var(--gold-bright); }
-  #skill-node-detail button:disabled{ opacity:.3; cursor:not-allowed; }
-  #skill-node-detail .detail-kind-btn{ width:auto; padding:4px 10px; }
+  #skill-list-wrap{ flex:1; overflow-y:auto; overflow-x:hidden; border:1px solid var(--gold-deep); border-radius:6px; background:radial-gradient(circle at 50% 20%, #16110b, #0a0805 72%); padding:8px; }
+  .spell-row-label{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.08em; margin:8px 0 4px; }
+  .spell-row-label:first-child{ margin-top:0; }
+  .spell-row-cards{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:8px; margin-bottom:4px; }
+  .spell-card{ border:1px solid var(--gold-deep); border-radius:6px; padding:8px; background:rgba(0,0,0,.3); }
+  .spell-card.invested{ border-color:var(--gold-bright); box-shadow:0 0 6px 1px rgba(240,211,138,.35); }
+  .spell-card.locked{ opacity:.5; }
+  .spell-card-head{ display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .spell-card-icon{ width:28px; height:28px; object-fit:contain; border-radius:4px; background:rgba(0,0,0,.3); flex-shrink:0; }
+  .spell-card-title{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); flex:1; }
+  .spell-card-kind-badge{ font-family:var(--font-mono); font-size:8px; padding:2px 5px; border-radius:8px; white-space:nowrap; }
+  .spell-card-kind-badge.active{ background:rgba(122,178,255,.15); color:#7ab2ff; }
+  .spell-card-kind-badge.passive{ background:rgba(143,209,122,.15); color:#8fd17a; }
+  .spell-card-kind-badge.legacy{ background:rgba(201,155,255,.15); color:#c99bff; }
+  .spell-card-desc{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:6px; line-height:1.4; }
+  .spell-card-lock-msg{ font-family:var(--font-mono); font-size:9px; color:#ff9a80; margin-bottom:6px; }
+  .spell-card-lvlctrl{ display:flex; align-items:center; gap:6px; }
+  .spell-card-minus, .spell-card-plus{ width:20px; height:20px; border-radius:4px; background:rgba(191,161,95,.15); border:1px solid var(--gold-deep); color:var(--gold-bright); font-size:11px; cursor:pointer; line-height:18px; text-align:center; }
+  .spell-card-minus:disabled, .spell-card-plus:disabled{ opacity:.3; cursor:not-allowed; }
+  .spell-card-lvl{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .spell-card-cost{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); margin-left:auto; }
+  .spell-card-toggle-btn{ width:100%; font-family:var(--font-mono); font-size:10px; padding:5px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .spell-card-toggle-btn.on{ color:#8fd17a; border-color:#8fd17a; }
+  .spell-card-toggle-btn:disabled{ opacity:.35; cursor:not-allowed; }
   .skill-actions-row{ display:flex; gap:8px; margin-top:8px; flex-shrink:0; }
   .skill-save-btn, .skill-reset-btn{ flex:1; font-family:var(--font-mono); font-size:11px; padding:8px; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
   .skill-save-btn:not(:disabled){ color:#7fbf6a; border-color:#7fbf6a; }
   .skill-save-btn:disabled, .skill-reset-btn:disabled{ opacity:.35; cursor:not-allowed; }
   .skill-reset-btn:not(:disabled):hover{ color:#ff9a80; border-color:#ff9a80; }
+
+  /* Painel "Character (X)" — Vitality/Might/Intelligence/Dexterity/Wisdom,
+     reusa .attr-row/.attr-track/.attr-fill/.attr-val/.attr-plus (definidos
+     mais abaixo pro antigo painel de Atributos Livres, mesmo visual). */
+  #skilltree-stats-section{ flex:1; overflow-y:auto; }
+  .attr-minus{ width:16px; height:16px; border-radius:3px; background:rgba(191,161,95,.15); border:1px solid var(--gold-deep); color:var(--gold-bright); font-size:10px; cursor:pointer; text-align:center; line-height:14px; }
+  .attr-minus:disabled{ opacity:.3; cursor:not-allowed; }
+  .stat-desc-line{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); margin:-2px 0 8px 62px; }
+  .stat-derived-box{ margin-top:8px; padding:8px 10px; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); }
+  .stat-derived-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); padding:2px 0; }
+  .stat-derived-row span:last-child{ color:var(--gold-bright); }
+
   .skill-node-tip{ position:fixed; z-index:50; max-width:220px; padding:7px 10px; background:rgba(9,7,5,.95); border:1px solid var(--gold-bright); border-radius:6px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); pointer-events:none; display:none; }
   .skill-node-tip b{ color:var(--gold-bright); display:block; margin-bottom:3px; }
   .skill-node-tip .hint{ display:block; margin-top:4px; color:#7fbf6a; }
@@ -858,18 +888,28 @@
     <div class="win-resize"></div>
   </div>
 
-  <!-- ÁRVORE DE HABILIDADES ELEMENTAL -->
+  <!-- ÁRVORE DE HABILIDADES — 10 ARQUÉTIPOS REAIS DE RAVENDAWN + PONTOS DE STATUS -->
   <div id="skilltree-panel" class="glass ornate win">
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Árvore de Habilidades<span class="rule"></span><span class="win-close-x" data-close-win="skilltree-panel">✕</span></div>
     <div class="skilltree-body">
-      <div class="skill-tabs" id="skill-tabs"></div>
-      <div class="skill-points-row"><span>Pontos de Habilidade</span><span><b id="skill-points-available">0</b> / <span id="skill-points-total">0</span> disponíveis</span></div>
-      <div id="skill-list-wrap"></div>
-      <div id="skill-node-detail"></div>
-      <div class="skill-actions-row">
-        <button class="skill-save-btn" id="skill-save-btn" disabled>💾 Salvar Árvore</button>
-        <button class="skill-reset-btn" id="skill-reset-btn">♻️ Resetar (150 💎)</button>
+      <div id="archetype-picker" class="archetype-picker"></div>
+      <div id="archetype-class-banner" class="skilltree-archname" style="text-align:center;"></div>
+      <div id="archetype-pick-menu" class="archetype-pick-menu" style="display:none;"></div>
+      <div class="skilltree-subnav" id="skilltree-subnav">
+        <div class="skilltree-subnav-tab active" data-subnav="skills">Habilidades</div>
+        <div class="skilltree-subnav-tab" data-subnav="stats">Status</div>
       </div>
+      <div id="skilltree-skills-section">
+        <div class="skill-tabs" id="skill-tabs"></div>
+        <div class="skill-points-row"><span>Pontos de Habilidade</span><span><b id="skill-points-available">0</b> / <span id="skill-points-total">0</span> disponíveis</span></div>
+        <div id="skill-list-wrap"></div>
+        <div id="skill-node-detail"></div>
+        <div class="skill-actions-row">
+          <button class="skill-save-btn" id="skill-save-btn" disabled>💾 Salvar Árvore</button>
+          <button class="skill-reset-btn" id="skill-reset-btn">♻️ Resetar (150 💎)</button>
+        </div>
+      </div>
+      <div id="skilltree-stats-section" style="display:none;"></div>
     </div>
   </div>
   <div class="skill-node-tip" id="skill-node-tip"></div>
@@ -1310,7 +1350,7 @@
   // ITEM_INFO: descrição + preço base de cada item de loot, coletados da
   // ravenquest.wiki.br (mesma fonte dos sprites de monstro). Chave = item.id
   // em possibleLoot. Nem todo item tem os dois campos (alguns não vendem no NPC).
-  const ITEM_INFO = {"boar_steak":{"desc":"One of the more traditional cuts of meat, many a family has enjoyed a meal gathered in their home around a spit of roasted boar.","price":"167"},"boar_ears":{"desc":"A delicacy in some parts of Ravendawn, there are many dishes that call for boar ears each as tasty as the last or you could just give it to your dog.","price":"77"},"boar_head":{"desc":"A trophy of a well-executed hunt, many hunters mount the head of a kill on their walls to prove their prowess for all to see.","price":"115"},"boar_pelt":{"desc":"A dark bristly fur with a thick undercoat that grows longer in winter. Traditionally a boar pelt can be placed in front of a fireplace as a rug due to its slightly fire-resistant nature.","price":"64"},"boar_tusks":{"desc":"A tool and weapon that boars employ with great effect, there have been many hunters who have underestimated the power of the boar and not lived to tell the story.","price":"180"},"brown_bear_pelt":{"desc":"Often the pride of a hunter's collection, the pelt of a bear is incredibly soft, warm and large enough to make quite a statement in anyone's home.","price":"231"},"flexible_stick":{"desc":"Perfect for shaping or just swinging around."},"hide":{"desc":"Used in various recipes. A raw and unprocessed piece of hide."},"apex_predator_claw":{"desc":"Taken from Ravendawn's fiercest beasts, hunters often boast these as trophies.","price":"385"},"bear_paw":{"desc":"Bear paw with huge and sharp claws that could easily rip a person to bloody shreds.","price":"205"},"arctic_fur_pelt":{"desc":"For millennia this fur has kept wolves warm even in the coldest climates and for almost as long, humans have craved the same security.","price":"257"},"predator_tooth":{"desc":"A sharp, canine-like tooth which clearly belonged to a carnivorous creature.","price":"51"},"spool_of_hair":{"desc":"Used in various recipes. A gentle tug on the thread unfurls a tapestry of textures."},"arachnid_trophy":{"desc":"Whatever is inside this ball of webs... it's better not to know. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Precision +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"swiftseer_band_fragment":{"desc":"A fragment of the legendary ring Swiftseer Band, it is said that the ring improves Wisdom and Dexterity. If brought to the right person, it could be restored..."},"red_spider_silk":{"desc":"Highly prized by the wealthy elite of many cities, Darzuac in particular.","price":"270"},"smoldering_embers":{"desc":"The remains of a very hot arachnid.","price":"25"},"spider_eggs":{"desc":"Is there something moving inside?","price":"102"},"crowmaiden_trophy":{"desc":"Who knows what eldritch rituals this skull has seen practiced... Using this trophy allows it to be placed in your house and grants you a permanent bonus to Spell Power +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"eldritch_coil_fragment":{"desc":"A fragment of the legendary ring Eldritch Coil, it is said that the ring improves Intelligence and Wisdom. If brought to the right person, it could be restored..."},"human_effigy":{"desc":"This odd talisman is reeking of powerful black magic. It gives an unsettling feeling to the touch."},"rohna_brotherhood_trophy":{"desc":"Some members of the brotherhood enjoy collecting their own wanted posters, like some vanity project. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Impact +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"brotherhood_lieutenant_ring":{"desc":"Carried by high ranked members of the Brotherhood.","price":"372"},"encrypted_notebook":{"desc":"This book is heavily coded, protecting the information within. A scholar could likely translate the book if given enough time but it's also worth a bit of silver because who doesn't love mysteries?","price":"257"},"aloe_bandages":{"desc":"Doused in aloe vera, these bandages soothe burns and help the healing process... not for you though.","price":"154"},"arrow_quiver":{"desc":"Some archers can tell of that one time they reached out to an empty quiver. Others can't anymore.","price":"77"},"hookmask_trophy":{"desc":"The identifying insignia of a band of thugs led by a nefarious cabal of exiled alchemists. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Healing Power +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"pirate_trophy":{"desc":"Every sailor across Ravendawn feels dread when they see this symbol on the high seas! Using this trophy allows it to be placed in your house and grants you a permanent bonus to Wisdom +2%, Might +1%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"bizarre_mask":{"desc":"A mask created with the intention to intimidate and unsettle opponents. (It's super effective!)","price":"128"},"strange_potion":{"desc":"Brewed by the Hookmask alchemists, these highly valuable potions are rarely seen intact."},"cave_spider_leg":{"desc":"This chitinous appendage is adapted to cavernous environments... Wait, is it still twitching?","price":"167"},"spider_fangs":{"desc":"Mostly drained of venom, but still sharp enough to cause a nasty wound."},"fox_trophy":{"desc":"Say goodbye to nightmares with this handy dreamcatcher! Except those that involve angry foxes of course... Using this trophy allows it to be placed in your house and grants you a permanent bonus to Haste +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"igneous_ice_shard":{"desc":"This diamond-hard shard overflows with elemental energy. The power of the White Blight in the palm of your hand."},"ripper_fang":{"desc":"A monstrous fang capable of ripping through armor, flesh and bone alike."},"elemental_crystal":{"desc":"In place of a heart, some creatures carry a potent crystal like this one."},"fox_fur":{"desc":"The fur of a fox has long adorned the shoulders of the rich and powerful and now you can officially join their ranks.","price":"257"},"dwarf_trophy":{"desc":"Now you can practice battling these stout warriors! It appears a little tall, actually... Using this trophy allows it to be placed in your house and grants you a permanent bonus to Weapon Defense +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"dwarven_coin":{"desc":"For as long as anyone remembers, dwarves have minted and used these coins as currency throughout the land."},"ancient_ingot":{"desc":"A prized stone sigil bestowed only to those amongst the most prominent dwarven clans."},"complex_schematics":{"desc":"Valuable information about exotic technology... provided you can understand the diagrams.","price":"205"},"dwarven_beard":{"desc":"A symbol of lineage and pride, it encapsulates the indomitable spirit of the dwarven kin.","price":"128"},"deep_sea_bladder":{"desc":"The bladders of deep sea marine animals are highly valued for their use as waterskins and floatation equipment.","price":"257"},"exotic_fin":{"desc":"Used in various recipes. The smell is not unpleasant but can be perceived from long distances."},"bat_wing":{"desc":"Dark and leathery, this wing must've belonged to a bat of considerable size.","price":"154"},"fading_light_bulb":{"desc":"Required to build various ship parts. It doesn't light up anymore, but it still has functionality."},"fish_mucus":{"desc":"Although unpleasant to the touch, when exposed to dry, hot air, this mucus hardens to form a basic sealant and assists in preserving goods. Many merchants use them for long journeys.","price":"51"},"warhog_trophy":{"desc":"Try not to practice with this dummy in the mornings or you'll start craving bacon. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Might +2%, Vitality +1%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"bone_ring":{"desc":"Worn either on their snout or on their arm to symbolize all the enemies a Warhog has slain, it makes you wonder exactly which bone and which creature this came from originally.","price":"90"},"chewacabra_blood":{"desc":"The blood of a Chewacabra is said to carry the magic stored within all the creatures it has feasted from, bloodmages often experiment with this knowledge for their profane practices.","price":"308"},"chewacabra_tusk":{"desc":"Considered a collector's piece by some hunters. The Ghaz, however, believe it brings bad luck.","price":"205"},"goblinhide_scroll":{"desc":"Warhogs despise goblins and to frighten their enemy, they skin them and wear these scrolls as trophies."},"goblin_trophy":{"desc":"A perfect target to practice your raiding skills! Using this trophy allows it to be placed in your house and grants you a permanent bonus to Intelligence +2%, Dexterity +1%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"sageheart_fragment":{"desc":"A fragment of the legendary ring Sageheart, it is said that the ring improves Wisdom and Vitality. If brought to the right person, it could be restored..."},"sporewalker_trophy":{"desc":"The contents of these flasks is unknown and perhaps it's better that it stays that way... considering the source. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Max Mana +6%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"perfect_sporecap":{"desc":"This mushroom cap is flawless and pristine, and is highly prized for its many mystical and ceremonial applications.","price":"2957"},"cracked_soul_orb":{"desc":"Used to power goblin mechas. A strange energy radiates from the cracks.","price":"1285"},"trunk_trophy":{"desc":"It just keep growling and trying to bite you. Fortunately, it's bite sized. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Mana Regeneration +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"enchanted_acorn":{"desc":"The magical seed of an ancient tree, who knows what could sprout if you planted this into the soil, probably best not to risk it.","price":"771"},"hardwood":{"desc":"Although highly difficult to work with it, weapons and tools made from this stone-like wood are almost unbreakable."},"hexing_eye":{"desc":"Those who gaze too long are soon affected with headaches and nausea... in a staring contest, the eye always wins.","price":"360"},"booty_stash":{"desc":"Raiding, plundering, and pillaging are a pirate's trade. The contents of this chest could fetch a good price if you don't mind their origin.","price":"282"},"brass_telescope":{"desc":"This large telescope is mounted onto larger ships to allow for the crew to peer through the clouds when stars are obstructed.","price":"514"},"infamous_doubloon":{"desc":"However disorganized pirates might seem, they can all agree on one thing: the value of gold and blood."},"platinum_compass":{"desc":"This once belonged to a wealthy sailor, now it will serve to fill your pockets with silver.","price":"1800"},"foreign_alcohol":{"desc":"Used in various recipes. It's clear, and the smell is not aggressive. You can see small grains floating in the liquid."},"chainwraith_trophy":{"desc":"The reflection in this mirror appears to have a mind of its own! Using this trophy allows it to be placed in your house and grants you a permanent bonus to Wisdom +2%, Might +1%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"netherweave_fragment":{"desc":"A fragment of the legendary ring Netherweave, it is said that the ring improves Vitality and Dexterity. If brought to the right person, it could be restored..."},"chainsunder_flail":{"desc":"The rattling chains of a wraith haunt many people's nightmares but the flail attached to the chain is far more dangerous.","price":"540"},"ethereal_cloak":{"desc":"A haunted cloak, soaked in the energy and sorrow of the unquiet dead.","price":"347"},"ghastly_lamp":{"desc":"This eerie lamp gives no warmth, but rather leaves its carrier feeling drained and empty.","price":"128"},"dark_insight_fragment":{"desc":"A fragment of the legendary ring Dark Insight, it is said that the ring improves Intelligence and Dexterity. If brought to the right person, it could be restored..."},"gazer_trophy":{"desc":"Some folk have alternative tastes in interior design. Then there's you... Using this trophy allows it to be placed in your house and grants you a permanent bonus to Mana Regeneration +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"underearth_gem":{"desc":"Priceless opaque gem believed to be derived from the mysterious domain known as the Underearth."},"despair_inducing_gland":{"desc":"This gland seems to pulse despite being removed from the Gazer's body, staring at it too long causes a feeling of sadness to wash over you and for a moment, you think perhaps it too is staring at you.","price":"334"},"eerie_bone_plate":{"desc":"This plate of bone is thick and singular, it is natural armor made to protect the inner workings of whatever creature it originated from.","price":"102"},"frozen_meat":{"desc":"This shank of meat is warm but rigid as if it was frozen.","price":"797"},"monstrous_mane":{"desc":"This once belonged to a real monster of a beast."},"oversized_flea":{"desc":"The juiciness of this bug shows that it had a good source of nourishment throughout its life."},"winterwool":{"desc":"Excellent quality fur, it will confer great isulation and protection to any apparel it's worked into."},"amber_eye_gem":{"desc":"Stonelings often carry various gems within their bodies, but their eyes are always made out of pure amber.","price":"514"},"exotic_fungus":{"desc":"This mushroom is incredibly resilient and adaptable, able to thrive in a wide range of environments, provided it can rely on its host for transportation and protection."},"demon_trophy":{"desc":"If you lean closely you can hear strange whispers in a language you cannot comprehend. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Impact +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"voidmind_fragment":{"desc":"A fragment of the legendary ring Voidmind, it is said that the ring improves Intelligence and Might. If brought to the right person, it could be restored..."},"demonic_essence":{"desc":"This stable core filled with dark energy taints everything it touches. Prolonged exposure to skin will begin to burn and rot the victim."},"cutting_edge_scrap":{"desc":"Razor-sharp metal fragments. Handled with care, these can be forged into deadly weapons."},"demon_core":{"desc":"A demon core is what passes for a heart in demons, it is a potent magically attuned item, however holding onto it for too long is ill-advised."},"crow_mask":{"desc":"Frequently wore by the most powerful among the Crowmaidens, this mask seems to be full of sorcerous glyphs."},"essence_of_darkness":{"desc":"This stone harbors the very core of shadow, a concentrated embodiment of primeval night.","price":"2571"},"direhorn_drake_trophy":{"desc":"To some a charging bull is a frightening sight, to you it's just an appetizer. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Dexterity +2%, Vitality +1%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"galeforce_fragment":{"desc":"A fragment of the legendary ring Galeforce, it is said that the ring improves Dexterity and Might. If brought to the right person, it could be restored..."},"jackal_trophy":{"desc":"Despite wanting to distance themselves from their old master, the jackals' love of gold is a sure sign of their connection. Using this trophy allows it to be placed in your house and grants you a permanent bonus to Spell Defense +4%. You can also trade it or consume additional Trophies to unlock its Golden and Enchanted versions, granting you extra Renown!"},"mindsurge_fragment":{"desc":"A fragment of the legendary ring Mindsurge, it is said that the ring improves Vitality and Intelligence. If brought to the right person, it could be restored..."},"beastly_distillate":{"desc":"A potent fluid distilled from the essence of primal creatures, it embodies untamed ferocity and the untapped power of the wilderness."},"draconic_hide":{"desc":"Working this material into wondrous armor pieces is not even half as hard as obtaining it in the first place."},"draconic_wings":{"desc":"If they weren't fit for a humanoid, it would be easy to believe these wings once belonged to a true dragon.","price":"1285"},"fiery_essence":{"desc":"This stable core is teeming with fiery hot natural energy. If you listen closely you can even hear it sizzle!"},"golden_ruby_belt":{"desc":"A belt made of finery to showcase the wealth of the owner.","price":"192"},"red_horns":{"desc":"Despite being smaller than the horns of many creatures, these are still incredibly sharp and warm to the touch.","price":"154"}};
+  const ITEM_INFO = {"boar_steak":{"desc":"Um dos cortes de carne mais tradicionais; muitas famílias já se reuniram em casa para uma refeição em torno de um espeto de javali assado.","price":"167"},"boar_ears":{"desc":"Uma iguaria em algumas partes de Ravendawn — há vários pratos que pedem orelhas de javali, todos tão saborosos quanto o anterior, ou você pode simplesmente dar ao seu cachorro.","price":"77"},"boar_head":{"desc":"Um troféu de uma caçada bem-sucedida; muitos caçadores penduram a cabeça do abate na parede para provar sua destreza a todos.","price":"115"},"boar_pelt":{"desc":"Um pelo escuro e áspero, com uma subcamada espessa que cresce mais no inverno. Tradicionalmente, um couro de javali é usado como tapete diante da lareira, graças à sua leve resistência ao fogo.","price":"64"},"boar_tusks":{"desc":"Uma ferramenta e arma que os javalis usam com grande eficácia; muitos caçadores já subestimaram o poder de um javali e não viveram para contar a história.","price":"180"},"brown_bear_pelt":{"desc":"Frequentemente o orgulho da coleção de um caçador, o couro de um urso é incrivelmente macio, quente e grande o suficiente para causar impacto na casa de qualquer um.","price":"231"},"flexible_stick":{"desc":"Perfeito para moldar ou apenas balançar por aí."},"hide":{"desc":"Usado em várias receitas. Um pedaço de couro cru e não processado."},"apex_predator_claw":{"desc":"Retirada das feras mais ferozes de Ravendawn, caçadores costumam exibi-la como troféu.","price":"385"},"bear_paw":{"desc":"Pata de urso com garras enormes e afiadas, capazes de rasgar uma pessoa em pedaços sangrentos com facilidade.","price":"205"},"arctic_fur_pelt":{"desc":"Por milênios esse pelo manteve lobos aquecidos até nos climas mais frios, e há quase o mesmo tempo os humanos desejam a mesma proteção.","price":"257"},"predator_tooth":{"desc":"Um dente afiado, semelhante a um canino, que claramente pertenceu a uma criatura carnívora.","price":"51"},"spool_of_hair":{"desc":"Usado em várias receitas. Um puxão suave no fio revela uma tapeçaria de texturas."},"arachnid_trophy":{"desc":"O que quer que esteja dentro dessa bola de teias... é melhor não saber. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Precisão. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"swiftseer_band_fragment":{"desc":"Um fragmento do lendário anel Swiftseer Band; diz-se que o anel melhora Sabedoria e Destreza. Se levado à pessoa certa, poderia ser restaurado..."},"red_spider_silk":{"desc":"Muito valorizada pela elite rica de várias cidades, especialmente Darzuac.","price":"270"},"smoldering_embers":{"desc":"Os restos de um aracnídeo muito quente.","price":"25"},"spider_eggs":{"desc":"Tem algo se mexendo aí dentro?","price":"102"},"crowmaiden_trophy":{"desc":"Quem sabe que rituais sinistros esse crânio já testemunhou... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Poder Mágico. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"eldritch_coil_fragment":{"desc":"Um fragmento do lendário anel Eldritch Coil; diz-se que o anel melhora Inteligência e Sabedoria. Se levado à pessoa certa, poderia ser restaurado..."},"human_effigy":{"desc":"Este talismã estranho exala uma poderosa magia negra. Ao toque, causa uma sensação perturbadora."},"rohna_brotherhood_trophy":{"desc":"Alguns membros da irmandade gostam de colecionar seus próprios cartazes de procurado, como um projeto de vaidade. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Impacto. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"brotherhood_lieutenant_ring":{"desc":"Carregado por membros de alta patente da Irmandade.","price":"372"},"encrypted_notebook":{"desc":"Este livro está fortemente codificado, protegendo as informações em seu interior. Um estudioso provavelmente conseguiria traduzi-lo com tempo suficiente, mas também vale uma boa prata — afinal, quem não gosta de mistérios?","price":"257"},"aloe_bandages":{"desc":"Embebidas em babosa, essas ataduras aliviam queimaduras e ajudam na cicatrização... só que não para você.","price":"154"},"arrow_quiver":{"desc":"Alguns arqueiros podem contar sobre aquela vez em que a mão foi buscar uma flecha e a aljava estava vazia. Outros não podem mais contar história nenhuma.","price":"77"},"hookmask_trophy":{"desc":"A insígnia identificadora de um bando de capangas liderado por um cabal nefasto de alquimistas exilados. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Poder de Cura. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"pirate_trophy":{"desc":"Todo marinheiro de Ravendawn sente pavor ao ver este símbolo em alto mar! Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Sabedoria e +1% de Força. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"bizarre_mask":{"desc":"Uma máscara criada com a intenção de intimidar e perturbar oponentes. (É super eficaz!)","price":"128"},"strange_potion":{"desc":"Preparadas pelos alquimistas Hookmask, essas poções muito valiosas raramente são vistas intactas."},"cave_spider_leg":{"desc":"Este apêndice quitinoso é adaptado a ambientes cavernosos... Espera, ainda está se mexendo?","price":"167"},"spider_fangs":{"desc":"Praticamente sem veneno, mas ainda afiadas o bastante para causar um ferimento feio."},"fox_trophy":{"desc":"Diga adeus aos pesadelos com este prático filtro dos sonhos! Exceto aqueles com raposas furiosas, claro... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Velocidade. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"igneous_ice_shard":{"desc":"Este fragmento, duro como diamante, transborda energia elemental. O poder da Praga Branca na palma da sua mão."},"ripper_fang":{"desc":"Uma presa monstruosa, capaz de rasgar armadura, carne e osso com igual facilidade."},"elemental_crystal":{"desc":"No lugar de um coração, algumas criaturas carregam um cristal potente como este."},"fox_fur":{"desc":"O pelo de raposa há muito adorna os ombros dos ricos e poderosos, e agora você pode oficialmente entrar para essas fileiras.","price":"257"},"dwarf_trophy":{"desc":"Agora você pode treinar batalhas contra esses guerreiros robustos! Ele parece meio alto demais, na verdade... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Defesa contra Armas. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"dwarven_coin":{"desc":"Desde que alguém se lembra, os anões cunham e usam essas moedas como moeda corrente por toda a terra."},"ancient_ingot":{"desc":"Um selo de pedra valioso, concedido apenas aos membros dos clãs anões mais proeminentes."},"complex_schematics":{"desc":"Informações valiosas sobre tecnologia exótica... desde que você consiga entender os diagramas.","price":"205"},"dwarven_beard":{"desc":"Um símbolo de linhagem e orgulho, que encapsula o espírito indomável do povo anão.","price":"128"},"deep_sea_bladder":{"desc":"As bexigas de animais marinhos das profundezas são muito valorizadas para uso como cantis de água e equipamento de flutuação.","price":"257"},"exotic_fin":{"desc":"Usada em várias receitas. O cheiro não é desagradável, mas pode ser percebido a longas distâncias."},"bat_wing":{"desc":"Escura e coriácea, esta asa certamente pertenceu a um morcego de tamanho considerável.","price":"154"},"fading_light_bulb":{"desc":"Necessária para construir várias peças de navio. Não acende mais, mas ainda tem utilidade."},"fish_mucus":{"desc":"Apesar de desagradável ao toque, quando exposto a ar seco e quente esse muco endurece, formando um selante básico que ajuda a conservar mercadorias. Muitos mercadores o usam em viagens longas.","price":"51"},"warhog_trophy":{"desc":"Tente não treinar com esse boneco de manhã, ou vai começar a desejar bacon. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Força e +1% de Vitalidade. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"bone_ring":{"desc":"Usado no focinho ou no braço para simbolizar todos os inimigos que um Warhog já abateu; dá pra imaginar de qual osso e de qual criatura ele veio originalmente.","price":"90"},"chewacabra_blood":{"desc":"Diz-se que o sangue de um Chewacabra carrega a magia armazenada de todas as criaturas de que já se alimentou; magos do sangue costumam experimentar com esse conhecimento em suas práticas profanas.","price":"308"},"chewacabra_tusk":{"desc":"Considerada uma peça de colecionador por alguns caçadores. Os Ghaz, porém, acreditam que ela traz azar.","price":"205"},"goblinhide_scroll":{"desc":"Warhogs detestam goblins e, para amedrontar o inimigo, os esfolam e usam esses pergaminhos como troféus."},"goblin_trophy":{"desc":"Um alvo perfeito para treinar suas habilidades de saque! Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Inteligência e +1% de Destreza. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"sageheart_fragment":{"desc":"Um fragmento do lendário anel Sageheart; diz-se que o anel melhora Sabedoria e Vitalidade. Se levado à pessoa certa, poderia ser restaurado..."},"sporewalker_trophy":{"desc":"O conteúdo desses frascos é desconhecido, e talvez seja melhor que continue assim... considerando a origem. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +6% de Mana Máxima. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"perfect_sporecap":{"desc":"Este chapéu de cogumelo é impecável e imaculado, muito valorizado por suas diversas aplicações místicas e cerimoniais.","price":"2957"},"cracked_soul_orb":{"desc":"Usado para energizar mechas goblin. Uma energia estranha irradia pelas rachaduras.","price":"1285"},"trunk_trophy":{"desc":"Ele só fica rosnando e tentando te morder. Felizmente, é do tamanho de um bocado. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Regeneração de Mana. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"enchanted_acorn":{"desc":"A semente mágica de uma árvore ancestral; quem sabe o que poderia brotar se você a plantasse no solo — melhor não arriscar.","price":"771"},"hardwood":{"desc":"Embora seja muito difícil de trabalhar, armas e ferramentas feitas dessa madeira semelhante a pedra são quase inquebráveis."},"hexing_eye":{"desc":"Quem encara por tempo demais logo sente dores de cabeça e náusea... em um duelo de olhares, o olho sempre vence.","price":"360"},"booty_stash":{"desc":"Saquear, pilhar e roubar são o ofício de um pirata. O conteúdo deste baú pode render um bom preço, desde que você não se importe com a origem.","price":"282"},"brass_telescope":{"desc":"Este grande telescópio é montado em navios maiores para permitir que a tripulação enxergue através das nuvens quando as estrelas ficam encobertas.","price":"514"},"infamous_doubloon":{"desc":"Por mais desorganizados que os piratas possam parecer, todos concordam em uma coisa: o valor do ouro e do sangue."},"platinum_compass":{"desc":"Isto já pertenceu a um marinheiro rico; agora vai servir para encher seus bolsos de prata.","price":"1800"},"foreign_alcohol":{"desc":"Usado em várias receitas. É transparente e o cheiro não é agressivo. Dá para ver pequenos grãos flutuando no líquido."},"chainwraith_trophy":{"desc":"O reflexo neste espelho parece ter vontade própria! Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Sabedoria e +1% de Força. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"netherweave_fragment":{"desc":"Um fragmento do lendário anel Netherweave; diz-se que o anel melhora Vitalidade e Destreza. Se levado à pessoa certa, poderia ser restaurado..."},"chainsunder_flail":{"desc":"As correntes que chacoalham de um espectro assombram os pesadelos de muita gente, mas o mangual preso à corrente é muito mais perigoso.","price":"540"},"ethereal_cloak":{"desc":"Uma capa assombrada, encharcada da energia e da tristeza dos mortos inquietos.","price":"347"},"ghastly_lamp":{"desc":"Esta lamparina sinistra não dá calor algum; pelo contrário, deixa quem a carrega se sentindo esgotado e vazio.","price":"128"},"dark_insight_fragment":{"desc":"Um fragmento do lendário anel Dark Insight; diz-se que o anel melhora Inteligência e Destreza. Se levado à pessoa certa, poderia ser restaurado..."},"gazer_trophy":{"desc":"Algumas pessoas têm gostos alternativos em decoração de interiores. E então tem você... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Regeneração de Mana. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"underearth_gem":{"desc":"Gema opaca de valor incalculável; acredita-se que venha do misterioso domínio conhecido como Underearth."},"despair_inducing_gland":{"desc":"Esta glândula parece pulsar mesmo removida do corpo do Gazer; encará-la por tempo demais provoca uma onda de tristeza, e por um instante você acha que ela também está encarando você.","price":"334"},"eerie_bone_plate":{"desc":"Esta placa de osso é espessa e única, uma armadura natural feita para proteger o funcionamento interno da criatura de onde veio.","price":"102"},"frozen_meat":{"desc":"Este pedaço de carne está morno, mas rígido, como se estivesse congelado.","price":"797"},"monstrous_mane":{"desc":"Isto já pertenceu a uma fera verdadeiramente monstruosa."},"oversized_flea":{"desc":"A suculência deste inseto mostra que ele teve uma boa fonte de alimento durante toda a vida."},"winterwool":{"desc":"Pelo de excelente qualidade; confere ótimo isolamento e proteção a qualquer peça de roupa em que for costurado."},"amber_eye_gem":{"desc":"Stonelings costumam carregar várias gemas dentro do corpo, mas os olhos deles são sempre feitos de âmbar puro.","price":"514"},"exotic_fungus":{"desc":"Este cogumelo é incrivelmente resistente e adaptável, capaz de prosperar em uma grande variedade de ambientes, desde que possa contar com seu hospedeiro para transporte e proteção."},"demon_trophy":{"desc":"Se você se aproximar, consegue ouvir sussurros estranhos em uma língua incompreensível. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Impacto. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"voidmind_fragment":{"desc":"Um fragmento do lendário anel Voidmind; diz-se que o anel melhora Inteligência e Força. Se levado à pessoa certa, poderia ser restaurado..."},"demonic_essence":{"desc":"Este núcleo estável, repleto de energia sombria, contamina tudo que toca. A exposição prolongada à pele começa a queimar e apodrecer a vítima."},"cutting_edge_scrap":{"desc":"Fragmentos de metal afiados como lâminas. Manuseados com cuidado, podem ser forjados em armas mortais."},"demon_core":{"desc":"Um núcleo demoníaco é o que serve de coração para os demônios; é um item potente e magicamente sintonizado, mas segurá-lo por tempo demais não é recomendado."},"crow_mask":{"desc":"Usada com frequência pelas mais poderosas entre as Crowmaidens, esta máscara parece coberta de glifos feiticeiros."},"essence_of_darkness":{"desc":"Esta pedra abriga o próprio núcleo da sombra, uma manifestação concentrada da noite primordial.","price":"2571"},"direhorn_drake_trophy":{"desc":"Para alguns, um touro em disparada é uma visão aterrorizante; para você, é só um aperitivo. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Destreza e +1% de Vitalidade. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"galeforce_fragment":{"desc":"Um fragmento do lendário anel Galeforce; diz-se que o anel melhora Destreza e Força. Se levado à pessoa certa, poderia ser restaurado..."},"jackal_trophy":{"desc":"Apesar de quererem se distanciar de seu antigo mestre, o amor dos chacais pelo ouro é um sinal claro dessa conexão. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Defesa Mágica. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"mindsurge_fragment":{"desc":"Um fragmento do lendário anel Mindsurge; diz-se que o anel melhora Vitalidade e Inteligência. Se levado à pessoa certa, poderia ser restaurado..."},"beastly_distillate":{"desc":"Um fluido potente destilado da essência de criaturas primordiais; encarna a ferocidade indomável e o poder inexplorado da natureza selvagem."},"draconic_hide":{"desc":"Transformar este material em peças de armadura maravilhosas não chega nem à metade da dificuldade de obtê-lo."},"draconic_wings":{"desc":"Se não coubessem em um humanoide, seria fácil acreditar que essas asas um dia pertenceram a um verdadeiro dragão.","price":"1285"},"fiery_essence":{"desc":"Este núcleo estável fervilha de energia natural ardente. Se prestar atenção, você até consegue ouvi-lo chiar!"},"golden_ruby_belt":{"desc":"Um cinto feito de adornos finos para exibir a riqueza de seu dono.","price":"192"},"red_horns":{"desc":"Apesar de menores que os chifres de muitas criaturas, estes ainda são incrivelmente afiados e quentes ao toque.","price":"154"}};
   function itemIconUrl(itemId){ return URL_BASE + 'items/loot/' + itemId + '.png'; }
   // Fraquezas elementais por bicho: o jogo só guarda "fraco contra: [elemento]"
   // (1-2 elementos), não uma tabela de % por tipo de dano como o jogo de
@@ -1400,7 +1440,8 @@
   let currentTrade = null;
   let fragments = 0; // Fragmentos do Altar — moeda do Reset de Estrela
   let starEvolutionCost = null; // {gold,fragments} para a próxima estrela; null quando já é Diamante
-  let skillTree = { levels: { fogo:{}, agua:{}, terra:{}, ar:{}, luz:{}, trevas:{} }, ultimateChoice: { fogo:null, agua:null, terra:null, ar:null, luz:null, trevas:null } };
+  let archetypes = { chosen: [], className: null }; // os 3 arquétipos de classe escolhidos (+ nome de classe resolvido pelo servidor)
+  let skillTree = { levels: {} }; // preenchido abaixo assim que ARCHETYPE_IDS existir (ver bloco da Árvore de Habilidades)
   let usedFreeSkillReset = false;
   let skillPoints = { total:0, spent:0 };
   let elementalCoins = 0;
@@ -2841,10 +2882,15 @@
     cosmeticColors = msg.cosmeticColors || cosmeticColors;
     hasTrainingKit = !!msg.hasTrainingKit; canTrainAtDummy = !!msg.canTrainAtDummy;
     trainingActive = msg.trainingActive || null; offlineTrainingArmed = msg.offlineTrainingArmed || null;
+    if(msg.archetypes) archetypes = msg.archetypes;
     if(msg.skillTree) skillTree = msg.skillTree;
     if(msg.skillPoints) skillPoints = msg.skillPoints;
     if(typeof msg.elementalCoins === 'number') elementalCoins = msg.elementalCoins;
     if(typeof msg.usedFreeSkillReset === 'boolean') usedFreeSkillReset = msg.usedFreeSkillReset;
+    if(msg.statAllocation) statAllocation = msg.statAllocation;
+    if(msg.statPoints) statPoints = msg.statPoints;
+    if(msg.statAttributes) statAttributes = msg.statAttributes;
+    if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
     if(msg.materials) materials = msg.materials;
     if(typeof msg.rankScore === 'number') rankScore = msg.rankScore;
@@ -3048,10 +3094,12 @@
         logLoot('⚠️ Você precisa estar no nível 100 pra evoluir de estrela.');
       }
     }
-    if(msg.forType === 'skill:chooseUltimate'){
-      if(!msg.ok){
-        const reasonMap = { tipo_invalido:'essa opção não é válida pra esse elemento.', ja_investido_use_reset:'esse elemento já tem pontos salvos no nó 15/30 — resete pra escolher de novo.' };
-        logLoot(`⚠️ Não foi possível escolher: ${reasonMap[msg.reason] || msg.reason}`);
+    if(msg.forType === 'archetype:chooseSlot'){
+      if(msg.ok){
+        logLoot(`⚔️ Classe definida: ${msg.className || 'arquétipos escolhidos'}!`);
+      } else {
+        const reasonMap = { slot_invalido:'slot inválido.', slot_bloqueado:'esse slot ainda está bloqueado.', arquetipo_invalido:'arquétipo inválido — só os 8 arquétipos de combate entram na classe.', arquetipo_ja_escolhido_em_outro_slot:'esse arquétipo já está em outro slot.', ouro_insuficiente:`trocar de arquétipo nesse slot custa ${ARCHETYPE_SWAP_GOLD_COST} Gold.` };
+        logLoot(`⚠️ Não foi possível escolher a classe: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderSkillTreeIfOpen();
     }
@@ -3097,7 +3145,7 @@
     }
     if(msg.forType === 'skill:save'){
       if(msg.ok){
-        logLoot(`🌳 Árvore de ${ELEMENT_LABEL[pendingSaveElement]||''} salva!`);
+        logLoot(`🌳 Árvore de ${ARCHETYPE_LABEL[pendingSaveArchetypeId]||''} salva!`);
         // NÃO zera pendingSkillLevels aqui: o snapshot 'hunt:state' com o
         // skillTree já persistido no servidor ainda não chegou nesse exato
         // instante (chega no próximo tick, alguns ms depois). Zerar na hora
@@ -3108,7 +3156,7 @@
         // draftIsDirty já volta sozinho a false assim que o snapshot real
         // alcançar o mesmo valor.
       } else {
-        const reasonMap = { cadeia_invalida:'existe uma lacuna na corrente de nós.', pontos_insuficientes:'você não tem pontos suficientes pra esse plano.' };
+        const reasonMap = { arquetipo_fechado:'esse arquétipo não está aberto pra você.', arquetipo_invalido:'arquétipo inválido.', pontos_insuficientes:'você não tem pontos suficientes pra esse plano.' };
         logLoot(`⚠️ Não foi possível salvar: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderSkillTreeIfOpen();
@@ -3119,10 +3167,20 @@
         // Mesmo motivo do save acima: aplica o resultado JÁ CONHECIDO (zerado)
         // direto no rascunho, em vez de anular e esperar o próximo snapshot —
         // evita mostrar por um instante os pontos antigos "voltando".
-        pendingSkillLevels[activeSkillElementTab] = {};
+        pendingSkillLevels[activeSkillArchetypeTab] = {};
       }
       else if(msg.reason === 'moedas_insuficientes') logLoot(`⚠️ Você precisa de ${ELEMENTAL_COIN_RESET_COST} Elemental Coin pra resetar.`);
       else logLoot(`⚠️ Reset falhou: ${msg.reason}`);
+      renderSkillTreeIfOpen();
+    }
+    if(msg.forType === 'stat:allocate' && !msg.ok){
+      const reasonMap = { stat_invalido:'status inválido.', delta_invalido:'ação inválida.', pontos_insuficientes:'você não tem pontos de status suficientes.', valor_invalido:'esse status já está em 0.' };
+      logLoot(`⚠️ ${reasonMap[msg.reason] || msg.reason}`);
+    }
+    if(msg.forType === 'stat:reset'){
+      if(msg.ok) logLoot('♻️ Status resetado — pontos devolvidos.');
+      else if(msg.reason === 'elemental_coin_insuficiente') logLoot(`⚠️ Você precisa de ${msg.cost || STAT_RESET_COST_CLIENT} Elemental Coin pra resetar o Status.`);
+      else logLoot(`⚠️ Reset de Status falhou: ${msg.reason}`);
       renderSkillTreeIfOpen();
     }
     if(msg.forType === 'shop:buyElementalCoins'){
@@ -4240,119 +4298,146 @@
      (poções automáticas por %); a hotbar aqui é a configuração
      visual das condições — igual à barra expandida pedida.
      ========================================================= */
-  /* ---- ÁRVORE DE HABILIDADES ELEMENTAL — dados/catálogo (espelha
-     exatamente o grafo gerado em huntEngine.js: mesmos ids/nomes/
-     descrições, só pra desenhar a UI; quem valida e persiste os níveis
-     de verdade é sempre o servidor). Fica aqui, antes da hotbar, porque
-     renderHotbar() já usa getUnlockedSpells() no primeiro render
-     síncrono da página. ---- */
-  const ELEMENT_IDS = ['fogo','agua','terra','ar','luz','trevas'];
-  const ELEMENT_LABEL = { fogo:'Fogo', agua:'Água', terra:'Terra', ar:'Ar', luz:'Luz', trevas:'Trevas' };
-  const ELEMENT_TAB_COLOR = { fogo:'var(--fogo, #e2542b)', agua:'var(--agua, #3aa0c9)', terra:'var(--terra, #8a6a3a)', ar:'var(--ar, #bcd9d0)', luz:'var(--luz, #f0d38a)', trevas:'var(--trevas, #8a5ad6)' };
-  const SPELL_ICON = { fogo:'🔥', agua:'💧', terra:'🪨', ar:'🌪️', luz:'✨', trevas:'🌑' };
-  const CATEGORY_ICON = { attack:'⚔️', defense:'🛡️', support:'💚', semiUltimate:'🌟', ultimate:'👑' };
-  const ELEMENTAL_COIN_RESET_COST = 150;
-  // e15 (Semi Ultimate) e e30 (Ultimate) não têm nome fixo: o jogador
-  // ESCOLHE entre Ataque/Defesa (e também Cura, só no caminho de Luz) na
-  // 1ª vez que investe no nó 15 — por isso cada elemento tem um nome/
-  // descrição por opção (semiOptions/ultimateOptions), igual ao servidor.
-  const ELEMENT_WORDBANK = {
-    fogo: { starter:'Bola de Fogo', appliesState:'queimando',
-      attack:['Fagulha Perfurante','Labareda Cortante','Chama Voraz','Brasa Perfurante','Incandescência','Fogo Fátuo','Cinza Ardente','Fúria Ígnea','Coração da Fornalha','Chuva de Faíscas','Lança Flamejante','Investida em Chamas'],
-      defense:['Escudo de Brasa','Manto Cinzento','Couraça Ardente','Pele de Magma','Barreira Incandescente','Casca Vulcânica','Anel de Fogo','Bastião Flamejante','Resistência Ígnea','Cúpula de Lava','Armadura Vulcânica','Fortaleza Ardente'],
-      support:['Sopro Quente','Bênção da Fornalha','Calor Vital','Chama Curativa','Fôlego Ardente','Aura de Brasa','Vigor Flamejante','Toque da Fênix','Fagulha Vital','Rescaldo Reconfortante','Chama Renovadora','Ânimo Ígneo'],
-      semiOptions:{ attack:{name:'Erupção Menor', desc:'Uma erupção de Fogo que atinge o alvo com força considerável e aplica Queimando.'}, defense:{name:'Manto Vulcânico Menor', desc:'Ergue um escudo de Fogo mais robusto, absorvendo bastante dano por um tempo.'} },
-      ultimateOptions:{ attack:{name:'Nova Explosiva', desc:'Explosão em área — dano de Fogo em todos os inimigos próximos e aplica Queimando.'}, defense:{name:'Coração Vulcânico', desc:'Ergue uma cúpula de magma em área — absorve grande parte do dano recebido por alguns segundos.'} } },
-    agua: { starter:'Flecha de Água', appliesState:'molhado',
-      attack:['Lâmina de Maré','Jato Cortante','Correnteza Furiosa','Investida Aquática','Chicote de Água','Estilhaço Gélido','Golpe da Maré','Redemoinho Cortante','Fúria das Profundezas','Lança de Gelo','Onda Perfurante','Maré Vingativa'],
-      defense:['Escudo de Maré','Manto Aquático','Couraça de Gelo','Bolha Protetora','Barreira Líquida','Casca de Coral','Névoa Densa','Bastião das Marés','Resistência Glacial','Cúpula Líquida','Armadura de Gelo','Fortaleza Abissal'],
-      support:['Sopro Refrescante','Bênção das Águas','Orvalho Vital','Maré Curativa','Fôlego das Profundezas','Aura Aquática','Vigor da Correnteza','Toque das Marés','Gota Vital','Rescaldo Sereno','Água Renovadora','Ânimo das Águas'],
-      semiOptions:{ attack:{name:'Maré Impetuosa', desc:'Uma onda de Água que empurra e atinge o alvo com força, aplicando Molhado.'}, defense:{name:'Bolha Menor', desc:'Envolve o jogador numa bolha d’água que absorve boa parte do dano recebido.'} },
-      ultimateOptions:{ attack:{name:'Maré Congelante', desc:'Onda em área — aplica Molhado e Congela (imobiliza) quem já estiver Molhado.'}, defense:{name:'Prisão de Gelo', desc:'Ergue uma muralha de gelo em área — absorve grande parte do dano recebido por alguns segundos.'} } },
-    terra: { starter:'Punho de Terra', appliesState:null,
-      attack:['Punho de Pedra','Lança de Rocha','Estilhaço Cortante','Investida Rochosa','Golpe Sísmico','Fragmento de Granito','Impacto Telúrico','Chicote de Raízes','Fúria da Montanha','Espinho de Pedra','Avalanche Menor','Golpe Tectônico'],
-      defense:['Escudo de Pedra','Manto Rochoso','Couraça Granítica','Pele de Basalto','Barreira Terrena','Casca Mineral','Anel de Raízes','Bastião Rochoso','Resistência Telúrica','Cúpula de Pedra','Armadura de Granito','Fortaleza Montanhosa'],
-      support:['Sopro da Terra','Bênção da Montanha','Raiz Vital','Solo Curativo','Fôlego Mineral','Aura Rochosa','Vigor Telúrico','Toque da Raiz','Fragmento Vital','Rescaldo da Terra','Pedra Renovadora','Ânimo Telúrico'],
-      semiOptions:{ attack:{name:'Punho Sísmico Menor', desc:'Um golpe sísmico de Terra que atinge o alvo com força considerável.'}, defense:{name:'Muralha Menor', desc:'Ergue uma barreira de Terra que absorve parte do dano recebido.'} },
-      ultimateOptions:{ attack:{name:'Terremoto', desc:'Abalo em área — dano de Terra contínuo em todos os inimigos próximos.'}, defense:{name:'Muralha Absoluta', desc:'Ergue uma barreira em área — absorve dano recebido por alguns segundos (escudo).'} } },
-    ar: { starter:'Lâmina de Ar', appliesState:'ventania',
-      attack:['Rajada Cortante','Investida do Vendaval','Golpe da Tempestade','Chicote de Ar','Estilhaço de Vento','Fúria dos Ventos','Redemoinho Cortante','Lança de Vento','Sopro Perfurante','Ciclone Menor','Tornado Vingativo','Corte do Vendaval'],
-      defense:['Escudo de Vento','Manto do Vendaval','Couraça Aérea','Barreira de Ar','Redoma de Vento','Casca Etérea','Anel dos Ventos','Bastião do Vendaval','Resistência Aérea','Cúpula de Vento','Armadura Etérea','Fortaleza dos Ventos'],
-      support:['Sopro Leve','Bênção do Vendaval','Brisa Vital','Ar Curativo','Fôlego dos Céus','Aura Etérea','Vigor dos Ventos','Toque da Brisa','Corrente Vital','Suspiro Reconfortante','Vento Renovador','Ânimo dos Céus'],
-      semiOptions:{ attack:{name:'Rajada Selvagem', desc:'Uma rajada poderosa de Ar que causa dano e aplica Ventania.'}, defense:{name:'Redoma Menor', desc:'Envolve o jogador num redemoinho protetor que absorve parte do dano recebido.'} },
-      ultimateOptions:{ attack:{name:'Vendaval Cortante', desc:'Tempestade em área — dano de Ar contínuo e empurra os inimigos para longe.'}, defense:{name:'Olho da Tempestade', desc:'Ergue um vórtice protetor em área — absorve grande parte do dano recebido por alguns segundos.'} } },
-    luz: { starter:'Golpe Sagrado', appliesState:'marcado',
-      attack:['Facho Perfurante','Lança Radiante','Golpe Celestial','Investida Sagrada','Raio Purificador','Estilhaço de Luz','Fúria Divina','Chicote Radiante','Lâmina Celeste','Brilho Cortante','Julgamento Menor','Golpe da Aurora'],
-      defense:['Escudo Sagrado','Manto Radiante','Couraça Celestial','Barreira de Luz','Redoma Divina','Casca Luminosa','Anel Sagrado','Bastião Radiante','Resistência Celestial','Cúpula de Luz','Armadura Divina','Fortaleza Sagrada'],
-      support:['Sopro Celeste','Bênção Divina','Luz Vital','Toque Sagrado','Fôlego Radiante','Aura Celestial','Vigor Divino','Carícia da Aurora','Brilho Vital','Rescaldo Sagrado','Luz Renovadora','Ânimo Celestial'],
-      semiOptions:{ attack:{name:'Julgamento Menor', desc:'Um facho de Luz que fere e Marca o alvo com força.'}, defense:{name:'Anteparo Sagrado Menor', desc:'Ergue um escudo de Luz que absorve parte do dano recebido.'}, heal:{name:'Facho Restaurador', desc:'Um facho de Luz que restaura parte do HP do jogador.'} },
-      ultimateOptions:{ attack:{name:'Julgamento Solar', desc:'Explosão de Luz em área — dano Sagrado em todos os inimigos próximos e Marca todos.'}, defense:{name:'Domo Celestial', desc:'Ergue uma cúpula de Luz em área — absorve grande parte do dano recebido por alguns segundos.'}, heal:{name:'Luz Restauradora', desc:'ÚNICA ultimate de cura do jogo — restaura HP em área por alguns segundos.'} } },
-    trevas: { starter:'Corte das Trevas', appliesState:null,
-      attack:['Lâmina Sombria','Toque do Vazio','Golpe Umbrio','Investida das Trevas','Corte Espectral','Estilhaço Sombrio','Fúria do Abismo','Chicote Sombrio','Lança do Vazio','Sopro Sombrio','Golpe Umbral','Investida Espectral'],
-      defense:['Escudo Sombrio','Manto das Sombras','Couraça Umbria','Barreira do Vazio','Redoma Sombria','Casca Espectral','Anel Umbrio','Bastião das Sombras','Resistência Umbria','Cúpula Sombria','Armadura Espectral','Fortaleza do Abismo'],
-      support:['Dreno Vital','Toque Vampírico','Sugar Sombrio','Absorção Umbria','Fôlego do Vazio','Aura Sombria','Vigor das Sombras','Carícia do Abismo','Essência Roubada','Rescaldo Sombrio','Sombra Renovadora','Ânimo Umbrio'],
-      semiOptions:{ attack:{name:'Ceifar Menor', desc:'Um golpe sombrio que causa dano verdadeiro, maior contra alvos com pouca vida.'}, defense:{name:'Véu Sombrio Menor', desc:'Envolve o jogador em sombras que absorvem parte do dano recebido.'} },
-      ultimateOptions:{ attack:{name:'Ceifar das Sombras', desc:'Golpe em área — dano verdadeiro de Trevas, maior contra alvos com pouca vida.'}, defense:{name:'Véu do Abismo', desc:'Envolve a área em sombras densas — absorve grande parte do dano recebido por alguns segundos.'} } },
-  };
-  const ULTIMATE_KIND_LABEL = { attack:'Ataque', defense:'Defesa', heal:'Cura' };
-  function allowedUltimateKindsClient(elementId){ return elementId==='luz' ? ['attack','defense','heal'] : ['attack','defense']; }
-  // Resolve nome/descrição reais do nó 15/30 pra exibição, de acordo com a
-  // escolha já SALVA no servidor pra esse elemento (skillTree.ultimateChoice).
-  function resolveMilestoneDisplay(elementId, category, chosenKind){
-    const wb = ELEMENT_WORDBANK[elementId];
-    const pool = category==='semiUltimate' ? wb.semiOptions : wb.ultimateOptions;
-    if(chosenKind && pool[chosenKind]) return pool[chosenKind];
-    return { name: category==='semiUltimate' ? 'Semi Ultimate' : 'Ultimate', desc: 'Escolha entre Ataque, Defesa' + (elementId==='luz' ? ' ou Cura' : '') + ' ao investir o 1º ponto neste nó.' };
+  /* ---- ÁRVORE DE HABILIDADES — 10 ARQUÉTIPOS REAIS DE RAVENDAWN (dados/
+     catálogo espelham exatamente o que huntEngine.js usa no servidor:
+     mesmos ids/nomes/descrições reais da wiki, custos por linha e regras de
+     pré-requisito/passiva, só pra desenhar a UI; quem valida e persiste os
+     níveis de verdade é sempre o servidor). Fica aqui, antes da hotbar,
+     porque renderHotbar() já usa getUnlockedSpells() no primeiro render
+     síncrono da página.
+
+     Substituiu o antigo sistema de 6 elementos x 30 nós procedurais — agora
+     o jogador tem até 3 SLOTS de arquétipo (slot 0 já vem escolhido na
+     criação do personagem; slot 1 abre no nível efetivo 7; slot 2 no nível
+     15 — ver ARCHETYPE_SLOT_UNLOCK_LEVEL), escolhidos entre os 8 arquétipos
+     "combatíveis" (Warfare, Protection, Shadow, Archery, Wizardry, Holy,
+     Spiritual, Witchcraft). 3 arquétipos preenchidos resolvem o nome de uma
+     classe real (ex.: Wizardry+Holy+Spiritual = "Sage", ver
+     RAVENDAWN_CLASS_TABLE, extraído do PDF enviado pelo usuário). Ballistics
+     e Naturalist ficam sempre abertos como trilhas utilitárias à parte (não
+     entram em nenhuma combinação de classe, nem ocupam slot).
+
+     Cada arquétipo tem ~19 magias reais (12 Ativas + 1 Legacy + 6 Passivas,
+     11 Ativas pra Holy), nome+descrição em português extraídos da wiki
+     oficial — descrição REAL sempre visível no card (pedido explícito do
+     usuário: "não esqueça de colocar todas as descrições das habilidades").
+     Regras REAIS copiadas das telas de referência do jogo (prints
+     enviados): 2 Ativas por linha = 6 linhas; custo de uma Ativa/Legacy é
+     (linha + níveis já upados nela), i.e. 1ª compra da linha 1 custa 1, 2ª
+     upgrade custa 2, 3ª custa 3...; só dá pra destravar uma skill de uma
+     linha se já tiver pelo menos 1 ponto numa skill da linha anterior;
+     Passiva é BINÁRIA (0 ou 1), custa 2 pontos fixos, e só destrava depois
+     de já ter investido em pelo menos 3 Ativas distintas naquele arquétipo
+     (upgrades não contam pra esse "3", só skills diferentes destravadas).
+     Total de Pontos de Habilidade = nível efetivo/10 + pontos bônus (Torres
+     etc.) + 1 ponto pra cada 10 níveis já investidos em arquétipos que
+     ficaram INATIVOS (trocados de slot, mas sem perder o que foi
+     investido). ---- */
+  const RAVENDAWN_SPELLS = JSON.parse(`[{"name":"Brutal Strike","archetype":"Warfare","kind":"Active Ability","desc":"Causa 100% Weapon Power de dano de arma ao alvo. Cada terceira Brutal Strike cura 50% Weapon Power de sua vida."},{"name":"Guillotine","archetype":"Warfare","kind":"Active Ability","desc":"Causa 50% Weapon Power de dano de arma ao alvo. Aumenta o dano em 45% Weapon Power para cada 10 Aether consumidos."},{"name":"Shieldbreak","archetype":"Warfare","kind":"Active Ability","desc":"Causa 100% Weapon Power de dano de arma e reduz a Weapon Defense em 5% Weapon Power por 8 segundos. Adiciona 3% Weapon Power de redução de Weapon Defense para cada 10 Aether consumidos. O alcance dessa habilidade se adapta à arma equipada."},{"name":"Bull Rush","archetype":"Warfare","kind":"Active Ability","desc":"Avança em direção ao alvo, causando 40% de Lentidão por 3 segundos, e 50% Weapon Power de dano de arma."},{"name":"Pummel","archetype":"Warfare","kind":"Active Ability","desc":"Interrompe a canalização de uma habilidade do alvo e causa 150% Weapon Power de dano de arma. Uma habilidade interrompida não pode ser usada novamente pelos próximos 5 segundos."},{"name":"Feasting Strike","archetype":"Warfare","kind":"Active Ability","desc":"Causa 100% Weapon Power de dano de arma ao alvo. Cura 50% Weapon Power de vida para cada 10 Aether consumidos. O alcance dessa habilidade se adapta à arma equipada."},{"name":"Bladestorm","archetype":"Warfare","kind":"Active Ability","desc":"Canaliza por até 2 segundos e causa até 160% Weapon Power de dano de arma em uma área média. Pressionar o botão da habilidade novamente fará com que ela seja conjurada com os respectivos bônus da canalização. Cura 20% Weapon Power de vida para cada alvo atingido. É possível se movimentar enquanto canaliza, mas sob o efeito de 50% de Lentidão. Adiciona 20% Weapon Power de dano e 4% Weapon Power de cura para cada 10 Aether consumidos."},{"name":"Fissure","archetype":"Warfare","kind":"Active Ability","desc":"Causa 125% Weapon Power de dano de arma e 1,5 segundo de Atordoamento, aos alvos em uma área em forma de cone. Aumenta o Atordoamento em 0,2 segundo para cada 10 Aether consumidos."},{"name":"Spiked Chains","archetype":"Warfare","kind":"Active Ability","desc":"Lança correntes em uma área em forma de cone na sua frente que causam 1,5 segundo de enraizamento e puxam o alvo para sua direção caso haja espaço."},{"name":"Earthquake","archetype":"Warfare","kind":"Active Ability","desc":"Causa 100% Weapon Power de dano de arma em uma área média e 40% de Lentidão por 6 segundos. Aumenta o dano em 20% Weapon Power para cada 10 Aether consumidos."},{"name":"Fierce Leap","archetype":"Warfare","kind":"Active Ability","desc":"Salta até um local e desfere um golpe no chão em uma área média que causa 200% Weapon Power de dano de arma, 2 segundos de Atordoamento nos alvos em uma área pequena e 50% de Lentidão em uma área média."},{"name":"Berserk","archetype":"Warfare","kind":"Active Ability","desc":"Gera 100 Aether após 1,5 segundo e um adicional de 50 aether a cada 5 segundos por 15 segundos."},{"name":"Chaos Chains","archetype":"Warfare","kind":"Legacy Ability","desc":"Correntes puxam todos os alvos em sua direção em uma área grande, causando 300% Weapon Power de dano de arma e 60% de Lentidão por 2 segundos, e aplicando um Sangramento por 4 segundos, causando 90% Weapon Power de dano de arma a cada 1 segundo."},{"name":"Savagery","archetype":"Warfare","kind":"Passive Ability","desc":"Seus acertos críticos de ataques básicos causam Feridas Profundas ao alvo. Cada acúmulo de Feridas Profundas causa 5% Weapon Power de dano de arma ao alvo a cada 1 segundo durante 5 segundos (Máx. 10 acúmulos). Acúmulos subsequentes reiniciarão a duração."},{"name":"Bloodlust","archetype":"Warfare","kind":"Passive Ability","desc":"Ao ficar com menos de 50% de vida, aumenta 10% Weapon Power, 20% de chance de acerto crítico por 10 segundos, e cura si mesmo em 5% do dano causado. Este efeito ocorre uma vez a cada 60 segundos. Sempre que conjurar Brutal Strike, reduz o Tempo de Recarga de Bloodlust em 2 segundos."},{"name":"Hatred","archetype":"Warfare","kind":"Passive Ability","desc":"Ao receber dano, gera 1 acúmulo de Ira por 6 segundos. Cada acúmulo de Ira aumenta seu dano causado em 1% e o recebido em 0,5%. (Máx. 10 acúmulos)."},{"name":"Bloodseeker","archetype":"Warfare","kind":"Passive Ability","desc":"Cura 20% do dano causado por ataques básicos corpo a corpo ou 10% por ataques básicos à distância."},{"name":"Concentrated Impact","archetype":"Warfare","kind":"Passive Ability","desc":"Ao conjurar uma habilidade e causar acerto crítico, aplica Fratura ao alvo por 12 segundos. Cada acúmulo de Fratura reduz o Defense Power do alvo em 6% Weapon Power do seu dano de arma (Máx. 2 acúmulos)."},{"name":"Bloodbath","archetype":"Warfare","kind":"Passive Ability","desc":"Ao causar dano com ataques básicos, gera 1 acúmulo de Banho de Sangue por 4 segundos. Ataques básicos corpo a corpo com uma arma em cada mão e ataques básicos com uma lâmina leve concedem duas vezes mais acúmulos, enquanto ataques corpo a corpo com uma arma de duas mãos concedem quatro vezes mais (Máx. 100 acúmulos). Cada acúmulo de Banho de Sangue aumenta o dano dos ataques básicos em 0,75%."},{"name":"Wind Arrow","archetype":"Archery","kind":"Active Ability","desc":"Atira uma flecha que causa 85% Weapon Power de dano de arma ao alvo. Cada terceira Wind Arrow atira uma Wind Arrow adicional com 50% de dano."},{"name":"Viper Arrow","archetype":"Archery","kind":"Active Ability","desc":"Atira uma flecha que causa 60% Adaptive Power de dano adaptativo ao alvo e aplica Envenenamento, que causa 5% Adaptive Power de dano adaptativo por segundo durante 8 segundos. Aumenta o dano de Envenenamento em 5% Adaptive Power de dano adaptativo para cada 10 Aether consumidos."},{"name":"Concussive Shot","archetype":"Archery","kind":"Active Ability","desc":"Atira uma flecha que causa 75% Weapon Power de dano de arma e 20% de Lentidão ao alvo por 4 segundos. Aumenta a Lentidão em 5% para cada 10 Aether consumidos."},{"name":"Quick Fire","archetype":"Archery","kind":"Active Ability","desc":"Atira quatro flechas de ataque básico por 1 segundo, e cada uma causa 45% Weapon Power de dano de arma. Aumenta o dano causado em 6% Weapon Power de dano de arma para cada 10 Aether consumidos."},{"name":"Precision Shot","archetype":"Archery","kind":"Active Ability","desc":"Canaliza por 2,5 segundos para atirar uma flecha poderosa que causa 300% Weapon Power de dano de arma ao alvo. O Tempo de Conjuração é reduzido em 0,5 segundo para cada 10 Aether consumidos."},{"name":"Snaring Shot","archetype":"Archery","kind":"Active Ability","desc":"Atira uma flecha que causa 50% Adaptive Power de dano adaptativo e 2 segundos de Enraizamento. Dobra a duração de Enraizamento se o alvo for uma criatura."},{"name":"Disengage","archetype":"Archery","kind":"Active Ability","desc":"Atira uma flecha que causa 100% Weapon Power de dano de arma e 50% de Lentidão ao alvo por 1,5 segundo. O disparo faz com que você recue 2 células e o alvo 3 células."},{"name":"Rain of Arrows","archetype":"Archery","kind":"Active Ability","desc":"Atira uma chuva de flechas em uma área média por 2 segundos. Cada flecha causa 25% Weapon Power de dano de arma e 30% de Lentidão aos alvos por 1 segundo. Aumenta a duração da chuva de flechas em 0,5 segundo para cada 10 Aether consumidos."},{"name":"Dawn Arrow","archetype":"Archery","kind":"Active Ability","desc":"Atira uma flecha em uma área pequena que causa Cegueira e Confusão por 2,5 segundos aos alvos na área afetada."},{"name":"Venom Grenade","archetype":"Archery","kind":"Active Ability","desc":"Lança uma granada de veneno em uma área pequena, causando 25% Adaptive Power de dano adaptativo por segundo durante 8 segundos. Os alvos afetados recebem 30% de Lentidão e a cura recebida por eles é reduzida em 35% durante 10 segundos. Causa o dobro de dano contra criaturas."},{"name":"Dragons Arrow","archetype":"Archery","kind":"Active Ability","desc":"Atira uma flecha que faz o alvo queimar, causando 75% Adaptive Power de dano adaptativo por segundo durante 5 segundos. Cria um chão em chamas entre você e o alvo, aplicando o mesmo efeito a todos que o atravessam e 20% de Lentidão. O Tempo de Recarga é reduzido em 3 segundos a cada 10 Aether consumidos. Dragons Arrow causa 35% Adaptive Power de dano adaptativo adicional por segundo a alvos afetados por Confusão."},{"name":"Spirit Rangers","archetype":"Archery","kind":"Active Ability","desc":"Dispara nove flechas em 2 segundos, e cada uma causa 50% Weapon Power de dano de arma."},{"name":"Celestial Barrage","archetype":"Archery","kind":"Legacy Ability","desc":"Dispara 3 ondas de flechas, sendo que cada onda causa 210% Weapon Power de dano de arma e causa Enraizamento por 3 segundos aos alvos atingidos. Esta habilidade é canalizada enquanto ativa. Você se torna invulnerável e imune aos efeitos de controle de grupo enquanto estiver usando essa habilidade."},{"name":"Fleetfooted","archetype":"Archery","kind":"Passive Ability","desc":"Ao sofrer dano equivalente a pelo menos 10% da sua vida máxima dentro de 2 segundos, sua Velocidade de Movimento aumenta em 30% por 3 segundos. Este efeito pode ocorrer uma vez a cada 5 segundos."},{"name":"Clever Adaptation","archetype":"Archery","kind":"Passive Ability","desc":"Seus ataques causam 3% Weapon Power de dano de arma para cada célula entre você e o alvo, até um máximo de 6 células."},{"name":"Clear Focus","archetype":"Archery","kind":"Passive Ability","desc":"Cada ataque básico no mesmo alvo gera um acúmulo de Foco Claro por 10 segundos. No quinto acúmulo, restaura 10 Aether. Acúmulos subsequentes reiniciarão a duração."},{"name":"Careful Aim","archetype":"Archery","kind":"Passive Ability","desc":"Seus ataques a alvos com 70% ou mais de vida causam 20% a mais de dano."},{"name":"Marked for Death","archetype":"Archery","kind":"Passive Ability","desc":"Seus ataques aplicam Marcado para Morrer ao alvo, reduzindo o Defense Power dele em 0,25% por 6 segundos (Máx. 20 acúmulos). Acúmulos subsequentes reiniciarão a duração. Ao atingir 20 acúmulos, o efeito é dobrado por 2 segundos. Os acúmulos serão redefinidos quando este efeito terminar."},{"name":"Blitz","archetype":"Archery","kind":"Passive Ability","desc":"Ao causar dano com ataques básicos, há 20% de chance de realizar um ataque básico extra."},{"name":"Quick Slash","archetype":"Shadow","kind":"Active Ability","desc":"Corta o alvo, causando 105% Weapon Power de dano de arma. Cada terceira Quick Slash tem chance garantida de acerto crítico."},{"name":"Shadowstrike","archetype":"Shadow","kind":"Active Ability","desc":"Apunhala o alvo, causando 50% Weapon Power de dano de arma e aplicando Sangramento que causa 15% Weapon Power de dano de arma por 1 segundo durante 5 segundos. Aumenta o dano causado e o dano de Sangramento em 20% para cada 10 Aether consumidos."},{"name":"Shadow Kick","archetype":"Shadow","kind":"Active Ability","desc":"Chuta o alvo, causando 75% Weapon Power de dano de arma e interrompendo a conjuração de habilidade do alvo. Se uma conjuração for interrompida, aplica 30% de penalidade de Tempo de Conjuração e Tempo de Recarga Global por 4 segundos."},{"name":"Coup de Grace","archetype":"Shadow","kind":"Active Ability","desc":"Causa 300% Weapon Power de dano de arma ao alvo. Reduz o Tempo de Recarga desta habilidade em 2 segundos para cada 10 Aether consumidos."},{"name":"Stalk","archetype":"Shadow","kind":"Active Ability","desc":"Avança para trás do alvo, causando 50% de Lentidão por 2 segundos. Reduz o Weapon Power e Spell Power do alvo em 10%, e aumenta seu Weapon Power e Spell Power em 10%. Stalk pode ser reativado dentro de 3 segundos para retornar à localização inicial."},{"name":"Crippling Dagger","archetype":"Shadow","kind":"Active Ability","desc":"Lança uma adaga no alvo que causa 75% Weapon Power de dano de arma. Crippling Dagger pode ser reativada nos próximos 10 segundos para avançar à frente do alvo, causando 100% Weapon Power de dano de arma e 60% de Lentidão por 1,5 segundo."},{"name":"Shadowbind","archetype":"Shadow","kind":"Active Ability","desc":"Lança uma rede de sombras que causa 2 segundos de Enraizamento ao alvo. Aumenta a duração do Enraizamento em 0,4 segundo para cada 10 Aether consumidos."},{"name":"Anti-Healing Venom","archetype":"Shadow","kind":"Active Ability","desc":"Causa 40% Weapon Power de dano de arma ao alvo e reduz a cura recebida por ele em 20% por 5 segundos. O dano é aumentado para 60% Weapon Power de dano de arma e a redução de cura para 30% ao usar armas corpo a corpo. Aumenta a duração desta habilidade em 2 segundos para cada 10 Aether consumidos. O alcance dessa habilidade se adapta à arma equipada."},{"name":"Venomous Weapons","archetype":"Shadow","kind":"Active Ability","desc":"Pelos próximos 15 segundos, os ataques básicos reduzem o Defense Power do alvo em 1% por 8 segundos (Máx. 10 acúmulos). Acúmulos subsequentes reiniciarão a duração."},{"name":"Sinister Plot","archetype":"Shadow","kind":"Active Ability","desc":"Gera 10 Aether por segundo durante 20 segundos."},{"name":"Death Blossom","archetype":"Shadow","kind":"Active Ability","desc":"Acerta o alvo três vezes, causando 200% Weapon Power de dano de arma no total. Adiciona 60% Weapon Power de dano total para cada 10 Aether consumidos."},{"name":"Illusive","archetype":"Shadow","kind":"Active Ability","desc":"Desvia de todos os danos de ataques básicos e de habilidades que não sejam de área por 1,5 segundo mas reduz seu Weapon Power e Spell Power em 40% enquanto esta habilidade estiver ativa. Aumenta a duração em 0,5 segundo para cada 10 Aether consumidos. Illusive dura 25% a mais se estiver usando uma arma corpo a corpo."},{"name":"Reaper's Eclipse","archetype":"Shadow","kind":"Legacy Ability","desc":"Faz você desaparecer temporariamente, retalhando até 6 alvos na tela, um de cada vez, causando a eles 30% de Lentidão por 4 segundos. Causa 400% Weapon Power de dano de arma a cada alvo e 40% Weapon Power de dano de arma de Sangramento a cada 1 segundos por 5 segundos, e reduz a cura recebida de alvos afetados por 30%. Enquanto essa habilidade estiver ativa, você estará invulnerável."},{"name":"Deadly Duelist","archetype":"Shadow","kind":"Passive Ability","desc":"Ao usar duas armas ou uma lâmina leve, ganhe 15% de Velocidade de Ataque. Se não estiver usando duas armas ou uma lâmina leve, ganhe 5% de dano crítico."},{"name":"Lethal Toxins","archetype":"Shadow","kind":"Passive Ability","desc":"Aumenta a efetividade das habilidades de Lentidão em 33%."},{"name":"Shadow Proficiency","archetype":"Shadow","kind":"Passive Ability","desc":"Ao causar dano crítico, aplique um acúmulo de Ferimento Sombrio no alvo por 8 segundos. Cada acúmulo de Ferimento Sombrio reduz a cura recebida em 2%. (Máx. 10 acúmulos). Quando Ferimento Sombrio atinge 10 acúmulos, a redução de cura é dobrada por 10 segundos e todos os acúmulos são removidos."},{"name":"Killer Instinct","archetype":"Shadow","kind":"Passive Ability","desc":"Aumenta o dano que você causa aos alvos com 70% ou menos de vida em 5%. Este efeito aumenta o dano adicional para 20% contra alvos com 25% ou menos de vida."},{"name":"Trickster","archetype":"Shadow","kind":"Passive Ability","desc":"Cada acerto no alvo rouba 1% de Velocidade de Movimento por 3,5 segundos a cada 0,5 segundo. Acertos corpo a corpo dobram os acúmulos (Máx. 10 acúmulos). Causar dano a um alvo diferente remove os acúmulos do alvo anterior."},{"name":"Cheap Shot","archetype":"Shadow","kind":"Passive Ability","desc":"Ao causar dano, há 10% de chance de aumentar sua chance de acerto crítico em 10% por 6 segundos."},{"name":"Bash","archetype":"Protection","kind":"Active Ability","desc":"Gira sua arma com força, causando 100% Weapon Power de dano de arma. Cada terceiro Bash causará 100% Weapon Power de dano de arma ao alvo principal e 50% Weapon Power de dano de arma em uma área pequena ao seu redor e 20% de Lentidão por 2 segundos a todos os alvos."},{"name":"Spirits Resolve","archetype":"Protection","kind":"Active Ability","desc":"Coloca um escudo de 300% Defense Power em você por 4 segundos."},{"name":"Smiting Smash","archetype":"Protection","kind":"Active Ability","desc":"Causa 100% Weapon Power de dano de arma a todos os alvos ao seu redor, diminuindo o Attack Power em 10% e causando 10% de Lentidão por 6 segundos aos alvos atingidos. Aumenta a redução de Attack Power e a efetividade da Lentidão em 5% para cada 10 Aether consumidos."},{"name":"Provoke","archetype":"Protection","kind":"Active Ability","desc":"Força todos os alvos em uma área média a atacarem você, gerando ameaça muito alta. Todos os inimigos provocados não podem mudar de alvo por 4 segundos."},{"name":"Revenge","archetype":"Protection","kind":"Active Ability","desc":"Causa 100% Weapon Power de dano de arma ao alvo, e 25% deste dano aos alvos adjacentes. Aumenta o dano ao alvo em 30% Weapon Power e 15% ao dano causado aos alvos adjacentes a cada 10 Aether consumidos. Receber um único dano de pelo menos 10% da sua vida máxima fará com que essa habilidade ative o efeito de 50 Aether sem consumi-los por 5 segundos."},{"name":"Shield Throw","archetype":"Protection","kind":"Active Ability","desc":"Lança um escudo espiritual ao alvo que causa 30% Weapon Power de dano de arma e interrompe a conjuração de uma habilidade do alvo."},{"name":"Safeguard","archetype":"Protection","kind":"Active Ability","desc":"Concentra sua vontade de proteger em um membro do grupo, redirecionando 50% do dano recebido pelo membro do grupo selecionado a você por 10 segundos. Reduz 10% de todo o dano recebido (exceto o dano redirecionado) durante a duração do efeito."},{"name":"Banner of Protection","archetype":"Protection","kind":"Active Ability","desc":"Coloca um estandarte no chão que aumenta o Defense Power de todos os membros do grupo dentro de uma grande área ao redor do estandarte em 5% por 15 segundos. Adiciona 3% de Defense Power para cada 10 Aether consumidos."},{"name":"Spirit Shield","archetype":"Protection","kind":"Active Ability","desc":"Aumenta seu Defense Power em 10% por 8 segundos, mas reduz seu Attack Power em 10% durante este efeito. Adiciona 7% de Defense Power para cada 10 Aether consumidos."},{"name":"Blessed Earth","archetype":"Protection","kind":"Active Ability","desc":"Causa 7,5% Weapon Defense + 7,5% Spell Defense + 5% Adaptive Power por segundo em uma área média, curando o conjurador em 0,005 de Vida Máxima por segundo durante 6 segundos para cada alvo atingido (Máx. 12 alvos). Aumenta o dano em 2,5% Weapon Defense + 2,5% Spell Defense e + 3% Adaptive Power para cada 10 Aether consumidos."},{"name":"Unchained","archetype":"Protection","kind":"Active Ability","desc":"Remove qualquer efeito que prejudique movimento, como Lentidão, Atordoamento e Enraizamento, e recebe imunidade a eles por 6 segundos."},{"name":"Unbreakable","archetype":"Protection","kind":"Active Ability","desc":"Absorve 90% de todos os danos recebidos por 3,5 segundos. Após este tempo, 50% do dano absorvido é convertido em cura por 5 segundos. Enquanto Unbreakable estiver ativo, você receberá 30% de Lentidão e redução de 90% de seu Weapon Power e Spell Power."},{"name":"Eternal Retribution","archetype":"Protection","kind":"Legacy Ability","desc":"Um martelo cai no local alvo, causando 300% Weapon Power de dano de arma aos alvos em uma área pequena e 100% Weapon Power de dano de arma aos alvos em uma área média. Causa Atordoamento a todos os alvos atingidos na área pequena e na área média por 2 segundos. Alvos fora dessas áreas recebem 50% de Lentidão por 3 segundos."},{"name":"Devout Protector","archetype":"Protection","kind":"Passive Ability","desc":"Receba 15% a menos de dano ao estar equipado com qualquer escudo e uma arma corpo a corpo, mas cause 8% a menos de dano. Receba 9% a menos de dano ao estar equipado com qualquer escudo e uma arma à distância, mas cause 5% a menos de dano."},{"name":"Strong Footed","archetype":"Protection","kind":"Passive Ability","desc":"Reduz a duração de Lentidão, Atordoamento e Enraizamento recebidos em 30%."},{"name":"Undying Will","archetype":"Protection","kind":"Passive Ability","desc":"Quando estiver com menos de 15% de vida, aumenta seu Defense Power em 160% por 6 segundos. Este efeito ocorre uma vez a cada 3 minutos."},{"name":"Divine Purpose","archetype":"Protection","kind":"Passive Ability","desc":"Aumenta sua Regeneração de Vida em 30%. Reduz sua Regeneração de Mana em 20%."},{"name":"Guardian","archetype":"Protection","kind":"Passive Ability","desc":"Quando estiver com menos de 80% de vida, qualquer dano recebido tem 5% de chance de ativar esta habilidade. Cura 1% da sua vida máxima por segundo durante 10 segundos. Esta habilidade pode ser ativada uma vez a cada 20 segundos."},{"name":"Giant's Blood","archetype":"Protection","kind":"Passive Ability","desc":"Aumenta sua vida em 10%"},{"name":"Fireball","archetype":"Wizardry","kind":"Active Ability","desc":"Lança uma bola de fogo no alvo que causa 70% Spell Power de dano mágico e aplica um acúmulo de bola de fogo. Cada acúmulo de bola de fogo causa 5% Spell Power de dano mágico a cada 2 segundos por 10 segundos (Máx. 3 acúmulos). Acúmulos subsequentes reiniciarão a duração. Cada terceira bola de fogo gera 20% Spell Power de dano mágico adicional ao alvo. Alvos adjacentes recebem 50% de dano e um acúmulo de bola de fogo."},{"name":"Frostbolt","archetype":"Wizardry","kind":"Active Ability","desc":"Atira um dardo glacial que causa 85% Spell Power de dano mágico. Cada terceiro dardo glacial causa 50% Spell Power de dano mágico adicional, e 30% Lentidão ao alvo por 5 segundos."},{"name":"Erupt","archetype":"Wizardry","kind":"Active Ability","desc":"Causa 80% Spell Power de dano mágico e aplica 3 acúmulos de Queimadura Profunda no alvo. Cada acúmulo de Queimadura Profunda causa 5% Spell Power de dano mágico a cada 2 segundos por 10 segundos. Aplica 1 acúmulo de Queimadura Profunda adicional para cada 10 Aether consumidos."},{"name":"Frost Shards","archetype":"Wizardry","kind":"Active Ability","desc":"Atira 5 estilhaços gélidos que causam 40% Spell Power de dano mágico por 3 segundos. Aumenta a duração dos estilhaços gélidos em 1 a cada 10 Aether consumidos. Causa 40% de Lentidão ao alvo por 3 segundos."},{"name":"Combustion","archetype":"Wizardry","kind":"Active Ability","desc":"Causa 100% Spell Power de dano mágico em uma pequena área em volta do alvo e 2 segundos de Atordoamento nos alvos atingidos."},{"name":"Frost Lance","archetype":"Wizardry","kind":"Active Ability","desc":"Atira uma lança glacial ao alvo que causa 75% Spell Power de dano mágico. Aumenta o dano causado em 35% Spell Power de dano mágico para cada 10 Aether consumidos."},{"name":"Flame Tornado","archetype":"Wizardry","kind":"Active Ability","desc":"Canaliza um tornado de chamas na localização alvo por 1,5 segundos, causando 75% Spell Power de dano mágico a todos os alvos em uma pequena área a cada 0,5 segundo. A duração é aumentada em 0,5 segundo a cada 10 Aether consumidos."},{"name":"Coldblast","archetype":"Wizardry","kind":"Active Ability","desc":"Causa 100% Spell Power de dano mágico e Enraizamento por 2,5 segundos aos alvos dentro de uma área média ao seu redor. A duração do Enraizamento é dobrada caso o alvo seja uma criatura. A cura recebida é reduzida em 10% durante 5 segundos."},{"name":"Meteor Strike","archetype":"Wizardry","kind":"Active Ability","desc":"Após a canalização e um intervalo de 1 segundo, um imenso meteoro cai na área alvo, causando 500% Spell Power de dano mágico em uma área pequena e 60% do dano em uma área média. A cura recebida é reduzida em 30% durante 5 segundos."},{"name":"Icestorm","archetype":"Wizardry","kind":"Active Ability","desc":"Causa 25% Spell Power de dano mágico em uma área média, e 20% de Lentidão por 3 segundos. Aumenta a Lentidão e o dano em 10% para cada 10 Aether consumidos."},{"name":"Pyroblast","archetype":"Wizardry","kind":"Active Ability","desc":"Causa 300% Spell Power de dano mágico ao alvo. Reduz o tempo de canalização em 0,7 segundo e o Tempo de Recarga em 2 segundos a cada 10 Aether consumidos. A cura recebida é reduzida em 20% durante 3 segundos."},{"name":"Teleport","archetype":"Wizardry","kind":"Active Ability","desc":"Teletransporta para um local selecionado. Esta habilidade não possui Tempo de Recarga Global."},{"name":"Cataclysm","archetype":"Wizardry","kind":"Legacy Ability","desc":"11 Meteoros cairão aleatoriamente em uma área grande ao seu redor durante a duração de Cataclysm, causando um total de 1000% Spell Power de dano mágico. Esses meteoros têm uma área de efeito maior do que a habilidade Meteor Strike normal, e seu dano é baseado no dano total de Cataclysm. Cada alvo atingido recebe dano reduzido para cada meteoro sucessivo que o acertar."},{"name":"Frost Armor","archetype":"Wizardry","kind":"Passive Ability","desc":"A cada 6 segundos converte 15% do dano causado em uma Barreira de Armadura de Gelo por 3 segundos. Este efeito pode ocorrer uma vez a cada 9 segundos."},{"name":"Havoc","archetype":"Wizardry","kind":"Passive Ability","desc":"Seus acertos críticos têm 15% de chance de aumentar seu Spell Power em 5% Spell Power de dano mágico por 8 segundos (Máx. 3 acúmulos). Acúmulos subsequentes reiniciarão a duração."},{"name":"Flow of Magic","archetype":"Wizardry","kind":"Passive Ability","desc":"Gera um acúmulo de Fluxo de Magia por 10 segundos para cada 1% de mana utilizada. Ao atingir 50 acúmulos de Flow of Magic, aumenta o dano crítico em 10% por 6 segundos e todos os acúmulos serão consumidos ao fim do efeito."},{"name":"Amplification","archetype":"Wizardry","kind":"Passive Ability","desc":"Aumenta o dano das suas habilidades em 10% ao custo de 50% a mais de mana ou vida."},{"name":"Hot Headed","archetype":"Wizardry","kind":"Passive Ability","desc":"Ao causar dano não crítico com uma habilidade, fornece um acúmulo de Hot Headed por 15 segundos (Máx. 50 acúmulos). Um acerto crítico consome todos os acúmulos e aumenta sua chance de outro acerto crítico em 2% por acúmulo por 6 segundos. Os acúmulos são perdidos após 30 segundos sem causar danos com uma habilidade."},{"name":"Fire Shield","archetype":"Wizardry","kind":"Passive Ability","desc":"Qualquer ataque básico contra você faz com que quem o desferiu queime e receba 10% Spell Power de dano mágico por segundo durante 3 segundos. Este efeito só ficará ativo caso você utilize uma habilidade de Arquétipo a cada 12 segundos. Este efeito ocorre uma vez ao mesmo alvo a cada 3 segundos."},{"name":"Flash Heal","archetype":"Holy","kind":"Active Ability","desc":"Cura o alvo em 125% Healing Power de vida. Cada terceira Flash Heal concede 50% Healing Power de cura adicional ao alvo, e sua próxima conjuração será instantânea."},{"name":"Smite","archetype":"Holy","kind":"Active Ability","desc":"Causa 90% Spell Power de dano mágico ao alvo. Cada terceiro Smite causará 30% de dano adicional."},{"name":"Mend","archetype":"Holy","kind":"Active Ability","desc":"Cura o alvo em 75% Healing Power de vida a cada segundo durante 5 segundos. Aumenta a cura em 18% Healing Power para cada 10 Aether consumidos."},{"name":"Holy Shackles","archetype":"Holy","kind":"Active Ability","desc":"Causa 30% Spell Power de dano mágico por segundo durante 3 segundos, 20% de Lentidão e 0,5 segundo de Enraizamento ao alvo. Aumenta a duração da Lentidão e o efeito de dano em 1 segundo, e a duração do Enraizamento em 0,3 segundo para cada 10 Aether consumidos."},{"name":"Healing Channel","archetype":"Holy","kind":"Active Ability","desc":"Foca em um alvo por 1 segundo curando-o em 130% Healing Power de vida a cada 0,5 segundo. Aumenta a duração em 0,5 segundo para cada 10 Aether consumidos."},{"name":"Devotion","archetype":"Holy","kind":"Active Ability","desc":"Cura o alvo em 325% Healing Power de vida."},{"name":"Holy Force","archetype":"Holy","kind":"Active Ability","desc":"Causa 200% Spell Power de dano mágico ao alvo. Adiciona 50% Spell Power de dano mágico para cada 10 Aether consumidos."},{"name":"Purify","archetype":"Holy","kind":"Active Ability","desc":"Remove 3 efeitos negativos aleatórios do alvo."},{"name":"Circle of Light","archetype":"Holy","kind":"Active Ability","desc":"Cura a todos dentro de uma área média em 75% Healing Power de vida por segundo durante 5 segundos. Causa Cegueira aos alvos dentro do círculo de luz. Aumenta a cura em 15% Healing Power para cada 10 Aether consumidos."},{"name":"Generous Influence","archetype":"Holy","kind":"Active Ability","desc":"Cura o alvo em 400% Healing Power de vida. Se usado em si mesmo, aumenta suas curas em 20% por 10 segundos. Se usado em alguém, aumenta a cura recebida pelo alvo em 30%. Receba 10 Aether a cada 2 segundos durante 10 segundos."},{"name":"Living Saint","archetype":"Holy","kind":"Active Ability","desc":"Aumenta o Defense Power e o Healing Power em 25% por 5 segundos. Aumenta a duração do efeito em 1 segundo para cada 10 Aether consumidos."},{"name":"Dawn's Apotheosis","archetype":"Holy","kind":"Legacy Ability","desc":"Tranforma você em um avatar do poder sagrado da Alvorada por 6 segundos. Concede invulnerabilidade e imunidade aos efeitos de controle de multidão, mas reduz sua Velocidade de Movimento em 30%. Cura um membro do grupo dentro de uma grande área a cada 0,5 segundo por 100% Healing Power de vida, priorizando o membro que estiver com a vida mais baixa. Enquanto o avatar estiver ativo, você não poderá usar habilidade ou atacar. Além disso, cura você instantaneamente por 250% Healing Power de vida ao ser ativado."},{"name":"Sacred Spirit","archetype":"Holy","kind":"Passive Ability","desc":"Habilidades de cura em um alvo com menos de 30% de vida curam 25% a mais."},{"name":"Prophet","archetype":"Holy","kind":"Passive Ability","desc":"Ao conjurar habilidades de cura, há 20% de chance de reduzir em 50% o custo de mana de habilidades de cura por 4 segundos."},{"name":"Invigorated Healing","archetype":"Holy","kind":"Passive Ability","desc":"Dobra a chance de acerto crítico base para as magias de cura."},{"name":"Healing Attunement","archetype":"Holy","kind":"Passive Ability","desc":"Reduz em 40% o custo de mana de curas conjuradas em outros."},{"name":"Healing Bond","archetype":"Holy","kind":"Passive Ability","desc":"Ao curar um alvo, receba 10% da cura realizada."},{"name":"Devout Healer","archetype":"Holy","kind":"Passive Ability","desc":"Reduz o tempo de conjuração de habilidades em 15%."},{"name":"Cyclone","archetype":"Spiritual","kind":"Active Ability","desc":"Conjura um ciclone, que causa 80% Spell Power de dano mágico ao alvo, e ricocheteia a 2 outros alvos dentro de uma área média, causando 45% Spell Power de dano mágico a cada alvo secundário. Se Cyclone não ricochetear, causa 20% Spell Power de dano mágico adicional ao alvo. Cada terceiro Cyclone reduz o Tempo de Recarga restante de habilidades de Spiritual em 0,5 segundo."},{"name":"Regenerate","archetype":"Spiritual","kind":"Active Ability","desc":"Cura um alvo em 55% Healing Power de vida por segundo durante 8 segundos. Cura adicionalmente 20% Healing Power de vida a cada segundo por 8 segundos se o alvo estiver sob o efeito de Party Recovery."},{"name":"Whirlwind","archetype":"Spiritual","kind":"Active Ability","desc":"Causa 110% Spell Power de dano mágico. Aumenta o dano em 35% Spell Power a cada 10 Aether consumidos."},{"name":"Barrier","archetype":"Spiritual","kind":"Active Ability","desc":"Cria uma barreira em volta do alvo que absorve até 240% Healing Power de dano durante 4 segundos. Aumenta a barreira em 25% Healing Power para cada 10 Aether consumidos."},{"name":"Windstrike Spirit","archetype":"Spiritual","kind":"Active Ability","desc":"Imbui a arma do alvo com vento por 15 segundos. Cada ataque básico do alvo afetado por Windstrike Spirit causa 25% Adaptive Power de Dano Adaptativo adicional ao alvo. Aumenta o Dano Adaptativo de Windstrike Spirit em 5% para cada 10 Aether consumidos. Esse valor é reduzido pela metade ao usar duas armas ou uma lâmina leve."},{"name":"Force Push","archetype":"Spiritual","kind":"Active Ability","desc":"Empurra todos ao seu redor por 3 células e causa 50% de Lentidão por 2 segundos."},{"name":"Wind Wall","archetype":"Spiritual","kind":"Active Ability","desc":"Cria uma parede de vento de 3 células que bloqueia projéteis por 5 segundos. Alvos dentro da parede são empurrados por 1 célula."},{"name":"Party Recovery","archetype":"Spiritual","kind":"Active Ability","desc":"Restaura 23% Healing Power de vida a cada segundo por 15 segundos de todos os membros do grupo. Aumenta a cura em 7% Healing Power de vida a cada 10 Aether consumidos."},{"name":"Air Aura","archetype":"Spiritual","kind":"Active Ability","desc":"Encanta um alvo aliado com uma aura de vento por 4 segundos. Após a duração da aura, o alvo recebe 200% do dano recebido como Barreira por 4 segundos."},{"name":"Haste","archetype":"Spiritual","kind":"Active Ability","desc":"Aumenta a Velocidade de Ataque do alvo em 15% e reduz o Tempo de Recarga Global e Tempo de Conjuração em 15% por 10 segundos."},{"name":"Healing Air Sphere","archetype":"Spiritual","kind":"Active Ability","desc":"Cura 80% Healing Power de vida de todos os membros do grupo dentro de uma área média por segundo durante 3 segundos. Aumenta a duração em 1 segundo para cada 10 Aether consumidos."},{"name":"Typhoon","archetype":"Spiritual","kind":"Active Ability","desc":"Posiciona um tufão que arrasta os alvos dentro de uma área média para a borda do tufão, causando 25% de Lentidão por 5 segundos. O Tufão causa 30% Spell Power de dano a cada 1 segundo a todos os alvos afetados por ele. Aumenta a Lentidão em 5% para cada 10 Aether consumidos."},{"name":"Eye of the Storm","archetype":"Spiritual","kind":"Legacy Ability","desc":"Transforma-se em um Ciclone por 5 segundos, ganhando 50% de Velocidade de Movimento e limpando quaisquer efeitos de controle de multidão ou redução de movimento. Concede imunidade a controle de multidão, efeitos de redução de movimento e dano. Alvos dentro de uma área pequena ao seu redor recebem 50% Spell Power de dano mágico a cada 0,5 segundos e são jogados para cima. Este efeito ocorre apenas uma vez a cada 30 segundos para um alvo durante Eye of the Storm. Após retornar do Ciclone, você recebe uma barreira de 400% Healing Power de vida por 10 segundos."},{"name":"Meditate","archetype":"Spiritual","kind":"Passive Ability","desc":"Aumenta a efetividade das suas habilidades de cura ao longo do tempo em 20%."},{"name":"Wind Mastery","archetype":"Spiritual","kind":"Passive Ability","desc":"Suas habilidades de suporte têm 50% de chance de aumentar a Velocidade de Movimento do alvo em 15% por 2 segundos."},{"name":"Lingering Impact","archetype":"Spiritual","kind":"Passive Ability","desc":"Aumenta a duração das suas habilidades de cura ao longo do tempo em 20%."},{"name":"Celerity","archetype":"Spiritual","kind":"Passive Ability","desc":"Reduz o Tempo de Recarga de todas as habilidades em 10%."},{"name":"Sins of the Many","archetype":"Spiritual","kind":"Passive Ability","desc":"Usar habilidades de cura aumenta seu Healing Power em 4% por 12 segundos (Máx. 5 acúmulos)."},{"name":"The Cost of Restoration","archetype":"Spiritual","kind":"Passive Ability","desc":"Aumenta sua Regeneração de Mana em 30%, mas reduz sua Regeneração de Vida em 20%."},{"name":"Arcane Pulse","archetype":"Witchcraft","kind":"Active Ability","desc":"Causa 70% Spell Power de dano mágico e aplica um acúmulo de Pulso. Cada acúmulo de Pulso reduz o Spell Defense do alvo em 2% Spell Power por 4 segundos (Máx. 3 acúmulos). Cada terceiro Arcane Pulse causa 20% Spell Power de dano mágico adicional."},{"name":"Curse","archetype":"Witchcraft","kind":"Active Ability","desc":"Aplica uma Maldição que causa 20% Spell Power de dano mágico ao alvo a cada 1 segundo por 12 segundos. Quando um alvo com Maldição é eliminado, gera 10 Aether."},{"name":"Arcane Torrent","archetype":"Witchcraft","kind":"Active Ability","desc":"Dispara 5 raios arcanos que causam 45% Spell Power de dano mágico por 3 segundos. Aumenta o número de raios arcanos em 1 para cada 10 Aether consumidos. Reduz o Tempo de Recarga de Arcane Torrent em 0,5 segundo para cada acúmulo de Arcane Pulse."},{"name":"Leech","archetype":"Witchcraft","kind":"Active Ability","desc":"Lança um parasita no alvo que causa 23% Spell Power de dano mágico por segundo durante 10 segundos e cura o conjurador na mesma quantidade."},{"name":"Eternal Worms","archetype":"Witchcraft","kind":"Active Ability","desc":"Consome 3 das suas habilidades de dano ao longo do tempo aplicadas no alvo e causa 50% de seus danos restante e 1,5 segundo de Enraizamento. Receba uma cura equivalente a 60% do dano restante. Cada habilidade de dano ao longo do tempo consumida gera 10 Aether."},{"name":"Siphon","archetype":"Witchcraft","kind":"Active Ability","desc":"Drena até 220% Spell Power de mana do alvo a cada segundo durante 8 segundos e causa a mesma quantidade de dano. Reduz o Tempo de Canalização em 1 segundo para cada 10 Aether consumidos. O total de mana drenada e o dano causado permanecem o mesmo."},{"name":"Magic Rupture","archetype":"Witchcraft","kind":"Active Ability","desc":"Causa 20% de Lentidão ao alvo. Aumenta sua Velocidade de Movimento em 20% por 5 segundos."},{"name":"Shackles of Pain","archetype":"Witchcraft","kind":"Active Ability","desc":"Acorrenta o alvo por 5 segundos. Caso o conjurador receba algum dano, o alvo acorrentado receberá 25% deste dano. O dano compartilhado aumenta em 5% a cada 10 Aether consumidos."},{"name":"Dispel","archetype":"Witchcraft","kind":"Active Ability","desc":"Remove 2 efeitos positivos aleatórios do alvo."},{"name":"Mirror Image","archetype":"Witchcraft","kind":"Active Ability","desc":"Cria uma cópia sua que imita certas habilidades ao custo de 15% de efetividade por 15 segundos. A cópia possui alcance limitado e não pode se mover. O número de cópias criadas varia de acordo com a quantidade de Aether consumido. Consumir 30 Aether cria 1 cópia adicional. Consumir 50 Aether cria outra cópia. Habilidades afetadas: Concussive Shot, Precision Shot, Quick Fire, Wind Arrow, Dawn's Light, Flash Heal, Holy Force, Smite, Crippling Dagger, Arcane Pulse, Arcane Torrent, Fireball, Frost Shards, Frostbolt, Pyroblast, Nature's Strike, Spore Spread, Life Touch, Target Practice, Double Tap, Quick Draw."},{"name":"Death Touch","archetype":"Witchcraft","kind":"Active Ability","desc":"Causa 200% Spell Power de dano mágico. Se esta habilidade acertar o alvo, espalha Maldição para todos os alvos dentro de uma área pequena. Aumenta o dano em 40% Spell Power de dano mágico a cada 10 Aether consumidos. Aumenta o dano de Death Touch em 25% se o alvo estiver com 70% ou menos de vida."},{"name":"Hex","archetype":"Witchcraft","kind":"Active Ability","desc":"Transforma o alvo em um sapo por 1,5 segundo, reduzindo a cura recebida em 35% enquanto o efeito durar. Aumenta a duração da transformação em 0,5 segundo para cada 10 Aether consumidos."},{"name":"Witch's Call","archetype":"Witchcraft","kind":"Legacy Ability","desc":"Lança corvos sobre seus alvos em uma área média por 8 segundos, causando 8% Spell Power a todos os alvos na área de efeito a cada 1 segundo enquanto aplica um acúmulo de Corrupção dos Corvos a cada acerto. A corrupção dos corvos dura 2 segundos, causando 20% Spell Power para cada acúmulo a cada 1 segundo e 20% de Lentidão por 2 segundos aos alvos afetados. Você recupera 10% do dano causado pelos corvos. Acúmulos subsequentes reiniciarão a duração da Corrupção dos Corvos."},{"name":"Exploitation","archetype":"Witchcraft","kind":"Passive Ability","desc":"Aplica um acúmulo de Exploração ao causar dano a um alvo com uma habilidade. Cada acúmulo de Exploração reduz o Defense Power em 0,25% enquanto aumenta o seu Defense Power na mesma quantidade por 20 segundos (Máx. 20 acúmulos). Acúmulos subsequentes reiniciarão a duração."},{"name":"Cursed Touch","archetype":"Witchcraft","kind":"Passive Ability","desc":"Aumenta o dano total das suas habilidades de dano ao longo do tempo em 20%."},{"name":"Witchcraft Mastery","archetype":"Witchcraft","kind":"Passive Ability","desc":"Reduz o Tempo de Recarga Global das suas habilidades em 10%."},{"name":"Arcane Corruption","archetype":"Witchcraft","kind":"Passive Ability","desc":"Ao causar dano, aplica um acúmulo de Corrupção Arcana ao alvo a cada 3 segundos. Cada acúmulo de Corrupção Arcana reduz a cura recebida pelo alvo em 1% (Máx. 10 acúmulos). Ao atingir 10 acúmulos, dobra a redução de cura recebida por 6 segundos e remove os acúmulos e 1 efeito benéfico aleatório."},{"name":"Creeping Death","archetype":"Witchcraft","kind":"Passive Ability","desc":"Sempre que um alvo estiver com menos de 50% de vida, habilidades de dano ao longo do tempo causam 10% a mais de dano. Quando um alvo estiver com menos de 25% de vida, habilidades de dano ao longo do tempo aumentam o dano causado para 30%."},{"name":"Bloodmancer","archetype":"Witchcraft","kind":"Passive Ability","desc":"Ao causar dano ao longo do tempo, recebe uma cura de 10% do dano causado."},{"name":"Nature's Strike","archetype":"Naturalist","kind":"Active Ability","desc":"Causa 100% Spell Power de dano mágico a um alvo em alcance corpo a corpo. A cada terceiro uso de Nature Strike, sua velocidade de movimento é aumentada em 20% por 3 segundos."},{"name":"Spore Spread","archetype":"Naturalist","kind":"Active Ability","desc":"Causa 100% Spell Power de dano mágico a um alvo em alcance corpo a corpo. Alvos atingidos por Spore Spread recebem uma carga de esporos bubônicos e cada carga aumenta o dano causado pela próxima propagação de esporos em 50% de forma cumulativa. Ao atingir 3 cargas de esporos bubônicos, elas são consumidas, afligindo o alvo com um veneno que causa 22.5% Spell Power de dano mágico a cada 3 segundos por 12 segundos."},{"name":"Life Touch","archetype":"Naturalist","kind":"Active Ability","desc":"Life Touch pode ser usado em aliados dentro do alcance corpo a corpo, caso contrário, é usado em você mesmo. Cura o alvo em 125% Healing Power e aumenta sua velocidade de movimento em 10% por 4 segundos. Após um breve atraso, causa 125% Healing Power como dano mágico a todos os alvos em uma área pequena ao redor do alvo curado. Aumenta a cura de Life Touch em 5% para cada 10 Aether consumido."},{"name":"Bristlehide","archetype":"Naturalist","kind":"Active Ability","desc":"Bristlehide pode ser conjurado em si mesmo ou sobre um aliado, criando uma barreira de 250% Healing Power de vida ao alvo, com duração de 8 segundos. Enquanto a barreira estiver ativa, o alvo reflete 5% do dano recebido de volta a quem desferiu o ataque, caso ele esteja a até 4 células de distância. Aumenta o dano refletido em 1% adicional para cada 10 Aether consumidos."},{"name":"Solar Flare","archetype":"Naturalist","kind":"Active Ability","desc":"Causa 85% Spell Power de dano mágico a todos os alvos em uma área pequena ao seu redor. Causa confusão aos alvos atingidos por 2,5 segundos. Aumenta o dano de Solar Flare em 10% para cada 10 Aether consumidos. Causa o dobro de dano contra criaturas."},{"name":"Thorn Wall","archetype":"Naturalist","kind":"Active Ability","desc":"Invoca uma parede de espinhos que dura 4,8 segundos. Alvos que entrarem na parede recebem 35% de lentidão. A cada 0,4 segundo, a parede de espinhos causa 50% Spell Power de dano mágico aos alvos que estiverem sobre ela. Causa o dobro de dano contra criaturas."},{"name":"One with the Hive","archetype":"Naturalist","kind":"Active Ability","desc":"Salta para o local desejado, recebendo 15% de bônus em Weapon Defense e Spell Defense, além de aplicar um bônus adicional de 10% em Weapon Defense e Spell Defense a todos os membros do grupo em uma área média por 6 segundos. Também aplica veneno a todos os alvos na mesma área, causando 30% Spell Power de dano mágico a cada 3 segundos por 12 segundos. Esta habilidade não possui Tempo de Recarga Global."},{"name":"Queen's Charge","archetype":"Naturalist","kind":"Active Ability","desc":"Você se torna imune à Lentidão e recebe um aumento de 25% na sua Velocidade de Movimento por 6 segundos. A Velocidade de Movimento de até 5 membros do grupo em uma área grande é aumentada em 20% por 6 segundos. Aumenta o bônus de Velocidade de Movimento em si mesmo em 2% para cada 10 Aether consumidos."},{"name":"Living Roots Swarm","archetype":"Naturalist","kind":"Active Ability","desc":"Lança uma onda de raízes que cobre uma área grande à frente do conjurador. À medida que a onda avança, causa 100% Spell Power de dano mágico a todos os alvos atingidos e Enraizamento por 2,5 segundos. Alvos aliados atingidos pela onda de raízes recebem uma Barreira de 150% Healing Power por 6 segundos.  O dano de Living Roots Swarm é aumentado em 10% Spell Power para cada 10 Aether consumidos. Causa o dobro de dano contra criaturas."},{"name":"Blooming Sapling","archetype":"Naturalist","kind":"Active Ability","desc":"Causa 125% Spell Power de dano mágico a um alvo em alcance corpo a corpo e aplica uma muda sedenta que drena 2% de sua Mana Máxima a cada segundos pelos próximos 5 segundos. Após 5 segundos, a muda florescerá, causando 250% Spell Power de dano mágico ao alvo principal e aos alvos em uma área pequena ao redor dele."},{"name":"Avatar of Rebirth","archetype":"Naturalist","kind":"Active Ability","desc":"Torne-se o Avatar do Renascimento por 8 segundos, aumentando seu Defense Power em 10% e curando a si mesmo em 125% Healing Power a cada segundo enquanto o efeito durar. Alvos aliados adjacentes também são curados pela mesma quantidade. Aumenta seu Healing Power em 15% a cada 10 Aether consumidos durante a duração do efeito. Ao usar esta habilidade, Avatar of Decay também entra em recarga."},{"name":"Avatar of Decay","archetype":"Naturalist","kind":"Active Ability","desc":"Torne-se o Avatar da Decomposição por 8 segundos. Enquanto este efeito estiver ativo, seu Attack Power é aumentado em 10% e o seu Weapon Defense e Spell Defense são reduzidos em 5%. Todos os alvos adjacentes recebem 75% Spell Power de dano mágico a cada segundo enquanto a habilidade durar. Alvos atingidos pelo dano em área da habilidade são afetados pela Maldição da Decomposição por 8 segundos, recebendo 10% Spell Power de dano mágico a cada segundo. Esse dano é aumentado em 10% Spell Power para cada efeito de dano ao longo do tempo presente no alvo, até um máximo de 40% Spell Power por segundo. Aumenta o dano em área da habilidade em 5% Spell Power a cada 10 Aether consumidos enquanto o efeito durar. Ao usar esta habilidade, Avatar of Rebirth também entra em recarga."},{"name":"Cosmic Karma","archetype":"Naturalist","kind":"Legacy Ability","desc":"Evoca uma onde de energia lunar para atingir sua posição atual e varrer uma área grande por 6 segundos. Todos os aliados dentro da área afetada são curados em 200% Healing Power no impacto inicial. Os alvos recebem 150% Spell Power de dano mágico e sofrem Cegueira por 6 segundos. Após o impacto inicial e pelos próximos 6 segundos, todos os aliados na área de efeito de Cosmic Karma são curados em 100% Healing Power e dissipam 1 condição negativa a cada 1 segundo. Alvos dentro da área de efeito recebem 30% de Lentidão."},{"name":"Equilibrium","archetype":"Naturalist","kind":"Passive Ability","desc":"Aumenta seu Attack Power em 12% e reduz seu Defense Power em 5% enquanto estiver acima de 50% da Vida Máxima. Aumenta seu Defense Power em 5% e reduz seu Attack Power em 12% enquanto estiver abaixo de 50% da Vida Máxima."},{"name":"Jungle Fever","archetype":"Naturalist","kind":"Passive Ability","desc":"Sempre que você sofrer dano, recebe 1 acúmulo de Febre da Selva por 6 segundos. Cada acúmulo aumenta seu Healing Power em 2% e diminui seu Spell Power em 1% (Máx. 10 acúmulos)."},{"name":"Nature's Bite","archetype":"Naturalist","kind":"Passive Ability","desc":"Seus ataques básicos corpo a corpo reduzem a cura recebida pelo alvo em 10% por 2 segundos."},{"name":"Karmic Scales","archetype":"Naturalist","kind":"Passive Ability","desc":"Efeitos de dano ao longo do tempo do alvo aplicados em você refletem 40% do dano causado de volta para o conjurador, se ele estiver dentro de 6 células."},{"name":"Nurturing Presence","archetype":"Naturalist","kind":"Passive Ability","desc":"Ao curar um aliado (incluindo a si mesmo) usando uma habilidade de cura, converta 10% do total curado em uma barreira enquanto estiver usando um totem. A barreira dura 3 segundos. Este efeito pode ocorrer uma vez a cada 6 segundos."},{"name":"Nature's Protection","archetype":"Naturalist","kind":"Passive Ability","desc":"Receber dano equivalente a pelo menos 10% da sua Vida Máxima em 2 segundos, aumentará seu Healing Power em 15% e seu Defense Power em 10% por 6 segundos. Este efeito pode ocorrer uma vez a cada 25 segundos."},{"name":"Target Practice","archetype":"Ballistics","kind":"Active Ability","desc":"Dispara no alvo, causando 90% Weapon Power de dano de arma. A cada terceiro disparo, causa 120% Weapon Power de dano de arma e reduz a Defesa de Arma do alvo em 3% por 3 segundos."},{"name":"Double Tap","archetype":"Ballistics","kind":"Active Ability","desc":"Dispara projéteis de ataque básico duas vezes, causando 100% Weapon Power de dano de arma. O dano é aumentado em 5% Weapon Power de dano de arma para cada 10 Aether consumidos."},{"name":"Scatter Shot","archetype":"Ballistics","kind":"Active Ability","desc":"Dispara uma rajada dispersa que causa 185% Weapon Power de dano de arma aos alvos à sua frente. Aumenta o dano de Scatter Shot em 20% Weapon Power de dano de arma para cada 10 Aether consumidos."},{"name":"Grappling Hook","archetype":"Ballistics","kind":"Active Ability","desc":"Lança um gancho até um local escolhido, puxando você rapidamente até ele. Esta habilidade não possui Tempo de Recarga Global."},{"name":"Multi-Target","archetype":"Ballistics","kind":"Active Ability","desc":"Marca um alvo enquanto canaliza por 0,2 segundo e depois dispara, causando 220% Weapon Power de dano de arma. A cada 10 Aether consumidos, adiciona um disparo extra, com mais 0,1 segundo de canalização, priorizando novos alvos. Cada disparo adicional causa 135% Weapon Power de dano de arma, mas acertar o mesmo alvo mais de uma vez reduz o dano de cada acerto em 15%."},{"name":"Quick Draw","archetype":"Ballistics","kind":"Active Ability","desc":"Dispara dois projéteis de ataque básico em rápida sucessão, causando 155% Weapon Power de dano de arma ao alvo principal e 114% Weapon Power de dano de arma a qualquer alvo secundário disponível. Se não houver um alvo secundário disponível, o segundo disparo atinge o alvo principal."},{"name":"Pirate's Ambrosia","archetype":"Ballistics","kind":"Active Ability","desc":"Faz você beber um barril de ambrosia dos piratas, curando você em 115% de dano adaptativo por segundo, durante 4 segundos. Causa 40% de lentidão enquanto estiver bebendo do barril."},{"name":"Smoke Screen","archetype":"Ballistics","kind":"Active Ability","desc":"Cria uma pequena nuvem de fumaça sobre a área alvo por 3 segundos, fornecendo cobertura para aliados e dificultando a ação dos alvos. Alvos atingidos quando Smoke Screen aparece são interrompidos e recebem Silêncio por 1 segundo. Enquanto Smoke Screen durar, alvos dentro dela sofrem Cegueira e 15% de Lentidão, e aliados dentro se movem 20% mais rápido."},{"name":"Pirate's Parry","archetype":"Ballistics","kind":"Active Ability","desc":"Canaliza por 2,5 segundos, reduzindo todo o dano recebido em 70%, e causando 185% Weapon Power de dano de arma aos alvos em uma área pequena ao seu redor."},{"name":"Illegal Munitions","archetype":"Ballistics","kind":"Active Ability","desc":"Faz com que seus ataques básicos detonem ao atingir, causando 70% Adaptive Power de dano adaptativo ao redor do alvo. Se estiver empunhando duas armas ou usando uma lâmina leve, o dano causado por Illegal Munitions será de 35% Adaptive Power de dano adaptativo por golpe. Esse efeito dura 5 segundos, afeta apenas ataques básicos e é ativado uma vez a cada 0,5 segundo. A duração desse efeito é aumentada em 0,5 segundo para cada 10 Aether consumidos."},{"name":"Makeshift Grenade","archetype":"Ballistics","kind":"Active Ability","desc":"Arremessa uma granada no local escolhido, causando 300% Weapon Power de dano de arma em uma área pequena e incendiando o chão por 3 segundos. Alvos que permanecerem sobre o chão em chamas serão incendiados, e receberão 50% Weapon Power de dano de arma a cada segundo por 3 segundos."},{"name":"Target Lock","archetype":"Ballistics","kind":"Active Ability","desc":"Marca o alvo, carregando por até 3 segundos. Em seguida, causa até 450% Weapon Power de dano de arma ao alvo e dissipa todos os bônus de Weapon Defense e Spell Defense nele se Target Lock for totalmente carregada. Se usado logo após Quick Draw, Target Lock será sempre um acerto crítico."},{"name":"Captain's Ordinance","archetype":"Ballistics","kind":"Legacy Ability","desc":"Lança uma saraivada de 18 balas de canhão para atingir uma área muito grande ao seu redor, com três balas de 7 canhão caindo a cada 0,6 segundo. Cada bala de canhão causa 250% Weapon Power de dano de arma em uma área pequena e incendeia os alvos atingidos, queimando-os por 40% Weapon Power de dano de arma por segundo durante 4 segundos."},{"name":"Pirate Reflexes","archetype":"Ballistics","kind":"Passive Ability","desc":"Concede a você 10% de aumento na Velocidade de Ataque e o dano dos seus ataques básicos é aumentado em 25% do Impacto."},{"name":"Witch Hunter","archetype":"Ballistics","kind":"Passive Ability","desc":"Sempre que você receber qualquer efeito de redução de Poder de Ataque, Poder de Defesa ou Poder de Cura, ganha uma carga de Witch Hunter, aumentando seu dano crítico em 10% (Máx. 3 acúmulos). Um acerto crítico consome todas as cargas. As cargas duram 120 segundos ou até serem consumidas."},{"name":"No Mercy","archetype":"Ballistics","kind":"Passive Ability","desc":"Aumenta o dano crítico em 20% contra alvos com menos de 25% de Vida."},{"name":"Goblin Tactics","archetype":"Ballistics","kind":"Passive Ability","desc":"Causar dano com ataques básicos ou com Target Practice concede 1 acúmulo de Goblin Tactics ao usar armas à distância, armas corpo a corpo de uma mão ou lâminas leves. Todas as outras armas corpo a corpo de duas mãos concedem o dobro dessa quantidade. Cada acúmulo aumenta sua Velocidade de Ataque em 0,5% (Máx. 40 acúmulos). Goblin Tactics dura 4 segundos. Acúmulos subsequentes reiniciarão a duração."},{"name":"Point Blank","archetype":"Ballistics","kind":"Passive Ability","desc":"Ao equipar uma arma de longo alcance, sua chance de acerto crítico é aumentada em 10% contra alvos que estejam a no máximo 2 células de distância de você."},{"name":"Suppressive Fire","archetype":"Ballistics","kind":"Passive Ability","desc":"Acertar um alvo com ataques básicos, Target Practice, Double Tap ou Quick Draw aplica 1 acúmulo de Suppressive Fire (Máx 5 acúmulos). Cada acúmulo reduz o Weapon Power e o Spell Power do alvo em 1,2% e aplica Lentidão de 1,5% por 5 segundos. Acúmulos subsequentes reiniciarão a duração."}]`); // 189 magias reais: [{name,archetype,kind,desc}]
+  const RAVENDAWN_CLASS_TABLE = JSON.parse(`[{"archetypes":["Holy","Spiritual","Wizardry"],"className":"Sage"},{"archetypes":["Holy","Witchcraft","Wizardry"],"className":"Loremaster"},{"archetypes":["Holy","Warfare","Wizardry"],"className":"Magus"},{"archetypes":["Holy","Protection","Wizardry"],"className":"Warden"},{"archetypes":["Holy","Shadow","Wizardry"],"className":"Necromancer"},{"archetypes":["Archery","Holy","Wizardry"],"className":"Cabalist"},{"archetypes":["Spiritual","Witchcraft","Wizardry"],"className":"Arcanist"},{"archetypes":["Spiritual","Warfare","Wizardry"],"className":"Battlemage"},{"archetypes":["Protection","Spiritual","Wizardry"],"className":"Blackguard"},{"archetypes":["Shadow","Spiritual","Wizardry"],"className":"Soulknife"},{"archetypes":["Archery","Spiritual","Wizardry"],"className":"Soulbow"},{"archetypes":["Warfare","Witchcraft","Wizardry"],"className":"Spellblade"},{"archetypes":["Protection","Witchcraft","Wizardry"],"className":"Hex Warden"},{"archetypes":["Shadow","Witchcraft","Wizardry"],"className":"Shadowspell"},{"archetypes":["Archery","Witchcraft","Wizardry"],"className":"Spellbow"},{"archetypes":["Protection","Warfare","Wizardry"],"className":"Dreadknight"},{"archetypes":["Shadow","Warfare","Wizardry"],"className":"Eldritch"},{"archetypes":["Archery","Warfare","Wizardry"],"className":"Reaver"},{"archetypes":["Protection","Shadow","Wizardry"],"className":"Death Warden"},{"archetypes":["Archery","Protection","Wizardry"],"className":"Minstrel"},{"archetypes":["Archery","Shadow","Wizardry"],"className":"Shade"},{"archetypes":["Holy","Spiritual","Witchcraft"],"className":"Scholar"},{"archetypes":["Holy","Spiritual","Warfare"],"className":"Warpriest"},{"archetypes":["Holy","Protection","Spiritual"],"className":"Cleric"},{"archetypes":["Holy","Shadow","Spiritual"],"className":"Occultist"},{"archetypes":["Archery","Holy","Spiritual"],"className":"Bard"},{"archetypes":["Holy","Warfare","Witchcraft"],"className":"Paragon"},{"archetypes":["Holy","Protection","Witchcraft"],"className":"Justicar"},{"archetypes":["Holy","Shadow","Witchcraft"],"className":"Emissary"},{"archetypes":["Archery","Holy","Witchcraft"],"className":"Oracle"},{"archetypes":["Holy","Protection","Warfare"],"className":"Paladin"},{"archetypes":["Holy","Shadow","Warfare"],"className":"Planeswalker"},{"archetypes":["Archery","Holy","Warfare"],"className":"Valkyrie"},{"archetypes":["Holy","Protection","Shadow"],"className":"Apothecary"},{"archetypes":["Archery","Holy","Protection"],"className":"Crusader"},{"archetypes":["Archery","Holy","Shadow"],"className":"Archivist"},{"archetypes":["Spiritual","Warfare","Witchcraft"],"className":"Hex Blade"},{"archetypes":["Protection","Spiritual","Witchcraft"],"className":"Runesmith"},{"archetypes":["Shadow","Spiritual","Witchcraft"],"className":"Hex Mage"},{"archetypes":["Archery","Spiritual","Witchcraft"],"className":"Astral Ranger"},{"archetypes":["Protection","Spiritual","Warfare"],"className":"Spellbreaker"},{"archetypes":["Shadow","Spiritual","Warfare"],"className":"Soulblade"},{"archetypes":["Archery","Spiritual","Warfare"],"className":"Marshal"},{"archetypes":["Protection","Shadow","Spiritual"],"className":"Inquisitive"},{"archetypes":["Archery","Protection","Spiritual"],"className":"Confessor"},{"archetypes":["Archery","Shadow","Spiritual"],"className":"Hex Ranger"},{"archetypes":["Protection","Warfare","Witchcraft"],"className":"Bloodthrall"},{"archetypes":["Shadow","Warfare","Witchcraft"],"className":"Nightblade"},{"archetypes":["Archery","Warfare","Witchcraft"],"className":"Herald"},{"archetypes":["Protection","Shadow","Witchcraft"],"className":"Executioner"},{"archetypes":["Archery","Protection","Witchcraft"],"className":"Sentinel"},{"archetypes":["Archery","Shadow","Witchcraft"],"className":"Trickster"},{"archetypes":["Protection","Shadow","Warfare"],"className":"Dark Knight"},{"archetypes":["Archery","Protection","Warfare"],"className":"Fighter"},{"archetypes":["Archery","Shadow","Warfare"],"className":"Shadestriker"},{"archetypes":["Archery","Protection","Shadow"],"className":"Boneweaver"}]`); // 56 combinações: [{archetypes:[...3]},className}]
+
+  const ARCHETYPE_LABELS = ['Warfare','Protection','Shadow','Archery','Wizardry','Holy','Spiritual','Witchcraft','Ballistics','Naturalist'];
+  function archetypeSlug(label){ return String(label||'').toLowerCase(); }
+  const ARCHETYPE_IDS = ARCHETYPE_LABELS.map(archetypeSlug);
+  const CLASSABLE_ARCHETYPE_IDS = ['warfare','protection','shadow','archery','wizardry','holy','spiritual','witchcraft'];
+  const UTILITY_ARCHETYPE_IDS = ['ballistics','naturalist'];
+  const ARCHETYPE_LABEL = {}; ARCHETYPE_LABELS.forEach(l=> ARCHETYPE_LABEL[archetypeSlug(l)] = l);
+  // Nomes/temas em português só pra UI (a wiki e os ícones usam o termo em
+  // inglês mesmo, igual ao jogo original — mantemos os dois: nome oficial
+  // em destaque + tema traduzido pequeno embaixo).
+  const ARCHETYPE_THEME_PT = { warfare:'Guerra', protection:'Proteção', shadow:'Sombra', archery:'Arqueria', wizardry:'Feitiçaria', holy:'Sagrado', spiritual:'Espiritual', witchcraft:'Bruxaria', ballistics:'Balística', naturalist:'Naturalista' };
+  const SPELL_KIND_LABEL = { active:'Ativa', passive:'Passiva', legacy:'Legacy (Ultimate)' };
+  const SPELL_KIND_ICON = { active:'⚔️', passive:'◆', legacy:'👑' };
+
+  // Slots progressivos (mesma regra do servidor, ver ARCHETYPE_SLOT_UNLOCK_LEVEL
+  // em huntEngine.js) — nível EFETIVO = total de estrelas*100 + nível do personagem.
+  const ARCHETYPE_SLOT_UNLOCK_LEVEL = [0, 7, 15];
+  const ARCHETYPE_SWAP_GOLD_COST = 500;
+  const ELEMENTAL_COIN_RESET_COST = 150; // custo do 2º reset em diante da Árvore de Habilidades (1º é grátis)
+  const STAT_RESET_COST_CLIENT = 100; // espelha huntEngine.STAT_RESET_COST_ELEMENTAL_COIN (painel de Status)
+  function getEffectiveLevelClient(){
+    const totalStars = (prestige.bronzeStars||0) + (prestige.silverStars||0) + (prestige.goldStars||0) + (prestige.diamondRank ? 5 : 0);
+    return totalStars * 100 + (player.level||1);
   }
-  // Espelha huntEngine.nodeKindForIndex no servidor: exatamente 10 nós
-  // "ativos" (viram magia de verdade, arrastável pra hotbar) por árvore —
-  // e1,e5,e9,e13 / e15 (Semi Ultimate) / e16,e20,e24,e28 / e30 (Ultimate) —
-  // os outros 20 são "passivos" (só bônus permanente, nunca vão pra hotbar).
-  function nodeKindForIndexClient(index){
-    if(index===15 || index===30) return 'active';
-    if(index>=1 && index<=14) return (index-1)%4===0 ? 'active' : 'passive';
-    if(index>=16 && index<=29) return (index-16)%4===0 ? 'active' : 'passive';
+  function getUnlockedSlotCountClient(){
+    const lvl = getEffectiveLevelClient();
+    return ARCHETYPE_SLOT_UNLOCK_LEVEL.filter(req => lvl >= req).length;
+  }
+
+  function spellSlug(name){
+    return String(name||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/['’]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  }
+  function spellKindFromWiki(kind){
+    if(kind==='Active Ability') return 'active';
+    if(kind==='Legacy Ability') return 'legacy';
     return 'passive';
   }
-  // Gera os mesmos 30 nós lineares que huntEngine.buildSkillTreeGraph gera no
-  // servidor (e1..e30, semi-ultimate no 15, ultimate no 30). e15/e30 levam um
-  // nome placeholder aqui — renderSkillTree resolve o nome real por jogador.
-  function buildSkillTreeGraphClient(elementId){
-    const wb = ELEMENT_WORDBANK[elementId], label = ELEMENT_LABEL[elementId];
-    const nodes = []; let atkI=0, defI=0, supI=0;
-    function descFor(category){
-      if(category==='attack') return `Golpe de ${label}: causa dano de ${label}${wb.appliesState?`, aplica ${wb.appliesState}`:''}.`;
-      if(category==='defense') return `Ergue um escudo temporário de ${label} que absorve parte do dano recebido.`;
-      if(elementId==='trevas') return `Absorve energia vital das Trevas ao seu redor, restaurando parte do seu HP.`;
-      return `Canaliza ${label} para restaurar parte do seu HP.`;
-    }
-    function pushRegular(index, category){
-      let name = category==='attack' ? wb.attack[atkI++] : category==='defense' ? wb.defense[defI++] : wb.support[supI++];
-      nodes.push({ id:`e${index}`, index, category, kind:nodeKindForIndexClient(index), deps:[`e${index-1}`], name, desc:descFor(category) });
-    }
-    nodes.push({ id:'e1', index:1, category:'attack', kind:nodeKindForIndexClient(1), deps:[], name:wb.starter, desc:`Ataque básico de ${label}${wb.appliesState?`, aplica ${wb.appliesState}`:''}.` });
-    for(let i=2;i<=14;i++) pushRegular(i, ['defense','support','attack'][(i-2)%3]);
-    nodes.push({ id:'e15', index:15, category:'semiUltimate', kind:'active', deps:['e14'] });
-    for(let i=16;i<=29;i++) pushRegular(i, ['defense','support','attack'][(i-16)%3]);
-    nodes.push({ id:'e30', index:30, category:'ultimate', kind:'active', deps:['e29'] });
-    return nodes;
+  // Catálogo real (espelha huntEngine.ARCHETYPE_SPELLBOOK): arquétipo -> lista de magias,
+  // já com .row atribído (2 Ativas por linha, na ordem da wiki; Legacy fica
+  // 1 linha acima da última Ativa; Passiva não tem linha — regra à parte).
+  const ARCHETYPE_SPELLBOOK = {};
+  ARCHETYPE_IDS.forEach(id=> ARCHETYPE_SPELLBOOK[id] = []);
+  RAVENDAWN_SPELLS.forEach(s=>{
+    const archId = archetypeSlug(s.archetype);
+    if(!ARCHETYPE_SPELLBOOK[archId]) return;
+    ARCHETYPE_SPELLBOOK[archId].push({ id: spellSlug(s.name), name: s.name, kind: spellKindFromWiki(s.kind), desc: s.desc, archetype: archId });
+  });
+  ARCHETYPE_IDS.forEach(archId=>{
+    const list = ARCHETYPE_SPELLBOOK[archId];
+    let activeIdx = 0, maxActiveRow = 1;
+    list.forEach(sp=>{
+      if(sp.kind === 'active'){ sp.row = Math.floor(activeIdx/2) + 1; maxActiveRow = Math.max(maxActiveRow, sp.row); activeIdx++; }
+    });
+    list.forEach(sp=>{ if(sp.kind === 'legacy') sp.row = maxActiveRow + 1; });
+  });
+  // Custo por linha (espelha huntEngine.pointCostForLevel/totalPointCostToLevel):
+  // Passiva = 2 pontos fixos (nível único, 0 ou 1); Ativa/Legacy = linha + (nível-1)
+  // pra cada nível investido (1ª compra da linha 1 custa 1, upgrade seguinte
+  // custa 2, e por aí vai — some 1..targetLevel pra pegar o total acumulado).
+  function pointCostForLevelClient(sp, level){
+    if(sp.kind === 'passive') return level === 1 ? 2 : Infinity;
+    return sp.row + (level - 1);
   }
-  const SKILL_TREE_GRAPH_CLIENT = {};
-  ELEMENT_IDS.forEach(id=>{ SKILL_TREE_GRAPH_CLIENT[id] = buildSkillTreeGraphClient(id); });
-  function spellIdFor(elementId, nodeId){ return `${elementId}_${nodeId}`; }
+  function totalPointCostToLevelClient(sp, targetLevel){
+    let total = 0;
+    for(let lvl=1; lvl<=targetLevel; lvl++) total += pointCostForLevelClient(sp, lvl);
+    return total;
+  }
+  // Resolve o nome de classe real (56 combinações do PDF) a partir de 3 arquétipos.
+  function classNameForArchetypes(chosenIds){
+    const wanted = [...chosenIds].map(id=> ARCHETYPE_LABEL[id]).sort();
+    const found = RAVENDAWN_CLASS_TABLE.find(c=>{
+      const a = [...c.archetypes].sort();
+      return a.length===wanted.length && a.every((v,i)=> v===wanted[i]);
+    });
+    return found ? found.className : null;
+  }
+  function spellCompositeId(archetypeId, spellId){ return `${archetypeId}_${spellId}`; }
+  function archetypeIconUrl(id, size){ return `${URL_BASE}ravendawn/icons/archetypes/${size}/${id}.png`; }
+  function archetypeIconDisabledUrl(id, size){ return `${URL_BASE}ravendawn/icons/archetypes/${size}/${id}_disabled.png`; }
+  function spellIconUrl(name){ return `${URL_BASE}ravendawn/icons/abilitybar/${encodeURIComponent(String(name||'').toLowerCase())}.png`; }
+  // Slots preenchidos (sem null) + utilitárias sempre abertas — é isso que
+  // conta como "arquétipo aberto" pra hotbar/skill tab, igual getOpenArchetypes do servidor.
+  function getOpenArchetypesClient(){ return [...(archetypes.chosen||[]).filter(Boolean), ...UTILITY_ARCHETYPE_IDS]; }
+  function spellIdFor(archetypeId, spellId){ return spellCompositeId(archetypeId, spellId); }
+  // quantas Ativas DISTINTAS já têm pelo menos 1 ponto nesse arquétipo — é o
+  // que libera Passiva (precisa de >=3), espelha countUnlockedActives do servidor.
+  function countUnlockedActivesClient(archetypeId, levelsMap){
+    const spells = ARCHETYPE_SPELLBOOK[archetypeId] || [];
+    return spells.filter(sp=> sp.kind==='active' && (levelsMap[sp.id]||0) > 0).length;
+  }
   function getUnlockedSpells(){
-    // hotbar só pode receber NÓS ATIVOS com pelo menos 1 ponto investido —
-    // nó passivo (n.kind==='passive') nunca aparece aqui, ele só soma bônus
-    // permanente (ver computeSkillTreeBonuses no servidor) e não é uma magia.
+    // hotbar só pode receber magias ATIVAS/LEGACY com pelo menos 1 ponto
+    // investido — Passiva nunca aparece aqui, só soma bônus permanente
+    // (ver computeSkillTreeBonuses no servidor), não é uma magia de verdade.
     const list = [];
-    ELEMENT_IDS.forEach(elementId=>{
-      const levels = (skillTree.levels && skillTree.levels[elementId]) || {};
-      const chosenKind = skillTree.ultimateChoice && skillTree.ultimateChoice[elementId];
-      SKILL_TREE_GRAPH_CLIENT[elementId].forEach(n=>{
-        if((levels[n.id]||0) <= 0 || n.kind !== 'active') return;
-        const isMilestone = n.category==='semiUltimate' || n.category==='ultimate';
-        const name = isMilestone ? resolveMilestoneDisplay(elementId, n.category, chosenKind).name : n.name;
-        list.push({ id:spellIdFor(elementId,n.id), name, icon:SPELL_ICON[elementId], element:elementId, node:n });
+    getOpenArchetypesClient().forEach(archId=>{
+      const levels = (skillTree.levels && skillTree.levels[archId]) || {};
+      (ARCHETYPE_SPELLBOOK[archId]||[]).forEach(sp=>{
+        if((levels[sp.id]||0) <= 0 || sp.kind === 'passive') return;
+        const iconHtml = `<img src="${spellIconUrl(sp.name)}" style="width:20px;height:20px;object-fit:contain;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','${SPELL_KIND_ICON[sp.kind]}')" />`;
+        list.push({ id: spellIdFor(archId, sp.id), name: sp.name, icon: iconHtml, archetype: archId, node: sp });
       });
     });
     return list;
@@ -4390,8 +4475,8 @@
     hotbar.forEach((slot,i)=>{
       const el = document.createElement('div');
       let locked = false, icon = '';
-      if(slot.kind==='spell'){ const sp = getUnlockedSpells().find(s=>s.id===slot.id); icon = sp ? sp.icon : '❔'; }
-      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:20px;height:20px;object-fit:contain;" />` : '❔'; locked = pot ? !canUsePotion(pot) : false; }
+      if(slot.kind==='spell'){ const sp = getUnlockedSpells().find(s=>s.id===slot.id); icon = sp ? sp.icon : '흔'; }
+      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:20px;height:20px;object-fit:contain;" />` : '흔'; locked = pot ? !canUsePotion(pot) : false; }
       el.className = 'slot' + (locked?' locked':'');
       const cdPct = slot.kind && Date.now() < slot.cooldownUntil ? Math.round((slot.cooldownUntil-Date.now())/2200*100) : 0;
       const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
@@ -4416,6 +4501,7 @@
   document.querySelectorAll('.action-tab').forEach(t=>{
     t.addEventListener('click', ()=>{ document.querySelectorAll('.action-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); renderActionBody(); });
   });
+
   function renderActionBody(){
     const body = document.getElementById('action-body');
     const activeTab = document.querySelector('.action-tab.active').dataset.actiontab;
@@ -4526,9 +4612,15 @@
   }
 
   /* =========================================================
-     ÁRVORE DE HABILIDADES ELEMENTAL — UI (dados/catálogo compartilhados
-     ficam antes da HOTBAR, logo acima, porque renderHotbar já precisa
-     deles no primeiro render síncrono da página).
+     ÁRVORE DE HABILIDADES — 10 ARQUÉTIPOS REAIS DE RAVENDAWN — UI (dados/
+     catálogo compartilhados ficam antes da HOTBAR, logo acima, porque
+     renderHotbar já precisa deles no primeiro render síncrono da página).
+
+     Layout em CARDS agrupados por linha (não mais grade radial "treliça"
+     do sistema antigo de elementos) — cada linha só destrava depois de já
+     ter 1 ponto investido numa Ativa da linha anterior (regra real
+     copiada das telas de referência do jogo), então uma lista vertical
+     simples deixa essa progressão bem mais legível que nós espalhados.
      ========================================================= */
   /* Modal de confirmação próprio (troca o confirm() nativo do navegador,
      que aparece com a cara de um alerta de sistema do Windows, por um
@@ -4558,259 +4650,336 @@
     });
   }
 
-  let activeSkillElementTab = 'fogo';
-  // Rascunho local por elemento — níveis-alvo (absolutos, não deltas) que o
-  // jogador está planejando. null = ainda não inicializado nesta sessão de
-  // edição (renderSkillTree clona de skillTree.levels[el] na 1ª renderização
-  // e só volta a ficar null depois de um Salvar/Reset confirmado pelo
-  // servidor — assim um snapshot chegando no meio da edição não apaga o
-  // que o jogador ainda não salvou).
-  const pendingSkillLevels = { fogo:null, agua:null, terra:null, ar:null, luz:null, trevas:null };
-  let pendingSaveElement = null;
+  /* ---- SELETOR DE ARQUÉTIPOS (3 slots progressivos) ----
+     Slot 0 já vem escolhido (ou ainda vazio, se o personagem for velho de
+     antes dessa migração); slot 1 abre no nível efetivo 7; slot 2 no 15
+     (ver ARCHETYPE_SLOT_UNLOCK_LEVEL). Escolher um slot VAZIO é grátis;
+     escolher um slot JÁ PREENCHIDO troca de arquétipo por
+     ARCHETYPE_SWAP_GOLD_COST Gold e NÃO devolve os pontos investidos no
+     arquétipo trocado (eles ficam "guardados", contando pro bônus de
+     arquétipo inativo — ver getInactiveArchetypeBonusPoints no servidor). */
+  const archetypePickerEl = document.getElementById('archetype-picker');
+  const archetypeClassBanner = document.getElementById('archetype-class-banner');
+  const archetypePickMenu = document.getElementById('archetype-pick-menu');
+  function renderArchetypePicker(){
+    if(!archetypePickerEl) return;
+    archetypePickerEl.innerHTML = '';
+    const unlockedCount = getUnlockedSlotCountClient();
+    const chosen = archetypes.chosen || [null,null,null];
+    for(let i=0;i<3;i++){
+      const cell = document.createElement('div');
+      const unlocked = i < unlockedCount;
+      const current = chosen[i] || null;
+      cell.className = 'archetype-slot' + (unlocked?'':' locked') + (current?' filled':'');
+      if(!unlocked){
+        cell.innerHTML = `<div class="archetype-slot-lock">🔒</div><div class="archetype-slot-label">Slot ${i+1}<br>Nível ${ARCHETYPE_SLOT_UNLOCK_LEVEL[i]}</div>`;
+      } else {
+        const iconHtml = current
+          ? `<img src="${archetypeIconUrl(current,'90x90')}" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'" />`
+          : `<div class="archetype-slot-plus">+</div>`;
+        cell.innerHTML = `${iconHtml}<div class="archetype-slot-label">${current ? ARCHETYPE_LABEL[current] : 'Escolher'}</div>`;
+        cell.addEventListener('click', ()=> openArchetypeSlotMenu(i, current));
+      }
+      archetypePickerEl.appendChild(cell);
+    }
+    const filledCount = chosen.filter(Boolean).length;
+    if(archetypeClassBanner){
+      archetypeClassBanner.textContent = archetypes.className
+        ? `⚔️ Classe: ${archetypes.className}`
+        : (filledCount<3 ? `Escolha os 3 arquétipos pra definir sua classe (${filledCount}/3)` : 'Combinação sem nome de classe conhecido');
+    }
+  }
+  function openArchetypeSlotMenu(slotIndex, current){
+    const chosen = archetypes.chosen || [null,null,null];
+    const used = chosen.filter((id,idx)=> idx!==slotIndex && id);
+    const options = CLASSABLE_ARCHETYPE_IDS.filter(id=> !used.includes(id));
+    archetypePickMenu.innerHTML = '';
+    if(!options.length){ archetypePickMenu.style.display = 'none'; return; }
+    options.forEach(id=>{
+      const btn = document.createElement('button');
+      btn.className = 'archetype-pick-option' + (id===current?' current':'');
+      btn.innerHTML = `<img src="${archetypeIconUrl(id,'28x28')}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;" onerror="this.style.display='none'" />${ARCHETYPE_LABEL[id]} <span class="hint">${ARCHETYPE_THEME_PT[id]}</span>`;
+      btn.addEventListener('click', async ()=>{
+        archetypePickMenu.style.display = 'none';
+        if(current && current!==id){
+          const ok = await showConfirmModal(`Trocar ${ARCHETYPE_LABEL[current]} por ${ARCHETYPE_LABEL[id]} nesse slot custa ${ARCHETYPE_SWAP_GOLD_COST} Gold e NÃO devolve os pontos já investidos em ${ARCHETYPE_LABEL[current]} (eles ficam guardados: contam pro bônus de "+1 ponto a cada 10 níveis em arquétipo inativo"). Continuar?`);
+          if(!ok) return;
+        }
+        sendWS({ type:'archetype:chooseSlot', slotIndex, archetypeId:id });
+      });
+      archetypePickMenu.appendChild(btn);
+    });
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'archetype-pick-option cancel';
+    cancelBtn.textContent = 'Cancelar';
+    cancelBtn.addEventListener('click', ()=> archetypePickMenu.style.display = 'none');
+    archetypePickMenu.appendChild(cancelBtn);
+    archetypePickMenu.style.display = 'block';
+  }
+
+  /* ---- SUB-ABAS: Habilidades / Status ---- */
+  let skilltreeSubnav = 'skills';
+  document.querySelectorAll('#skilltree-subnav .skilltree-subnav-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      skilltreeSubnav = t.dataset.subnav;
+      document.querySelectorAll('#skilltree-subnav .skilltree-subnav-tab').forEach(x=> x.classList.toggle('active', x===t));
+      document.getElementById('skilltree-skills-section').style.display = skilltreeSubnav==='skills' ? '' : 'none';
+      document.getElementById('skilltree-stats-section').style.display = skilltreeSubnav==='stats' ? '' : 'none';
+      if(skilltreeSubnav==='stats') renderStatsSection(); else { renderSkillTabs(); renderSkillTree(); }
+    });
+  });
+
+  /* ---- ÁRVORE DE HABILIDADES POR ARQUÉTIPO ---- */
+  let activeSkillArchetypeTab = null;
+  // Rascunho local por arquétipo — níveis-alvo (absolutos, não deltas) que o
+  // jogador está planejando. undefined = ainda não inicializado nesta sessão
+  // de edição (currentDraft clona de skillTree.levels[id] na 1ª chamada e só
+  // volta a ficar limpo depois de um Salvar/Reset confirmado pelo servidor —
+  // assim um snapshot chegando no meio da edição não apaga o que o jogador
+  // ainda não salvou).
+  const pendingSkillLevels = {};
+  let pendingSaveArchetypeId = null;
   function sumLevels(obj){ return Object.values(obj||{}).reduce((a,b)=>a+(b||0),0); }
-  function currentDraft(elementId){
-    if(!pendingSkillLevels[elementId]) pendingSkillLevels[elementId] = { ...((skillTree.levels && skillTree.levels[elementId]) || {}) };
-    return pendingSkillLevels[elementId];
+  function currentDraft(archId){
+    if(!pendingSkillLevels[archId]) pendingSkillLevels[archId] = { ...((skillTree.levels && skillTree.levels[archId]) || {}) };
+    return pendingSkillLevels[archId];
   }
-  function draftIsDirty(elementId){
-    const draft = pendingSkillLevels[elementId];
+  function draftIsDirty(archId){
+    const draft = pendingSkillLevels[archId];
     if(!draft) return false;
-    const committed = (skillTree.levels && skillTree.levels[elementId]) || {};
-    return SKILL_TREE_GRAPH_CLIENT[elementId].some(n => (draft[n.id]||0) !== (committed[n.id]||0));
+    const committed = (skillTree.levels && skillTree.levels[archId]) || {};
+    return (ARCHETYPE_SPELLBOOK[archId]||[]).some(sp => (draft[sp.id]||0) !== (committed[sp.id]||0));
   }
-  function availablePointsFor(elementId){
+  function spentCostForArchetype(archId, levelsMap){
+    let total = 0;
+    (ARCHETYPE_SPELLBOOK[archId]||[]).forEach(sp=>{
+      const lvl = (levelsMap && levelsMap[sp.id]) || 0;
+      if(lvl > 0) total += totalPointCostToLevelClient(sp, lvl);
+    });
+    return total;
+  }
+  function availablePointsFor(archId){
     const total = (skillPoints && skillPoints.total) || 0;
     let spentOthers = 0;
-    ELEMENT_IDS.forEach(id=>{ if(id!==elementId) spentOthers += sumLevels(skillTree.levels && skillTree.levels[id]); });
-    const draft = currentDraft(elementId);
-    return total - spentOthers - sumLevels(draft);
+    getOpenArchetypesClient().forEach(id=>{ if(id!==archId) spentOthers += spentCostForArchetype(id, skillTree.levels && skillTree.levels[id]); });
+    const draft = currentDraft(archId);
+    return total - spentOthers - spentCostForArchetype(archId, draft);
   }
 
   const skilltreePanel = document.getElementById('skilltree-panel');
-  document.getElementById('btn-open-skilltree').addEventListener('click', ()=>{ skilltreePanel.classList.toggle('open'); renderSkillTabs(); renderSkillTree(); });
+  document.getElementById('btn-open-skilltree').addEventListener('click', ()=>{
+    skilltreePanel.classList.toggle('open');
+    renderArchetypePicker(); renderSkillTabs(); renderSkillTree();
+  });
   async function switchSkillTab(id){
-    if(id===activeSkillElementTab) return;
-    if(draftIsDirty(activeSkillElementTab)){
-      const ok = await showConfirmModal('Você tem alterações não salvas nessa árvore. Trocar de elemento vai descartá-las. Continuar?');
+    if(id===activeSkillArchetypeTab) return;
+    if(activeSkillArchetypeTab && draftIsDirty(activeSkillArchetypeTab)){
+      const ok = await showConfirmModal('Você tem alterações não salvas nessa árvore. Trocar de arquétipo vai descartá-las. Continuar?');
       if(!ok) return;
     }
-    pendingSkillLevels[activeSkillElementTab] = null;
-    activeSkillElementTab = id; renderSkillTabs(); renderSkillTree();
+    if(activeSkillArchetypeTab) pendingSkillLevels[activeSkillArchetypeTab] = null;
+    activeSkillArchetypeTab = id; renderSkillTabs(); renderSkillTree();
   }
   function renderSkillTabs(){
     const wrap = document.getElementById('skill-tabs');
+    if(!wrap) return;
     wrap.innerHTML = '';
-    ELEMENT_IDS.forEach(id=>{
+    const open = getOpenArchetypesClient();
+    if(!open.includes(activeSkillArchetypeTab)) activeSkillArchetypeTab = open[0] || null;
+    open.forEach(id=>{
       const el = document.createElement('div');
-      el.className = 'skill-tab' + (id===activeSkillElementTab ? ' active':'') + (draftIsDirty(id) ? ' dirty':'');
-      if(id===activeSkillElementTab){ el.style.color = ELEMENT_TAB_COLOR[id]; el.style.borderColor = ELEMENT_TAB_COLOR[id]; }
-      el.textContent = ELEMENT_LABEL[id] + (draftIsDirty(id) ? ' •' : '');
+      el.className = 'skill-tab' + (id===activeSkillArchetypeTab ? ' active':'') + (draftIsDirty(id) ? ' dirty':'');
+      el.textContent = ARCHETYPE_LABEL[id] + (draftIsDirty(id) ? ' •' : '');
       el.addEventListener('click', ()=> switchSkillTab(id));
       wrap.appendChild(el);
     });
+    if(!open.length) wrap.innerHTML = '<span style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Escolha um arquétipo acima pra ver a árvore.</span>';
   }
-  const skillTip = document.getElementById('skill-node-tip');
-  const selectedSkillNodeId = {}; // último nó clicado por elemento, pra reabrir os detalhes ao trocar de aba/re-render
+  function spellCardHtml(archId, sp, draft){
+    const level = draft[sp.id] || 0;
+    const maxLevel = sp.kind==='passive' ? 1 : sp.kind==='legacy' ? 5 : 10;
+    const iconUrl = spellIconUrl(sp.name);
+    const kindBadge = `<span class="spell-card-kind-badge ${sp.kind}">${SPELL_KIND_ICON[sp.kind]} ${SPELL_KIND_LABEL[sp.kind]}</span>`;
+    let lockedReason = null;
+    if(sp.kind==='active' && sp.row>1){
+      const prevRowUnlocked = (ARCHETYPE_SPELLBOOK[archId]||[]).some(o=> o.kind==='active' && o.row===sp.row-1 && (draft[o.id]||0)>0);
+      if(!prevRowUnlocked) lockedReason = `Precisa destravar 1 habilidade da linha ${sp.row-1} primeiro.`;
+    }
+    if(sp.kind==='legacy'){
+      const lastActiveRow = Math.max(...(ARCHETYPE_SPELLBOOK[archId]||[]).filter(o=>o.kind==='active').map(o=>o.row));
+      const anyActive = (ARCHETYPE_SPELLBOOK[archId]||[]).some(o=> o.kind==='active' && o.row===lastActiveRow && (draft[o.id]||0)>0);
+      if(!anyActive) lockedReason = `Precisa destravar 1 habilidade da última linha de Ativas primeiro.`;
+    }
+    if(sp.kind==='passive' && level<=0){
+      const unlockedActives = countUnlockedActivesClient(archId, draft);
+      if(unlockedActives < 3) lockedReason = `Precisa ter 3 Ativas distintas destravadas nesse arquétipo (tem ${unlockedActives}/3).`;
+    }
+    const nextCost = level<maxLevel ? pointCostForLevelClient(sp, level+1) : null;
+    const avail = availablePointsForDraft(archId, draft);
+    const canAfford = nextCost!==null && nextCost<=avail;
+    const canPlus = level<maxLevel && !lockedReason && canAfford;
+    const canMinus = level>0;
+    const isPassiveToggle = sp.kind==='passive';
+    const btns = isPassiveToggle
+      ? `<button class="spell-card-toggle-btn ${level>0?'on':''}" data-spell="${sp.id}" ${(!canPlus && level<=0)?'disabled':''}>${level>0 ? '✓ Destravada' : `Destravar (${pointCostForLevelClient(sp,1)} pts)`}</button>`
+      : `<div class="spell-card-lvlctrl">
+           <button class="spell-card-minus" data-spell="${sp.id}" ${canMinus?'':'disabled'}>−</button>
+           <span class="spell-card-lvl">Nv. ${level}/${maxLevel}</span>
+           <button class="spell-card-plus" data-spell="${sp.id}" ${canPlus?'':'disabled'}>+</button>
+           ${nextCost!==null ? `<span class="spell-card-cost">próx: ${nextCost} pt${nextCost>1?'s':''}</span>` : ''}
+         </div>`;
+    return `<div class="spell-card ${lockedReason?'locked':''} ${level>0?'invested':''}" data-spell="${sp.id}">
+        <div class="spell-card-head">
+          <img class="spell-card-icon" src="${iconUrl}" onerror="this.style.visibility='hidden'" />
+          <div class="spell-card-title"><b>${sp.name}</b>${kindBadge}</div>
+        </div>
+        <div class="spell-card-desc">${sp.desc || ''}</div>
+        ${lockedReason ? `<div class="spell-card-lock-msg">🔒 ${lockedReason}</div>` : ''}
+        ${btns}
+      </div>`;
+  }
+  function availablePointsForDraft(archId, draft){
+    const total = (skillPoints && skillPoints.total) || 0;
+    let spentOthers = 0;
+    getOpenArchetypesClient().forEach(id=>{ if(id!==archId) spentOthers += spentCostForArchetype(id, skillTree.levels && skillTree.levels[id]); });
+    return total - spentOthers - spentCostForArchetype(archId, draft);
+  }
   function renderSkillTree(){
     if(!skilltreePanel.classList.contains('open')) return;
-    // wrap.innerHTML é zerado e reconstruído mais abaixo toda vez que essa
-    // função roda — inclusive quando ela é chamada de novo por causa de um
-    // snapshot do servidor chegando enquanto o mouse ainda está em cima de um
-    // nome de skill (renderSkillTreeIfOpen roda a cada snapshot). Remover o
-    // node-name do DOM não dispara 'mouseleave' nele, então a tooltip antiga
-    // ficava presa em display:block pra sempre — era o "a caixa de detalhes
-    // não some". Escondendo aqui, toda reconstrução some com qualquer tooltip
-    // órfã; se o mouse continuar em cima da skill, ela some por um instante e
-    // some de vez só se o ponteiro realmente sair (comportamento correto).
-    skillTip.style.display = 'none';
-    const elementId = activeSkillElementTab;
-    const nodes = SKILL_TREE_GRAPH_CLIENT[elementId];
-    const committed = (skillTree.levels && skillTree.levels[elementId]) || {};
-    const chosenKind = skillTree.ultimateChoice && skillTree.ultimateChoice[elementId];
-    const draft = currentDraft(elementId);
-    const available = availablePointsFor(elementId);
-    document.getElementById('skill-points-total').textContent = (skillPoints && skillPoints.total) || 0;
-    document.getElementById('skill-points-available').textContent = Math.max(0, available);
-
-    // ===== Layout em "treliça" (estilo grade de passivas da referência) =====
-    // Nosso grafo continua sendo a mesma corrente linear de 30 nós que o
-    // servidor gera (cada nó só depende do anterior — a trava/desbloqueio
-    // não muda em nada aqui) — só o DESENHO muda: em vez do galho
-    // serpenteando livre de cima pra baixo, agora a corrente é organizada em
-    // 3 "trilhas" horizontais fixas (Defesa/Suporte/Ataque) e a sequência
-    // real vai IZ-zagueando entre as trilhas coluna a coluna (defesa1 →
-    // suporte1 → ataque1 → defesa2 → ...), igual à referência mas fiel à
-    // dependência real (a linha SVG sempre liga um nó só ao seu dep real,
-    // então o zigue-zague É a corrente verdadeira, não um efeito falso). A
-    // Raiz (e1) fica sozinha à esquerda, centralizada nas 3 trilhas, e cada
-    // marco (Semi Ultimate e15 / Ultimate e30 = "Marco Final") fica numa
-    // coluna própria também centralizada, maior e com brilho, exatamente
-    // como o nó "Marco Final" da referência.
     const wrap = document.getElementById('skill-list-wrap');
-    wrap.innerHTML = '';
-    const LANE_ORDER = ['defense','support','attack'];
-    const ROW_H = 66, COL_W = 62, LEFT_PAD = 40, TOP_PAD = 36;
-    const tierCount = { defense:0, support:0, attack:0 };
-    let segmentBaseCol = 0;
-    const nodeInfos = nodes.map((n, idx)=>{
-      const isMilestone = n.category==='semiUltimate' || n.category==='ultimate';
-      const isRoot = idx===0;
-      const display = isMilestone ? resolveMilestoneDisplay(elementId, n.category, chosenKind) : n;
-      const committedLvl = committed[n.id] || 0;
-      const pendingLvl = draft[n.id] || 0;
-      const prevOk = n.deps.length===0 || (draft[n.deps[0]]||0) > 0;
-      const locked = !isRoot && !prevOk;
-      const needsChoice = n.category==='semiUltimate' && !chosenKind; // e15 sem escolha ainda feita
-      const dirty = pendingLvl !== committedLvl;
-      let col, laneIdx;
-      if(isRoot){ col = 0; laneIdx = 1; }
-      else if(isMilestone){
-        col = segmentBaseCol + Math.max(tierCount.defense, tierCount.support, tierCount.attack) + 1;
-        laneIdx = 1;
-        segmentBaseCol = col; tierCount.defense = tierCount.support = tierCount.attack = 0;
-      } else {
-        tierCount[n.category]++;
-        col = segmentBaseCol + tierCount[n.category];
-        laneIdx = LANE_ORDER.indexOf(n.category);
-      }
-      const x = LEFT_PAD + col*COL_W;
-      const y = TOP_PAD + laneIdx*ROW_H;
-      const isActiveSkill = n.kind === 'active';
-      // Nó ativo (vira magia de verdade, vai pra hotbar) desenha com um
-      // círculo maior que os passivos, pra dar pra diferenciar de relance —
-      // a Raiz e os 2 Marcos (sempre ativos) já eram os maiores de qualquer
-      // forma; só os ativos "do meio da corrente" (e5/e9/e13/e16/e20/e24/e28)
-      // precisavam de um tamanho intermediário novo entre eles e as passivas.
-      const size = isMilestone ? 32 : (isRoot ? 26 : (isActiveSkill ? 22 : 17));
-      return { n, idx, isMilestone, isRoot, isActiveSkill, display, committedLvl, pendingLvl, locked, needsChoice, dirty, x, y, size, col };
-    });
-    const maxCol = nodeInfos.reduce((m,i)=>Math.max(m,i.col), 0);
-    wrap.style.height = (TOP_PAD*2 + ROW_H*2) + 'px';
-    const canvasW = LEFT_PAD*2 + maxCol*COL_W;
-
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('width', canvasW);
-    svg.setAttribute('height', wrap.style.height);
-    svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
-    const byId = {}; nodeInfos.forEach(i=> byId[i.n.id] = i);
-    nodeInfos.forEach(b=>{
-      b.n.deps.forEach(depId=>{
-        const a = byId[depId];
-        if(!a) return;
-        const line = document.createElementNS(svgNS, 'line');
-        line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
-        line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
-        const lit = b.committedLvl > 0;
-        line.setAttribute('stroke', lit ? 'rgba(240,211,138,.8)' : 'rgba(191,161,95,.25)');
-        line.setAttribute('stroke-width', lit ? 2.2 : 1.4);
-        svg.appendChild(line);
+    if(!wrap) return;
+    const archId = activeSkillArchetypeTab;
+    if(!archId){ wrap.innerHTML = ''; document.getElementById('skill-points-available').textContent = '0'; document.getElementById('skill-points-total').textContent = String((skillPoints&&skillPoints.total)||0); document.getElementById('skill-save-btn').disabled = true; return; }
+    const draft = currentDraft(archId);
+    const spells = ARCHETYPE_SPELLBOOK[archId] || [];
+    const actives = spells.filter(sp=>sp.kind==='active');
+    const legacy = spells.filter(sp=>sp.kind==='legacy');
+    const passives = spells.filter(sp=>sp.kind==='passive');
+    const maxRow = actives.reduce((m,sp)=>Math.max(m,sp.row),1);
+    let html = `<div class="skilltree-archname">${ARCHETYPE_LABEL[archId]} <span class="hint">${ARCHETYPE_THEME_PT[archId]}</span></div>`;
+    for(let row=1; row<=maxRow; row++){
+      html += `<div class="spell-row-label">Linha ${row}</div><div class="spell-row-cards">`;
+      actives.filter(sp=>sp.row===row).forEach(sp=>{ html += spellCardHtml(archId, sp, draft); });
+      html += `</div>`;
+    }
+    if(legacy.length){
+      html += `<div class="spell-row-label">Legacy (Ultimate)</div><div class="spell-row-cards">`;
+      legacy.forEach(sp=>{ html += spellCardHtml(archId, sp, draft); });
+      html += `</div>`;
+    }
+    if(passives.length){
+      html += `<div class="spell-row-label">Passivas</div><div class="spell-row-cards">`;
+      passives.forEach(sp=>{ html += spellCardHtml(archId, sp, draft); });
+      html += `</div>`;
+    }
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.spell-card-plus, .spell-card-minus, .spell-card-toggle-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const spellId = btn.dataset.spell;
+        const sp = spells.find(s=>s.id===spellId);
+        if(!sp) return;
+        const cur = draft[spellId] || 0;
+        if(btn.classList.contains('spell-card-toggle-btn')) draft[spellId] = cur>0 ? 0 : 1;
+        else if(btn.classList.contains('spell-card-plus')) draft[spellId] = cur + 1;
+        else draft[spellId] = Math.max(0, cur - 1);
+        renderSkillTree();
       });
     });
-    // canvas interno com a largura REAL da árvore (pode passar da largura
-    // visível do painel) — é ele que rola dentro de #skill-list-wrap
-    // (overflow-x:auto), e não o wrap em si, senão os nós das colunas finais
-    // (2º milestone em diante) ficam cortados fora da área visível.
-    const canvas = document.createElement('div');
-    canvas.style.cssText = `position:relative; width:${canvasW}px; height:${wrap.style.height}; min-width:100%;`;
-    canvas.appendChild(svg);
-    wrap.appendChild(canvas);
-
-    const detail = document.getElementById('skill-node-detail');
-    function markSelected(info){
-      wrap.querySelectorAll('.skill-node').forEach(el=> el.classList.remove('selected'));
-      const el = wrap.querySelector(`[data-node-id="${info.n.id}"]`);
-      if(el) el.classList.add('selected');
-    }
-    function renderDetail(info){
-      selectedSkillNodeId[elementId] = info.n.id;
-      const { n, display, committedLvl, pendingLvl, locked, needsChoice } = info;
-      if(needsChoice && !locked){
-        const opts = allowedUltimateKindsClient(elementId);
-        detail.innerHTML = `<span class="detail-name">${CATEGORY_ICON[n.category]} Escolher natureza da ${n.category==='semiUltimate'?'Semi Ultimate':'Ultimate'}</span>` +
-          `<div class="detail-row">${opts.map(k=>`<button class="detail-kind-btn" data-kind="${k}">${ULTIMATE_KIND_LABEL[k]}</button>`).join('')}</div>`;
-        detail.querySelectorAll('.detail-kind-btn').forEach(btn=> btn.addEventListener('click', ()=>{
-          sendWS({ type:'skill:chooseUltimate', elementId, kind: btn.dataset.kind });
-        }));
-        return;
-      }
-      const laterInvested = nodes.slice(info.idx+1).some(later => (draft[later.id]||0) > 0);
-      const canInc = !locked && !needsChoice && pendingLvl < 10 && available > 0;
-      const canDec = pendingLvl > committedLvl && (pendingLvl > 1 || !laterInvested);
-      detail.innerHTML = `<span class="detail-name">${String(n.index).padStart(2,'0')} · ${CATEGORY_ICON[n.category]} ${display.name}</span>` +
-        `<span class="detail-desc">${display.desc}${locked?' <b style="color:#ff9a80;">— requer o nó anterior investido</b>':''}</span>` +
-        `<div class="detail-row"><span class="detail-level">Nv. <b>${pendingLvl}</b>/10</span><span style="display:flex;gap:6px;"><button class="detail-minus" ${canDec?'':'disabled'}>−</button><button class="detail-plus" ${canInc?'':'disabled'}>+</button></span></div>`;
-      detail.querySelector('.detail-plus').addEventListener('click', ()=>{ if(!canInc) return; draft[n.id] = pendingLvl+1; renderSkillTree(); });
-      detail.querySelector('.detail-minus').addEventListener('click', ()=>{ if(!canDec) return; draft[n.id] = pendingLvl-1; renderSkillTree(); });
-    }
-
-    nodeInfos.forEach(info=>{
-      const { n, isMilestone, isRoot, isActiveSkill, display, committedLvl, locked, dirty, x, y, size } = info;
-      const el = document.createElement('div');
-      el.className = 'skill-node' + (isMilestone?' milestone':'') + (isActiveSkill?' active-skill':'') + (committedLvl>0?' invested':'') + (locked?' locked':'') + (dirty?' dirty':'');
-      el.dataset.nodeId = n.id;
-      el.style.width = size+'px'; el.style.height = size+'px';
-      el.style.left = (x - size/2)+'px'; el.style.top = (y - size/2)+'px';
-      el.style.fontSize = (isMilestone||isRoot ? 15 : 9)+'px';
-      el.textContent = CATEGORY_ICON[n.category];
-      // Só nó ATIVO com pelo menos 1 ponto investido vai pra hotbar — nó
-      // passivo nunca é arrastável, ele só contribui bônus permanente (ver
-      // computeSkillTreeBonuses no servidor), nunca é uma magia de verdade.
-      if(committedLvl>0 && isActiveSkill){
-        el.draggable = true;
-        el.addEventListener('dragstart', e=> e.dataTransfer.setData('text/spell-id', spellIdFor(elementId, n.id)));
-      }
-      el.addEventListener('mouseenter', ()=>{
-        const kindHint = isActiveSkill
-          ? (committedLvl>0 ? '<span class="hint">✦ Ativa — arraste pra um slot da hotbar</span>' : '<span class="hint">✦ Ativa — vira magia ao investir</span>')
-          : '<span class="hint" style="color:#9ac7e0;">◆ Passiva — só bônus permanente, não vai pra hotbar</span>';
-        skillTip.innerHTML = `<b>${display.name}</b>${display.desc}${locked?'<span class="hint" style="color:#ff9a80;">Requer o nó anterior investido</span>':''}${kindHint}`;
-        skillTip.style.display = 'block';
-      });
-      el.addEventListener('mousemove', e=>{ skillTip.style.left = (e.clientX+14)+'px'; skillTip.style.top = (e.clientY+14)+'px'; });
-      el.addEventListener('mouseleave', ()=>{ skillTip.style.display = 'none'; });
-      el.addEventListener('click', ()=>{ markSelected(info); renderDetail(info); });
-      canvas.appendChild(el);
-      // labels fixas "Raiz" / "Marco Final" embaixo das duas âncoras da
-      // trilha, igual à referência (as demais ficam só com tooltip, senão
-      // 30 labels por elemento poluem a grade).
-      if(isRoot || n.category==='ultimate'){
-        const lbl = document.createElement('div');
-        lbl.className = 'skill-node-anchor-label';
-        lbl.style.left = x+'px'; lbl.style.top = (y + size/2 + 4)+'px';
-        lbl.textContent = isRoot ? 'Raiz' : 'Marco Final';
-        canvas.appendChild(lbl);
-      }
-    });
-
-    let sel = nodeInfos.find(i=> i.n.id === selectedSkillNodeId[elementId]) || nodeInfos.find(i=> !i.locked) || nodeInfos[0];
-    markSelected(sel);
-    renderDetail(sel);
-
-    const dirty = draftIsDirty(elementId);
-    const resetCost = usedFreeSkillReset ? ELEMENTAL_COIN_RESET_COST : 0;
-    const saveBtn = document.getElementById('skill-save-btn');
-    saveBtn.disabled = !dirty;
-    saveBtn.onclick = async ()=>{
-      if(!dirty) return;
-      const ok = await showConfirmModal(`Tem certeza que quer salvar a Árvore de ${ELEMENT_LABEL[elementId]}? Depois de salvar, a única forma de reorganizar os pontos é resetando essa árvore${usedFreeSkillReset ? ` por ${ELEMENTAL_COIN_RESET_COST} Elemental Coin` : ' (1º reset da conta é grátis)'}.`);
-      if(!ok) return;
-      pendingSaveElement = elementId;
-      sendWS({ type:'skill:save', elementId, levels: draft });
-    };
+    const avail = availablePointsFor(archId);
+    document.getElementById('skill-points-available').textContent = String(Math.max(0,avail));
+    document.getElementById('skill-points-total').textContent = String((skillPoints&&skillPoints.total)||0);
+    document.getElementById('skill-save-btn').disabled = !draftIsDirty(archId) || avail<0;
     const resetBtn = document.getElementById('skill-reset-btn');
-    resetBtn.textContent = resetCost ? `♻️ Resetar (${resetCost} 💎)` : '♻️ Resetar (1º grátis)';
-    resetBtn.disabled = resetCost > elementalCoins;
-    resetBtn.onclick = async ()=>{
-      if(resetCost > elementalCoins) return;
-      const msg = resetCost ? `Resetar a Árvore de ${ELEMENT_LABEL[elementId]} vai devolver todos os pontos investidos nela e custa ${resetCost} Elemental Coin. Continuar?`
-        : `Resetar a Árvore de ${ELEMENT_LABEL[elementId]} vai devolver todos os pontos investidos nela. Este é o seu 1º reset e é GRÁTIS. Continuar?`;
+    const resetCost = usedFreeSkillReset ? ELEMENTAL_COIN_RESET_COST : 0;
+    resetBtn.textContent = resetCost ? `♻️ Resetar (${resetCost} 💎)` : '♻️ Resetar (grátis)';
+  }
+  document.getElementById('skill-save-btn').addEventListener('click', async ()=>{
+    const archId = activeSkillArchetypeTab;
+    if(!archId) return;
+    const ok = await showConfirmModal(`Tem certeza que quer salvar a Árvore de ${ARCHETYPE_LABEL[archId]}? Depois de salvar, a única forma de reorganizar os pontos é resetando essa árvore${usedFreeSkillReset ? ` por ${ELEMENTAL_COIN_RESET_COST} Elemental Coin` : ' (1º reset da conta é grátis)'}.`);
+    if(!ok) return;
+    pendingSaveArchetypeId = archId;
+    sendWS({ type:'skill:save', archetypeId: archId, levels: currentDraft(archId) });
+  });
+  document.getElementById('skill-reset-btn').addEventListener('click', async ()=>{
+    const archId = activeSkillArchetypeTab;
+    if(!archId) return;
+    const resetCost = usedFreeSkillReset ? ELEMENTAL_COIN_RESET_COST : 0;
+    const msg = resetCost ? `Resetar a Árvore de ${ARCHETYPE_LABEL[archId]} vai devolver todos os pontos investidos nela e custa ${resetCost} Elemental Coin. Continuar?`
+      : `Resetar a Árvore de ${ARCHETYPE_LABEL[archId]} vai devolver todos os pontos investidos nela. Este é o seu 1º reset e é GRÁTIS. Continuar?`;
+    const ok = await showConfirmModal(msg);
+    if(!ok) return;
+    sendWS({ type:'skill:reset', archetypeId: archId });
+  });
+  function renderSkillTreeIfOpen(){
+    if(!skilltreePanel.classList.contains('open')) return;
+    renderArchetypePicker();
+    if(skilltreeSubnav==='stats') renderStatsSection(); else { renderSkillTabs(); renderSkillTree(); }
+  }
+
+  /* ---- PAINEL "CHARACTER (X)" — Vitality/Might/Intelligence/Dexterity/Wisdom.
+     Sistema à parte da Árvore de Habilidades (arquétipos), com pontos e
+     Reset próprios (ver stat:allocate/stat:reset e getStatPointsTotal no
+     servidor — a fórmula de pontos-por-nível é uma aproximação nossa, não
+     documentada no material recebido, ver comentário em huntEngine.js). */
+  const STAT_META = {
+    vitality: { label:'Vitality', icon:'❤️', desc:'Aumenta seu HP máximo.' },
+    might: { label:'Might', icon:'⚔️', desc:'Aumenta Weapon Power (dano físico).' },
+    intelligence: { label:'Intelligence', icon:'🔮', desc:'Aumenta Spell Power (dano mágico).' },
+    dexterity: { label:'Dexterity', icon:'🏹', desc:'Aumenta Haste, Precision e Impact.' },
+    wisdom: { label:'Wisdom', icon:'📖', desc:'Aumenta Healing Power e seu MP máximo.' },
+  };
+  let statAllocation = { vitality:0, might:0, intelligence:0, dexterity:0, wisdom:0 };
+  let statPoints = { total:0, spent:0 };
+  let statAttributes = {};
+  let usedFreeStatReset = false;
+  function renderStatsSection(){
+    const el = document.getElementById('skilltree-stats-section');
+    if(!el) return;
+    const spent = (statPoints && statPoints.spent) || 0;
+    const total = (statPoints && statPoints.total) || 0;
+    const avail = total - spent;
+    let html = `<div class="skill-points-row"><span>Pontos de Status</span><span><b>${Math.max(0,avail)}</b> / ${total} disponíveis</span></div>`;
+    Object.keys(STAT_META).forEach(key=>{
+      const meta = STAT_META[key];
+      const val = statAllocation[key] || 0;
+      html += `<div class="attr-row">
+        <span class="name">${meta.icon} ${meta.label}</span>
+        <div class="attr-track"><div class="attr-fill" style="width:${Math.min(100, val*2)}%"></div></div>
+        <span class="attr-val">${val}</span>
+        <button class="attr-plus attr-minus" data-stat="${key}" data-delta="-1" ${val<=0?'disabled':''}>−</button>
+        <button class="attr-plus" data-stat="${key}" data-delta="1" ${avail<=0?'disabled':''}>+</button>
+      </div>
+      <div class="stat-desc-line">${meta.desc}</div>`;
+    });
+    const a = statAttributes || {};
+    html += `<div class="stat-derived-box">
+      <div class="stat-derived-row"><span>HP máximo</span><span>${player.hpMax||0} <span class="hint">(+${Math.round(a.hpBonus||0)})</span></span></div>
+      <div class="stat-derived-row"><span>MP máximo</span><span>${player.mpMax||0} <span class="hint">(+${Math.round(a.mpBonus||0)})</span></span></div>
+      <div class="stat-derived-row"><span>Weapon Power</span><span>+${(a.weaponPowerPct||0).toFixed(1)}%</span></div>
+      <div class="stat-derived-row"><span>Spell Power</span><span>+${(a.spellPowerPct||0).toFixed(1)}%</span></div>
+      <div class="stat-derived-row"><span>Healing Power</span><span>+${(a.healingPowerPct||0).toFixed(1)}%</span></div>
+      <div class="stat-derived-row"><span>Haste</span><span>+${(a.hastePct||0).toFixed(1)}%</span></div>
+      <div class="stat-derived-row"><span>Precision</span><span>+${(a.precisionPct||0).toFixed(1)}%</span></div>
+      <div class="stat-derived-row"><span>Impact</span><span>+${(a.impactPct||0).toFixed(1)}%</span></div>
+    </div>
+    <div class="skill-actions-row">
+      <button class="skill-reset-btn" id="stat-reset-btn">♻️ Resetar Status${usedFreeStatReset ? ` (${STAT_RESET_COST_CLIENT} 💎)` : ' (grátis)'}</button>
+    </div>`;
+    el.innerHTML = html;
+    el.querySelectorAll('.attr-plus').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        sendWS({ type:'stat:allocate', stat: btn.dataset.stat, delta: Number(btn.dataset.delta) });
+      });
+    });
+    document.getElementById('stat-reset-btn').addEventListener('click', async ()=>{
+      const cost = usedFreeStatReset ? STAT_RESET_COST_CLIENT : 0;
+      const msg = cost ? `Resetar seu painel de Status devolve todos os pontos investidos e custa ${cost} Elemental Coin. Continuar?` : 'Resetar seu painel de Status devolve todos os pontos investidos. Este é o seu 1º reset e é GRÁTIS. Continuar?';
       const ok = await showConfirmModal(msg);
       if(!ok) return;
-      sendWS({ type:'skill:reset', elementId });
-    };
+      sendWS({ type:'stat:reset' });
+    });
   }
-  function renderSkillTreeIfOpen(){ if(skilltreePanel.classList.contains('open')){ renderSkillTabs(); renderSkillTree(); } }
 
   /* =========================================================
      TORRES ELEMENTAIS
