@@ -165,7 +165,7 @@
   #hunts-body{ flex:1; display:flex; overflow:hidden; }
   #hunts-left{ width:220px; border-right:1px solid rgba(191,161,95,.2); padding:12px; overflow-y:auto; flex-shrink:0; }
   #hunts-search{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:7px 9px; font-family:var(--font-body); font-size:12px; outline:none; margin-bottom:10px; }
-  .hunt-list-item{ padding:9px 10px; border-radius:5px; cursor:pointer; font-family:var(--font-body); font-size:12.5px; color:var(--ink-dim); margin-bottom:4px; border:1px solid transparent; }
+  .hunt-list-item{ padding:9px 10px; border-radius:5px; cursor:pointer; font-family:var(--font-body); font-size:12.5px; color:var(--ink-dim); margin-bottom:4px; border:1px solid transparent; display:flex; align-items:center; gap:9px; } .hunt-list-item-icon{ width:34px; height:34px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; background:rgba(0,0,0,.25); border:1px solid var(--gold-deep); border-radius:4px; } .hunt-list-item-body{ flex:1; min-width:0; }
   .hunt-list-item.selected{ color:var(--gold-bright); border-color:var(--gold-deep); background:rgba(191,161,95,.08); }
   .hunt-list-item .lvl{ display:block; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-top:2px; }
 
@@ -3250,7 +3250,10 @@
     HUNTS.filter(h=> h.name.toLowerCase().includes(filter.toLowerCase())).forEach(h=>{
       const el = document.createElement('div');
       el.className = 'hunt-list-item' + (h.id===selectedHunt.id?' selected':'');
-      el.innerHTML = `${h.name}<span class="lvl">Nv. ${h.level}</span>`;
+      const firstMt = (h.monsterTypes||[])[0];
+      const iconUrl = firstMt && firstMt.spriteId ? URL_BASE+'monsters/'+firstMt.spriteId+'.png' : null;
+      const iconHtml = iconUrl ? `<img class="hunt-list-item-icon" src="${iconUrl}" alt="" onerror="this.style.display='none'">` : `<div class="hunt-list-item-icon" style="display:flex;align-items:center;justify-content:center;font-size:18px;">${firstMt?firstMt.icon:''}</div>`;
+      el.innerHTML = `${iconHtml}<div class="hunt-list-item-body">${h.name}<span class="lvl">Nv. ${h.level}</span></div>`;
       el.addEventListener('click', ()=> selectHunt(h));
       listEl.appendChild(el);
     });
@@ -5297,7 +5300,8 @@
       const card = document.createElement('div');
       card.className = 'hd-monster-card';
       const weakHtml = (mt.weakTo||[]).map(w=>`<span class="elem-chip">${w}</span>`).join('') || '<span class="elem-chip">Nenhuma</span>';
-      const mtIconHtml = mt.img ? `<img src="${mt.img}" alt="${mt.name}" onerror="this.replaceWith(document.createTextNode('${mt.icon}'))" />` : mt.icon;
+      const mtImgSrc = mt.img || (mt.spriteId ? URL_BASE+'monsters/'+mt.spriteId+'.png' : null);
+      const mtIconHtml = mtImgSrc ? `<img src="${mtImgSrc}" alt="${mt.name}" onerror="this.replaceWith(document.createTextNode('${mt.icon}'))" />` : mt.icon;
       card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div><div class="hd-monster-toggle">Detalhes ▾</div><div class="hd-monster-weak">Fraco contra:<br>${weakHtml}</div>`;
       const toggle = card.querySelector('.hd-monster-toggle');
       const weakBox = card.querySelector('.hd-monster-weak');
