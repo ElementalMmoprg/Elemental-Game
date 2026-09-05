@@ -4102,6 +4102,17 @@
   };
   const POTION_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M10 2v5l-4 8a4 4 0 0 0 4 6h4a4 4 0 0 0 4-6l-4-8V2"/><path d="M8 15h8"/></svg>';
   const MATERIAL_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 5-2 10-6 5-6-5L4 7l8-5z"/></svg>';
+  // Fallback do ícone real (foto vinda da wiki) pra loot comum sem sprite
+  // dedicado — chamado pelo onerror do <img> quando o arquivo não existe
+  // (ex.: 2 itens sem imagem utilizável na wiki). Troca a <img> quebrada
+  // pelo mesmo desenho SVG genérico de "material" usado antes disso existir.
+  function handleLootIconError(img){
+    const span = document.createElement('span');
+    span.className = 'item-icon';
+    span.style.color = img.dataset.rarityColor || '#a99872';
+    span.innerHTML = MATERIAL_ICON_SVG;
+    img.replaceWith(span);
+  }
   // Gemas Elementais — dropadas por monstro (ver monsterElementFromWeakTo no
   // servidor), vendem por Gold como qualquer loot. Usam arte real (PNG) em
   // vez de SVG genérico — a "chave" pro arquivo é o próprio id do item.
@@ -4177,9 +4188,15 @@
       const gemIconUrl = GEM_ICON_URL[it.id];
       const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
       slot.style.borderColor = rarityColor;
+      // Loot comum da Mochila (Boar Steak, Tower Shard etc., sem "slot" de
+      // equipar) agora usa a foto real do item (mesma pasta usada em
+      // "Detalhes da Caçada"); se o arquivo não existir, handleLootIconError
+      // troca pelo SVG genérico de material.
       const iconHtml = gemIconUrl
         ? `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`
-        : `<span class="item-icon" style="color:${rarityColor};">${invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
+        : (invTab === 'mochila' && !it.slot)
+          ? `<img class="item-icon" data-rarity-color="${rarityColor}" src="${itemIconUrl(it.id)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleLootIconError(this)" />`
+          : `<span class="item-icon" style="color:${rarityColor};">${invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
       slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}`;
       // só itens da Mochila com "slot" definido (arma/elmo/etc) são equipáveis —
       // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
