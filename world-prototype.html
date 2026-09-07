@@ -265,6 +265,17 @@
   .color-swatches{ display:flex; gap:4px; flex-wrap:wrap; }
   .color-swatch{ width:18px; height:18px; border-radius:3px; border:2px solid transparent; cursor:pointer; }
   .color-swatch.selected{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright); }
+  /* Aba "Cores" do painel de Outfits -- paleta por parte (Cabeça/Corpo/
+     Pernas/Pés) dos trajes Arquétipo (recolorable:true). Reaproveita a
+     mesma ideia visual das outfit-subtab (abas com borda dourada quando
+     ativa) só que pras 4 partes do corpo. */
+  #cores-parts{ display:flex; gap:6px; margin-bottom:10px; }
+  .cores-part-tab{ padding:5px 12px; border-radius:5px; border:1px solid var(--gold-deep); font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); cursor:pointer; }
+  .cores-part-tab.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.1); }
+  #cores-swatches{ display:grid; grid-template-columns:repeat(auto-fill, minmax(28px,1fr)); gap:6px; max-width:420px; }
+  .cores-swatch{ width:28px; height:28px; border-radius:4px; border:2px solid rgba(0,0,0,.4); cursor:pointer; }
+  .cores-swatch.active{ border-color:var(--gold-bright); box-shadow:0 0 0 2px rgba(191,161,95,.5); }
+  .cores-hint{ color:var(--ink-dim); font-size:12px; padding:10px; }
   #outfit-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:12px; }
   .outfit-card{ border:1px solid var(--gold-deep); border-radius:6px; padding:10px; text-align:center; cursor:pointer; background:rgba(0,0,0,.25); }
   .outfit-card.owned{ border-color:var(--gold-bright); }
@@ -526,6 +537,8 @@
   .analyzer-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); }
   .analyzer-tab{ flex:1; text-align:center; padding:8px; font-family:var(--font-display); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
   .analyzer-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); }
+  .analyzer-reset-btn{ padding:8px 10px; cursor:pointer; color:var(--ink-dim); font-size:13px; align-self:center; }
+  .analyzer-reset-btn:hover{ color:var(--gold-bright); }
   .analyzer-body{ padding:12px 14px; font-family:var(--font-mono); font-size:11px; }
   .analyzer-row{ display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed rgba(191,161,95,.15); }
   .analyzer-row b{ color:var(--gold-bright); }
@@ -971,6 +984,8 @@
     <div class="analyzer-tabs win-drag">
       <div class="analyzer-tab active" data-atab="geral">Geral</div>
       <div class="analyzer-tab" data-atab="combate">Combate</div>
+      <div class="analyzer-tab" data-atab="suprimentos">Suprimentos</div>
+      <span class="analyzer-reset-btn" id="analyzer-reset-btn" title="Reiniciar contadores da sessão">⟳</span>
       <span class="win-close-x" style="margin-left:auto;align-self:center;" data-close-win="analyzer-panel">✕</span>
     </div>
     <div class="analyzer-body" id="analyzer-body"></div>
@@ -1465,6 +1480,7 @@
           <div class="outfit-subtab" data-osub="mounts">Monturas</div>
           <div class="outfit-subtab" data-osub="wings">Asas</div>
           <div class="outfit-subtab" data-osub="auras">Auras</div>
+          <div class="outfit-subtab" data-osub="cores">Cores</div>
         </div>
         <div id="outfit-grid"></div>
       </div>
@@ -1711,6 +1727,7 @@
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
   let party = null; // { id, leaderUsername, members:[...] }
   let rateio = null; // projecao ao vivo do Rateio de custo em grupo (ver getRateioSnapshot no servidor) -- null = desligado/sem grupo
+  let huntStats = { kills:0, lootGold:0, suppliesCost:0, suppliesUsed:{} }; // contadores reais de sessao (Analisador) -- ver huntStats no servidor
   let activeTradeId = null;
   let currentTrade = null;
   let fragments = 0; // Fragmentos do Altar — moeda do Reset de Estrela
@@ -2125,6 +2142,17 @@
     // não "base.png" — confirmado na listagem real do repositório.
     function bodySprite(genero){ return load('b_'+genero, `player/bodies ${genero}/${genero}_base.png`); }
     function armorSprite(genero, outfitId){ return load('a_'+genero+'_'+outfitId, `player/armors ${genero}/${outfitId}.png`); }
+    // Arquetipos elementais (holy/warfare/archery/protection/shadow/
+    // spiritual/wizardry/witchcraft) sao RECOLORABLE (ver OUTFIT_CATALOG,
+    // flag recolorable:true): em vez de 1 PNG unico por genero, tem 2 atlas
+    // SEM genero (mesma arte pros dois por enquanto): <id>_base.png (parte
+    // fixa, nao recolore) e <id>_mask.png (mascara de template crua --
+    // Cabeca=amarelo/Corpo=vermelho/Pernas=verde/Pes=azul -- recolorida em
+    // tempo real por getRecoloredArmor). kind é 'base' ou 'mask'. Prefixo
+    // 'a_' faz o loader calcular dirFrames automaticamente (mesma logica
+    // do atlas de armadura normal, ja que foi gerado com a MESMA convencao
+    // de linhas down/up/right -- ver gen_archetype_atlas.py).
+    function outfitTemplateSprite(outfitId, kind){ return load('a_'+outfitId+'_'+kind, `player/outfits_template/${outfitId}_${kind}.png`); }
     // Asas não têm variação por gênero (arte simétrica, cosmético "acima do
     // Elmo") — 1 arquivo só por id do WING_CATALOG, igual convenção de outfit.
     function wingSprite(wingId){ return load('w_'+wingId, `wings/${wingId}.png`); }
@@ -2264,7 +2292,7 @@
       const stableTopY = bottomY - (ref.sh*scale);
       return { dw, dh, dx, dy, topY: stableTopY };
     }
-    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, drawHeadStyleContainFit, getHeadStyleFrame, BODY_WALK_SAFE_FRAMES, URL_BASE };
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, outfitTemplateSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, drawHeadStyleContainFit, getHeadStyleFrame, BODY_WALK_SAFE_FRAMES, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -2276,7 +2304,115 @@
   // futuro cada uma tiver sua própria contagem, isso pode vir do auraCatalog
   // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
   const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
-  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim){
+  // ---- RECOLORIR DE OUTFIT EM TEMPO REAL (arquetipos) ----
+  // Mesmo algoritmo provado em tibia_recolor2.py (script Python usado só pra
+  // validar a ideia, nunca commitado como pintura definitiva das sprites --
+  // ver notas do projeto "tibia-ravendawn-asset-extraction"): o layer 1
+  // (mascara) de cada arquetipo usa 4 matizes fixos -- Cabeça=amarelo(~60°),
+  // Corpo=vermelho(~0°), Pernas=verde(~120°), Pés=azul(~240°) -- com a
+  // INTENSIDADE (value do HSV) já carregando o sombreado original da arte.
+  // Pra cada pixel da mascara: acha a região mais próxima por matiz, troca
+  // matiz+saturação pela cor escolhida (palette), mas preserva o sombreado
+  // combinando o value original com o value da cor-alvo (senão uma cor-alvo
+  // escura -- ex.: preto -- nunca fica realmente escura). Pixels de baixa
+  // saturação (contorno/anti-aliasing em cinza) não são tingidos.
+  const OUTFIT_COLOR_REGIONS = [['head', 60/360], ['body', 0/360], ['legs', 120/360], ['feet', 240/360]];
+  function hexToRgbTriplet(hex){
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||'').trim());
+    if(!m) return { r:255, g:255, b:255 };
+    const n = parseInt(m[1], 16);
+    return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+  }
+  function rgbToHsvTriplet(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0;
+    if(d!==0){
+      if(max===r) h=((g-b)/d)%6;
+      else if(max===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h/=6; if(h<0) h+=1;
+    }
+    const s = max===0 ? 0 : d/max;
+    return { h, s, v:max };
+  }
+  function hsvToRgbTriplet(h,s,v){
+    const i = Math.floor(h*6), f = h*6-i;
+    const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
+    let r,g,b;
+    switch(i%6){
+      case 0: r=v; g=t; b=p; break;
+      case 1: r=q; g=v; b=p; break;
+      case 2: r=p; g=v; b=t; break;
+      case 3: r=p; g=q; b=v; break;
+      case 4: r=t; g=p; b=v; break;
+      default: r=v; g=p; b=q; break;
+    }
+    return { r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255) };
+  }
+  function nearestOutfitRegion(h){
+    let best=null, bestD=999;
+    OUTFIT_COLOR_REGIONS.forEach(([name, rh])=>{
+      const d = Math.min(Math.abs(h-rh), 1-Math.abs(h-rh));
+      if(d<bestD){ bestD=d; best=name; }
+    });
+    return best;
+  }
+  // Cache por combinação (outfit + as 4 cores) -- recolorir é getImageData +
+  // loop por pixel, caro demais pra rodar todo frame; cada combinação só é
+  // processada 1x e o canvas resultante é reaproveitado até o cache encher
+  // (60 entradas -- muito mais que qualquer sessão single-player chega a
+  // usar) e começar a descartar as mais antigas (FIFO simples).
+  const _recolorCache = {};
+  const _recolorCacheOrder = [];
+  function getRecoloredArmor(outfitId, colors, palette){
+    const c = colors || { head:0, body:0, legs:0, feet:0 };
+    const key = outfitId+'|'+c.head+','+c.body+','+c.legs+','+c.feet;
+    if(_recolorCache[key]) return _recolorCache[key];
+    if(!palette || !palette.length) return null;
+    const baseEntry = SpriteManager.outfitTemplateSprite(outfitId, 'base');
+    const maskEntry = SpriteManager.outfitTemplateSprite(outfitId, 'mask');
+    if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
+    const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
+    if(!w || !h) return null;
+    const targetHsv = {};
+    ['head','body','legs','feet'].forEach(part=>{
+      const rgb = hexToRgbTriplet(palette[c[part]] || palette[0]);
+      targetHsv[part] = rgbToHsvTriplet(rgb.r, rgb.g, rgb.b);
+    });
+    const mc = document.createElement('canvas'); mc.width=w; mc.height=h;
+    const mcx = mc.getContext('2d');
+    mcx.drawImage(maskEntry.img, 0, 0);
+    let imgData;
+    try{ imgData = mcx.getImageData(0,0,w,h); } catch(e){ return null; } // CORS/tainted -- nunca trava o jogo, so nao recolore
+    const data = imgData.data;
+    for(let i=0;i<data.length;i+=4){
+      const a = data[i+3];
+      if(a===0) continue;
+      const hsv = rgbToHsvTriplet(data[i], data[i+1], data[i+2]);
+      if(hsv.s < 0.12) continue;
+      const region = nearestOutfitRegion(hsv.h);
+      const t = targetHsv[region];
+      const nv = Math.max(0, Math.min(1, hsv.v*(0.35+0.65*t.v)));
+      const rgb = hsvToRgbTriplet(t.h, t.s, nv);
+      data[i]=rgb.r; data[i+1]=rgb.g; data[i+2]=rgb.b;
+    }
+    mcx.putImageData(imgData, 0, 0);
+    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    const cx = canvas.getContext('2d');
+    cx.drawImage(baseEntry.img, 0, 0);
+    cx.drawImage(mc, 0, 0);
+    // "entry" fake reaproveitando frame/dirFrames do base (mask tem a MESMA
+    // grade -- gerados juntos pelo mesmo script) -- drawBodyDirFrame/
+    // drawFrameContainFit desenham um canvas exatamente como desenhariam
+    // uma <img>, ctx.drawImage aceita os dois.
+    const entry = { loaded:true, img:canvas, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
+    _recolorCache[key] = entry;
+    _recolorCacheOrder.push(key);
+    if(_recolorCacheOrder.length > 60){ delete _recolorCache[_recolorCacheOrder.shift()]; }
+    return entry;
+  }
+  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim, cosmeticColorsArg){
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
     // sempre; com ele, desenha em QUALQUER outro canvas (usado pelo retrato
     // do personagem no Inventário, que reaproveita esse mesmo desenhista em
@@ -2324,14 +2460,24 @@
       : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
     drewBody = !!bodyDraw;
     if(outfitId && outfitId !== 'padrao'){
-      const armor = SpriteManager.armorSprite(genero, outfitId);
+      // Arquetipos (OUTFIT_CATALOG[].recolorable:true) usam o atlas base+mask
+      // recolorido em tempo real (ver getRecoloredArmor acima) em vez do PNG
+      // único de sempre — o resto (contain-fit / dirFrame) é idêntico,
+      // porque a "entry" que getRecoloredArmor devolve tem a mesma forma
+      // (loaded/img/frame/dirFrames) que SpriteManager.armorSprite devolveria.
+      const outfitDef = outfitCatalog.find(o => o.id === outfitId);
+      const armor = (outfitDef && outfitDef.recolorable)
+        ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
+        : SpriteManager.armorSprite(genero, outfitId);
       // Armadura cobre o MESMO recorte do corpo — usa a altura real do corpo
       // (ou o próprio tamanho-alvo se o corpo não carregou) pra alinhar.
       // Mesma lógica do corpo: com ciclo de andar ativo (drawWalkAnim),
       // acompanha dir/frameIdx pelo atlas da própria armadura em vez de
       // ficar sempre no quadro "parado" (ver dirFrames acima).
-      if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
-      else SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34*scl, 46*scl);
+      if(armor){
+        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
+        else SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34*scl, 46*scl);
+      }
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
     const headAtlas = SpriteManager.headSprite(genero, corCabelo);
@@ -2990,7 +3136,7 @@
       drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
-        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim);
+        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
       }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
@@ -3016,7 +3162,7 @@
       const castAnim = (now() < castPoseUntil)
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
         : anim;
-      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim);
+      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
     }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
@@ -3406,6 +3552,7 @@
     stamina = msg.stamina; dispatch = msg.dispatch;
     party = msg.party; activeTradeId = msg.activeTradeId;
     rateio = msg.rateio || null;
+    huntStats = msg.huntStats || huntStats;
     guildId = msg.guildId || null; guildSummary = msg.guild || null;
     bestiaryKilled = msg.bestiaryKilled || [];
     bestiaryKillCounts = msg.bestiaryKillCounts || {};
@@ -4387,11 +4534,14 @@
       outfitSubTab = t.dataset.osub; renderCharOutfit();
     });
   });
+  // Aba "Cores": só outfits com OUTFIT_CATALOG[].recolorable:true (os
+  // Arquétipos) têm o que colorir — cabelo é fixo desde a criação do
+  // personagem, e os outfits clássicos (assassino, sacerdote etc.) já têm
+  // cor própria definida na arte. coresPart lembra qual das 4 partes
+  // (Cabeça/Corpo/Pernas/Pés) está com a paleta aberta.
+  let coresPart = 'head';
+  const CORES_PART_LABEL = { head:'Cabeça', body:'Corpo', legs:'Pernas', feet:'Pés' };
   function renderCharOutfit(){
-    // Sem paleta de cor: o cabelo é escolhido na criação do personagem (fixo
-    // depois disso) e cada outfit/asas já tem uma cor própria definida na
-    // arte — nada aqui é recolorável, então não existe seletor de cor por
-    // partes.
     const grid = document.getElementById('outfit-grid');
     if(outfitSubTab === 'outfits'){
       grid.innerHTML = outfitCatalog.map(o=>{
@@ -4450,7 +4600,7 @@
           else sendWS({ type:'wing:buy', wingId:id });
         });
       });
-    } else {
+    } else if(outfitSubTab === 'auras'){
       // Auras — cosmético ANIMADO (4 quadros em loop, ver AURA_CATALOG no
       // servidor + AuraManager no cliente); envolve o personagem, desenhado
       // por cima do corpo (ver drawCharacterLayers).
@@ -4470,6 +4620,40 @@
           if(id === '__none__') { sendWS({ type:'aura:equip', auraId:null }); return; }
           if(ownedAuras.includes(id)) sendWS({ type:'aura:equip', auraId:id });
           else sendWS({ type:'aura:buy', auraId:id });
+        });
+      });
+    } else {
+      // Cores — só faz sentido com um outfit RECOLORABLE equipado (ver
+      // OUTFIT_CATALOG[].recolorable, hoje só os 8 Arquétipos elementais).
+      const equippedDef = outfitCatalog.find(o => o.id === cosmetics.outfit);
+      if(!equippedDef || !equippedDef.recolorable){
+        grid.innerHTML = '<div class="cores-hint">Equipe um traje Arquétipo (aba Outfits) para escolher as cores dele. Os trajes clássicos já têm cor própria fixa na arte.</div>';
+        return;
+      }
+      grid.innerHTML = `
+        <div id="cores-parts">
+          ${['head','body','legs','feet'].map(p=>`<div class="cores-part-tab${coresPart===p?' active':''}" data-part="${p}">${CORES_PART_LABEL[p]}</div>`).join('')}
+        </div>
+        <div id="cores-swatches">
+          ${colorPalette.map((hex,idx)=>`<div class="cores-swatch${cosmeticColors[coresPart]===idx?' active':''}" data-idx="${idx}" style="background:${hex}" title="${hex}"></div>`).join('')}
+        </div>
+      `;
+      grid.querySelectorAll('.cores-part-tab').forEach(t=>{
+        t.addEventListener('click', ()=>{ coresPart = t.dataset.part; renderCharOutfit(); });
+      });
+      grid.querySelectorAll('.cores-swatch').forEach(sw=>{
+        sw.addEventListener('click', ()=>{
+          const idx = Number(sw.dataset.idx);
+          // aplica local IMEDIATO (sem esperar o ack do servidor) pra picker
+          // e retrato responderem na hora -- cosmeticColors é substituído de
+          // novo pelo valor real assim que o snapshot/ack confirmar (linha
+          // 'cosmeticColors = msg.cosmeticColors || cosmeticColors'), então
+          // uma rejeição do servidor (não deveria acontecer, mas por via das
+          // dúvidas) se autocorrige no próximo pacote.
+          cosmeticColors = Object.assign({}, cosmeticColors, { [coresPart]: idx });
+          sendWS({ type:'cosmetic:color', part: coresPart, colorIndex: idx });
+          renderCharOutfit();
+          renderInventory();
         });
       });
     }
@@ -5204,7 +5388,7 @@
     const generoPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male';
     const hairIdPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
     const hairStyleIdPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1;
-    drawCharacterLayers({ x: portraitCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', pctx, hairStyleIdPortrait);
+    drawCharacterLayers({ x: portraitCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', pctx, hairStyleIdPortrait, null, cosmeticColors);
 
     const grid = document.getElementById('inv-items-grid');
     const cap = document.getElementById('inv-capacity-line');
@@ -5753,16 +5937,41 @@
       const xpIntoLevel = Math.max(0, player.xp - xpAtLevelStart);
       const xpRemaining = Math.max(0, xpNeededThisLevel - xpIntoLevel);
       const etaNextLevel = (player.level >= 100) ? 'Nível máximo' : (xpPerHour > 0.01 ? fmtDuration((xpRemaining / xpPerHour) * 3600000) : '—');
+      // Gold/Gasto/Saldo vem do SERVIDOR (huntStats) -- sao os contadores reais
+      // de "Inimigos mortos"/"Gold"/"Gasto"/"Suprimentos usados" que a tela do
+      // Huntera mostra. Diferente de "Lucro" acima (que é qualquer variação de
+      // patrimônio, incluindo banco/loja), "Saldo" aqui é estritamente Gold de
+      // loot menos Gasto de suprimentos da caçada -- o mesmo número usado pelo
+      // Rateio de custo em grupo (ver getRateioSnapshot).
+      const kills = huntStats.kills || 0;
+      const lootGold = huntStats.lootGold || 0;
+      const gasto = huntStats.suppliesCost || 0;
+      const saldoCacada = lootGold - gasto;
+      const lootGoldPerHour = lootGold / elapsedH;
+      const gastoPerHour = gasto / elapsedH;
+      const saldoCacadaPerHour = saldoCacada / elapsedH;
       body.innerHTML = `
         <div class="analyzer-row"><span>Tempo de sessão</span><b>${fmtDuration(now()-session.startedAt)}</b></div>
+        <div class="analyzer-row"><span>Inimigos mortos</span><b>${kills.toLocaleString('pt-BR')}</b></div>
         <div class="analyzer-row"><span>EXP total</span><b>${Math.round(sessionXp).toLocaleString('pt-BR')}</b></div>
         <div class="analyzer-row"><span>EXP/h</span><b>${Math.round(xpPerHour).toLocaleString('pt-BR')}</b></div>
         <div class="analyzer-row"><span>Próximo level</span><b>${etaNextLevel}</b></div>
+        <div class="analyzer-row"><span>Gold</span><b>${Math.round(lootGold).toLocaleString('pt-BR')}</b></div>
+        <div class="analyzer-row"><span>Gasto</span><b class="rateio-pay">${Math.round(gasto).toLocaleString('pt-BR')}</b></div>
+        <div class="analyzer-row"><span>Saldo</span><b class="${saldoCacada>=0?'rateio-receive':'rateio-pay'}">${Math.round(saldoCacada).toLocaleString('pt-BR')}</b></div>
+        <div class="analyzer-row"><span>Gold/h</span><b>${Math.round(lootGoldPerHour).toLocaleString('pt-BR')}</b></div>
+        <div class="analyzer-row"><span>Gasto/h</span><b class="rateio-pay">${Math.round(gastoPerHour).toLocaleString('pt-BR')}</b></div>
+        <div class="analyzer-row"><span>Saldo/h</span><b class="${saldoCacadaPerHour>=0?'rateio-receive':'rateio-pay'}">${Math.round(saldoCacadaPerHour).toLocaleString('pt-BR')}</b></div>
         <div class="analyzer-row"><span>Lucro total</span><b>${Math.round(sessionWealth).toLocaleString('pt-BR')}</b></div>
         <div class="analyzer-row"><span>Lucro/h</span><b>${Math.round(profitPerHour).toLocaleString('pt-BR')}</b></div>
         <div class="analyzer-row"><span>Ouro em mãos</span><b>${Math.round(player.gold)}</b></div>
         <div class="analyzer-row"><span>Ouro no banco</span><b>${Math.round(player.bankGold)}</b></div>
       `;
+    } else if(activeTab==='suprimentos'){
+      const used = Object.values(huntStats.suppliesUsed || {});
+      body.innerHTML = used.length ? used.map(u=>`
+        <div class="analyzer-row"><span>${escapeHtml(u.name)} ×${u.count}</span><b class="rateio-pay">${Math.round(u.cost).toLocaleString('pt-BR')}</b></div>
+      `).join('') : `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum suprimento usado ainda nesta sessão.</div>`;
     } else {
       body.innerHTML = `
         <div class="analyzer-row"><span>Postura</span><b>${combatPosture}</b></div>
@@ -5772,6 +5981,13 @@
       `;
     }
   }
+  document.getElementById('analyzer-reset-btn').addEventListener('click', ()=>{
+    sendWS({ type:'hunt:resetAnalyzer' });
+    session.startedAt = now();
+    session.startXp = player.xp;
+    session.startWealth = player.gold + player.bankGold;
+    renderAnalyzer();
+  });
   setInterval(renderAnalyzer, 1000);
 
   /* =========================================================
