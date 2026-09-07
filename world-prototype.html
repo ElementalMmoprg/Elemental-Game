@@ -358,6 +358,11 @@
   .slot .cond-chip{ position:absolute; bottom:-1px; right:-1px; font-size:7.5px; background:#1a1510; border:1px solid var(--gold-deep); border-radius:3px; padding:0 2px; color:var(--ink-dim); }
   .slot .pct-input{ position:absolute; bottom:-16px; left:0; width:100%; font-family:var(--font-mono); font-size:8px; text-align:center; background:transparent; border:none; color:var(--ink-dim); }
   #hotbar-hint{ position:absolute; bottom:96px; left:50%; transform:translateX(-50%); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); background:rgba(0,0,0,.4); padding:3px 9px; border-radius:10px; white-space:nowrap; z-index:6; }
+  /* Botões de serviço da Cidade (Armazém/Venda Rápida/Bênçãos) — acima da
+     hotbar/hint, só visíveis na Cidade Principal (igual a referência
+     enviada pelo usuário). #stage > * já dá position:absolute (ver acima). */
+  #city-services-bar{ display:none; bottom:126px; left:50%; transform:translateX(-50%); flex-direction:row; align-items:center; gap:8px; padding:6px 8px; z-index:6; }
+  body.in-city #city-services-bar{ display:flex; }
 
   /* ============ BARRA TÁTICA COMPACTA (Postura/Alvo/SQM) — estilo Huntera:
      fininha, colada ao lado direito da hotbar (mesma linha, dentro de
@@ -769,6 +774,13 @@
   /* ============ PETS + GACHA ============ */
   #pets-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; height:520px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
   #pets-modal.open{ display:flex; }
+  #quicksell-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:94vw; display:none; z-index:17; }
+  #quicksell-modal.open{ display:block; }
+  #blessings-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:94vw; display:none; z-index:17; }
+  #blessings-modal.open{ display:block; }
+  .bless-row{ grid-column:1/-1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; gap:10px; padding:7px 10px; margin-bottom:6px; }
+  .bless-row.owned{ border-color:#7ee08a; }
+  .bless-row .bless-name{ flex:1; }
   .pets-tabs{ display:flex; gap:4px; padding:0 14px; }
   .pets-tab{ padding:6px 10px; border:1px solid var(--gold-deep); border-radius:4px 4px 0 0; font-family:var(--font-mono); font-size:10.5px; cursor:pointer; color:var(--ink-dim); }
   .pets-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
@@ -897,7 +909,7 @@
         <div id="bank-msg" class="italic-note"></div>
       </div>
     </div>
-    <div class="tb-pill" id="tb-coin-pill" title="Elemental Coin — comprada com Moeda Real, usada pra Reset da Árvore e Encantamento. Clique pra comprar mais.">💎 <span id="tb-elementalcoins">0</span></div>
+    <div class="tb-pill" id="tb-coin-pill" title="Elemental Coin — comprada com Moeda Real, usada pra Reset da Árvore e Refinamento. Clique pra comprar mais.">💎 <span id="tb-elementalcoins">0</span></div>
     <div class="tb-pill tb-shop" id="btn-open-shop"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/shop.png" alt=""> Loja</div>
     <div class="tb-pill" id="btn-open-rank" title="Rank Geral"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/rank.png" alt=""> Rank</div>
     <div id="tb-online">— jogadores online</div>
@@ -912,7 +924,7 @@
       <div class="tb-icon" id="btn-open-attrs" title="Atributos Livres"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/attributes.png" alt=""></div>
       <div class="tb-icon" id="btn-open-skilltree" title="Árvore de Habilidades"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/skilltree.png" alt=""></div>
       <div class="tb-icon" id="btn-open-towers" title="Torres Elementais"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/tower.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-enchant" title="Encantamento"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
+      <div class="tb-icon" id="btn-open-enchant" title="Refinamento"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
       <div class="tb-icon" id="btn-open-pets" title="Pets"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/pets.png" alt=""></div>
       <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
       <div class="tb-icon" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
@@ -1050,7 +1062,7 @@
   <!-- ENCANTAMENTO — +1 a +10 em equipamento usando Cristal (obrigatório) +
        Bênção do Ferreiro (opcional, aumenta chance de sucesso), estilo Ragnarok. -->
   <div id="enchant-modal" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ ⚒️ Encantamento<span class="rule"></span><span class="win-close-x" data-close-win="enchant-modal">✕</span></div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ ⚒️ Refinamento<span class="rule"></span><span class="win-close-x" data-close-win="enchant-modal">✕</span></div>
     <div style="padding:0 14px 14px;">
       <div class="enchant-slot-tabs" id="enchant-slot-tabs"></div>
       <div id="enchant-body"></div>
@@ -1072,6 +1084,34 @@
     <div id="bp-header" style="padding:8px 14px 0;font-family:var(--font-mono);font-size:10.5px;"></div>
     <div id="bp-progress-bar"><div id="bp-progress-fill" style="width:0%;"></div></div>
     <div id="bp-tier-list"></div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- VENDA RÁPIDA — marca itens da Mochila e vende todos de uma vez, ouro
+       direto na mão (não no Banco), só na Cidade Principal. -->
+  <div id="quicksell-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🪙 Venda Rápida<span class="rule"></span><span class="win-close-x" data-close-win="quicksell-modal">✕</span></div>
+    <div style="padding:0 14px 14px;">
+      <div class="italic-note" style="margin-bottom:8px;">Marque os itens da Mochila que quer vender — a marca fica salva até você vender ou desmarcar.</div>
+      <div id="quicksell-list"></div>
+      <div id="quicksell-footer" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;border-top:1px dashed rgba(191,161,95,.2);padding-top:10px;">
+        <span id="quicksell-summary" class="hint">Nada marcado.</span>
+        <button type="button" class="treino-inline-btn" id="quicksell-confirm-btn">Vender</button>
+      </div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- BÊNÇÃOS — até 5, permanentes, reduzem a perda por morte (ver
+       huntEngine.onPlayerDeath). Custo escalona por nível E por qual bênção. -->
+  <div id="blessings-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🙏 Bênçãos<span class="rule"></span><span class="win-close-x" data-close-win="blessings-modal">✕</span></div>
+    <div style="padding:0 14px 14px;">
+      <div class="italic-note" style="margin-bottom:8px;">Cada Bênção reduz 20% da perda ao morrer (XP, atributos, item da Mochila e chance de perder equipamento vestido). 5 Bênçãos = imunidade total nessa morte — mas todas se GASTAM ao morrer, precisa comprar de novo.</div>
+      <div class="row" style="margin-bottom:8px;"><span>Proteção atual</span><b id="bless-protection">0%</b></div>
+      <div id="bless-list"></div>
+      <button type="button" class="treino-inline-btn" id="bless-buy-btn" style="width:100%;margin-top:10px;">Comprar Próxima Bênção</button>
+    </div>
     <div class="win-resize"></div>
   </div>
 
@@ -1158,6 +1198,7 @@
       <div class="inv-tab active" data-invtab="bolsa">Bolsa</div>
       <div class="inv-tab" data-invtab="mochila">Mochila</div>
       <div class="inv-tab" data-invtab="lixeira">Lixeira de Itens</div>
+      <div class="inv-tab" data-invtab="armazem">Armazém</div>
       <div class="inv-tool-btn hover-trigger" id="inv-frame-btn" title="Escolher visual dos slots">🎨
         <div class="popover glass" id="inv-frame-popover">
           <div class="panel-title" style="margin-bottom:8px;">Visual dos Slots<span class="rule"></span></div>
@@ -1280,6 +1321,16 @@
        Alvo, SQM) numa ÚNICA barra horizontal fina, sempre visível, em
        qualquer área do jogo (Cidade, Caçada ou Torre Elementar). A barra
        tática fica EXATAMENTE ao lado direito da hotbar, sem menu pra abrir. -->
+  <!-- BOTÕES DE SERVIÇO DA CIDADE (Armazém/Venda Rápida/Bênçãos) — ficam
+       ACIMA da hotbar, igual a referência enviada (Depot/Venda Rápida/
+       Imbuiments/Blessings no topo da barra de ação). Imbuiments fica de
+       fora, a pedido do usuário. Só aparecem na Cidade Principal (ver
+       body.in-city no CSS). -->
+  <div id="city-services-bar" class="glass ornate">
+    <div class="tb-icon" id="btn-open-depot" title="Armazém (Depot)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/altar.png" alt="" style="filter:hue-rotate(180deg);"></div>
+    <div class="tb-icon" id="btn-open-quicksell" title="Venda Rápida">🪙</div>
+    <div class="tb-icon" id="btn-open-blessings" title="Bênçãos">🙏</div>
+  </div>
   <div id="hotbar-hint">Clique direito num slot para configurar a ação · clique na mochila pro inventário completo</div>
   <div id="footer-bar">
     <!-- Vitals compactos (estilo Huntera: HP/Mana/Level ficam coladas na
@@ -1289,11 +1340,11 @@
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_mana.png" alt=""><div class="bar-track mp-track"><div class="bar-fill mp" id="mp-bar" style="width:100%"></div><div class="bar-label" id="mp-label"></div></div></div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="bar-track" style="flex:1;margin-bottom:0;"><div class="bar-fill stam" id="stam-bar" style="width:100%"></div><div class="bar-label" id="stam-label"></div></div>
-        <div id="stam-recharge-btn" class="hover-trigger" title="Recarregar Stamina (Premium)">
+        <div id="stam-recharge-btn" class="hover-trigger" title="Recarregar Stamina (Free +4h / Premium +6h)">
           <span id="stam-recharge-plus">+</span>
           <div class="popover glass" id="stam-recharge-popover">
             <div class="panel-title" style="margin-bottom:8px;">Recarregar Stamina<span class="rule"></span></div>
-            <div class="row">Ganho<b>+4h</b></div>
+            <div class="row">Ganho<b id="stam-recharge-gain">+4h</b></div>
             <div class="row">Hoje<b id="stam-recharge-count">0/4</b></div>
             <div class="row">Custo<b id="stam-recharge-cost">—</b></div>
             <div class="italic-note" id="stam-recharge-note"></div>
@@ -1636,6 +1687,9 @@
   let bag = [], bagCapacity = 30;
   let pouch = [], pouchCapacity = 20;
   let trash = [], trashCapacity = 40; // Lixeira de Itens (ver pushToTrash em huntEngine.js)
+  let depot = [], depotCapacity = 200;
+  let quickSellMarks = [];
+  let blessingsCount = 0, blessingProtectionPct = 0, nextBlessingCost = null;
   let invSlotFrame = 1; // Visual escolhido pro slot da Bolsa/Mochila (1-6, ver huntEngine.setInvSlotFrame)
   let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, ring:null, amulet:null };
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
@@ -1761,6 +1815,19 @@
     itemTooltipEl.style.top = y + 'px';
   }
   function hideItemTooltip(){ itemTooltipEl.style.display = 'none'; }
+  // Tooltip genérico pra hotbar (magias + poções) — reaproveita o mesmo
+  // elemento flutuante/posicionamento do tooltip de loot, só troca o
+  // conteúdo (magia/poção não tem raridade nem entrada em ITEM_INFO).
+  function showHotbarTooltip(evt, html){
+    itemTooltipEl.innerHTML = html;
+    itemTooltipEl.style.display = 'block';
+    moveItemTooltip(evt);
+  }
+  function attachHotbarTooltip(el, getHtml){
+    el.addEventListener('mouseenter', e=>{ const html = getHtml(); if(html) showHotbarTooltip(e, html); });
+    el.addEventListener('mousemove', moveItemTooltip);
+    el.addEventListener('mouseleave', hideItemTooltip);
+  }
   function attachItemTooltip(el, item){
     el.addEventListener('mouseenter', e=> showItemTooltip(e, item));
     el.addEventListener('mousemove', moveItemTooltip);
@@ -2182,6 +2249,11 @@
     // do personagem no Inventário, que reaproveita esse mesmo desenhista em
     // vez de duplicar a lógica de sprite/fallback procedural).
     const tctx = targetCtx || ctx;
+    // SPRITE_SCALE só entra quando desenha no MUNDO (targetCtx vazio) — o
+    // retrato do Inventário (targetCtx=pctx) usa outro canvas pequeno de
+    // tamanho fixo (90x150) já calibrado sozinho, não precisa acompanhar o
+    // tamanho do SQM da câmera.
+    const scl = targetCtx ? 1 : SPRITE_SCALE;
     const genero = gender === 'female' ? 'female' : 'male';
     let drewBody = false, drewHead = false;
     // Truque estilo Tibia: o atlas de corpo só tem 3 recortes realmente úteis
@@ -2204,7 +2276,7 @@
     // desenhar um boneco de emergência no lugar).
     if(wingId){
       const wing = SpriteManager.wingSprite(wingId);
-      if(wing.loaded) SpriteManager.drawClippedFrame(tctx, wing, 64,64, 0,0, s.x-30, s.y-46+breathe, 60,52);
+      if(wing.loaded) SpriteManager.drawClippedFrame(tctx, wing, 64,64, 0,0, s.x-30*scl, s.y-46*scl+breathe, 60*scl,52*scl);
     }
     // Pés fixos em (s.x, feetY); corpo cresce PRA CIMA a partir daí mantendo
     // a proporção real do recorte (ver drawFrameContainFit) — nada de
@@ -2215,14 +2287,14 @@
     const feetY = s.y + breathe;
     const body = SpriteManager.bodySprite(genero);
     const bodyDraw = drawWalkAnim
-      ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34, 46)
-      : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34, 46);
+      ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl)
+      : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
     drewBody = !!bodyDraw;
     if(outfitId && outfitId !== 'padrao'){
       const armor = SpriteManager.armorSprite(genero, outfitId);
       // Armadura cobre o MESMO recorte do corpo — usa a altura real do corpo
       // (ou o próprio tamanho-alvo se o corpo não carregou) pra alinhar.
-      SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34, 46);
+      SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34*scl, 46*scl);
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
     const headAtlas = SpriteManager.headSprite(genero, corCabelo);
@@ -2234,15 +2306,15 @@
     // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
     // já move como um objeto rígido — corpo e cabeça não têm posições
     // independentes, as duas derivam do MESMO s.x/feetY.
-    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30) + 8;
+    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30*scl) + 8*scl;
     // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
     // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
     // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
     // igual ao default do servidor pra personagens antigos.
-    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26, 26, drawWalkAnim && drawWalkAnim.dir);
+    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
     drewHead = !!headDraw;
-    if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11, 15, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
-    if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13+breathe, 13, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
+    if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11*scl, 15*scl, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
+    if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(mirror){ tctx.restore(); }
     // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
@@ -2252,10 +2324,10 @@
       const aura = SpriteManager.auraFrame(auraId, frameIdx);
       if(aura.loaded){
         const iw = aura.img.naturalWidth, ih = aura.img.naturalHeight;
-        const box = 84;
+        const box = 84*scl;
         const scale = Math.min(box/iw, box/ih);
         const dw = iw*scale, dh = ih*scale;
-        tctx.drawImage(aura.img, s.x-dw/2, s.y-18+breathe-dh/2, dw, dh);
+        tctx.drawImage(aura.img, s.x-dw/2, s.y-18*scl+breathe-dh/2, dw, dh);
       }
     }
     return { drewBody, drewHead };
@@ -2266,7 +2338,25 @@
      ========================================================= */
   const canvas = document.getElementById('world-canvas');
   const ctx = canvas.getContext('2d');
-  function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  // Câmera de tela cheia com viewport estendido: o canvas SEMPRE cobre
+  // 100% da janela do navegador (fullscreen incluso — o browser dispara
+  // 'resize' ao entrar/sair do fullscreen igual a qualquer redimensionamento),
+  // e a grade de tiles/sprites simplesmente revela mais coisa nas bordas em
+  // telas maiores (ver bounds em draw()) em vez de esticar/encolher o que já
+  // tinha. viewW/viewH guardam o tamanho em pixels DE CSS (lógicos) — o
+  // canvas.width/height reais ficam em pixels de DISPOSITIVO (* devicePixelRatio)
+  // só pra ficar nítido em telas retina/hidpi; ctx.setTransform devolve o
+  // sistema de coordenadas pra pixel-de-CSS, então NENHUM outro desenho no
+  // arquivo precisa saber disso — todo o resto do código já desenha em
+  // pixel-de-CSS como sempre desenhou.
+  let viewW = window.innerWidth, viewH = window.innerHeight;
+  function resize(){
+    const dpr = window.devicePixelRatio || 1;
+    viewW = window.innerWidth; viewH = window.innerHeight;
+    canvas.style.width = viewW + 'px'; canvas.style.height = viewH + 'px';
+    canvas.width = Math.round(viewW * dpr); canvas.height = Math.round(viewH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
   window.addEventListener('resize', resize); resize();
 
   // ==========================================================================
@@ -2282,8 +2372,23 @@
   // WORLD_SCALE faz o papel que ISO_SCALE fazia (zoom da câmera), só que sem
   // nenhum cisalhamento — mantive o mesmo valor (1.08) pra não precisar
   // reajustar tamanho de sprite/UI que já estava calibrado em cima dele.
-  const WORLD_SCALE = 1.55; // câmera mais próxima (pedido: mundo/monstros ficarem menos espalhados/distantes, estilo Tibia)
+  // 2026-09: câmera de tela cheia com viewport estendido, estilo Huntera —
+  // pedido explícito do usuário: SQM (tile) com tamanho FIXO e grande em
+  // pixels de tela (não encolhe em telas maiores), e a câmera revela mais
+  // tiles nas bordas em telas grandes/fullscreen em vez de esticar/encolher
+  // o que já está na tela. TILE_SCREEN_PX é esse tamanho fixo; WORLD_SCALE
+  // (o "zoom", em unidades de tela por unidade de mundo) é derivado dele +
+  // TILE_STEP, então nunca fica descolado do tile de verdade.
   const TILE_STEP = 34; // tamanho de 1 tile do chão, em unidades de mundo
+  const TILE_SCREEN_PX = 64; // tamanho FIXO do SQM na tela, em pixels (pedido: 48 ou 64 — usamos 64, estilo Huntera)
+  const WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
+  // Antes desta mudança, WORLD_SCALE era 1.55 e todo sprite/hitbox/offset de
+  // personagem, monstro e cenário abaixo foi calibrado em cima desse valor
+  // em pixels FIXOS (34x46 do corpo, 68x68 do monstro etc.) — SPRITE_SCALE
+  // é o fator que mantém esses elementos na MESMA proporção visual de antes
+  // em relação ao tile, agora que o tile ficou maior (senão os sprites
+  // ficariam pequenos demais perto de um SQM de 64px).
+  const SPRITE_SCALE = WORLD_SCALE / 1.55;
   // Escala pura, sem deslocamento de câmera — serve tanto pra montar
   // worldToScreen (que soma o offset) quanto pra qualquer lugar que precise
   // de uma função monotônica e estável da posição de mundo SEM o
@@ -2302,7 +2407,7 @@
   // clique de movimento/WASD) no meio do canvas.
   function getCameraOffset(){
     const p = worldToScreenRaw(player.x, player.y);
-    return { x: canvas.width/2 - p.x, y: canvas.height/2 - p.y + 40 };
+    return { x: viewW/2 - p.x, y: viewH/2 - p.y + 40 };
   }
   const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
   // Praça da Cidade Principal — mesma técnica de sempre (blocos de cenário
@@ -2366,18 +2471,23 @@
   }
   function drawCityTiles(toScreen){
     if(!CITY_TILES || !CITY_ATLAS_IMG || !CITY_ATLAS_MANIFEST) return false;
-    const half = TILE_STEP/2;
+    // TILE_SCREEN_PX (= TILE_STEP*WORLD_SCALE) no lugar do TILE_STEP cru —
+    // sem isso os tiles reais da Cidade não acompanhavam o zoom da câmera
+    // (WORLD_SCALE), só a posição deles (toScreen já escala), abrindo frestas
+    // entre os tiles sempre que WORLD_SCALE > 1. A grade de fallback
+    // (drawFloorSquare) já fazia essa conta certa; agora as duas batem.
+    const half = TILE_SCREEN_PX/2;
     CITY_TILES.forEach(t=>{
       const w = cityTileToWorld(t.x, t.y);
       const s = toScreen(w.x, w.y);
       const draw1 = (spriteId)=>{
         const r = cityRectFor(spriteId);
         if(!r) return;
-        // sprites de origem 32x32 escalados pro tamanho de tile do mundo
-        // (TILE_STEP), ancorados no canto inferior-direito igual o resto do
-        // atlas Tibia (ver README do atlas em Elemental_assets).
-        const dw = r.w * (TILE_STEP/32), dh = r.h * (TILE_STEP/32);
-        ctx.drawImage(CITY_ATLAS_IMG, r.x, r.y, r.w, r.h, s.x-half-(dw-TILE_STEP), s.y-half-(dh-TILE_STEP), dw, dh);
+        // sprites de origem 32x32 escalados pro tamanho de tile NA TELA
+        // (TILE_SCREEN_PX), ancorados no canto inferior-direito igual o
+        // resto do atlas Tibia (ver README do atlas em Elemental_assets).
+        const dw = r.w * (TILE_SCREEN_PX/32), dh = r.h * (TILE_SCREEN_PX/32);
+        ctx.drawImage(CITY_ATLAS_IMG, r.x, r.y, r.w, r.h, s.x-half-(dw-TILE_SCREEN_PX), s.y-half-(dh-TILE_SCREEN_PX), dw, dh);
       };
       draw1(t.g);
       if(t.d) t.d.forEach(draw1);
@@ -2469,7 +2579,10 @@
   // bisel/losango isométrico. hw/hh continuam sendo a meia-largura/altura do
   // footprint (mesmos valores de SCENERY_STYLE, não precisou mudar).
   function drawSceneryBlock(sx, sy, height, topColor, sideColorL, sideColorR, hw, hh){
-    hw = hw || BLOCK_HW; hh = hh || BLOCK_HH;
+    // SPRITE_SCALE mantém paredes/prédios/pilares/árvores na MESMA proporção
+    // de antes em relação ao tile, agora que o tile (TILE_SCREEN_PX) ficou
+    // maior — só multiplicar aqui já cobre TODOS os chamadores de uma vez.
+    hw = (hw || BLOCK_HW) * SPRITE_SCALE; hh = (hh || BLOCK_HH) * SPRITE_SCALE; height = height * SPRITE_SCALE;
     // sombra/base no chão (footprint real do objeto na grade)
     ctx.fillStyle = sideColorL;
     ctx.fillRect(sx-hw, sy-hh, hw*2, hh*2);
@@ -2515,14 +2628,17 @@
     if(color) drawStarShape(cx,cy,size/2,color);
   }
   function drawNickAndStar(sx, headY, nick, dim){
-    const starSize = 10;
-    ctx.font = '10px "JetBrains Mono"';
+    // SPRITE_SCALE aqui também — nick/estrela de rank acompanham o mesmo
+    // crescimento do personagem, senão ficam pequenos/desproporcionais perto
+    // de um sprite maior.
+    const starSize = 10*SPRITE_SCALE;
+    ctx.font = `${Math.round(10*SPRITE_SCALE)}px "JetBrains Mono"`;
     const textW = ctx.measureText(nick).width;
     const hasStar = !dim && (prestige.bronzeStars>0||prestige.silverStars>0||prestige.goldStars>0||prestige.diamondRank);
-    const totalW = textW + (hasStar?starSize+4:0);
-    if(hasStar) drawRankIcon(sx-totalW/2+starSize/2, headY-3, starSize);
+    const totalW = textW + (hasStar?starSize+4*SPRITE_SCALE:0);
+    if(hasStar) drawRankIcon(sx-totalW/2+starSize/2, headY-3*SPRITE_SCALE, starSize);
     ctx.textAlign = 'left';
-    const textX = sx-totalW/2+(hasStar?starSize+4:0);
+    const textX = sx-totalW/2+(hasStar?starSize+4*SPRITE_SCALE:0);
     ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.strokeText(nick, textX, headY);
     ctx.fillStyle = dim ? '#bcd3ff' : '#fff'; ctx.fillText(nick, textX, headY);
     ctx.textAlign = 'center';
@@ -2596,6 +2712,21 @@
       } else if(fx.t === 'shield'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), 'Escudo!', '#8fd0ff');
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
+      } else if(fx.t === 'death'){
+        // Consequências de morte (ver onPlayerDeath em huntEngine.js) — XP/
+        // atributos/chance de item cair, todos reduzidos pela proteção das
+        // Bênçãos. Mostra como texto flutuante + resumo no log de loot (sem
+        // modal bloqueante, pra não travar o jogador no meio da ação).
+        spawnFloatingText(()=>({x:player.x,y:player.y}), '💀 Você morreu!', '#ff5a5a');
+        const parts = [];
+        if(fx.xpLoss) parts.push(`-${fx.xpLoss} XP`);
+        if(fx.attrLoss) parts.push(Object.entries(fx.attrLoss).map(([k,v])=>`-${v} ${k}`).join(', '));
+        if(fx.droppedItemName) parts.push(`perdeu "${fx.droppedItemName}" da mochila`);
+        if(fx.droppedEquipName) parts.push(`⚠️ perdeu o equipamento "${fx.droppedEquipName}"!`);
+        const protLine = fx.protectionPct ? ` (Bênçãos reduziram a perda em ${fx.protectionPct}%)` : '';
+        // Bênçãos se gastam pra amortecer a morte — some depois de usadas.
+        const blessLine = fx.blessingsUsed ? ` ${fx.blessingsUsed} Bênção(s) foram consumidas na proteção.` : '';
+        logLoot(`💀 Você morreu!${protLine} ${parts.length ? parts.join(' · ') : 'Sem perdas adicionais.'}${blessLine}`);
       }
     });
   }
@@ -2649,7 +2780,7 @@
 
   function draw(){
     ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillRect(0,0,viewW,viewH);
     const toScreen = worldToScreen;
 
     // Torre Elemental: cada torre tem sua própria "área quadrada" (pedido do
@@ -2662,8 +2793,21 @@
     const bounds = isTowerArena
       ? [ { x: activeHunt.lurePoints[0].x-220, y: activeHunt.lurePoints[0].y-220 }, { x: activeHunt.lurePoints[0].x+220, y: activeHunt.lurePoints[0].y+220 } ]
       : (activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS);
-    const minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
-    const minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
+    let minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
+    let minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
+    // Câmera de tela cheia com viewport estendido: em telas grandes/
+    // fullscreen o chão precisa cobrir 100% da tela, nunca só a área do
+    // conteúdo (cidade/lure points) — une os dois bounds em vez de travar
+    // num raio fixo tipo "15x11". Torre Elemental fica de fora de propósito:
+    // a arena é um quadrado fechado por design (ver comentário acima), não
+    // faz sentido desenhar chão além da muralha dela.
+    if(!isTowerArena){
+      const viewTL = screenToWorld(0, 0);
+      const viewBR = screenToWorld(viewW, viewH);
+      const pad = TILE_STEP; // 1 tile de folga além da borda visível, evita "piscar" tile cortado ao mover
+      minX = Math.min(minX, viewTL.x - pad); maxX = Math.max(maxX, viewBR.x + pad);
+      minY = Math.min(minY, viewTL.y - pad); maxY = Math.max(maxY, viewBR.y + pad);
+    }
     // Cidade Elemental: se os tiles reais do town.otbm já carregaram, desenha
     // eles (chão + decoração real do mapa) em vez do piso xadrez genérico.
     // Sem eles ainda (fetch em andamento ou falhou), cai no piso xadrez de
@@ -2706,13 +2850,15 @@
         drawSceneryBlock(sc.x, sc.y, s.h, top, style.l, style.r, style.hw, style.hh);
         // Copa da árvore e espelho d'água da fonte são só um desenho a mais
         // por cima do mesmo bloco (nenhum sprite novo) — dão silhueta de
-        // árvore/fonte sem precisar de arte externa.
-        const topY = sc.y - (style.hh || BLOCK_HH) - s.h;
+        // árvore/fonte sem precisar de arte externa. Mesma conta de
+        // SPRITE_SCALE do drawSceneryBlock acima, pra não descolar do topo
+        // real do bloco (que já desenhou escalado).
+        const topY = sc.y - (style.hh || BLOCK_HH)*SPRITE_SCALE - s.h*SPRITE_SCALE;
         if(s.type==='arvore'){
-          ctx.beginPath(); ctx.ellipse(sc.x, topY-7, 15, 10, 0, 0, Math.PI*2);
+          ctx.beginPath(); ctx.ellipse(sc.x, topY-7*SPRITE_SCALE, 15*SPRITE_SCALE, 10*SPRITE_SCALE, 0, 0, Math.PI*2);
           ctx.fillStyle = '#4a7a3a'; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.stroke();
         } else if(s.type==='fonte'){
-          const hw2 = (style.hw||BLOCK_HW)*0.68, hh2 = (style.hh||BLOCK_HH)*0.68;
+          const hw2 = (style.hw||BLOCK_HW)*0.68*SPRITE_SCALE, hh2 = (style.hh||BLOCK_HH)*0.68*SPRITE_SCALE;
           ctx.beginPath(); ctx.ellipse(sc.x, topY, hw2, hh2, 0, 0, Math.PI*2);
           ctx.fillStyle = 'rgba(150,210,230,.55)'; ctx.fill(); ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.stroke();
         }
@@ -2725,7 +2871,7 @@
         const waitingCooldown = p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
         drawList.push({ baseCart:{x:p.x,y:p.y}, draw:()=>{
           const s = toScreen(p.x,p.y);
-          ctx.beginPath(); ctx.ellipse(s.x, s.y, BLOCK_HW*0.85, BLOCK_HH*0.85, 0, 0, Math.PI*2);
+          ctx.beginPath(); ctx.ellipse(s.x, s.y, BLOCK_HW*0.85*SPRITE_SCALE, BLOCK_HH*0.85*SPRITE_SCALE, 0, 0, Math.PI*2);
           ctx.fillStyle = isCurrent ? 'rgba(240,211,138,.22)' : 'rgba(191,161,95,.08)'; ctx.fill();
           ctx.lineWidth = isCurrent?2:1; ctx.strokeStyle = waitingCooldown ? '#5a7ac0' : '#bfa15f'; ctx.stroke();
         }});
@@ -2743,12 +2889,14 @@
             const bob = Math.sin(now()/1000*1.6 + m._bobPhase)*1.6;
             const s = toScreen(m.x,m.y);
             const sprite = m.spriteId ? SpriteManager.monsterSprite(m.spriteId) : null;
-            const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34, s.y-68+bob, 68,68);
+            // SPRITE_SCALE mantém o monstro do mesmo tamanho relativo ao
+            // SQM de sempre, agora que o tile (TILE_SCREEN_PX) ficou maior.
+            const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34*SPRITE_SCALE, s.y-68*SPRITE_SCALE+bob, 68*SPRITE_SCALE,68*SPRITE_SCALE);
             if(!drew){
               // sem sprite carregado ainda (ou espécie sem arte) — bolinha
               // procedural com o ícone do bestiário por cima, nunca quebra.
-              ctx.beginPath(); ctx.arc(s.x, s.y-13+bob, 13, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
-              if(m.icon){ ctx.font = '21px sans-serif'; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-6+bob); }
+              ctx.beginPath(); ctx.arc(s.x, s.y-13*SPRITE_SCALE+bob, 13*SPRITE_SCALE, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
+              if(m.icon){ ctx.font = `${Math.round(21*SPRITE_SCALE)}px sans-serif`; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-6*SPRITE_SCALE+bob); }
             }
             // flash branco rápido ao acertar (ver monsterHitFlash/processCombatFx) —
             // sem isso um golpe no monstro não tinha NENHUM retorno visual nele.
@@ -2757,13 +2905,13 @@
               const flashAge = now() - hitAt;
               if(flashAge < MONSTER_HIT_FLASH_MS){
                 ctx.globalAlpha = 1 - flashAge/MONSTER_HIT_FLASH_MS;
-                ctx.beginPath(); ctx.arc(s.x, s.y-30+bob, 26, 0, Math.PI*2);
+                ctx.beginPath(); ctx.arc(s.x, s.y-30*SPRITE_SCALE+bob, 26*SPRITE_SCALE, 0, Math.PI*2);
                 ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(); ctx.globalAlpha = 1;
               } else {
                 monsterHitFlash.delete(m.id);
               }
             }
-          }, headCart:{x:m.x,y:m.y}, headLift:24, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster' });
+          }, headCart:{x:m.x,y:m.y}, headLift:24*SPRITE_SCALE, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster' });
         });
       });
     }
@@ -2785,7 +2933,7 @@
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
         drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim);
-      }, headCart:{x:rp.x,y:rp.y}, headLift:27, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
+      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
     drawList.push({ baseCart:{x:player.x,y:player.y}, draw:()=>{
@@ -2803,7 +2951,7 @@
       const animRef = worldToScreenRaw(player.x, player.y);
       const anim = updateWalkAnim('__player__', animRef.x, animRef.y);
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, anim);
-    }, headCart:{x:player.x,y:player.y}, headLift:33, isPlayer:true, nick:PLAYER_NICK });
+    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     drawList.forEach(item=> item.draw());
@@ -2815,10 +2963,10 @@
       const s = toScreen(item.headCart.x, item.headCart.y);
       const headY = s.y - item.headLift - (item.isPlayer?breathe:0) - (item.bobOffset ? item.bobOffset() : 0);
       ctx.textAlign = 'center';
-      if(item.nick) drawNickAndStar(s.x, headY-10, item.nick, item.dimNick);
+      if(item.nick) drawNickAndStar(s.x, headY-10*SPRITE_SCALE, item.nick, item.dimNick);
       if(item.kind==='monster' && item.hpPct!=null){
-        ctx.fillStyle='#000'; ctx.fillRect(s.x-12, headY-24, 24, 4);
-        ctx.fillStyle='#c94040'; ctx.fillRect(s.x-12, headY-24, 24*item.hpPct, 4);
+        ctx.fillStyle='#000'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE, 4*SPRITE_SCALE);
+        ctx.fillStyle='#c94040'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE*item.hpPct, 4*SPRITE_SCALE);
       }
     });
 
@@ -3011,11 +3159,16 @@
     document.body.classList.toggle('in-dungeon', location==='dungeon');
     document.getElementById('hunt-action-row').classList.toggle('show', location==='dungeon');
     if(location !== 'dungeon' && typeof cancelExitCountdown === 'function') cancelExitCountdown();
-    const canRecharge = isPremium && stamina.rechargesUsedToday < stamina.maxRechargesPerDay;
+    // Free TAMBÉM pode recarregar agora (antes era só Premium) — só a
+    // quantidade de horas devolvida muda (4h Free / 6h Premium, ver
+    // stamina.rechargeMs mandado pelo server).
+    const canRecharge = stamina.rechargesUsedToday < stamina.maxRechargesPerDay;
     document.getElementById('stam-recharge-btn').classList.toggle('show', canRecharge);
     document.getElementById('stam-recharge-count').textContent = `${stamina.rechargesUsedToday}/${stamina.maxRechargesPerDay}`;
     document.getElementById('stam-recharge-cost').textContent = canRecharge ? `${Math.round(stamina.rechargeCost).toLocaleString('pt-BR')} Gold` : '—';
     document.getElementById('stam-recharge-note').textContent = canRecharge ? 'Clique pra comprar — fica mais caro a cada compra do dia.' : 'Reseta à meia-noite.';
+    const rechargeHours = Math.round((stamina.rechargeMs||0) / 3600000);
+    document.getElementById('stam-recharge-gain').textContent = `+${rechargeHours}h`;
     const badge = document.getElementById('premium-badge');
     badge.textContent = isPremium ? 'PREMIUM' : 'FREE'; badge.classList.toggle('free', !isPremium);
 
@@ -3162,6 +3315,9 @@
     if(location === 'dungeon' && matchmakingActive){ matchmakingActive = false; matchmakingKey = null; } // saiu da fila (entrou em caçada por outro caminho)
     bag = msg.bag; bagCapacity = msg.bagCapacity;
     trash = msg.trash || trash; trashCapacity = msg.trashCapacity || trashCapacity;
+    depot = msg.depot || depot; depotCapacity = msg.depotCapacity || depotCapacity;
+    quickSellMarks = msg.quickSellMarks || quickSellMarks;
+    blessingsCount = msg.blessingsCount || 0; blessingProtectionPct = msg.blessingProtectionPct || 0; nextBlessingCost = (msg.nextBlessingCost != null) ? msg.nextBlessingCost : null;
     if(Number.isInteger(msg.invSlotFrame) && msg.invSlotFrame !== invSlotFrame){ invSlotFrame = msg.invSlotFrame; applyInvFrameClass(); }
     pouch = msg.pouch; pouchCapacity = msg.pouchCapacity;
     equipment = msg.equipment; cosmetics = msg.cosmetics;
@@ -3551,22 +3707,49 @@
       renderAltar();
     }
     if(msg.forType === 'shop:buyEnchantMaterial'){
-      if(msg.ok) logLoot(`⚒️ Comprou ${msg.qty}x material de Encantamento por ${msg.cost} Gold.`);
-      else if(msg.reason === 'apenas_na_cidade_principal') logLoot('⚠️ Materiais de Encantamento só são vendidos na Cidade Principal.');
+      if(msg.ok) logLoot(`⚒️ Comprou ${msg.qty}x material de Refinamento por ${msg.cost} Gold.`);
+      else if(msg.reason === 'apenas_na_cidade_principal') logLoot('⚠️ Materiais de Refinamento só são vendidos na Cidade Principal.');
       else if(msg.reason === 'ouro_insuficiente') logLoot('⚠️ Ouro insuficiente para essa compra.');
       else logLoot(`⚠️ Compra falhou: ${msg.reason}`);
       renderEnchantIfOpen();
     }
     if(msg.forType === 'item:enchant'){
-      if(msg.ok && msg.success) logLoot(`✨ Encantamento bem-sucedido! Item agora está +${msg.item.enchantLevel}.`);
-      else if(msg.ok && msg.broke) logLoot('💥 O item se QUEBROU no Encantamento e foi perdido!');
-      else if(msg.ok && !msg.success) logLoot('⚠️ Encantamento falhou — o item perdeu 1 nível.');
+      if(msg.ok && msg.success) logLoot(`✨ Refinamento bem-sucedido! Item agora está +${msg.item.enchantLevel}.`);
+      else if(msg.ok && msg.broke) logLoot('💥 O item se QUEBROU no Refinamento e foi perdido!');
+      else if(msg.ok && !msg.success) logLoot('⚠️ Refinamento falhou — o item perdeu 1 nível.');
       else {
-        const reasonMap = { slot_invalido:'slot inválido.', slot_vazio:'não há item equipado nesse slot.', nivel_maximo:'esse item já está no nível máximo (+10).', sem_cristal:'você precisa de 1 Cristal de Encantamento.', sem_protetor:'você precisa de 1 Bênção do Ferreiro.', sem_selo:'você precisa de 1 Selo Inquebrável.' };
-        logLoot(`⚠️ Não foi possível encantar: ${reasonMap[msg.reason] || msg.reason}`);
+        const reasonMap = { slot_invalido:'slot inválido.', slot_vazio:'não há item equipado nesse slot.', nivel_maximo:'esse item já está no nível máximo (+10).', sem_cristal:`você precisa de ${msg.crystalsNeeded||1} Cristal(is) de Refino.`, sem_protetor:'você precisa de 1 Bênção do Ferreiro.', sem_selo:'você precisa de 1 Selo Inquebrável.' };
+        logLoot(`⚠️ Não foi possível refinar: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderInventoryIfOpen();
       renderEnchantIfOpen();
+    }
+    if(msg.forType === 'depot:store' || msg.forType === 'depot:retrieve'){
+      if(!msg.ok){
+        const reasonMap = { precisa_estar_na_cidade:'o Armazém só funciona na Cidade Principal.', item_invalido:'item inválido.', armazem_cheio:'Armazém cheio.', mochila_cheia:'Mochila cheia — abra espaço antes de retirar.' };
+        logLoot(`⚠️ ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderInventoryIfOpen();
+    }
+    if(msg.forType === 'shop:toggleQuickSell'){
+      renderQuickSellIfOpen();
+    }
+    if(msg.forType === 'shop:quickSell'){
+      if(msg.ok) logLoot(`🪙 Venda Rápida: ${msg.sold} item(ns) vendido(s) por ${msg.gold} Gold.`);
+      else {
+        const reasonMap = { precisa_estar_na_cidade:'Venda Rápida só funciona na Cidade Principal.', nada_marcado:'nenhum item marcado pra vender.' };
+        logLoot(`⚠️ ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderQuickSellIfOpen();
+      renderInventoryIfOpen();
+    }
+    if(msg.forType === 'shop:buyBlessing'){
+      if(msg.ok) logLoot(`🙏 ${msg.blessingName} adquirida por ${msg.cost} Gold! Proteção contra morte aumentada.`);
+      else {
+        const reasonMap = { precisa_estar_na_cidade:'Bênçãos só são vendidas na Cidade Principal.', ja_tem_todas:'você já tem todas as 5 Bênçãos.', ouro_insuficiente:'ouro insuficiente para essa Bênção.' };
+        logLoot(`⚠️ ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderBlessingsIfOpen();
     }
     if(msg.forType === 'rank:get'){
       if(msg.ok){ rankTop = msg.top || []; rankMyPosition = msg.myPosition; if(typeof msg.myScore === 'number') rankScore = msg.myScore; }
@@ -4783,6 +4966,74 @@
     grid.querySelectorAll('.trash-recover-btn').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:Number(btn.dataset.idx) })));
     grid.querySelectorAll('.trash-sell-btn').forEach(btn=> btn.addEventListener('click', ()=>{ if(!btn.disabled) sendWS({ type:'trash:sell', trashIndex:Number(btn.dataset.idx) }); }));
   }
+  // ARMAZÉM (Depot) — guarda de longo prazo, só na Cidade Principal. Mostra
+  // a Mochila (com botão "Guardar" por item) em cima e o Armazém (com botão
+  // "Retirar" por item) embaixo — reaproveita o mesmo .trash-row visual da
+  // Lixeira em vez de duplicar CSS novo.
+  function renderDepotItems(grid, cap){
+    cap.textContent = `Armazém: ${depot.length}/${depotCapacity}`;
+    grid.innerHTML = '';
+    if(location !== 'city'){
+      const warn = document.createElement('div');
+      warn.className = 'trash-row';
+      warn.style.color = 'var(--ink-dim)'; warn.style.fontFamily = 'var(--font-mono)'; warn.style.fontSize = '11px';
+      warn.textContent = 'O Armazém só pode ser acessado na Cidade Principal.';
+      grid.appendChild(warn);
+      return;
+    }
+    const bagHeader = document.createElement('div');
+    bagHeader.className = 'panel-title'; bagHeader.style.cssText = 'font-size:11px;margin:2px 0 4px;';
+    bagHeader.textContent = `Mochila (${bag.length}/${bagCapacity}) — clique em ↪ pra guardar`;
+    grid.appendChild(bagHeader);
+    if(!bag.length){
+      const empty = document.createElement('div');
+      empty.className = 'trash-row'; empty.style.color = 'var(--ink-dim)'; empty.style.fontFamily = 'var(--font-mono)'; empty.style.fontSize = '11px';
+      empty.textContent = 'Mochila vazia.';
+      grid.appendChild(empty);
+    }
+    bag.forEach((it,i)=>{
+      const row = document.createElement('div');
+      row.className = 'trash-row';
+      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+      row.style.borderColor = rarityColor;
+      const iconHtml = it.icon
+        ? `<img data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="handleEquipIconError(this)" />`
+        : `<span style="color:${rarityColor};flex-shrink:0;">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+      row.innerHTML = `${iconHtml}
+        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
+          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}</div>
+        </div>
+        <button type="button" class="treino-inline-btn trash-btn depot-store-btn" data-idx="${i}" title="Guardar no Armazém">↪</button>`;
+      grid.appendChild(row);
+    });
+    const depotHeader = document.createElement('div');
+    depotHeader.className = 'panel-title'; depotHeader.style.cssText = 'font-size:11px;margin:10px 0 4px;';
+    depotHeader.textContent = `Armazém (${depot.length}/${depotCapacity}) — clique em ↩ pra recuperar`;
+    grid.appendChild(depotHeader);
+    if(!depot.length){
+      const empty = document.createElement('div');
+      empty.className = 'trash-row'; empty.style.color = 'var(--ink-dim)'; empty.style.fontFamily = 'var(--font-mono)'; empty.style.fontSize = '11px';
+      empty.textContent = 'Armazém vazio.';
+      grid.appendChild(empty);
+    }
+    depot.forEach((it,i)=>{
+      const row = document.createElement('div');
+      row.className = 'trash-row';
+      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+      row.style.borderColor = rarityColor;
+      const iconHtml = it.icon
+        ? `<img data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="handleEquipIconError(this)" />`
+        : `<span style="color:${rarityColor};flex-shrink:0;">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+      row.innerHTML = `${iconHtml}
+        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
+          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}</div>
+        </div>
+        <button type="button" class="treino-inline-btn trash-btn depot-retrieve-btn" data-idx="${i}" title="Recuperar pra Mochila (precisa de espaço livre)">↩</button>`;
+      grid.appendChild(row);
+    });
+    grid.querySelectorAll('.depot-store-btn').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'depot:store', bagIndex:Number(btn.dataset.idx) })));
+    grid.querySelectorAll('.depot-retrieve-btn').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'depot:retrieve', depotIndex:Number(btn.dataset.idx) })));
+  }
   function renderInventory(){
     // grid.innerHTML='' mais abaixo reconstrói os slots a cada render (inclusive
     // quando chamado de novo por um snapshot chegando com o mouse ainda em cima
@@ -4844,6 +5095,7 @@
     const grid = document.getElementById('inv-items-grid');
     const cap = document.getElementById('inv-capacity-line');
     if(invTab === 'lixeira'){ renderTrashItems(grid, cap); return; }
+    if(invTab === 'armazem'){ renderDepotItems(grid, cap); return; }
     const items = invTab === 'bolsa' ? pouch : bag;
     const capMax = invTab === 'bolsa' ? pouchCapacity : bagCapacity;
     cap.textContent = `${invTab === 'bolsa' ? 'Bolsa (consumíveis)' : 'Mochila (loot)'}: ${items.length}/${capMax}`;
@@ -4891,6 +5143,81 @@
     });
     for(let i=items.length;i<Math.min(capMax,30);i++){ const empty = document.createElement('div'); empty.className='item-slot'; empty.style.opacity='.35'; grid.appendChild(empty); }
   }
+
+  /* =========================================================
+     VENDA RÁPIDA — marca/desmarca itens da Mochila pelo id (persistido no
+     servidor em quickSellMarks) e vende todos de uma vez, ouro na mão.
+     ========================================================= */
+  const quickSellModal = document.getElementById('quicksell-modal');
+  function renderQuickSell(){
+    const list = document.getElementById('quicksell-list');
+    list.innerHTML = '';
+    if(!bag.length){
+      list.innerHTML = '<div class="hint">Mochila vazia — não há nada pra marcar.</div>';
+    }
+    bag.forEach((it,i)=>{
+      const marked = quickSellMarks.includes(it.id);
+      const row = document.createElement('div');
+      row.className = 'trash-row';
+      if(marked) row.style.borderColor = '#7ee08a';
+      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+      row.innerHTML = `<input type="checkbox" class="quicksell-mark-cb" data-id="${it.id}" ${marked?'checked':''}>
+        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
+          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}${it.qty>1?` x${it.qty}`:''}</div>
+        </div>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.quicksell-mark-cb').forEach(cb=>{
+      cb.addEventListener('change', ()=> sendWS({ type:'shop:toggleQuickSell', itemId: cb.dataset.id }));
+    });
+    // Preço real por raridade só existe no servidor (NPC_FERREIRO_BRAN_PRICES
+    // em huntEngine.js) — o total exato vem no ack de 'shop:quickSell', aqui
+    // só mostramos quantos itens estão marcados.
+    const markedCount = bag.filter(it=>quickSellMarks.includes(it.id)).length;
+    const summary = document.getElementById('quicksell-summary');
+    const confirmBtn = document.getElementById('quicksell-confirm-btn');
+    if(!markedCount){ summary.textContent = 'Nada marcado.'; confirmBtn.disabled = true; }
+    else { summary.textContent = `${markedCount} item(ns) marcado(s)`; confirmBtn.disabled = location !== 'city'; }
+  }
+  function renderQuickSellIfOpen(){ if(quickSellModal.classList.contains('open')) renderQuickSell(); }
+  document.getElementById('btn-open-quicksell').addEventListener('click', ()=>{ quickSellModal.classList.toggle('open'); renderQuickSell(); });
+  document.getElementById('quicksell-confirm-btn').addEventListener('click', ()=> sendWS({ type:'shop:quickSell' }));
+
+  /* =========================================================
+     BÊNÇÃOS — até 5, permanentes, reduzem a perda por morte.
+     ========================================================= */
+  const blessingsModal = document.getElementById('blessings-modal');
+  const BLESSINGS_DISPLAY = ['Bênção do Fogo Eterno', 'Bênção das Águas Vivas', 'Bênção da Terra Firme', 'Bênção do Vento Guardião', 'Bênção da Luz Sagrada'];
+  function renderBlessings(){
+    document.getElementById('bless-protection').textContent = `${blessingProtectionPct}%`;
+    const list = document.getElementById('bless-list');
+    list.innerHTML = '';
+    BLESSINGS_DISPLAY.forEach((name,i)=>{
+      const owned = i < blessingsCount;
+      const row = document.createElement('div');
+      row.className = 'bless-row' + (owned ? ' owned' : '');
+      row.innerHTML = `<span class="bless-name">${owned?'✅':'🔒'} ${name}</span>${owned?'':'<span class=\"hint\">bloqueada</span>'}`;
+      list.appendChild(row);
+    });
+    const buyBtn = document.getElementById('bless-buy-btn');
+    if(blessingsCount >= 5){ buyBtn.textContent = 'Todas as Bênçãos adquiridas'; buyBtn.disabled = true; }
+    else { buyBtn.textContent = `Comprar Próxima Bênção${nextBlessingCost!=null?` (${nextBlessingCost} Gold)`:''}`; buyBtn.disabled = location !== 'city'; }
+  }
+  function renderBlessingsIfOpen(){ if(blessingsModal.classList.contains('open')) renderBlessings(); }
+  document.getElementById('btn-open-blessings').addEventListener('click', ()=>{ blessingsModal.classList.toggle('open'); renderBlessings(); });
+  document.getElementById('bless-buy-btn').addEventListener('click', ()=> sendWS({ type:'shop:buyBlessing' }));
+
+  /* =========================================================
+     ARMAZÉM — atalho da topbar abre o Inventário já na aba "Armazém". ---- */
+  document.getElementById('btn-open-depot').addEventListener('click', ()=>{
+    inventoryModal.classList.add('open');
+    document.querySelectorAll('.inv-tab').forEach(x=>x.classList.remove('active'));
+    const tab = document.querySelector('.inv-tab[data-invtab="armazem"]');
+    if(tab) tab.classList.add('active');
+    invTab = 'armazem';
+    renderInventory();
+  });
+
   // Drop (equipar) e clique (desequipar) nos slots do paperdoll — os elementos
   // são fixos no DOM, então isso só precisa ser ligado uma vez, fora do render.
   document.querySelectorAll('.equip-slot[data-equip]').forEach(el=>{
@@ -5079,11 +5406,14 @@
 
   // Catálogo de 6 tiers (espelha huntEngine.js POTION_CATALOG — nomes/custo/
   // nível mínimo têm que bater com o servidor, que é quem valida de verdade).
+  // cost:0 = Lesser é sempre de graça (POTION_CATALOG espelhado no server) —
+  // Medium/Strong cobram ouro DE VERDADE a cada cura real (sem comprar
+  // estoque antes, ver autoUsePotions no huntEngine.js).
   const POTIONS = [
-    { id:'lesser_health', icon: URL_BASE+'items/potions/lesser_health.png', name:'Lesser Health', minLevel:1,  kind:'health', cost:5 },
+    { id:'lesser_health', icon: URL_BASE+'items/potions/lesser_health.png', name:'Lesser Health', minLevel:1,  kind:'health', cost:0 },
     { id:'medium_health', icon: URL_BASE+'items/potions/medium_health.png', name:'Medium Health', minLevel:25, kind:'health', cost:12 },
     { id:'strong_health', icon: URL_BASE+'items/potions/strong_health.png', name:'Strong Health', minLevel:50, kind:'health', cost:22 },
-    { id:'lesser_mana',   icon: URL_BASE+'items/potions/lesser_mana.png',   name:'Lesser Mana',   minLevel:1,  kind:'mana',   cost:5 },
+    { id:'lesser_mana',   icon: URL_BASE+'items/potions/lesser_mana.png',   name:'Lesser Mana',   minLevel:1,  kind:'mana',   cost:0 },
     { id:'medium_mana',   icon: URL_BASE+'items/potions/medium_mana.png',   name:'Medium Mana',   minLevel:25, kind:'mana',   cost:12 },
     { id:'strong_mana',   icon: URL_BASE+'items/potions/strong_mana.png',   name:'Strong Mana',   minLevel:50, kind:'mana',   cost:22 },
   ];
@@ -5104,6 +5434,22 @@
 
   const hotbarEl = document.getElementById('hotbar');
   let configuringSlotIndex = null;
+  // Descrição pra tooltip de um slot já preenchido (magia ou poção) — usada
+  // tanto no hover do próprio slot quanto (via getHotbarTooltipHtmlFor) em
+  // qualquer outro lugar que precise do mesmo texto.
+  function hotbarTooltipHtmlFor(slot){
+    if(slot.kind==='spell'){
+      const sp = getUnlockedSpells().find(s=>s.id===slot.id);
+      if(!sp) return null;
+      return `<div class="tt-name">${sp.name}</div><div>${sp.node && sp.node.desc ? sp.node.desc : ''}</div>`;
+    }
+    if(slot.kind==='item'){
+      const pot = POTIONS.find(p=>p.id===slot.id);
+      if(!pot) return null;
+      return `<div class="tt-name">${pot.name}</div><div>Restaura ${pot.kind==='health'?'HP':'Mana'} · Nv.${pot.minLevel} · ${pot.cost>0?pot.cost+' Gold por uso':'Grátis'}</div>`;
+    }
+    return null;
+  }
   function renderHotbar(){
     hotbarEl.innerHTML = '<div class="corner-br"></div>';
     hotbar.forEach((slot,i)=>{
@@ -5116,11 +5462,37 @@
       const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
       el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>`;
       el.addEventListener('contextmenu', e=>{ e.preventDefault(); openActionModal(i); });
-      // arrastar uma magia desbloqueada da Árvore de Habilidades solta aqui
+      // Tooltip com a descrição do que está no slot (magia ou poção) ao passar o mouse.
+      attachHotbarTooltip(el, ()=> hotbarTooltipHtmlFor(slot));
+      // Slot já preenchido pode ser ARRASTADO pra outro slot (reordenar/mover
+      // — a ordem da esquerda pra direita é a ordem de disparo/prioridade,
+      // então mover de posição realmente muda o comportamento).
+      if(slot.kind){
+        el.draggable = true;
+        el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/hotbar-index', String(i)); e.dataTransfer.effectAllowed = 'move'; });
+      }
+      // arrastar uma magia desbloqueada da Árvore de Habilidades solta aqui,
+      // OU arrastar outro slot da própria hotbar pra TROCAR de posição.
       el.addEventListener('dragover', e=>{ e.preventDefault(); el.classList.add('drop-hover'); });
       el.addEventListener('dragleave', ()=> el.classList.remove('drop-hover'));
       el.addEventListener('drop', e=>{
         e.preventDefault(); el.classList.remove('drop-hover');
+        const fromIndexRaw = e.dataTransfer.getData('text/hotbar-index');
+        if(fromIndexRaw !== ''){
+          const fromIndex = Number(fromIndexRaw);
+          if(fromIndex === i || Number.isNaN(fromIndex)) return;
+          const a = hotbar[fromIndex], b = hotbar[i];
+          hotbar[fromIndex] = b; hotbar[i] = a;
+          renderHotbar();
+          // Persiste a troca pro server pros slots do tipo 'spell' (que são
+          // os únicos espelhados lá — 'item' continua 100% local, ver nota
+          // acima na declaração de hotbar[]).
+          if(a.kind==='spell' || b.kind==='spell'){
+            sendWS({ type:'hotbar:set', index: fromIndex, kind: b.kind==='spell' ? 'spell' : null, spellId: b.kind==='spell' ? b.id : undefined });
+            sendWS({ type:'hotbar:set', index: i, kind: a.kind==='spell' ? 'spell' : null, spellId: a.kind==='spell' ? a.id : undefined });
+          }
+          return;
+        }
         const spellId = e.dataTransfer.getData('text/spell-id');
         if(!spellId) return;
         sendWS({ type:'hotbar:set', index:i, kind:'spell', spellId });
@@ -5146,11 +5518,11 @@
       // exigem o nó correspondente na Árvore de Habilidades) — o servidor
       // valida de novo mesmo assim, isso aqui só evita mostrar opção inválida.
       getUnlockedSpells().forEach(s=>{ const selected = slot.kind==='spell' && slot.id===s.id;
-        html += `<div class="opt-row ${selected?'selected':''}" data-assign-spell="${s.id}">${s.icon} ${s.name}</div>`; });
+        html += `<div class="opt-row ${selected?'selected':''}" data-assign-spell="${s.id}" data-tooltip-spell="${s.id}">${s.icon} ${s.name}</div>`; });
     } else {
       POTIONS.forEach(p=>{
         const unlocked = canUsePotion(p); const selected = slot.kind==='item' && slot.id===p.id;
-        html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''}><img src="${p.icon}" style="width:16px;height:16px;vertical-align:middle;object-fit:contain;margin-right:4px;" /> ${p.name} <span class="req">Nv.${p.minLevel} · ${p.cost}g</span></div>`;
+        html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''} data-tooltip-potion="${p.id}"><img src="${p.icon}" style="width:16px;height:16px;vertical-align:middle;object-fit:contain;margin-right:4px;" /> ${p.name} <span class="req">Nv.${p.minLevel} · ${p.cost>0?p.cost+'g/uso':'Grátis'}</span></div>`;
       });
     }
     html += `<div style="margin-top:10px;">
@@ -5160,6 +5532,13 @@
       <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);text-align:right;" id="cond-threshold-val">${slot.condition.threshold||50}%</div>
     </div>`;
     body.innerHTML = html;
+    // Descrição de tudo que pode ir no slot, ao passar o mouse (magias E poções).
+    body.querySelectorAll('[data-tooltip-spell]').forEach(el=>{
+      attachHotbarTooltip(el, ()=> hotbarTooltipHtmlFor({ kind:'spell', id: el.dataset.tooltipSpell }));
+    });
+    body.querySelectorAll('[data-tooltip-potion]').forEach(el=>{
+      attachHotbarTooltip(el, ()=> hotbarTooltipHtmlFor({ kind:'item', id: el.dataset.tooltipPotion }));
+    });
     body.querySelectorAll('[data-assign-spell]').forEach(el=> el.addEventListener('click', ()=>{
       // servidor valida/persiste — a resposta chega no próximo snapshot e
       // atualiza hotbar[] de verdade (ver applyHuntSnapshot); aqui só
@@ -5750,7 +6129,7 @@
       <div class="altar-req-row"><span>Seu Ouro</span><span>${Math.floor(player.gold)}</span></div>
       <div class="altar-req-row"><span>Seus Fragmentos</span><span>💠 ${fragments}</span></div>
       ${costLine}
-      ${starEvolutionCost ? `<div class="altar-req-row" style="color:var(--ink-dim);font-size:9.5px;">ℹ️ Só o Nível e o XP voltam a 1 — equipamento, Encantamento, Árvore de Habilidades, treino, itens e todo o resto conquistado permanecem intactos.</div>` : ''}
+      ${starEvolutionCost ? `<div class="altar-req-row" style="color:var(--ink-dim);font-size:9.5px;">ℹ️ Só o Nível e o XP voltam a 1 — equipamento, Refinamento, Árvore de Habilidades, treino, itens e todo o resto conquistado permanecem intactos.</div>` : ''}
       ${!inCity ? `<div class="altar-req-row" style="color:#ff9a80;">⚠️ Disponível apenas na Cidade Principal</div>` : ''}
       ${(!meetsLevel && starEvolutionCost) ? `<div class="altar-req-row" style="color:#ff9a80;">⚠️ Requer Nível 100 pra evoluir de estrela.</div>` : ''}
       <button id="altar-evolve-btn" ${(!inCity || !starEvolutionCost || !canAfford || !meetsLevel) ? 'disabled' : ''}>🔥 Realizar Reset de Estrela</button>
@@ -5906,10 +6285,34 @@
   const ENCHANT_SUCCESS_CHANCE = { 1:1.0, 2:.95, 3:.9, 4:.8, 5:.7, 6:.6, 7:.5, 8:.4, 9:.3, 10:.2 };
   const ENCHANT_BREAK_FROM_LEVEL = 7;
   const ENCHANT_PROTECTOR_CHANCE_BONUS = 0.15;
-  const ENCHANT_CRYSTAL_COST_GOLD = 400;
+  // Cristais de Refino consumidos por tentativa, por nível-alvo — espelha
+  // ENCHANT_CRYSTAL_COST_BY_LEVEL no huntEngine.js (server valida de novo).
+  const ENCHANT_CRYSTAL_COST_BY_LEVEL = { 1:1, 2:3, 3:5, 4:7, 5:10, 6:20, 7:25, 8:35, 9:40, 10:50 };
+  const ENCHANT_CRYSTAL_COST_GOLD = 2000; // preço unitário abaixo de 10 na mesma compra
+  const ENCHANT_CRYSTAL_BULK_TIERS = [ { min:50, unit:10000 }, { min:30, unit:7000 }, { min:20, unit:5000 }, { min:10, unit:3000 } ];
+  // Acima de 50 unidades sobe +3000 no unitário a cada bloco de 10 além de 50
+  // (50-59=10000, 60-69=13000, 70-79=16000...) — espelha huntEngine.js.
+  const ENCHANT_CRYSTAL_STEP_QTY_ABOVE_50 = 10;
+  const ENCHANT_CRYSTAL_STEP_GOLD_ABOVE_50 = 3000;
+  function enchantCrystalUnitPrice(qty){
+    const t = ENCHANT_CRYSTAL_BULK_TIERS.find(t=>qty>=t.min);
+    if(!t) return ENCHANT_CRYSTAL_COST_GOLD;
+    if(t.min !== 50) return t.unit;
+    const extraSteps = Math.floor((qty-50)/ENCHANT_CRYSTAL_STEP_QTY_ABOVE_50);
+    return t.unit + extraSteps*ENCHANT_CRYSTAL_STEP_GOLD_ABOVE_50;
+  }
   const ENCHANT_PROTECTOR_COST_GOLD = 900;
   const ENCHANT_WARD_COST_GOLD = 3500; // Selo Inquebrável — custo elevado, garante que o item não quebra na tentativa
   let enchantSelectedSlot = 'weapon';
+  // Guardam o estado dos checkboxes "Usar Bênção"/"Usar Selo" FORA do DOM —
+  // o painel de Refinamento é reconstruído (innerHTML) a cada snapshot
+  // (renderEnchantIfOpen, ~4x/s), o que sempre recriava os checkboxes
+  // desmarcados. Resultado: se o jogador marcava e o snapshot seguinte
+  // chegava antes de clicar em "Refinar" (quase sempre, given o timing),
+  // o clique lia `checked=false` de novo — bug reportado como "Usar Bênção
+  // e Usar Selo Inquebrável não funcionam". Agora o valor vive aqui e o
+  // template só reflete essas variáveis, sobrevivendo a qualquer re-render.
+  let enchantUseProtector = false, enchantUseWard = false;
   function computeBaseItemStatsClient(slot, rarity){
     const base = SLOT_BASE_STATS[slot]; if(!base) return {};
     const mult = RARITY_STAT_MULT[rarity] || 1; const out = {};
@@ -5954,35 +6357,61 @@
     const hasCrystal = (materials.enchantCrystal||0) >= 1;
     const hasProtector = (materials.enchantProtector||0) >= 1;
     const hasWard = (materials.antiBreakWard||0) >= 1;
+    // limpa a escolha se o material acabou/não é mais aplicável nesse nível
+    // (senão o checkbox ficaria "marcado" numa opção desabilitada)
+    if(!hasProtector) enchantUseProtector = false;
+    if(!(hasWard && canBreak)) enchantUseWard = false;
     body.innerHTML = `
       <div class="enchant-req-row"><span>Item</span><span style="color:${RARITY_COLORS[item.rarity]||'var(--ink)'}">${item.name} (${item.rarity})</span></div>
-      <div class="enchant-req-row"><span>Nível de Encantamento</span><span class="${level>0?'ok':''}">${atMax ? '+10 (MÁXIMO)' : `+${level} → +${nextLevel}`}</span></div>
+      <div class="enchant-req-row"><span>Nível de Refinamento</span><span class="${level>0?'ok':''}">${atMax ? '+10 (MÁXIMO)' : `+${level} → +${nextLevel}`}</span></div>
       <div class="enchant-stats-box">Status atuais: ${formatStats(stats)}${(item.bonusStats||[]).length ? `<br><span class="enchant-affix">Bônus únicos: ${item.bonusStats.map(b=>`${b.label} +${b.value}`).join(', ')}</span>` : ''}</div>
       ${!atMax ? `
       <div class="enchant-req-row"><span>Chance de sucesso</span><span class="${hasProtector?'ok':''}">${Math.round(baseChance*100)}% ${hasProtector?`(+${Math.round(ENCHANT_PROTECTOR_CHANCE_BONUS*100)}% com Bênção)`:''}</span></div>
       ${canBreak ? `<div class="enchant-req-row"><span>⚠️ Risco</span><span class="missing">Falhar pode QUEBRAR o item (destruído) — use o Selo Inquebrável abaixo pra evitar</span></div>` : `<div class="enchant-req-row"><span>Risco</span><span>Falhar só volta 1 nível (sem quebrar)</span></div>`}
-      <div class="enchant-req-row"><span>Cristal de Encantamento</span><span class="${hasCrystal?'ok':'missing'}">${materials.enchantCrystal||0} <button class="party-btn" id="enchant-buy-crystal" style="margin-left:6px;">Comprar (${ENCHANT_CRYSTAL_COST_GOLD} Gold)</button></span></div>
+      <div class="enchant-req-row" style="align-items:center;"><span>Cristal de Refino (precisa de ${crystalsNeeded} pra +${nextLevel})</span><span class="${hasCrystal?'ok':'missing'}">${materials.enchantCrystal||0}</span></div>
+      <div class="enchant-req-row" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <span style="font-size:9px;color:var(--ink-dim);">Comprar cristais (preço sobe por lote): base ${ENCHANT_CRYSTAL_COST_GOLD}/un · 10x=${ENCHANT_CRYSTAL_BULK_TIERS[3].unit}/un · 20x=${ENCHANT_CRYSTAL_BULK_TIERS[2].unit}/un · 30x=${ENCHANT_CRYSTAL_BULK_TIERS[1].unit}/un · 50x=${ENCHANT_CRYSTAL_BULK_TIERS[0].unit}/un</span>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <input type="number" id="enchant-crystal-qty" class="trade-gold-input" min="1" max="999" value="1" style="width:56px;">
+          <button class="party-btn" id="enchant-buy-crystal" style="white-space:nowrap;">Comprar (<span id="enchant-crystal-total">${ENCHANT_CRYSTAL_COST_GOLD}</span> Gold)</button>
+          ${[10,20,30,50].map(q=>`<button class="party-btn" data-crystal-preset="${q}" style="font-size:9px;padding:2px 6px;">${q}x</button>`).join('')}
+        </div>
+      </div>
       <div class="enchant-req-row"><span>Bênção do Ferreiro (opcional, +chance)</span><span>${materials.enchantProtector||0} <button class="party-btn" id="enchant-buy-protector" style="margin-left:6px;">Comprar (${ENCHANT_PROTECTOR_COST_GOLD} Gold)</button></span></div>
       <div class="enchant-req-row"><span>Selo Inquebrável (opcional, nunca quebra)</span><span>${materials.antiBreakWard||0} <button class="party-btn" id="enchant-buy-ward" style="margin-left:6px;">Comprar (${ENCHANT_WARD_COST_GOLD} Gold)</button></span></div>
-      <label style="display:flex;gap:6px;align-items:center;margin:8px 0;font-family:var(--font-mono);font-size:10.5px;"><input type="checkbox" id="enchant-use-protector" ${hasProtector?'':'disabled'}> Usar Bênção do Ferreiro nesta tentativa</label>
-      <label style="display:flex;gap:6px;align-items:center;margin:8px 0;font-family:var(--font-mono);font-size:10.5px;"><input type="checkbox" id="enchant-use-ward" ${(hasWard && canBreak)?'':'disabled'}> Usar Selo Inquebrável nesta tentativa ${!canBreak?'<span style="color:var(--ink-dim);">(sem risco de quebra nesse nível — desnecessário)</span>':''}</label>
-      ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Comprar materiais só na Cidade Principal (encantar funciona em qualquer lugar)</div>` : ''}
-      <button class="skill-save-btn" id="enchant-go-btn" style="width:100%;margin-top:8px;" ${hasCrystal?'':'disabled'}>⚒️ Encantar (+${level} → +${nextLevel})</button>
+      <label style="display:flex;gap:6px;align-items:center;margin:8px 0;font-family:var(--font-mono);font-size:10.5px;"><input type="checkbox" id="enchant-use-protector" ${hasProtector?'':'disabled'} ${enchantUseProtector?'checked':''}> Usar Bênção do Ferreiro nesta tentativa</label>
+      <label style="display:flex;gap:6px;align-items:center;margin:8px 0;font-family:var(--font-mono);font-size:10.5px;"><input type="checkbox" id="enchant-use-ward" ${(hasWard && canBreak)?'':'disabled'} ${enchantUseWard?'checked':''}> Usar Selo Inquebrável nesta tentativa ${!canBreak?'<span style="color:var(--ink-dim);">(sem risco de quebra nesse nível — desnecessário)</span>':''}</label>
+      ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Comprar materiais só na Cidade Principal (refinar funciona em qualquer lugar)</div>` : ''}
+      <button class="skill-save-btn" id="enchant-go-btn" style="width:100%;margin-top:8px;" ${hasCrystal?'':'disabled'}>⚒️ Refinar (+${level} → +${nextLevel})</button>
       ` : ''}
     `;
     if(!atMax){
-      document.getElementById('enchant-buy-crystal').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'crystal', qty:1 }));
+      const crystalQtyInput = document.getElementById('enchant-crystal-qty');
+      const crystalTotalEl = document.getElementById('enchant-crystal-total');
+      const updateCrystalTotal = ()=>{
+        const q = Math.max(1, Math.min(999, Number(crystalQtyInput.value)||1));
+        crystalTotalEl.textContent = (enchantCrystalUnitPrice(q) * q).toLocaleString('pt-BR');
+      };
+      crystalQtyInput.addEventListener('input', updateCrystalTotal);
+      updateCrystalTotal();
+      document.querySelectorAll('[data-crystal-preset]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{ crystalQtyInput.value = btn.dataset.crystalPreset; updateCrystalTotal(); });
+      });
+      document.getElementById('enchant-buy-crystal').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'crystal', qty: Math.max(1, Math.min(999, Number(crystalQtyInput.value)||1)) }));
       document.getElementById('enchant-buy-protector').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'protector', qty:1 }));
       document.getElementById('enchant-buy-ward').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'ward', qty:1 }));
+      document.getElementById('enchant-use-protector').addEventListener('change', e=>{ enchantUseProtector = e.target.checked; });
+      document.getElementById('enchant-use-ward').addEventListener('change', e=>{ enchantUseWard = e.target.checked; });
       document.getElementById('enchant-go-btn').addEventListener('click', ()=>{
-        const useProtector = document.getElementById('enchant-use-protector').checked;
-        const useWard = document.getElementById('enchant-use-ward').checked;
+        const useProtector = enchantUseProtector;
+        const useWard = enchantUseWard;
         const finalChance = Math.round((baseChance+(useProtector?ENCHANT_PROTECTOR_CHANCE_BONUS:0))*100);
         const warn = (canBreak && !useWard)
-          ? `Tentar encantar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso — falhar pode QUEBRAR o item de vez (perda total). Continuar?`
-          : `Tentar encantar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso${useWard?' (Selo Inquebrável garante que não vai quebrar mesmo falhando)':''}. Continuar?`;
+          ? `Tentar refinar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso — falhar pode QUEBRAR o item de vez (perda total). Continuar?`
+          : `Tentar refinar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso${useWard?' (Selo Inquebrável garante que não vai quebrar mesmo falhando)':''}. Continuar?`;
         if(!confirm(warn)) return;
         sendWS({ type:'item:enchant', slot: enchantSelectedSlot, useProtector, useWard });
+        enchantUseProtector = false; enchantUseWard = false; // reseta pra próxima tentativa (não "reusar" sem decidir de novo)
       });
     }
   }
@@ -6350,7 +6779,7 @@
       const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
       if(!sameBucket) continue;
       const s = worldToScreen(rp.x, rp.y);
-      if(Math.hypot(clickX-s.x, clickY-(s.y-18)) < 16){ hitUsername = uname; break; }
+      if(Math.hypot(clickX-s.x, clickY-(s.y-18*SPRITE_SCALE)) < 16*SPRITE_SCALE){ hitUsername = uname; break; }
     }
     if(hitUsername){ showPlayerMenu(hitUsername, e.clientX, e.clientY); return; }
 
