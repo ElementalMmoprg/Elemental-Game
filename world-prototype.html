@@ -810,7 +810,7 @@
     <div class="tb-pill" id="btn-open-rank" title="Rank Geral">🏆 Rank</div>
     <div id="tb-online">— jogadores online</div>
     <div id="matchmaking-pill" class="tb-pill searching" title="Clique para cancelar a busca por time" style="display:none;">🔎 Buscando time...</div>
-    <div id="training-pill" class="tb-pill searching" title="Treinando no boneco (2x o ritmo de caçada) — clique para parar" style="display:none;">🏋️ Treinando...</div>
+    <div id="training-pill" class="tb-pill searching" title="Treinando no boneco (1 ponto a cada ~40min, mais rápido que caçar) — clique para parar" style="display:none;">🏋️ Treinando...</div>
     <div id="tb-icons">
       <div class="tb-icon" id="open-hunts-btn" title="Caçadas">⚔️</div>
       <div class="tb-icon" id="btn-open-party" title="Grupo">👥</div>
@@ -862,8 +862,12 @@
   <div id="attrs-panel" class="glass ornate win">
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Atributos Livres<span class="rule"></span><span class="win-close-x" data-close-win="attrs-panel">✕</span></div>
     <div style="padding:0 14px 14px;">
-      <div class="cap-line"><span>Teto atual: <b id="attr-cap" style="color:var(--gold-bright)">100</b></span><span>Banco: <b id="attr-bank" style="color:var(--gold-bright)">0</b></span></div>
+      <div class="cap-line"><span>Teto atual (soma de tudo): <b id="attr-cap" style="color:var(--gold-bright)">100</b></span><span>Banco: <b id="attr-bank" style="color:var(--gold-bright)">0</b></span></div>
       <div id="attrs-list"></div>
+      <div class="skill-actions-row">
+        <button class="skill-save-btn" id="attrs-confirm-btn" disabled>💾 Confirmar</button>
+        <button class="skill-reset-btn" id="attrs-reset-btn">♻️ Resetar</button>
+      </div>
     </div>
     <div class="win-resize"></div>
   </div>
@@ -1424,6 +1428,8 @@
   let premiumExpiresAt = null;
   const training = { magia:0, defesa:0, esquiva:0, critico:0, sword:0, axe:0, club:0, distance:0 };
   let trainingBank = 0;
+  let usedFreeTrainingReset = false;
+  const TRAINING_RESET_COST_CLIENT = 100; // espelha TRAINING_RESET_COST_ELEMENTAL_COIN no servidor
   let combatPosture = 'balanca';
   let sqmDistance = 1;
   let targetMode = 'closest';
@@ -2870,6 +2876,7 @@
     starEvolutionCost = msg.starEvolutionCost || null;
     friends = msg.friends || [];
     Object.assign(training, msg.training); trainingBank = msg.trainingBank;
+    if(typeof msg.usedFreeTrainingReset === 'boolean') usedFreeTrainingReset = msg.usedFreeTrainingReset;
     combatPosture = msg.combatPosture; sqmDistance = msg.sqmDistance;
     targetMode = msg.targetMode; followUsername = msg.followUsername || null;
     autoSellOnBagFull = msg.autoSellOnBagFull;
@@ -3173,6 +3180,20 @@
       else logLoot(`⚠️ Reset falhou: ${msg.reason}`);
       renderSkillTreeIfOpen();
     }
+    if(msg.forType === 'training:confirm'){
+      if(msg.ok){ pendingTrainingDraft = {}; logLoot('🎯 Atributos confirmados.'); }
+      else {
+        const reasonMap = { nada_para_confirmar:'nada pendente pra confirmar.', banco_insuficiente:'seu Banco não tem pontos suficientes pra esse plano.', teto_atingido:'esse plano passa do teto atual de pontos.' };
+        logLoot(`⚠️ Não foi possível confirmar: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderAttrs();
+    }
+    if(msg.forType === 'training:reset'){
+      if(msg.ok){ pendingTrainingDraft = {}; logLoot('♻️ Atributos resetados — pontos devolvidos ao Banco.'); }
+      else if(msg.reason === 'elemental_coin_insuficiente') logLoot(`⚠️ Você precisa de ${msg.cost || TRAINING_RESET_COST_CLIENT} Elemental Coin pra resetar os Atributos.`);
+      else logLoot(`⚠️ Reset de Atributos falhou: ${msg.reason}`);
+      renderAttrs();
+    }
     if(msg.forType === 'stat:allocate' && !msg.ok){
       const reasonMap = { stat_invalido:'status inválido.', delta_invalido:'ação inválida.', pontos_insuficientes:'você não tem pontos de status suficientes.', valor_invalido:'esse status já está em 0.' };
       logLoot(`⚠️ ${reasonMap[msg.reason] || msg.reason}`);
@@ -3339,7 +3360,7 @@
     const isOfflineArmed = !!offlineTrainingArmed;
     const actionsEl = document.getElementById('treino-actions');
     actionsEl.innerHTML = `
-      <button id="treino-online-btn" class="${isOnline?'stop':''}" ${(!hasTrainingKit && !isOnline) || isOfflineArmed ? 'disabled':''}>${isOnline?'⏹ Parar Treino Online':'▶ Iniciar Treino Online (2x o ritmo de caçada)'}</button>
+      <button id="treino-online-btn" class="${isOnline?'stop':''}" ${(!hasTrainingKit && !isOnline) || isOfflineArmed ? 'disabled':''}>${isOnline?'⏹ Parar Treino Online':'▶ Iniciar Treino Online (1 ponto a cada ~40min)'}</button>
       <div id="treino-offline-row">
         <label class="opt-box"><input type="checkbox" id="treino-repeat-cb" ${isOfflineArmed && offlineTrainingArmed.repeat ? 'checked':''} ${isOfflineArmed?'disabled':''}> Repetir enquanto eu estiver fora (sem limite de 12h)</label>
         <button id="treino-offline-btn" class="${isOfflineArmed?'stop':''}" ${(!hasTrainingKit && !isOfflineArmed) || isOnline ? 'disabled':''}>${isOfflineArmed?'⏹ Cancelar Treino Offline':'🌙 Armar Treino Offline (rende ao desconectar, até 12h)'}</button>
@@ -4597,22 +4618,62 @@
   function getTrainingCap(){ const s = prestige.bronzeStars+prestige.silverStars+prestige.goldStars; return 50 + s*10 + (prestige.diamondRank?50:0); }
   const attrsPanel = document.getElementById('attrs-panel');
   document.getElementById('btn-open-attrs').addEventListener('click', ()=>{ attrsPanel.classList.toggle('open'); renderAttrs(); });
+  // Rascunho local dos cliques em "+"/"−" ainda NÃO confirmados — nada é
+  // mandado pro servidor até apertar "Confirmar" (pedido do usuário depois
+  // de perceber que cada clique gastava banco na hora, sem chance de
+  // planejar/desfazer antes de mandar). { attrKey: pontosPendentes }
+  let pendingTrainingDraft = {};
+  function attrsTotalInvested(){ return ATTR_DEFS.reduce((sum,a)=> sum + Math.round(training[a.key]||0), 0); }
+  function attrsDraftTotal(){ return Object.values(pendingTrainingDraft).reduce((a,b)=>a+b,0); }
   function renderAttrs(){
     if(!attrsPanel.classList.contains('open')) return;
     const cap = getTrainingCap();
+    const investedTotal = attrsTotalInvested();
+    const draftTotal = attrsDraftTotal();
+    const bankLeft = trainingBank - draftTotal;
     document.getElementById('attr-cap').textContent = cap;
-    document.getElementById('attr-bank').textContent = Math.floor(trainingBank);
+    document.getElementById('attr-bank').textContent = Math.floor(bankLeft);
     const list = document.getElementById('attrs-list');
     list.innerHTML = '';
     ATTR_DEFS.forEach(a=>{
-      const val = Math.round(training[a.key]);
+      const committed = Math.round(training[a.key]||0);
+      const pending = pendingTrainingDraft[a.key] || 0;
+      const val = committed + pending;
       const row = document.createElement('div'); row.className = 'attr-row';
-      const canAdd = trainingBank>=1 && val<cap;
-      row.innerHTML = `<span class="name">${a.label}</span><div class="attr-track"><div class="attr-fill" style="width:${(val/cap*100).toFixed(1)}%"></div></div><span class="attr-val">${val}/${cap}</span><button class="attr-plus" ${canAdd?'':'disabled'}>+</button>`;
-      row.querySelector('.attr-plus').addEventListener('click', ()=> sendWS({ type:'hunt:train', attrKey:a.key }));
+      const canAdd = bankLeft>=1 && (investedTotal+draftTotal)<cap;
+      const canRemove = pending>0;
+      const pendingLabel = pending>0 ? ` <span style="color:#8fd17a;">(+${pending})</span>` : '';
+      row.innerHTML = `<span class="name">${a.label}</span><div class="attr-track"><div class="attr-fill" style="width:${(val/cap*100).toFixed(1)}%"></div></div><span class="attr-val">${val}/${cap}${pendingLabel}</span><button class="attr-minus" ${canRemove?'':'disabled'}>−</button><button class="attr-plus" ${canAdd?'':'disabled'}>+</button>`;
+      row.querySelector('.attr-plus').addEventListener('click', ()=>{
+        pendingTrainingDraft[a.key] = (pendingTrainingDraft[a.key]||0) + 1;
+        renderAttrs();
+      });
+      row.querySelector('.attr-minus').addEventListener('click', ()=>{
+        if(!pendingTrainingDraft[a.key]) return;
+        pendingTrainingDraft[a.key] -= 1;
+        if(pendingTrainingDraft[a.key]<=0) delete pendingTrainingDraft[a.key];
+        renderAttrs();
+      });
       list.appendChild(row);
     });
+    document.getElementById('attrs-confirm-btn').disabled = draftTotal<=0;
+    const resetBtn = document.getElementById('attrs-reset-btn');
+    const resetCost = usedFreeTrainingReset ? TRAINING_RESET_COST_CLIENT : 0;
+    resetBtn.textContent = resetCost ? `♻️ Resetar (${resetCost} 💎)` : '♻️ Resetar (grátis)';
   }
+  document.getElementById('attrs-confirm-btn').addEventListener('click', ()=>{
+    if(attrsDraftTotal()<=0) return;
+    sendWS({ type:'training:confirm', deltas: { ...pendingTrainingDraft } });
+  });
+  document.getElementById('attrs-reset-btn').addEventListener('click', async ()=>{
+    const resetCost = usedFreeTrainingReset ? TRAINING_RESET_COST_CLIENT : 0;
+    const msg = resetCost
+      ? `Resetar os Atributos Livres devolve todos os pontos já treinados pro Banco e custa ${resetCost} Elemental Coin. Continuar?`
+      : 'Resetar os Atributos Livres devolve todos os pontos já treinados pro Banco. Este é o seu 1º reset e é GRÁTIS. Continuar?';
+    const ok = await showConfirmModal(msg);
+    if(!ok) return;
+    sendWS({ type:'training:reset' });
+  });
 
   /* =========================================================
      ÁRVORE DE HABILIDADES — 10 ARQUÉTIPOS REAIS DE RAVENDAWN — UI (dados/
