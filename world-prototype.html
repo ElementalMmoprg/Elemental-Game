@@ -372,7 +372,7 @@
   #inv-body{ flex:1; display:flex; overflow:hidden; position:relative; }
 
   /* STATS — coluna nova (referência "Morgan Hearson"), valores reais */
-  #inv-stats-col{ width:130px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:16px 12px; display:flex; flex-direction:column; gap:12px; }
+  #inv-stats-col{ width:130px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:14px 12px; display:flex; flex-direction:column; gap:7px; overflow-y:auto; }
   .inv-stat-row{ display:flex; flex-direction:column; gap:1px; font-family:var(--font-mono); }
   .inv-stat-icon{ font-size:13px; }
   .inv-stat-label{ font-size:9px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.05em; }
@@ -1042,6 +1042,11 @@
         <div class="inv-stat-row"><span class="inv-stat-icon">💧</span><span class="inv-stat-label">Mana</span><b id="inv-stat-mana">0</b></div>
         <div class="inv-stat-row"><span class="inv-stat-icon">⚔️</span><span class="inv-stat-label">DPS</span><b id="inv-stat-dps">0</b></div>
         <div class="inv-stat-row"><span class="inv-stat-icon">🛡️</span><span class="inv-stat-label">Armadura</span><b id="inv-stat-armor">0</b></div>
+        <div class="inv-stat-row"><span class="inv-stat-icon">🎯</span><span class="inv-stat-label">Chance Crítico</span><b id="inv-stat-critchance">0%</b></div>
+        <div class="inv-stat-row"><span class="inv-stat-icon">💥</span><span class="inv-stat-label">Dano Crítico</span><b id="inv-stat-critdmg">0%</b></div>
+        <div class="inv-stat-row"><span class="inv-stat-icon">🌀</span><span class="inv-stat-label">Esquiva</span><b id="inv-stat-dodge">0%</b></div>
+        <div class="inv-stat-row"><span class="inv-stat-icon">🔮</span><span class="inv-stat-label">Dano Mágico</span><b id="inv-stat-magicdmg">0%</b></div>
+        <div class="inv-stat-row"><span class="inv-stat-icon">🗡️</span><span class="inv-stat-label">Dano Físico</span><b id="inv-stat-physdmg">0%</b></div>
       </div>
       <div id="inv-equip-col">
         <div id="inv-char-name">—</div>
@@ -2897,6 +2902,7 @@
     if(msg.statAllocation) statAllocation = msg.statAllocation;
     if(msg.statPoints) statPoints = msg.statPoints;
     if(msg.statAttributes) statAttributes = msg.statAttributes;
+    if(msg.combatStats) combatStats = msg.combatStats;
     if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
     if(msg.materials) materials = msg.materials;
@@ -4236,12 +4242,22 @@
       el.title = id ? (def ? def.name : id) : el.querySelector('.slot-tag').textContent;
     });
 
-    // STATS (referência "Morgan Hearson") — valores reais: Vida/Mana do
-    // personagem, DPS/Armadura somados dos status de TODO o equipamento.
+    // STATS (referência "Morgan Hearson") — Vida/Mana reais do personagem;
+    // DPS/Armadura/Crítico/Esquiva/Dano vêm prontos do servidor (combatStats,
+    // ver computeDisplayCombatStats em huntEngine.js) já somando equipamento +
+    // pet + skill tree + pontos de status + Treino (Atributos Livres) — antes
+    // o DPS/Armadura eram só a soma do ATK/DEF do equipamento, sem reagir a
+    // NENHUM atributo; agora reagem a todos.
+    const cs = combatStats || {};
     document.getElementById('inv-stat-life').textContent = `${Math.round(player.hp)}/${player.hpMax}`;
     document.getElementById('inv-stat-mana').textContent = `${Math.round(player.mp)}/${player.mpMax}`;
-    document.getElementById('inv-stat-dps').textContent = sumEquipStat('atk');
-    document.getElementById('inv-stat-armor').textContent = sumEquipStat('def');
+    document.getElementById('inv-stat-dps').textContent = cs.dps!=null ? cs.dps : sumEquipStat('atk');
+    document.getElementById('inv-stat-armor').textContent = cs.armor!=null ? cs.armor : sumEquipStat('def');
+    document.getElementById('inv-stat-critchance').textContent = `${(cs.critChancePct||0).toFixed(1)}%`;
+    document.getElementById('inv-stat-critdmg').textContent = `${(cs.critDamagePct||0).toFixed(1)}%`;
+    document.getElementById('inv-stat-dodge').textContent = `${(cs.dodgeChancePct||0).toFixed(1)}%`;
+    document.getElementById('inv-stat-magicdmg').textContent = `${(cs.magicDamagePct||0).toFixed(1)}%`;
+    document.getElementById('inv-stat-physdmg').textContent = `${(cs.physicalDamagePct||0).toFixed(1)}%`;
 
     // Retrato do personagem — reaproveita o MESMO desenhista de sprite do
     // mundo (corpo+outfit+cabeça, com fallback procedural), só que numa tela
@@ -4996,6 +5012,7 @@
   let statAllocation = { vitality:0, might:0, intelligence:0, dexterity:0, wisdom:0 };
   let statPoints = { total:0, spent:0 };
   let statAttributes = {};
+  let combatStats = {}; // DPS/Armadura/Crítico/Esquiva/Dano real, calculado no servidor (ver computeDisplayCombatStats)
   let usedFreeStatReset = false;
   function renderStatsSection(){
     const el = document.getElementById('skilltree-stats-section');
