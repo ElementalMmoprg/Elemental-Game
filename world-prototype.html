@@ -4339,8 +4339,11 @@
   const ARCHETYPE_LABELS = ['Warfare','Protection','Shadow','Archery','Wizardry','Holy','Spiritual','Witchcraft','Ballistics','Naturalist'];
   function archetypeSlug(label){ return String(label||'').toLowerCase(); }
   const ARCHETYPE_IDS = ARCHETYPE_LABELS.map(archetypeSlug);
-  const CLASSABLE_ARCHETYPE_IDS = ['warfare','protection','shadow','archery','wizardry','holy','spiritual','witchcraft'];
-  const UTILITY_ARCHETYPE_IDS = ['ballistics','naturalist'];
+  // Os 10 arquétipos competem igualmente pelos 3 slots de classe — sem
+  // trilhas utilitárias sempre abertas (mesma correção do servidor, ver
+  // huntEngine.js).
+  const CLASSABLE_ARCHETYPE_IDS = ['warfare','protection','shadow','archery','wizardry','holy','spiritual','witchcraft','ballistics','naturalist'];
+  const UTILITY_ARCHETYPE_IDS = [];
   const ARCHETYPE_LABEL = {}; ARCHETYPE_LABELS.forEach(l=> ARCHETYPE_LABEL[archetypeSlug(l)] = l);
   // Nomes/temas em português só pra UI (a wiki e os ícones usam o termo em
   // inglês mesmo, igual ao jogo original — mantemos os dois: nome oficial
@@ -4419,7 +4422,7 @@
   function spellIconUrl(name){ return `${URL_BASE}ravendawn/icons/abilitybar/${encodeURIComponent(String(name||'').toLowerCase())}.png`; }
   // Slots preenchidos (sem null) + utilitárias sempre abertas — é isso que
   // conta como "arquétipo aberto" pra hotbar/skill tab, igual getOpenArchetypes do servidor.
-  function getOpenArchetypesClient(){ return [...(archetypes.chosen||[]).filter(Boolean), ...UTILITY_ARCHETYPE_IDS]; }
+  function getOpenArchetypesClient(){ return (archetypes.chosen||[]).filter(Boolean); }
   function spellIdFor(archetypeId, spellId){ return spellCompositeId(archetypeId, spellId); }
   // quantas Ativas DISTINTAS já têm pelo menos 1 ponto nesse arquétipo — é o
   // que libera Passiva (precisa de >=3), espelha countUnlockedActives do servidor.
