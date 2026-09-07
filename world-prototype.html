@@ -346,22 +346,29 @@
      em UMA ÚNICA linha horizontal fina e compacta. #footer-bar é quem
      centraliza o conjunto inteiro; hotbar-wrap e tactics-bar são só flex
      items dele agora (não têm posição própria). ============ */
-  #footer-bar{ bottom:14px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:12px; z-index:6; }
-  #hotbar-wrap{ display:flex; align-items:flex-end; gap:10px; }
+  #footer-bar{ bottom:14px; left:50%; transform:translateX(-50%); display:flex; align-items:flex-end; gap:12px; z-index:6; }
+  #hotbar-wrap{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #hotbar-row{ display:flex; align-items:flex-end; gap:10px; }
   #hotbar{ display:flex; gap:6px; padding:10px; }
   #bag-shortcut{ width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4) url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/ability_slot_frame.png) center/100% 100% no-repeat; border:none; display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; }
   #bag-shortcut:hover{ box-shadow:0 0 12px rgba(240,211,138,.3); }
   .slot{ position:relative; width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4) url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/ability_slot_frame.png) center/100% 100% no-repeat; border:none; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:context-menu; }
   .slot .num{ position:absolute; top:1px; left:3px; font-family:var(--font-mono); font-size:8px; color:var(--ink-dim); }
   .slot .cd-overlay{ position:absolute; inset:0; background:conic-gradient(rgba(0,0,0,.78) var(--pct,0%), transparent 0); border-radius:6px; }
+  .slot .cd-text{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; font-weight:bold; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.95); pointer-events:none; }
   .slot.locked{ opacity:.35; filter:grayscale(1); }
   .slot .cond-chip{ position:absolute; bottom:-1px; right:-1px; font-size:7.5px; background:#1a1510; border:1px solid var(--gold-deep); border-radius:3px; padding:0 2px; color:var(--ink-dim); }
   .slot .pct-input{ position:absolute; bottom:-16px; left:0; width:100%; font-family:var(--font-mono); font-size:8px; text-align:center; background:transparent; border:none; color:var(--ink-dim); }
   #hotbar-hint{ position:absolute; bottom:96px; left:50%; transform:translateX(-50%); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); background:rgba(0,0,0,.4); padding:3px 9px; border-radius:10px; white-space:nowrap; z-index:6; }
-  /* Botões de serviço da Cidade (Armazém/Venda Rápida/Bênçãos) — acima da
-     hotbar/hint, só visíveis na Cidade Principal (igual a referência
-     enviada pelo usuário). #stage > * já dá position:absolute (ver acima). */
-  #city-services-bar{ display:none; bottom:126px; left:50%; transform:translateX(-50%); flex-direction:row; align-items:center; gap:8px; padding:6px 8px; z-index:6; }
+  /* Botões de serviço da Cidade (Armazém/Venda Rápida/Bênçãos) — agora
+     vivem DENTRO do #hotbar-wrap (ver HTML), empilhados acima da linha
+     bag+hotbar pelo próprio flex-direction:column dele — assim ficam
+     automaticamente centralizados igual ao slot de habilidades, sem left:50%
+     na tela inteira (que não bate com o centro real da hotbar, deslocada
+     pelas vitals/tactics do lado) e sem posição própria pra colidir com o
+     #footer-bar. Só visíveis na Cidade Principal (igual a referência
+     enviada pelo usuário). */
+  #city-services-bar{ display:none; flex-direction:row; align-items:center; gap:8px; padding:6px 8px; }
   body.in-city #city-services-bar{ display:flex; }
 
   /* ============ BARRA TÁTICA COMPACTA (Postura/Alvo/SQM) — estilo Huntera:
@@ -829,7 +836,7 @@
   .dps-hint{ text-align:center; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); opacity:.6; margin-top:6px; }
 
   /* ============ CHAT FLUTUANTE (Global/Local/Guild/Sistema/Combate) ============ */
-  #chat-window{ left:14px; bottom:80px; width:400px; height:220px; min-width:260px; min-height:130px; display:flex; flex-direction:column; overflow:hidden; z-index:5; }
+  #chat-window{ left:14px; bottom:122px; width:370px; height:190px; min-width:260px; min-height:130px; display:flex; flex-direction:column; overflow:hidden; z-index:5; }
   #chat-titlebar{ padding:6px 10px; display:flex; align-items:center; justify-content:space-between; cursor:move; border-bottom:1px solid var(--gold-deep); user-select:none; }
   #chat-titlebar span{ font-family:var(--font-display); font-size:10.5px; letter-spacing:.08em; color:var(--gold-bright); text-transform:uppercase; }
   #chat-tabs{ display:flex; background:rgba(0,0,0,.25); border-bottom:1px solid var(--gold-deep); overflow-x:auto; flex-shrink:0; }
@@ -1326,11 +1333,6 @@
        Imbuiments/Blessings no topo da barra de ação). Imbuiments fica de
        fora, a pedido do usuário. Só aparecem na Cidade Principal (ver
        body.in-city no CSS). -->
-  <div id="city-services-bar" class="glass ornate">
-    <div class="tb-icon" id="btn-open-depot" title="Armazém (Depot)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/altar.png" alt="" style="filter:hue-rotate(180deg);"></div>
-    <div class="tb-icon" id="btn-open-quicksell" title="Venda Rápida">🪙</div>
-    <div class="tb-icon" id="btn-open-blessings" title="Bênçãos">🙏</div>
-  </div>
   <div id="hotbar-hint">Clique direito num slot para configurar a ação · clique na mochila pro inventário completo</div>
   <div id="footer-bar">
     <!-- Vitals compactos (estilo Huntera: HP/Mana/Level ficam coladas na
@@ -1357,8 +1359,15 @@
       </label>
     </div>
     <div id="hotbar-wrap">
-      <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/inventory.png" alt=""></div>
-      <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
+      <div id="city-services-bar" class="glass ornate">
+        <div class="tb-icon" id="btn-open-depot" title="Armazém (Depot)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/altar.png" alt="" style="filter:hue-rotate(180deg);"></div>
+        <div class="tb-icon" id="btn-open-quicksell" title="Venda Rápida">🪙</div>
+        <div class="tb-icon" id="btn-open-blessings" title="Bênçãos">🙏</div>
+      </div>
+      <div id="hotbar-row">
+        <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/inventory.png" alt=""></div>
+        <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
+      </div>
     </div>
     <div id="tactics-bar" class="glass ornate">
       <div class="tactics-group">
@@ -1905,7 +1914,14 @@
         // já é a linha 0 coluna 0 (o mesmo "parado de pé" de sempre), então
         // nada muda pra quem ainda não usa animação — dirFrames é só um
         // extra pro drawBodyDirFrame usar.
-        if(key.charAt(0)==='b' && key.charAt(1)==='_') entry.dirFrames = computeBodyDirFrames(entry.img);
+        // 'a_' = atlas de armadura (ver armorSprite) — confirmado visualmente
+        // (ex.: player/armors male/sorcerer.png) que os arquivos de outfit
+        // têm a MESMA estrutura de grade (4 linhas de direção x N quadros)
+        // que o atlas de corpo, então reaproveita o mesmo detector — sem
+        // isso a armadura ficava travada num quadro só (parado) enquanto o
+        // corpo por baixo já andava, dando a impressão de roupa "colada"
+        // sem animação própria.
+        if((key.charAt(0)==='b' || key.charAt(0)==='a') && key.charAt(1)==='_') entry.dirFrames = computeBodyDirFrames(entry.img);
       };
       entry.img.onerror = ()=> entry.failed = true; // cai pro desenho procedural
       entry.img.src = URL_BASE + relPath;
@@ -2190,10 +2206,19 @@
     // (ver comentário grandão de computeBodyDirFrames) — além disso a arte
     // deixa de ser passo-de-caminhada e vira outra pose (habilidade/sentado).
     const BODY_WALK_SAFE_FRAMES = { down:2, up:6, right:6, left:6 };
-    function getBodyDirFrame(entry, dir, frameIdx){
+    function getBodyDirFrame(entry, dir, frameIdx, usePose){
       if(!entry.loaded) return entry.frame;
       const all = entry.dirFrames && entry.dirFrames[dir];
       if(!all || !all.length) return entry.frame;
+      // usePose: pega o primeiro quadro LOGO DEPOIS do ciclo de andar seguro
+      // (BODY_WALK_SAFE_FRAMES) — é onde a arte vira pose de ataque/gesto de
+      // habilidade em vez de passo de caminhada (ver castPoseUntil no draw
+      // do jogador). O modulo normal abaixo nunca alcança esse índice de
+      // propósito (protege o ciclo de andar de "vazar" pra essas poses).
+      if(usePose){
+        const poseIdx = Math.min(all.length-1, BODY_WALK_SAFE_FRAMES[dir] || 0);
+        return all[poseIdx] || entry.frame;
+      }
       const cap = Math.max(1, Math.min(all.length, BODY_WALK_SAFE_FRAMES[dir] || all.length));
       const idx = ((Math.floor(Number(frameIdx)||0) % cap) + cap) % cap;
       return all[idx] || entry.frame;
@@ -2208,11 +2233,11 @@
     // durante a passada mudaria sw/sh e faria o personagem inteiro "pulsar"
     // de tamanho a cada passo — com escala fixa, só a pose muda, o tamanho
     // fica estável.
-    function drawBodyDirFrame(targetCtx, entry, dir, frameIdx, cx, bottomY, maxW, maxH){
+    function drawBodyDirFrame(targetCtx, entry, dir, frameIdx, cx, bottomY, maxW, maxH, usePose){
       if(!entry.loaded || !entry.frame) return null;
       const ref = entry.frame;
       const scale = Math.min(maxW/ref.sw, maxH/ref.sh);
-      const f = getBodyDirFrame(entry, dir, frameIdx) || ref;
+      const f = getBodyDirFrame(entry, dir, frameIdx, usePose) || ref;
       const dw = f.sw*scale, dh = f.sh*scale;
       const dx = cx - dw/2, dy = bottomY - dh;
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
@@ -2231,7 +2256,7 @@
       const stableTopY = bottomY - (ref.sh*scale);
       return { dw, dh, dx, dy, topY: stableTopY };
     }
-    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, drawHeadStyleContainFit, getHeadStyleFrame, URL_BASE };
+    return { load, monsterSprite, headSprite, bodySprite, armorSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, drawHeadStyleContainFit, getHeadStyleFrame, BODY_WALK_SAFE_FRAMES, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -2268,7 +2293,7 @@
     // resolvendo sua própria posição sem um pivô compartilhado, que causava
     // a separação/afundamento reportado).
     const mirror = !!(walkAnim && walkAnim.dir === 'left');
-    const drawWalkAnim = mirror ? { dir:'right', frameIdx: walkAnim.frameIdx } : walkAnim;
+    const drawWalkAnim = mirror ? { dir:'right', frameIdx: walkAnim.frameIdx, pose: walkAnim.pose } : walkAnim;
     if(mirror){ tctx.save(); tctx.translate(s.x, 0); tctx.scale(-1, 1); tctx.translate(-s.x, 0); }
     // Asas desenham ANTES do corpo (ficam atrás do personagem) — sem
     // fallback procedural: se o sprite ainda não carregou/não existe pra
@@ -2287,14 +2312,18 @@
     const feetY = s.y + breathe;
     const body = SpriteManager.bodySprite(genero);
     const bodyDraw = drawWalkAnim
-      ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl)
+      ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
       : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
     drewBody = !!bodyDraw;
     if(outfitId && outfitId !== 'padrao'){
       const armor = SpriteManager.armorSprite(genero, outfitId);
       // Armadura cobre o MESMO recorte do corpo — usa a altura real do corpo
       // (ou o próprio tamanho-alvo se o corpo não carregou) pra alinhar.
-      SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34*scl, 46*scl);
+      // Mesma lógica do corpo: com ciclo de andar ativo (drawWalkAnim),
+      // acompanha dir/frameIdx pelo atlas da própria armadura em vez de
+      // ficar sempre no quadro "parado" (ver dirFrames acima).
+      if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
+      else SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34*scl, 46*scl);
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
     const headAtlas = SpriteManager.headSprite(genero, corCabelo);
@@ -2682,6 +2711,15 @@
   // crítico/esquiva/especial, que um diff de HP não sabe distinguir). ----
   const fxRings = []; // pulsos de ataque/magia (anel que expande e some)
   function spawnFxRing(getAnchor, color, maxRadius, durationMs){ fxRings.push({ getAnchor, color, maxRadius, durationMs, bornAt: now() }); }
+  // Alem do anel (fxRing), o personagem agora tambem MUDA DE POSE por um
+  // instante ao usar uma habilidade -- reaproveita um quadro que ja existe
+  // no proprio atlas de corpo/armadura (logo depois do fim do ciclo de
+  // andar "seguro", ver BODY_WALK_SAFE_FRAMES) em vez de pedir arte nova,
+  // ja que confirmamos visualmente que cada linha de direcao tem uma pose
+  // de ataque/habilidade colada ali. So o jogador LOCAL usa isso (e o unico
+  // cujos combatFx representam acoes que ELE mesmo executou).
+  let castPoseUntil = 0;
+  const CAST_POSE_MS = 260;
   const monsterHitFlash = new Map(); // monsterId -> timestamp do último acerto (pra desenhar um flash branco rápido)
   const MONSTER_HIT_FLASH_MS = 160;
   function findMonsterById(id){
@@ -2701,6 +2739,7 @@
         // pulso saindo do jogador em direção ao golpe — dá o feedback visual
         // de "usei uma habilidade/ataquei" que estava faltando por completo.
         spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
+        castPoseUntil = now() + CAST_POSE_MS;
       } else if(fx.t === 'monsterHit'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), `${fx.special?'⚡ ':''}-${fx.dmg}`, fx.special ? '#ff8a3d' : '#ff5a5a');
         if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
@@ -2709,9 +2748,11 @@
       } else if(fx.t === 'heal'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
+        castPoseUntil = now() + CAST_POSE_MS;
       } else if(fx.t === 'shield'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), 'Escudo!', '#8fd0ff');
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
+        castPoseUntil = now() + CAST_POSE_MS;
       } else if(fx.t === 'death'){
         // Consequências de morte (ver onPlayerDeath em huntEngine.js) — XP/
         // atributos/chance de item cair, todos reduzidos pela proteção das
@@ -2889,6 +2930,14 @@
             const bob = Math.sin(now()/1000*1.6 + m._bobPhase)*1.6;
             const s = toScreen(m.x,m.y);
             const sprite = m.spriteId ? SpriteManager.monsterSprite(m.spriteId) : null;
+            // Espelha o monstro esquerda/direita conforme m.facingLeft (já
+            // calculado no servidor a partir da direção de perseguição/ataque
+            // — ver huntEngine.js "m.facingLeft = dx < 0" — só nunca era lido
+            // no cliente). Mesma técnica do jogador: save/translate/scale(-1,1)/
+            // translate ancorado em s.x, envolvendo TODO o desenho do monstro
+            // (sprite + fallback + flash de hit), então nada fica desalinhado.
+            const monsterMirror = !!m.facingLeft;
+            if(monsterMirror){ ctx.save(); ctx.translate(s.x, 0); ctx.scale(-1, 1); ctx.translate(-s.x, 0); }
             // SPRITE_SCALE mantém o monstro do mesmo tamanho relativo ao
             // SQM de sempre, agora que o tile (TILE_SCREEN_PX) ficou maior.
             const drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34*SPRITE_SCALE, s.y-68*SPRITE_SCALE+bob, 68*SPRITE_SCALE,68*SPRITE_SCALE);
@@ -2911,6 +2960,7 @@
                 monsterHitFlash.delete(m.id);
               }
             }
+            if(monsterMirror) ctx.restore();
           }, headCart:{x:m.x,y:m.y}, headLift:24*SPRITE_SCALE, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster' });
         });
       });
@@ -2950,7 +3000,15 @@
       // então o movimento de verdade aparece pro detector de direção/frame.
       const animRef = worldToScreenRaw(player.x, player.y);
       const anim = updateWalkAnim('__player__', animRef.x, animRef.y);
-      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, anim);
+      // Janela curta de "pose de habilidade" (ver castPoseUntil acima) —
+      // troca só o frameIdx pro primeiro quadro depois do ciclo de andar
+      // seguro daquela direção (index BODY_WALK_SAFE_FRAMES[dir]), que já
+      // é uma pose de ataque/gesto no próprio atlas, sem mexer na direção
+      // que o jogador está de fato encarando.
+      const castAnim = (now() < castPoseUntil)
+        ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
+        : anim;
+      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim);
     }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
@@ -3370,6 +3428,13 @@
         if(slot.kind==='spell') hotbar[i] = { kind:'spell', id:slot.id, condition:{type:'always',threshold:0}, cooldownUntil:0 };
         else if(hotbar[i].kind==='spell') hotbar[i] = { kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 };
       });
+    }
+    // Tempo de recarga real de cada magia (spellId -> timestamp de quando
+    // libera de novo — ver server.js snapshot "spellCooldowns"). Sem isso
+    // slot.cooldownUntil nunca saía de 0 e o overlay/contador da hotbar não
+    // tinha como aparecer, mesmo o servidor já bloqueando o cast repetido.
+    if(msg.spellCooldowns){
+      hotbar.forEach(slot=>{ if(slot.kind==='spell') slot.cooldownUntil = msg.spellCooldowns[slot.id] || 0; });
     }
     if(msg.hunt.running){
       activeHunt.running = true; activeHunt.huntId = msg.hunt.huntId; activeHunt.huntName = msg.hunt.huntName;
@@ -4750,7 +4815,14 @@
     const map = new Map();
     HUNTS.forEach(h=>{
       (h.monsterTypes||[]).forEach(mt=>{
-        if(!map.has(mt.name)) map.set(mt.name, { ...mt, zone:h.name, level:h.level, huntId:h.id });
+        if(!map.has(mt.name)){
+          // Foto real do bestiário via spriteId (mesmo padrão já usado no
+          // card de "Detalhes da Caçada" — ver openHuntDetailsModal) — antes
+          // essa aba do Wiki/Cyclopedia não montava m.img nenhum, então
+          // caía sempre no emoji de fallback mesmo quando existia PNG real.
+          const img = mt.spriteId ? URL_BASE+'monsters/'+mt.spriteId+'.png' : (mt.img || null);
+          map.set(mt.name, { ...mt, img, zone:h.name, level:h.level, huntId:h.id });
+        }
       });
     });
     return Array.from(map.values()).sort((a,b)=> a.name.localeCompare(b.name));
@@ -5426,11 +5498,38 @@
   const HOTBAR_SIZE = 8;
   // Slots 'spell' são espelho do state.hotbar do servidor (ver applyHuntSnapshot)
   // — começam vazios até o jogador arrastar uma magia da Árvore de Habilidades
-  // ou escolher pelo menu (clique direito). Slots 'item' continuam 100% locais.
+  // ou escolher pelo menu (clique direito). Slots 'item' continuam 100% locais
+  // (nunca viajam pro servidor) — MAS precisam sobreviver a um F5/relogin,
+  // senão qualquer poção que o jogador arraste pra um slot "some" ao sair e
+  // entrar de novo (bug reportado). Como são 100% locais mesmo, persistem em
+  // localStorage por personagem (SELECTED_CHARACTER.id), não no Mongo.
+  const LS_HOTBAR_ITEMS = 'elemental_hotbar_items_' + (SELECTED_CHARACTER ? SELECTED_CHARACTER.id : 'default');
   const hotbar = Array.from({length:HOTBAR_SIZE}, ()=>({ kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 }));
   hotbar[3] = { kind:'item',  id:'lesser_health',condition:{type:'hpBelow',threshold:50}, cooldownUntil:0 };
   hotbar[4] = { kind:'item',  id:'strong_health',condition:{type:'hpBelow',threshold:30}, cooldownUntil:0 };
   hotbar[5] = { kind:'item',  id:'strong_mana',  condition:{type:'manaBelow',threshold:30}, cooldownUntil:0 };
+  // Sobrescreve os defaults acima com o que o jogador de fato configurou da
+  // última vez (se existir) — só toca em slots 'item', spell continua vindo
+  // do servidor via applyHuntSnapshot.
+  function loadLocalHotbarItems(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(LS_HOTBAR_ITEMS) || 'null');
+      if(!saved) return;
+      Object.keys(saved).forEach(idxStr=>{
+        const idx = Number(idxStr);
+        if(!hotbar[idx] || !saved[idxStr]) return;
+        hotbar[idx] = { kind:'item', id:saved[idxStr].id, condition:saved[idxStr].condition || {type:'always',threshold:0}, cooldownUntil:0 };
+      });
+    }catch(e){}
+  }
+  function saveLocalHotbarItems(){
+    try{
+      const out = {};
+      hotbar.forEach((slot,i)=>{ if(slot.kind==='item') out[i] = { id:slot.id, condition:slot.condition }; });
+      localStorage.setItem(LS_HOTBAR_ITEMS, JSON.stringify(out));
+    }catch(e){}
+  }
+  loadLocalHotbarItems();
 
   const hotbarEl = document.getElementById('hotbar');
   let configuringSlotIndex = null;
@@ -5450,6 +5549,16 @@
     }
     return null;
   }
+  // Cooldown real só chega do servidor como um TIMESTAMP de quando libera
+  // (slot.cooldownUntil, ver applyHuntSnapshot "spellCooldowns") — o cliente
+  // não tem o catálogo de duração de cada magia (varia por tier: base
+  // 4-9s, greater/ultimate 50s, ver huntEngine.js), então em vez de chutar
+  // um divisor fixo (bug antigo: sempre /2200, dava % absurdo pra qualquer
+  // cooldown >2.2s), guarda o MAIOR "restante" já visto por slot — isso
+  // captura a duração cheia assim que o cast acontece (renderHotbar roda a
+  // cada 500ms) e se autoajusta pra qualquer magia, sem precisar saber a
+  // duração de antemão.
+  const cooldownPeakMs = {};
   function renderHotbar(){
     hotbarEl.innerHTML = '<div class="corner-br"></div>';
     hotbar.forEach((slot,i)=>{
@@ -5458,9 +5567,13 @@
       if(slot.kind==='spell'){ const sp = getUnlockedSpells().find(s=>s.id===slot.id); icon = sp ? sp.icon : '흔'; }
       else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:20px;height:20px;object-fit:contain;" />` : '흔'; locked = pot ? !canUsePotion(pot) : false; }
       el.className = 'slot' + (locked?' locked':'');
-      const cdPct = slot.kind && Date.now() < slot.cooldownUntil ? Math.round((slot.cooldownUntil-Date.now())/2200*100) : 0;
+      const remainingMs = slot.kind && slot.cooldownUntil > Date.now() ? slot.cooldownUntil - Date.now() : 0;
+      if(remainingMs > 0) cooldownPeakMs[i] = Math.max(cooldownPeakMs[i]||0, remainingMs);
+      else cooldownPeakMs[i] = 0;
+      const cdPct = remainingMs > 0 && cooldownPeakMs[i] ? Math.round(remainingMs/cooldownPeakMs[i]*100) : 0;
+      const cdText = remainingMs > 0 ? Math.ceil(remainingMs/1000)+'s' : '';
       const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
-      el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>`;
+      el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>${cdText?`<div class="cd-text">${cdText}</div>`:''}`;
       el.addEventListener('contextmenu', e=>{ e.preventDefault(); openActionModal(i); });
       // Tooltip com a descrição do que está no slot (magia ou poção) ao passar o mouse.
       attachHotbarTooltip(el, ()=> hotbarTooltipHtmlFor(slot));
@@ -5486,11 +5599,12 @@
           renderHotbar();
           // Persiste a troca pro server pros slots do tipo 'spell' (que são
           // os únicos espelhados lá — 'item' continua 100% local, ver nota
-          // acima na declaração de hotbar[]).
+          // acima na declaração de hotbar[]) e localmente pros que forem 'item'.
           if(a.kind==='spell' || b.kind==='spell'){
             sendWS({ type:'hotbar:set', index: fromIndex, kind: b.kind==='spell' ? 'spell' : null, spellId: b.kind==='spell' ? b.id : undefined });
             sendWS({ type:'hotbar:set', index: i, kind: a.kind==='spell' ? 'spell' : null, spellId: a.kind==='spell' ? a.id : undefined });
           }
+          if(a.kind==='item' || b.kind==='item') saveLocalHotbarItems();
           return;
         }
         const spellId = e.dataTransfer.getData('text/spell-id');
@@ -5550,14 +5664,19 @@
       slot.kind='item'; slot.id=el.dataset.assignItem; renderActionBody(); renderHotbar();
       const pot = POTIONS.find(p=>p.id===slot.id);
       sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { enabled:true, thresholdPercent: slot.condition.threshold||50, potionId: pot.id } } });
+      saveLocalHotbarItems();
     }));
-    document.getElementById('cond-type-select').addEventListener('change', e=>{ slot.condition.type=e.target.value; renderHotbar(); });
+    document.getElementById('cond-type-select').addEventListener('change', e=>{
+      slot.condition.type=e.target.value; renderHotbar();
+      if(slot.kind==='item') saveLocalHotbarItems();
+    });
     document.getElementById('cond-threshold-input').addEventListener('input', e=>{
       slot.condition.threshold = +e.target.value;
       document.getElementById('cond-threshold-val').textContent = e.target.value+'%';
       if(slot.kind==='item'){
         const pot = POTIONS.find(p=>p.id===slot.id);
         sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { thresholdPercent: +e.target.value, potionId: pot.id } } });
+        saveLocalHotbarItems();
       }
     });
   }
@@ -6684,9 +6803,23 @@
       card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">*estimado a partir da fraqueza elemental — não é a tabela real de dano do jogo.</div></div>`;
       const toggle = card.querySelector('.hd-monster-toggle');
       const weakBox = card.querySelector('.hd-monster-weak');
-      toggle.addEventListener('click', ()=>{
+      toggle.addEventListener('click', (e)=>{
+        e.stopPropagation();
         const show = weakBox.classList.toggle('show');
         toggle.textContent = show ? 'Dano recebido ▴' : 'Dano recebido ▾';
+      });
+      // Clicar no card (fora do toggle "Dano recebido") abre a ficha
+      // completa do monstro no Bestiário do Wiki/Cyclopedia (abates, marcos,
+      // loot da zona) — antes não tinha NENHUM listener no card, só o
+      // toggle interno, então clicar no monstro literalmente não fazia nada.
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', (e)=>{
+        if(e.target.closest('.hd-monster-toggle') || e.target.closest('.hd-monster-weak')) return;
+        document.getElementById('hunt-details-modal').classList.remove('open');
+        wikiTab = 'bestiario'; wikiSelectedMonster = mt.name;
+        document.querySelectorAll('.wiki-tab').forEach(x=> x.classList.toggle('active', x.dataset.wikitab==='bestiario'));
+        wikiModal.classList.add('open');
+        renderWiki();
       });
       grid.appendChild(card);
     });
