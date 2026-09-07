@@ -103,6 +103,8 @@
   .popover b{ color:var(--gold-bright); }
   .popover .row{ display:flex; justify-content:space-between; }
   #profile-popover{ top:100%; left:0; margin-top:8px; }
+  #bank-popover{ top:100%; left:0; margin-top:8px; width:210px; }
+  #bank-popover .row{ display:flex; justify-content:space-between; padding:2px 0; }
   #dispatch-popover .opt-box{ display:flex; align-items:center; gap:6px; padding:5px 0; }
   #dispatch-popover .countdown{ margin-top:8px; padding:8px; background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); border-radius:5px; text-align:center; }
   #dispatch-popover .countdown .big{ font-family:var(--font-display); font-size:15px; color:var(--gold-bright); }
@@ -426,6 +428,11 @@
   #inv-items-col{ flex:1; display:flex; flex-direction:column; overflow:hidden; }
   #inv-items-grid{ flex:1; padding:14px; display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; overflow-y:auto; align-content:start; }
   .item-slot{ aspect-ratio:1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:18px; position:relative; }
+  /* Lixeira de Itens — linhas de largura cheia (não o grid quadrado de ícone
+     usado por Bolsa/Mochila), pra caber nome + contagem regressiva + botões. */
+  .trash-row{ grid-column:1/-1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; gap:10px; padding:7px 10px; }
+  .trash-row .trash-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .trash-row .trash-btn{ padding:5px 9px; font-size:13px; }
   .item-slot .qty{ position:absolute; bottom:1px; right:3px; font-family:var(--font-mono); font-size:9px; color:var(--gold-bright); }
   .item-slot .rarity-dot{ position:absolute; top:2px; left:2px; width:6px; height:6px; border-radius:50%; }
   #inv-capacity-line{ padding:6px 14px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); border-top:1px solid rgba(191,161,95,.2); }
@@ -808,7 +815,19 @@
         <button class="treino-inline-btn" id="pf-open-character-btn" style="width:100%;margin-top:8px;">Ver Personagem</button>
       </div>
     </div>
-    <div class="tb-pill" id="tb-gold-pill">🪙 <span id="tb-gold">0</span></div>
+    <div class="tb-pill hover-trigger" id="tb-gold-pill">🪙 <span id="tb-gold">0</span>
+      <div class="popover glass" id="bank-popover">
+        <div class="panel-title" style="margin-bottom:8px;">Banco<span class="rule"></span></div>
+        <div class="row"><span>Em mãos</span><b id="bank-hand-amount">0</b></div>
+        <div class="row"><span>No banco</span><b id="bank-vault-amount">0</b></div>
+        <input type="number" min="1" class="trade-gold-input" id="bank-amount-input" placeholder="Quantidade" style="margin-top:8px;">
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="treino-inline-btn" id="bank-deposit-btn" style="flex:1;">Depositar</button>
+          <button type="button" class="treino-inline-btn" id="bank-withdraw-btn" style="flex:1;">Sacar</button>
+        </div>
+        <div id="bank-msg" class="italic-note"></div>
+      </div>
+    </div>
     <div class="tb-pill" id="tb-coin-pill" title="Elemental Coin — comprada com Moeda Real, usada pra Reset da Árvore e Encantamento. Clique pra comprar mais.">💎 <span id="tb-elementalcoins">0</span></div>
     <div class="tb-pill tb-shop" id="btn-open-shop">🛒 Loja</div>
     <div class="tb-pill" id="btn-open-rank" title="Rank Geral">🏆 Rank</div>
@@ -1034,6 +1053,7 @@
     <div id="inv-tabs" class="win-drag">
       <div class="inv-tab active" data-invtab="bolsa">Bolsa</div>
       <div class="inv-tab" data-invtab="mochila">Mochila</div>
+      <div class="inv-tab" data-invtab="lixeira">Lixeira de Itens</div>
       <div id="inv-close">✕ Fechar</div>
     </div>
     <div id="inv-body">
@@ -1451,6 +1471,7 @@
   let autoSellOnBagFull = true;
   let bag = [], bagCapacity = 30;
   let pouch = [], pouchCapacity = 20;
+  let trash = [], trashCapacity = 40; // Lixeira de Itens (ver pushToTrash em huntEngine.js)
   let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, ring:null, amulet:null };
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
   let party = null; // { id, leaderUsername, members:[...] }
@@ -2372,6 +2393,47 @@
   const FLOAT_LIFETIME_MS = 900;
   let lastGold = 0, lastXp = 0, lastHp = player.hp;
 
+  // ---- COMBAT FX: dano/cura/crítico/esquiva/ataque especial + o "flash" de
+  // acerto no monstro e o "pulso" de ataque/magia do jogador. Alimentado por
+  // msg.combatFx (fila transiente que o servidor drena a cada snapshot — ver
+  // pushCombatFx em huntEngine.js), não por diff de HP local (isso cobre
+  // crítico/esquiva/especial, que um diff de HP não sabe distinguir). ----
+  const fxRings = []; // pulsos de ataque/magia (anel que expande e some)
+  function spawnFxRing(getAnchor, color, maxRadius, durationMs){ fxRings.push({ getAnchor, color, maxRadius, durationMs, bornAt: now() }); }
+  const monsterHitFlash = new Map(); // monsterId -> timestamp do último acerto (pra desenhar um flash branco rápido)
+  const MONSTER_HIT_FLASH_MS = 160;
+  function findMonsterById(id){
+    for(const p of activeHunt.lurePoints){ const m = p.monsters.find(mm=>mm.id===id); if(m) return m; }
+    return null;
+  }
+  function processCombatFx(fxList){
+    if(!Array.isArray(fxList) || !fxList.length) return;
+    fxList.forEach(fx=>{
+      if(fx.t === 'playerHit' || fx.t === 'spellHit'){
+        const m = findMonsterById(fx.monsterId);
+        const anchor = m ? (()=>({x:m.x,y:m.y})) : (()=>({x:player.x,y:player.y}));
+        const isMagic = fx.t === 'spellHit';
+        const color = fx.crit ? '#ffd23f' : (isMagic ? '#8fd0ff' : '#f2f2f2');
+        spawnFloatingText(anchor, `${fx.crit?'💥 ':''}-${fx.dmg}`, color);
+        if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
+        // pulso saindo do jogador em direção ao golpe — dá o feedback visual
+        // de "usei uma habilidade/ataquei" que estava faltando por completo.
+        spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
+      } else if(fx.t === 'monsterHit'){
+        spawnFloatingText(()=>({x:player.x,y:player.y}), `${fx.special?'⚡ ':''}-${fx.dmg}`, fx.special ? '#ff8a3d' : '#ff5a5a');
+        if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
+      } else if(fx.t === 'dodge'){
+        spawnFloatingText(()=>({x:player.x,y:player.y}), 'Esquiva!', '#8fd0ff');
+      } else if(fx.t === 'heal'){
+        spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
+        spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
+      } else if(fx.t === 'shield'){
+        spawnFloatingText(()=>({x:player.x,y:player.y}), 'Escudo!', '#8fd0ff');
+        spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
+      }
+    });
+  }
+
   // Animação de andar: acompanha, por personagem (jogador local + cada
   // remoto, indexados por uma chave estável — ver chamadores), pra ONDE ele
   // está indo e há quanto tempo — sem isso, drawCharacterLayers não tem como
@@ -2522,6 +2584,19 @@
               ctx.beginPath(); ctx.arc(s.x, s.y-13+bob, 13, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
               if(m.icon){ ctx.font = '21px sans-serif'; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-6+bob); }
             }
+            // flash branco rápido ao acertar (ver monsterHitFlash/processCombatFx) —
+            // sem isso um golpe no monstro não tinha NENHUM retorno visual nele.
+            const hitAt = monsterHitFlash.get(m.id);
+            if(hitAt != null){
+              const flashAge = now() - hitAt;
+              if(flashAge < MONSTER_HIT_FLASH_MS){
+                ctx.globalAlpha = 1 - flashAge/MONSTER_HIT_FLASH_MS;
+                ctx.beginPath(); ctx.arc(s.x, s.y-30+bob, 26, 0, Math.PI*2);
+                ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(); ctx.globalAlpha = 1;
+              } else {
+                monsterHitFlash.delete(m.id);
+              }
+            }
           }, headCart:{x:m.x,y:m.y}, headLift:24, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster' });
         });
       });
@@ -2588,6 +2663,16 @@
       const rise = (age/FLOAT_LIFETIME_MS) * 26; const alpha = 1 - age/FLOAT_LIFETIME_MS;
       ctx.globalAlpha = Math.max(0,alpha); ctx.font = '11px "JetBrains Mono"'; ctx.textAlign='center';
       ctx.fillStyle = ft.color; ctx.fillText(ft.text, s.x, s.y - 26 - rise); ctx.globalAlpha = 1;
+    }
+
+    // pulso de ataque/magia (anel que expande e some — ver spawnFxRing em processCombatFx)
+    for(let i=fxRings.length-1;i>=0;i--){
+      const r = fxRings[i]; const age = now() - r.bornAt;
+      if(age > r.durationMs){ fxRings.splice(i,1); continue; }
+      const t = age / r.durationMs;
+      const anchor = r.getAnchor(); const s = toScreen(anchor.x, anchor.y);
+      ctx.globalAlpha = 1 - t; ctx.lineWidth = 2; ctx.strokeStyle = r.color;
+      ctx.beginPath(); ctx.arc(s.x, s.y - 20, r.maxRadius * t, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
     }
 
     if(activeHunt.running){
@@ -2731,7 +2816,8 @@
     const t = now(); const dt = Math.min(.05,(t-lastT)/1000); lastT = t;
     if(player.gold > lastGold) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.gold-lastGold} 🪙`, '#f0d38a');
     if(player.xp > lastXp) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.xp-lastXp} XP`, '#f0d38a');
-    if(player.hp < lastHp) spawnFloatingText(()=>({x:player.x,y:player.y}), `-${Math.round(lastHp-player.hp)}`, '#ff5a5a');
+    // dano recebido de monstro agora vem via combatFx (processCombatFx),
+    // que sabe distinguir crítico/esquiva/especial — um diff de HP não sabe.
     lastGold = player.gold; lastXp = player.xp; lastHp = player.hp;
     updateWasdMovement(dt);
     updateAutoWalk(dt);
@@ -2812,6 +2898,36 @@
   profileHover.addEventListener('mouseleave', ()=> profilePopover.classList.remove('show'));
 
   /* =========================================================
+     BANCO — depositar/sacar entre ouro em mãos (player.gold) e o banco
+     (player.bankGold). Antes o banco só recebia da venda automática e não
+     tinha NENHUM jeito de virar ouro de novo — ver bank:deposit/bank:withdraw
+     em server.js e depositGold/withdrawGold em huntEngine.js.
+     ========================================================= */
+  const bankPill = document.getElementById('tb-gold-pill');
+  const bankPopover = document.getElementById('bank-popover');
+  const bankMsg = document.getElementById('bank-msg');
+  function refreshBankPopoverAmounts(){
+    document.getElementById('bank-hand-amount').textContent = Math.round(player.gold).toLocaleString('pt-BR');
+    document.getElementById('bank-vault-amount').textContent = Math.round(player.bankGold).toLocaleString('pt-BR');
+  }
+  bankPill.addEventListener('mouseenter', ()=>{ refreshBankPopoverAmounts(); bankMsg.textContent=''; bankPopover.classList.add('show'); });
+  bankPill.addEventListener('mouseleave', ()=> bankPopover.classList.remove('show'));
+  function readBankAmountInput(){
+    const v = Math.floor(Number(document.getElementById('bank-amount-input').value) || 0);
+    return v > 0 ? v : 0;
+  }
+  document.getElementById('bank-deposit-btn').addEventListener('click', ()=>{
+    const amt = readBankAmountInput();
+    if(!amt){ bankMsg.textContent = 'Digite uma quantidade.'; return; }
+    sendWS({ type:'bank:deposit', amount: amt });
+  });
+  document.getElementById('bank-withdraw-btn').addEventListener('click', ()=>{
+    const amt = readBankAmountInput();
+    if(!amt){ bankMsg.textContent = 'Digite uma quantidade.'; return; }
+    sendWS({ type:'bank:withdraw', amount: amt });
+  });
+
+  /* =========================================================
      DISPATCH POPOVER (setinhas '>>' do despacho) — countdown regressivo
      ========================================================= */
   // Robô de Venda agora mora no pill "PRONTO EM XX:XX" da BARRA DE AÇÃO DA
@@ -2879,6 +2995,7 @@
     location = msg.location;
     if(location === 'dungeon' && matchmakingActive){ matchmakingActive = false; matchmakingKey = null; } // saiu da fila (entrou em caçada por outro caminho)
     bag = msg.bag; bagCapacity = msg.bagCapacity;
+    trash = msg.trash || trash; trashCapacity = msg.trashCapacity || trashCapacity;
     pouch = msg.pouch; pouchCapacity = msg.pouchCapacity;
     equipment = msg.equipment; cosmetics = msg.cosmetics;
     Object.assign(prestige, msg.prestige);
@@ -2910,6 +3027,7 @@
     if(msg.statPoints) statPoints = msg.statPoints;
     if(msg.statAttributes) statAttributes = msg.statAttributes;
     if(msg.combatStats) combatStats = msg.combatStats;
+    processCombatFx(msg.combatFx);
     if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
     if(msg.materials) materials = msg.materials;
@@ -3092,6 +3210,21 @@
       else logLoot(`⚠️ Recarga falhou: ${msg.reason}`);
     }
     if(msg.forType === 'party:invite' && !msg.ok) logLoot(`⚠️ Convite falhou: ${msg.reason}`);
+    if(msg.forType === 'bank:deposit' || msg.forType === 'bank:withdraw'){
+      const bm = document.getElementById('bank-msg');
+      const verbo = msg.forType === 'bank:deposit' ? 'Depositado' : 'Sacado';
+      if(msg.ok){ if(bm) bm.textContent = `${verbo} ${msg.amount.toLocaleString('pt-BR')} 🪙.`; refreshBankPopoverAmounts(); }
+      else if(bm) bm.textContent = msg.reason === 'ouro_insuficiente' ? 'Ouro insuficiente.' : 'Quantidade inválida.';
+    }
+    if(msg.forType === 'trash:sell'){
+      if(msg.ok) logLoot(`🗑️🪙 Vendido por ${msg.gold} Gold (banco).`);
+      else logLoot(`⚠️ ${msg.reason === 'precisa_estar_na_cidade' ? 'Só dá pra vender a Lixeira na Cidade.' : msg.reason}`);
+    }
+    if(msg.forType === 'trash:sellAll'){
+      if(msg.ok) logLoot(`🗑️🪙 Lixeira vendida por ${msg.gold} Gold (banco).`);
+      else logLoot(`⚠️ ${msg.reason === 'precisa_estar_na_cidade' ? 'Só dá pra vender a Lixeira na Cidade.' : msg.reason}`);
+    }
+    if(msg.forType === 'trash:recover' && !msg.ok) logLoot(`⚠️ ${msg.reason === 'mochila_cheia' ? 'Mochila cheia — abra espaço antes de recuperar.' : msg.reason}`);
     if(msg.forType === 'trade:request'){
       if(msg.ok) logLoot('🤝 Pedido de troca enviado.'); else logLoot(`⚠️ Troca falhou: ${msg.reason}`);
     }
@@ -4234,6 +4367,56 @@
     return Math.round(total);
   }
   const invItemTooltip = document.getElementById('inv-item-tooltip');
+  // Lixeira de Itens — ver pushToTrash/sellTrashItem/recoverTrashItem em
+  // huntEngine.js. Contagem regressiva calculada localmente a partir de
+  // expiresAt (mandado pelo servidor); repintada a cada snapshot enquanto o
+  // inventário estiver aberto (renderInventoryIfOpen), então fica perto de
+  // tempo real sem precisar de um setInterval próprio.
+  function fmtTrashRemaining(expiresAt){
+    const ms = Math.max(0, expiresAt - Date.now());
+    const totalMin = Math.floor(ms/60000);
+    const h = Math.floor(totalMin/60), m = totalMin%60;
+    return h>0 ? `${h}h${String(m).padStart(2,'0')}m` : `${Math.max(m, ms>0?1:0)}m`;
+  }
+  function renderTrashItems(grid, cap){
+    cap.textContent = `Lixeira de Itens: ${trash.length}/${trashCapacity}`;
+    grid.innerHTML = '';
+    if(!trash.length){
+      const empty = document.createElement('div');
+      empty.className = 'trash-row';
+      empty.style.color = 'var(--ink-dim)'; empty.style.fontFamily = 'var(--font-mono)'; empty.style.fontSize = '11px';
+      empty.textContent = 'Vazia. Loot ou compra que não coube na Mochila cheia aparece aqui em vez de ser perdido.';
+      grid.appendChild(empty);
+      return;
+    }
+    if(location === 'city'){
+      const sellAllRow = document.createElement('div');
+      sellAllRow.className = 'trash-row';
+      sellAllRow.style.justifyContent = 'flex-end';
+      sellAllRow.innerHTML = `<button type="button" class="treino-inline-btn" id="trash-sell-all-btn">🪙 Vender Tudo</button>`;
+      grid.appendChild(sellAllRow);
+      sellAllRow.querySelector('#trash-sell-all-btn').addEventListener('click', ()=> sendWS({ type:'trash:sellAll' }));
+    }
+    trash.forEach((it,i)=>{
+      const row = document.createElement('div');
+      row.className = 'trash-row';
+      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+      row.style.borderColor = rarityColor;
+      const iconHtml = it.icon
+        ? `<img data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="handleEquipIconError(this)" />`
+        : `<span style="color:${rarityColor};flex-shrink:0;">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+      row.innerHTML = `${iconHtml}
+        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
+          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}</div>
+          <div class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</div>
+        </div>
+        <button type="button" class="treino-inline-btn trash-btn trash-recover-btn" data-idx="${i}" title="Mandar pra Mochila (precisa de espaço livre)">↩</button>
+        <button type="button" class="treino-inline-btn trash-btn trash-sell-btn" data-idx="${i}" title="${location==='city'?'Vender':'Só dá pra vender na Cidade'}" ${location!=='city'?'disabled':''}>🪙</button>`;
+      grid.appendChild(row);
+    });
+    grid.querySelectorAll('.trash-recover-btn').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:Number(btn.dataset.idx) })));
+    grid.querySelectorAll('.trash-sell-btn').forEach(btn=> btn.addEventListener('click', ()=>{ if(!btn.disabled) sendWS({ type:'trash:sell', trashIndex:Number(btn.dataset.idx) }); }));
+  }
   function renderInventory(){
     // grid.innerHTML='' mais abaixo reconstrói os slots a cada render (inclusive
     // quando chamado de novo por um snapshot chegando com o mouse ainda em cima
@@ -4294,6 +4477,7 @@
 
     const grid = document.getElementById('inv-items-grid');
     const cap = document.getElementById('inv-capacity-line');
+    if(invTab === 'lixeira'){ renderTrashItems(grid, cap); return; }
     const items = invTab === 'bolsa' ? pouch : bag;
     const capMax = invTab === 'bolsa' ? pouchCapacity : bagCapacity;
     cap.textContent = `${invTab === 'bolsa' ? 'Bolsa (consumíveis)' : 'Mochila (loot)'}: ${items.length}/${capMax}`;
@@ -4327,8 +4511,12 @@
       slot.addEventListener('mouseenter', ()=>{
         const stats = it.slot ? getItemTotalStatsClient(it) : {};
         const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+        const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
         const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
-        invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}`;
+        // poção (Bolsa): cura% real igual o Auto-Uso usa (POTION_CATALOG no
+        // servidor) — antes o tooltip da Bolsa não mostrava NENHUM status.
+        const healLine = (invTab==='bolsa' && it.healPct) ? `<span class="hint">Cura ${Math.round(it.healPct*100)}% de ${it.kind==='mana'?'Mana':'Vida'}</span>` : '';
+        invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${enchantLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}${healLine}`;
         invItemTooltip.style.display = 'block';
       });
       slot.addEventListener('mousemove', e=>{ invItemTooltip.style.left = (e.clientX+14)+'px'; invItemTooltip.style.top = (e.clientY+14)+'px'; });
@@ -4350,6 +4538,23 @@
     el.addEventListener('click', ()=>{
       if(el.classList.contains('filled')) sendWS({ type:'equip:remove', slot: el.dataset.equip });
     });
+    // Tooltip rica (nome + raridade + encantamento + descrição real + status
+    // de verdade — atk/def/crítico/etc via getItemTotalStatsClient) igual à
+    // que já existia pros itens da Mochila (ver renderInventory) — antes,
+    // passar o mouse num item JÁ EQUIPADO só mostrava o `title` nativo do
+    // navegador (só o nome, sem status nenhum).
+    el.addEventListener('mouseenter', ()=>{
+      const item = equipment[el.dataset.equip];
+      if(!item) return; // slot vazio: mantém só o title nativo (nome do slot)
+      const stats = getItemTotalStatsClient(item);
+      const rarityLabel = (item.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+      const enchantLine = item.enchantLevel ? ` · +${item.enchantLevel}` : '';
+      const descLine = item.description ? `<span class="hint" style="font-style:italic;">${item.description}</span>` : '';
+      invItemTooltip.innerHTML = `<b>${item.name || item.id}</b>${rarityLabel}${enchantLine}${descLine}<span class="hint">${formatStats(stats)}</span>`;
+      invItemTooltip.style.display = 'block';
+    });
+    el.addEventListener('mousemove', e=>{ invItemTooltip.style.left = (e.clientX+14)+'px'; invItemTooltip.style.top = (e.clientY+14)+'px'; });
+    el.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
   });
 
   /* =========================================================
