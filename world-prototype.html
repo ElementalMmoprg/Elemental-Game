@@ -379,13 +379,28 @@
      pelas vitals/tactics do lado) e sem posição própria pra colidir com o
      #footer-bar. Só visíveis na Cidade Principal (igual a referência
      enviada pelo usuário). */
-  #city-services-bar{ display:none; flex-direction:row; align-items:center; gap:8px; padding:6px 8px; }
+  #city-services-bar{ display:none; flex-direction:row; align-items:center; gap:8px; }
   body.in-city #city-services-bar{ display:flex; }
+  /* "Plate" ornamentada (moldura dourada sobre fundo escuro) pros atalhos de
+     serviço da Cidade -- pedido do usuário pra trocar os 3 ícones redondos
+     por botões retangulares com texto, no estilo da referência que ele
+     mandou (Depot/Venda Rápida/Bênçãos -- Imbuiments fica de fora, não
+     existe nesse jogo). Reaproveita as mesmas variáveis de cor/gradiente do
+     .glass em vez de precisar de um asset de imagem novo. */
+  .service-plate-btn{
+    padding:8px 14px; border-radius:6px; border:1px solid var(--gold);
+    background:linear-gradient(180deg, var(--glass-1), var(--glass-2));
+    box-shadow:0 0 0 1px rgba(191,161,95,.14) inset, 0 4px 10px rgba(0,0,0,.4);
+    color:var(--gold-bright); font-family:var(--font-display); font-size:10px;
+    letter-spacing:.06em; text-transform:uppercase; text-align:center;
+    cursor:pointer; white-space:nowrap;
+  }
+  .service-plate-btn:hover{ border-color:var(--gold-bright); box-shadow:0 0 10px rgba(240,211,138,.35), 0 0 0 1px rgba(191,161,95,.2) inset; }
 
   /* ============ BARRA TÁTICA COMPACTA (Postura/Alvo/SQM) — estilo Huntera:
      fininha, colada ao lado direito da hotbar (mesma linha, dentro de
      #footer-bar), sempre visível em qualquer área do jogo. ============ */
-  #tactics-bar{ display:flex; align-items:center; gap:10px; padding:6px 10px; white-space:nowrap; align-self:center; }
+  #tactics-bar{ display:flex; align-items:center; gap:10px; padding:6px 10px; white-space:nowrap; align-self:flex-end; }
   .tactics-group{ display:flex; align-items:center; gap:5px; }
   .tactics-group + .tactics-group{ padding-left:10px; border-left:1px solid rgba(191,161,95,.2); }
   .tactics-label{ font-family:var(--font-mono); font-size:7.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; }
@@ -492,6 +507,9 @@
   .trash-row .trash-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .trash-row .trash-btn{ padding:5px 9px; font-size:13px; }
   .item-slot .qty{ position:absolute; bottom:1px; right:3px; font-family:var(--font-mono); font-size:9px; color:var(--gold-bright); }
+  .item-slot .trash-timer{ position:absolute; top:1px; left:3px; font-family:var(--font-mono); font-size:8px; color:var(--ink-dim); pointer-events:none; }
+  .item-slot .slot-mini-btn{ position:absolute; bottom:1px; left:2px; font-size:10px; line-height:1; padding:1px 3px; border-radius:3px; background:rgba(0,0,0,.6); border:1px solid var(--gold-deep); cursor:pointer; }
+  .item-slot .slot-mini-btn:hover{ border-color:var(--gold-bright); }
   .item-slot .rarity-dot{ position:absolute; top:2px; left:2px; width:6px; height:6px; border-radius:50%; }
   #inv-capacity-line{ padding:6px 14px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); border-top:1px solid rgba(191,161,95,.2); }
 
@@ -855,7 +873,7 @@
   .dps-hint{ text-align:center; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); opacity:.6; margin-top:6px; }
 
   /* ============ CHAT FLUTUANTE (Global/Local/Guild/Sistema/Combate) ============ */
-  #chat-window{ left:14px; bottom:122px; width:370px; height:190px; min-width:260px; min-height:130px; display:flex; flex-direction:column; overflow:hidden; z-index:5; }
+  #chat-window{ left:14px; bottom:185px; width:370px; height:190px; min-width:260px; min-height:130px; display:flex; flex-direction:column; overflow:hidden; z-index:5; }
   #chat-titlebar{ padding:6px 10px; display:flex; align-items:center; justify-content:space-between; cursor:move; border-bottom:1px solid var(--gold-deep); user-select:none; }
   #chat-titlebar span{ font-family:var(--font-display); font-size:10.5px; letter-spacing:.08em; color:var(--gold-bright); text-transform:uppercase; }
   #chat-tabs{ display:flex; background:rgba(0,0,0,.25); border-bottom:1px solid var(--gold-deep); overflow-x:auto; flex-shrink:0; }
@@ -1381,10 +1399,10 @@
       </label>
     </div>
     <div id="hotbar-wrap">
-      <div id="city-services-bar" class="glass ornate">
-        <div class="tb-icon" id="btn-open-depot" title="Armazém (Depot)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/altar.png" alt="" style="filter:hue-rotate(180deg);"></div>
-        <div class="tb-icon" id="btn-open-quicksell" title="Venda Rápida">🪙</div>
-        <div class="tb-icon" id="btn-open-blessings" title="Bênçãos">🙏</div>
+      <div id="city-services-bar">
+        <div class="service-plate-btn" id="btn-open-depot" title="Armazém (Depot)">Depot</div>
+        <div class="service-plate-btn" id="btn-open-quicksell" title="Venda Rápida">Venda Rápida</div>
+        <div class="service-plate-btn" id="btn-open-blessings" title="Bênçãos">Bênçãos</div>
       </div>
       <div id="hotbar-row">
         <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/inventory.png" alt=""></div>
@@ -1783,11 +1801,15 @@
      ========================================================= */
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   const chatTabsData = {
-    sistema: { label:'Sistema', messages:[{ cls:'ch-sistema', text:'Conectando ao servidor...' }] },
-    global:  { label:'Global',  messages:[] },
-    local:   { label:'Local',   messages:[] },
-    guild:   { label:'Guild',   messages:[] },
-    combate: { label:'Combate', messages:[] },
+    sistema:  { label:'Sistema',  messages:[{ cls:'ch-sistema', text:'Conectando ao servidor...' }] },
+    global:   { label:'Global',   messages:[] },
+    local:    { label:'Local',    messages:[] },
+    guild:    { label:'Guild',    messages:[] },
+    combate:  { label:'Combate',  messages:[] },
+    // Mensagem privada (menu de contexto do botão direito num jogador) -- só
+    // leitura aqui (não está em CHAT_SENDABLE); pra responder, usa o mesmo
+    // menu de novo no personagem de quem mandou.
+    sussurro: { label:'Sussurro', messages:[] },
   };
   const CHAT_SENDABLE = ['global','local','guild'];
   let activeChatTab = 'sistema';
@@ -3558,7 +3580,6 @@
     bestiaryKillCounts = msg.bestiaryKillCounts || {};
     bestiaryTierClaims = msg.bestiaryTierClaims || {};
     bestiaryRandomBonus = msg.bestiaryRandomBonus || {};
-    if(wikiModal && wikiModal.classList.contains('open')) renderWiki();
     xpBonus = msg.xpBonus || xpBonus;
     ownedOutfits = msg.ownedOutfits || ownedOutfits; ownedMounts = msg.ownedMounts || ownedMounts; ownedWings = msg.ownedWings || ownedWings; ownedAuras = msg.ownedAuras || ownedAuras;
     cosmeticColors = msg.cosmeticColors || cosmeticColors;
@@ -3642,7 +3663,7 @@
       renderSkillTreeIfOpen(); renderTowersIfOpen();
       renderTargetModeOptions();
       refreshTacticsUI();
-      renderAttrs(); renderParty(); renderInventoryIfOpen(); renderAltar(); renderFriends(); renderShop();
+      renderAttrs(); renderParty(); renderInventoryIfOpen(); renderWikiIfOpen(); renderAltar(); renderFriends(); renderShop();
       renderCoinShopIfOpen(); renderEnchantIfOpen(); updateRankPill();
       renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen();
       if(currentTrade) renderTrade();
@@ -3680,7 +3701,14 @@
           hairColors = msg.hairColors && msg.hairColors.length ? msg.hairColors : hairColors;
           renderShop();
           break;
-        case 'chat': logChat(msg.channel, `<b>${escapeHtml(msg.from)}</b>: ${escapeHtml(msg.text)}`); break;
+        case 'chat':
+          if(msg.channel === 'sussurro'){
+            const label = msg.self ? `Você → <b>${escapeHtml(msg.to)}</b>` : `<b>${escapeHtml(msg.from)}</b> → você`;
+            logChat('sussurro', `${label}: ${escapeHtml(msg.text)}`);
+          } else {
+            logChat(msg.channel, `<b>${escapeHtml(msg.from)}</b>: ${escapeHtml(msg.text)}`);
+          }
+          break;
         case 'positions':
           remotePlayers.clear();
           msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
@@ -3836,6 +3864,10 @@
     if(msg.forType === 'friend:add'){
       if(msg.ok) logLoot('👤 Amigo adicionado.');
       else logLoot(`⚠️ Não foi possível adicionar: ${msg.reason}`);
+    }
+    if(msg.forType === 'chat:whisper' && !msg.ok){
+      const reasonMap = { jogador_offline:'jogador offline ou nick incorreto.', mensagem_vazia:'mensagem vazia.' };
+      logLoot(`⚠️ Mensagem não enviada: ${reasonMap[msg.reason] || msg.reason}`);
     }
 
     if(['training:start','training:stop','training:offline','training:cancelOffline'].includes(msg.forType) && !msg.ok){
@@ -4982,9 +5014,23 @@
   }
   applyInvFrameClass();
   document.querySelectorAll('.inv-frame-thumb').forEach(t=>{
-    t.addEventListener('click', ()=> sendWS({ type:'inventory:setSlotFrame', model:Number(t.dataset.frameModel) }));
+    t.addEventListener('click', ()=>{
+      // Aplica na hora (não espera o próximo snapshot do servidor pra
+      // "confirmar" visualmente) -- clicar numa moldura devia trocar o visual
+      // do slot IMEDIATAMENTE; o servidor ainda valida/persiste por trás.
+      const model = Number(t.dataset.frameModel);
+      invSlotFrame = model;
+      applyInvFrameClass();
+      sendWS({ type:'inventory:setSlotFrame', model });
+    });
   });
   function renderInventoryIfOpen(){ if(inventoryModal.classList.contains('open')) renderInventory(); }
+  // Bestiário/Wiki sofria o MESMO bug estrutural documentado acima (render
+  // não-throttled a 30Hz destruindo o DOM do card de monstro entre o
+  // mousedown e o mouseup do clique) -- por isso "abre o bestiário mas
+  // clicar no monstro não faz nada": o clique nunca chegava a disparar.
+  // Corrigido botando o redesenho do Wiki na mesma leva throttled acima.
+  function renderWikiIfOpen(){ if(wikiModal && wikiModal.classList.contains('open')) renderWiki(); }
   const RARITY_COLORS = { comum:'#a99872', incomum:'#6fae6f', rara:'#7fc6ff', 'épica':'#b98af0', 'lendária':'#f0d38a' };
 
   /* =========================================================
@@ -5214,6 +5260,20 @@
     return Math.round(total);
   }
   const invItemTooltip = document.getElementById('inv-item-tooltip');
+  // Posiciona o tooltip perto do mouse mas SEM deixar vazar pra fora da
+  // tela -- antes era sempre (mouseX+14, mouseY+14) sem checar o tamanho
+  // real do tooltip nem a borda da janela, então itens equipados perto da
+  // direita/baixo da tela mostravam o tooltip cortado/fora da área visível.
+  function positionInvTooltip(e){
+    const pad = 10;
+    const rect = invItemTooltip.getBoundingClientRect();
+    const w = rect.width || 220, h = rect.height || 40;
+    let x = e.clientX + 14, y = e.clientY + 14;
+    if(x + w + pad > window.innerWidth) x = Math.max(pad, e.clientX - w - 14);
+    if(y + h + pad > window.innerHeight) y = Math.max(pad, e.clientY - h - 14);
+    invItemTooltip.style.left = x + 'px';
+    invItemTooltip.style.top = y + 'px';
+  }
   // Lixeira de Itens — ver pushToTrash/sellTrashItem/recoverTrashItem em
   // huntEngine.js. Contagem regressiva calculada localmente a partir de
   // expiresAt (mandado pelo servidor); repintada a cada snapshot enquanto o
@@ -5244,30 +5304,63 @@
       grid.appendChild(sellAllRow);
       sellAllRow.querySelector('#trash-sell-all-btn').addEventListener('click', ()=> sendWS({ type:'trash:sellAll' }));
     }
+    // Pedido do usuário: Lixeira mostrando slots quadrados (igual Mochila),
+    // não mais uma lista de linhas -- reaproveita a MESMA classe .item-slot
+    // e o MESMO grid (#inv-items-grid) já usado pela Bolsa/Mochila.
     trash.forEach((it,i)=>{
-      const row = document.createElement('div');
-      row.className = 'trash-row';
+      const slot = document.createElement('div'); slot.className = 'item-slot';
       const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
-      row.style.borderColor = rarityColor;
+      slot.style.borderColor = rarityColor;
+      slot.style.cursor = 'pointer';
+      slot.title = 'Recuperar pra Mochila (precisa de espaço livre)';
       const iconHtml = it.icon
-        ? `<img data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="handleEquipIconError(this)" />`
-        : `<span style="color:${rarityColor};flex-shrink:0;">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
-      row.innerHTML = `${iconHtml}
-        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
-          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}</div>
-          <div class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</div>
-        </div>
-        <button type="button" class="treino-inline-btn trash-btn trash-recover-btn" data-idx="${i}" title="Mandar pra Mochila (precisa de espaço livre)">↩</button>
-        <button type="button" class="treino-inline-btn trash-btn trash-sell-btn" data-idx="${i}" title="${location==='city'?'Vender':'Só dá pra vender na Cidade'}" ${location!=='city'?'disabled':''}>🪙</button>`;
-      grid.appendChild(row);
+        ? `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`
+        : `<span class="item-icon" style="color:${rarityColor};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+      slot.innerHTML = `${iconHtml}
+        <span class="trash-timer">${fmtTrashRemaining(it.expiresAt)}</span>
+        ${it.qty>1?`<span class="qty">${it.qty}</span>`:''}
+        ${location==='city' ? `<span class="slot-mini-btn" data-trash-sell="${i}" title="Vender">🪙</span>` : ''}`;
+      slot.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:i }));
+      slot.addEventListener('mouseenter', ()=>{
+        const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+        invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${it.qty>1?` · x${it.qty}`:''}<span class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</span>`;
+        invItemTooltip.style.display = 'block';
+      });
+      slot.addEventListener('mousemove', positionInvTooltip);
+      slot.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
+      grid.appendChild(slot);
     });
-    grid.querySelectorAll('.trash-recover-btn').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:Number(btn.dataset.idx) })));
-    grid.querySelectorAll('.trash-sell-btn').forEach(btn=> btn.addEventListener('click', ()=>{ if(!btn.disabled) sendWS({ type:'trash:sell', trashIndex:Number(btn.dataset.idx) }); }));
+    grid.querySelectorAll('[data-trash-sell]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); sendWS({ type:'trash:sell', trashIndex:Number(btn.dataset.trashSell) }); });
+    });
   }
   // ARMAZÉM (Depot) — guarda de longo prazo, só na Cidade Principal. Mostra
   // a Mochila (com botão "Guardar" por item) em cima e o Armazém (com botão
   // "Retirar" por item) embaixo — reaproveita o mesmo .trash-row visual da
   // Lixeira em vez de duplicar CSS novo.
+  function buildDepotSlot(it, onClick, actionLabel){
+    // Slot compartilhado entre a metade "Mochila" e "Armazém" do Armazém --
+    // mesma classe .item-slot (visual igual Bolsa/Mochila), só troca a ação
+    // do clique (guardar vs. recuperar).
+    const slot = document.createElement('div'); slot.className = 'item-slot';
+    const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+    slot.style.borderColor = rarityColor;
+    slot.style.cursor = 'pointer';
+    slot.title = actionLabel;
+    const iconHtml = it.icon
+      ? `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`
+      : `<span class="item-icon" style="color:${rarityColor};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+    slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}`;
+    slot.addEventListener('click', onClick);
+    slot.addEventListener('mouseenter', ()=>{
+      const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${it.qty>1?` · x${it.qty}`:''}`;
+      invItemTooltip.style.display = 'block';
+    });
+    slot.addEventListener('mousemove', positionInvTooltip);
+    slot.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
+    return slot;
+  }
   function renderDepotItems(grid, cap){
     cap.textContent = `Armazém: ${depot.length}/${depotCapacity}`;
     grid.innerHTML = '';
@@ -5279,9 +5372,12 @@
       grid.appendChild(warn);
       return;
     }
+    // Pedido do usuário: Armazém mostrando slots quadrados (igual Mochila)
+    // pras duas metades (Mochila pra guardar / Armazém pra recuperar), em
+    // vez da lista de linhas de antes.
     const bagHeader = document.createElement('div');
-    bagHeader.className = 'panel-title'; bagHeader.style.cssText = 'font-size:11px;margin:2px 0 4px;';
-    bagHeader.textContent = `Mochila (${bag.length}/${bagCapacity}) — clique em ↪ pra guardar`;
+    bagHeader.className = 'panel-title'; bagHeader.style.cssText = 'grid-column:1/-1;font-size:11px;margin:2px 0 4px;';
+    bagHeader.textContent = `Mochila (${bag.length}/${bagCapacity}) — clique pra guardar`;
     grid.appendChild(bagHeader);
     if(!bag.length){
       const empty = document.createElement('div');
@@ -5289,24 +5385,10 @@
       empty.textContent = 'Mochila vazia.';
       grid.appendChild(empty);
     }
-    bag.forEach((it,i)=>{
-      const row = document.createElement('div');
-      row.className = 'trash-row';
-      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
-      row.style.borderColor = rarityColor;
-      const iconHtml = it.icon
-        ? `<img data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="handleEquipIconError(this)" />`
-        : `<span style="color:${rarityColor};flex-shrink:0;">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
-      row.innerHTML = `${iconHtml}
-        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
-          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}</div>
-        </div>
-        <button type="button" class="treino-inline-btn trash-btn depot-store-btn" data-idx="${i}" title="Guardar no Armazém">↪</button>`;
-      grid.appendChild(row);
-    });
+    bag.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:store', bagIndex:i }), 'Guardar no Armazém')));
     const depotHeader = document.createElement('div');
-    depotHeader.className = 'panel-title'; depotHeader.style.cssText = 'font-size:11px;margin:10px 0 4px;';
-    depotHeader.textContent = `Armazém (${depot.length}/${depotCapacity}) — clique em ↩ pra recuperar`;
+    depotHeader.className = 'panel-title'; depotHeader.style.cssText = 'grid-column:1/-1;font-size:11px;margin:10px 0 4px;';
+    depotHeader.textContent = `Armazém (${depot.length}/${depotCapacity}) — clique pra recuperar`;
     grid.appendChild(depotHeader);
     if(!depot.length){
       const empty = document.createElement('div');
@@ -5314,23 +5396,7 @@
       empty.textContent = 'Armazém vazio.';
       grid.appendChild(empty);
     }
-    depot.forEach((it,i)=>{
-      const row = document.createElement('div');
-      row.className = 'trash-row';
-      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
-      row.style.borderColor = rarityColor;
-      const iconHtml = it.icon
-        ? `<img data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="handleEquipIconError(this)" />`
-        : `<span style="color:${rarityColor};flex-shrink:0;">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
-      row.innerHTML = `${iconHtml}
-        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
-          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}</div>
-        </div>
-        <button type="button" class="treino-inline-btn trash-btn depot-retrieve-btn" data-idx="${i}" title="Recuperar pra Mochila (precisa de espaço livre)">↩</button>`;
-      grid.appendChild(row);
-    });
-    grid.querySelectorAll('.depot-store-btn').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'depot:store', bagIndex:Number(btn.dataset.idx) })));
-    grid.querySelectorAll('.depot-retrieve-btn').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'depot:retrieve', depotIndex:Number(btn.dataset.idx) })));
+    depot.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:retrieve', depotIndex:i }), 'Recuperar pra Mochila (precisa de espaço livre)')));
   }
   function renderInventory(){
     // grid.innerHTML='' mais abaixo reconstrói os slots a cada render (inclusive
@@ -5420,6 +5486,12 @@
       if(invTab==='mochila' && it.slot){
         slot.draggable = true;
         slot.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(i)); e.dataTransfer.effectAllowed = 'move'; });
+        // Clique equipa direto (sem precisar arrastar) -- simétrico ao clique
+        // que já desequipava no slot do paperdoll (equip:remove); antes só
+        // dava pra equipar arrastando, então "clicar no item da bolsa" não
+        // fazia nada, parecendo quebrado.
+        slot.style.cursor = 'pointer';
+        slot.addEventListener('click', ()=> sendWS({ type:'equip:item', bagIndex: i }));
       }
       // Tooltip flutuante com nome + status reais do item (estilo referência:
       // "Item / descrição / Life/Mana/Dps/Armor") — reaproveita o mesmo
@@ -5435,7 +5507,7 @@
         invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${enchantLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}${healLine}`;
         invItemTooltip.style.display = 'block';
       });
-      slot.addEventListener('mousemove', e=>{ invItemTooltip.style.left = (e.clientX+14)+'px'; invItemTooltip.style.top = (e.clientY+14)+'px'; });
+      slot.addEventListener('mousemove', positionInvTooltip);
       slot.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
       grid.appendChild(slot);
     });
@@ -5544,7 +5616,7 @@
       invItemTooltip.innerHTML = `<b>${item.name || item.id}</b>${rarityLabel}${enchantLine}${descLine}<span class="hint">${formatStats(stats)}</span>`;
       invItemTooltip.style.display = 'block';
     });
-    el.addEventListener('mousemove', e=>{ invItemTooltip.style.left = (e.clientX+14)+'px'; invItemTooltip.style.top = (e.clientY+14)+'px'; });
+    el.addEventListener('mousemove', positionInvTooltip);
     el.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
   });
 
@@ -5741,18 +5813,33 @@
   function loadLocalHotbarItems(){
     try{
       const saved = JSON.parse(localStorage.getItem(LS_HOTBAR_ITEMS) || 'null');
-      if(!saved) return;
+      if(!saved) return; // nunca configurado nada neste personagem -- mantém as sugestões (vida/mana) do array acima
       Object.keys(saved).forEach(idxStr=>{
         const idx = Number(idxStr);
-        if(!hotbar[idx] || !saved[idxStr]) return;
-        hotbar[idx] = { kind:'item', id:saved[idxStr].id, condition:saved[idxStr].condition || {type:'always',threshold:0}, cooldownUntil:0 };
+        if(!hotbar[idx]) return;
+        const entry = saved[idxStr];
+        // null EXPLÍCITO = o jogador limpou esse slot antes (botão "Remover
+        // deste slot") -- tem que ficar vazio de vez, não voltar a ser
+        // preenchido pela sugestão de vida/mana hardcoded logo acima. Antes
+        // esse `!saved[idxStr]` tratava null igual a "nunca configurado" e
+        // ignorava, então o slot "sozinho" reaparecia com poção depois de um
+        // F5/relogin -- era exatamente o bug relatado.
+        if(entry === null){
+          hotbar[idx] = { kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 };
+        } else if(entry){
+          hotbar[idx] = { kind:'item', id:entry.id, condition:entry.condition || {type:'always',threshold:0}, cooldownUntil:0 };
+        }
       });
     }catch(e){}
   }
   function saveLocalHotbarItems(){
     try{
       const out = {};
-      hotbar.forEach((slot,i)=>{ if(slot.kind==='item') out[i] = { id:slot.id, condition:slot.condition }; });
+      hotbar.forEach((slot,i)=>{
+        if(slot.kind==='item') out[i] = { id:slot.id, condition:slot.condition };
+        else if(slot.kind===null) out[i] = null; // slot limpo explicitamente -- ver loadLocalHotbarItems
+        // slot.kind==='spell': não persiste local (vem sempre do servidor)
+      });
       localStorage.setItem(LS_HOTBAR_ITEMS, JSON.stringify(out));
     }catch(e){}
   }
@@ -5866,6 +5953,14 @@
         html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''} data-tooltip-potion="${p.id}"><img src="${p.icon}" style="width:16px;height:16px;vertical-align:middle;object-fit:contain;margin-right:4px;" /> ${p.name} <span class="req">Nv.${p.minLevel} · ${p.cost>0?p.cost+'g/uso':'Grátis'}</span></div>`;
       });
     }
+    // Remover deste slot -- só aparece se o slot tiver algo (magia OU poção).
+    // Faltava isso: sem um jeito de esvaziar o slot de verdade, uma poção de
+    // vida/mana sugerida por padrão (ver hotbar[3]/[4]/[5] mais abaixo) nunca
+    // saía dali, e voltava sozinha depois de F5/relogin mesmo se o jogador
+    // trocasse -- era o bug relatado de slots "se preenchendo sozinhos".
+    if(slot.kind){
+      html += `<div class="opt-row" data-clear-slot="1" style="color:#ff9a80;margin-top:6px;">✖ Remover deste slot</div>`;
+    }
     html += `<div style="margin-top:10px;">
       <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Condição de disparo (ativação por % de HP/MP)</label>
       <select class="cond-select" id="cond-type-select">${CONDITION_TYPES.map(c=>`<option value="${c.id}" ${slot.condition.type===c.id?'selected':''}>${c.label}</option>`).join('')}</select>
@@ -5893,6 +5988,19 @@
       sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { enabled:true, thresholdPercent: slot.condition.threshold||50, potionId: pot.id } } });
       saveLocalHotbarItems();
     }));
+    const clearBtn = body.querySelector('[data-clear-slot]');
+    if(clearBtn) clearBtn.addEventListener('click', ()=>{
+      const wasItem = slot.kind === 'item';
+      const wasPotionKind = wasItem ? (POTIONS.find(p=>p.id===slot.id)||{}).kind : null;
+      if(slot.kind === 'spell') sendWS({ type:'hotbar:set', index:configuringSlotIndex, kind:null });
+      // poção de auto-uso removida do slot -- desliga o auto-uso desse tipo
+      // no servidor também, senão ele continuaria bebendo a poção sozinho
+      // mesmo com o slot visualmente vazio.
+      if(wasPotionKind) sendWS({ type:'hunt:configure', potionAutoUse: { [wasPotionKind]: { enabled:false } } });
+      slot.kind = null; slot.id = null;
+      renderActionBody(); renderHotbar();
+      if(wasItem) saveLocalHotbarItems();
+    });
     document.getElementById('cond-type-select').addEventListener('change', e=>{
       slot.condition.type=e.target.value; renderHotbar();
       if(slot.kind==='item') saveLocalHotbarItems();
@@ -7167,34 +7275,61 @@
   const playerMenu = document.createElement('div');
   playerMenu.className = 'glass'; playerMenu.style.cssText = 'position:absolute;display:none;z-index:45;padding:6px;flex-direction:column;gap:4px;';
   document.getElementById('stage').appendChild(playerMenu);
+  // Menu de contexto (botão DIREITO) num jogador remoto -- pedido explícito:
+  // clicar com o botão direito em cima do personagem/nick de alguém abre
+  // Adicionar amigo / Convidar pro Grupo / Propor Troca / Mensagem, em vez de
+  // precisar digitar o nick num campo separado (que também existe, mas
+  // sofria de um bug de maiúsculas/minúsculas -- ver resolveOnlineUsername
+  // no servidor).
   function showPlayerMenu(username, screenX, screenY){
     playerMenu.innerHTML = '';
+    const addBtn = document.createElement('button'); addBtn.className='party-btn'; addBtn.textContent = `Adicionar ${username} como amigo`;
+    addBtn.addEventListener('click', ()=>{ sendWS({ type:'friend:add', targetUsername: username }); playerMenu.style.display='none'; });
     const inviteBtn = document.createElement('button'); inviteBtn.className='party-btn primary'; inviteBtn.textContent = `Convidar ${username} pro Grupo`;
     inviteBtn.addEventListener('click', ()=>{ sendWS({ type:'party:invite', targetUsername: username }); playerMenu.style.display='none'; });
     const tradeBtn = document.createElement('button'); tradeBtn.className='party-btn'; tradeBtn.textContent = `Propor Troca com ${username}`;
     tradeBtn.addEventListener('click', ()=>{ sendWS({ type:'trade:request', targetUsername: username }); playerMenu.style.display='none'; });
-    playerMenu.appendChild(inviteBtn); playerMenu.appendChild(tradeBtn);
+    const msgBtn = document.createElement('button'); msgBtn.className='party-btn'; msgBtn.textContent = `Mandar mensagem pra ${username}`;
+    msgBtn.addEventListener('click', ()=>{
+      playerMenu.style.display='none';
+      const text = window.prompt(`Mensagem (sussurro) pra ${username}:`, '');
+      if(text && text.trim()) sendWS({ type:'chat:whisper', targetUsername: username, text: text.trim() });
+    });
+    playerMenu.appendChild(addBtn); playerMenu.appendChild(inviteBtn); playerMenu.appendChild(tradeBtn); playerMenu.appendChild(msgBtn);
     playerMenu.style.left = screenX+'px'; playerMenu.style.top = screenY+'px'; playerMenu.style.display = 'flex';
   }
   window.addEventListener('click', (e)=>{ if(!playerMenu.contains(e.target)) playerMenu.style.display = 'none'; });
 
-  canvas.addEventListener('click', (e)=>{
-    const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
-
-    // hit-test contra jogadores remotos visíveis no bucket atual (mesma regra do draw())
-    let hitUsername = null;
+  // hit-test contra jogadores remotos visíveis no bucket atual (mesma regra do draw())
+  function hitTestRemotePlayer(clickX, clickY){
     for(const [uname, rp] of remotePlayers){
       const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
       if(!sameBucket) continue;
       const s = worldToScreen(rp.x, rp.y);
-      if(Math.hypot(clickX-s.x, clickY-(s.y-18*SPRITE_SCALE)) < 16*SPRITE_SCALE){ hitUsername = uname; break; }
+      if(Math.hypot(clickX-s.x, clickY-(s.y-18*SPRITE_SCALE)) < 16*SPRITE_SCALE) return uname;
     }
-    if(hitUsername){ showPlayerMenu(hitUsername, e.clientX, e.clientY); return; }
+    return null;
+  }
 
+  // Botão ESQUERDO: só move o personagem (clicar num jogador com o botão
+  // esquerdo não faz mais nada -- o menu agora é botão DIREITO, ver abaixo).
+  canvas.addEventListener('click', (e)=>{
+    playerMenu.style.display = 'none';
     if(location !== 'city') return; // na Dungeon o movimento é 100% do Bot autoritativo do servidor
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
     const world = screenToWorld(clickX, clickY);
     player.x = world.x; player.y = world.y; // resposta visual imediata; o servidor confirma no próximo snapshot
+  });
+
+  // Botão DIREITO: abre o menu de contexto se acertar um jogador remoto;
+  // caso contrário, deixa o menu de contexto padrão do navegador em paz
+  // (preventDefault só quando realmente acertou alguém).
+  canvas.addEventListener('contextmenu', (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
+    const hitUsername = hitTestRemotePlayer(clickX, clickY);
+    if(hitUsername){ e.preventDefault(); showPlayerMenu(hitUsername, e.clientX, e.clientY); }
   });
 
 })();
