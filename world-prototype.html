@@ -950,6 +950,11 @@
           <button type="button" class="treino-inline-btn" id="bank-deposit-btn" style="flex:1;">Depositar</button>
           <button type="button" class="treino-inline-btn" id="bank-withdraw-btn" style="flex:1;">Sacar</button>
         </div>
+        <div style="border-top:1px solid var(--gold-deep);margin:8px 0;"></div>
+        <div class="panel-title" style="font-size:10px;margin-bottom:6px;">Transferir do Banco</div>
+        <input type="text" class="trade-gold-input" id="bank-transfer-name-input" placeholder="Nome do jogador">
+        <input type="number" min="1" class="trade-gold-input" id="bank-transfer-amount-input" placeholder="Quantidade" style="margin-top:6px;">
+        <button type="button" class="treino-inline-btn" id="bank-transfer-btn" style="width:100%;margin-top:6px;">Transferir</button>
         <div id="bank-msg" class="italic-note"></div>
       </div>
     </div>
@@ -1309,9 +1314,9 @@
         <div id="inv-capacity-line">0/0</div>
       </div>
     </div>
-    <div id="inv-item-tooltip" class="skill-node-tip"></div>
     <div class="win-resize"></div>
   </div>
+  <div id="inv-item-tooltip" class="skill-node-tip"></div>
 
   <!-- TRADE — seguro em duas etapas (Travar Oferta + Confirmar) -->
   <div id="trade-modal" class="glass ornate win">
@@ -1373,7 +1378,7 @@
        Imbuiments/Blessings no topo da barra de ação). Imbuiments fica de
        fora, a pedido do usuário. Só aparecem na Cidade Principal (ver
        body.in-city no CSS). -->
-  <div id="hotbar-hint">Clique direito num slot para configurar a ação · clique na mochila pro inventário completo</div>
+  <div id="hotbar-hint">Clique direito num slot para configurar a ação</div>
   <div id="footer-bar">
     <!-- Vitals compactos (estilo Huntera: HP/Mana/Level ficam coladas na
          hotbar, não mais numa janela solta no canto superior). -->
@@ -1398,16 +1403,14 @@
         <input type="checkbox" id="toggle-aura" checked style="accent-color:var(--gold);"> Aura equipada
       </label>
     </div>
+    <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/inventory.png" alt=""></div>
     <div id="hotbar-wrap">
       <div id="city-services-bar">
         <div class="service-plate-btn" id="btn-open-depot" title="Armazém (Depot)">Depot</div>
         <div class="service-plate-btn" id="btn-open-quicksell" title="Venda Rápida">Venda Rápida</div>
         <div class="service-plate-btn" id="btn-open-blessings" title="Bênçãos">Bênçãos</div>
       </div>
-      <div id="hotbar-row">
-        <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/inventory.png" alt=""></div>
-        <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
-      </div>
+      <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
     </div>
     <div id="tactics-bar" class="glass ornate">
       <div class="tactics-group">
@@ -3159,7 +3162,7 @@
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
         drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
-      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: uname + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
+      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
     drawList.push({ baseCart:{x:player.x,y:player.y}, draw:()=>{
@@ -3311,7 +3314,11 @@
   const AUTO_WALK_ARRIVE_PX = 6;
   // target opcional — sem ele, anda pro teleporte azul (uso mais comum: início de caçada)
   function startAutoWalkToTeleport(onArrive){ autoWalk = { target: TELEPORT_WORLD_POS, onArrive }; }
-  function startAutoWalkToPos(target, onArrive){ autoWalk = { target, onArrive }; }
+  // opts.interruptible: true pro "andar até onde cliquei" (WASD cancela na
+  // hora, ver updateWasdMovement) -- o uso original (andar sozinho até o
+  // teleporte azul no início da caçada) continua NÃO interruptível, porque
+  // ali o jogo precisa garantir que o personagem realmente chegue lá.
+  function startAutoWalkToPos(target, onArrive, opts){ autoWalk = { target, onArrive, interruptible: !!(opts && opts.interruptible) }; }
   function nearestTrainingDummy(){
     if(!trainingDummies.length) return null;
     let best = trainingDummies[0], bestD = Infinity;
@@ -3332,7 +3339,7 @@
   }
   function updateWasdMovement(dt){
     if(location !== 'city') return; // Dungeon: movimento é 100% do Bot no servidor
-    if(autoWalk) return; // andando sozinho até o teleporte — ignora WASD até chegar
+    if(autoWalk && !autoWalk.interruptible) return; // andando sozinho até o teleporte — ignora WASD até chegar
     // Grade reta = mundo e tela só diferem por escala (WORLD_SCALE), nunca
     // por ângulo — então o vetor de tela desejado (sx,sy) já É o vetor de
     // mundo (dx,dy), só dividido pela escala. Antes, na projeção isométrica,
@@ -3346,6 +3353,7 @@
     if(heldKeys['a']||heldKeys['arrowleft'])  sx -= 1; // tela: esquerda
     if(heldKeys['d']||heldKeys['arrowright']) sx += 1; // tela: direita
     if(!sx && !sy) return;
+    if(autoWalk && autoWalk.interruptible) cancelAutoWalk(); // apertou WASD -- cancela o "andar até o clique" e devolve o controle na hora
     const slen = Math.hypot(sx,sy); sx/=slen; sy/=slen; // vetor UNITÁRIO — mesma velocidade aparente em qualquer uma das 8 direções, incluindo diagonais
     const dx = sx / WORLD_SCALE;
     const dy = sy / WORLD_SCALE;
@@ -3478,6 +3486,19 @@
     const amt = readBankAmountInput();
     if(!amt){ bankMsg.textContent = 'Digite uma quantidade.'; return; }
     sendWS({ type:'bank:withdraw', amount: amt });
+  });
+  // Transferência de ouro do Banco pra outro jogador -- pedido do usuário:
+  // digita nome + quantidade, confirma numa modal (showConfirmModal, o
+  // mesmo popup usado noutras ações irreversíveis do jogo) e só então manda
+  // pro servidor. Exige o alvo ONLINE (mesma regra de Troca/Convite).
+  document.getElementById('bank-transfer-btn').addEventListener('click', async ()=>{
+    const targetName = document.getElementById('bank-transfer-name-input').value.trim();
+    const amt = Math.floor(Number(document.getElementById('bank-transfer-amount-input').value) || 0);
+    if(!targetName){ bankMsg.textContent = 'Digite o nome do jogador.'; return; }
+    if(!amt || amt <= 0){ bankMsg.textContent = 'Digite uma quantidade válida.'; return; }
+    const confirmed = await showConfirmModal(`Transferir ${amt.toLocaleString('pt-BR')} de ouro do Banco para "${targetName}"? Essa ação não pode ser desfeita.`);
+    if(!confirmed) return;
+    sendWS({ type:'bank:transfer', targetName, amount: amt });
   });
 
   /* =========================================================
@@ -3693,7 +3714,12 @@
       switch(msg.type){
         case 'system': logChat('sistema', escapeHtml(msg.text)); break;
         case 'welcome':
-          logChat('sistema', `Conectado. Jogadores no mundo: ${escapeHtml(msg.players.join(', ')||'só você')}.`);
+          // Pedido do usuário: tirar esse anúncio do chat Sistema -- ficava
+          // logando "Jogadores no mundo: fulano, ciclano..." toda vez que
+          // QUALQUER jogador conectava (o próprio, no seu welcome), o que não
+          // escala com a base de jogadores crescendo. msg.players continua
+          // vindo do servidor (não usado mais aqui) caso vire útil noutro
+          // painel no futuro.
           npcShops = msg.npcShops || {};
           trainingDummies = msg.trainingDummies || [];
           outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || []; wingCatalog = msg.wingCatalog || []; auraCatalog = msg.auraCatalog || [];
@@ -3717,6 +3743,10 @@
         case 'hunt:ack': handleAck(msg); break;
         case 'party:invite': showPartyInviteToast(msg); break;
         case 'party:declined': logLoot(`👥 <b>${escapeHtml(msg.by)}</b> recusou o convite pro grupo.`); break;
+        case 'bank:transferReceived':
+          logLoot(`🏦🪙 Você recebeu ${msg.amount.toLocaleString('pt-BR')} Gold no Banco, transferido por <b>${escapeHtml(msg.from)}</b>.`);
+          refreshBankPopoverAmounts();
+          break;
         case 'hunt:invite': showHuntInviteAcceptModal(msg); break;
         case 'hunt:inviteProgress': showHuntPartyModal('convite', msg.partyId, msg.accepted, msg.total); break;
         case 'hunt:inviteCancelled':
@@ -3796,6 +3826,20 @@
       const verbo = msg.forType === 'bank:deposit' ? 'Depositado' : 'Sacado';
       if(msg.ok){ if(bm) bm.textContent = `${verbo} ${msg.amount.toLocaleString('pt-BR')} 🪙.`; refreshBankPopoverAmounts(); }
       else if(bm) bm.textContent = msg.reason === 'ouro_insuficiente' ? 'Ouro insuficiente.' : 'Quantidade inválida.';
+    }
+    if(msg.forType === 'bank:transfer'){
+      const bm = document.getElementById('bank-msg');
+      if(msg.ok){
+        if(bm) bm.textContent = `Transferido ${msg.amount.toLocaleString('pt-BR')} 🪙 pro Banco de ${msg.targetNick||'jogador'}.`;
+        refreshBankPopoverAmounts();
+        document.getElementById('bank-transfer-name-input').value = '';
+        document.getElementById('bank-transfer-amount-input').value = '';
+      } else if(bm) {
+        bm.textContent = msg.reason === 'jogador_offline' ? 'Jogador não encontrado ou offline.'
+          : msg.reason === 'ouro_insuficiente' ? 'Ouro insuficiente no Banco.'
+          : msg.reason === 'nao_pode_transferir_pra_si_mesmo' ? 'Não dá pra transferir pra si mesmo.'
+          : 'Quantidade inválida.';
+      }
     }
     if(msg.forType === 'trash:sell'){
       if(msg.ok) logLoot(`🗑️🪙 Vendido por ${msg.gold} Gold (banco).`);
@@ -5005,6 +5049,10 @@
       invTab = t.dataset.invtab; renderInventory();
     });
   });
+  const invFrameBtn = document.getElementById('inv-frame-btn');
+  const invFramePopover = document.getElementById('inv-frame-popover');
+  invFrameBtn.addEventListener('mouseenter', ()=> invFramePopover.classList.add('show'));
+  invFrameBtn.addEventListener('mouseleave', ()=> invFramePopover.classList.remove('show'));
   function applyInvFrameClass(){
     for(let n=1;n<=6;n++) inventoryModal.classList.remove('inv-frame-'+n);
     inventoryModal.classList.add('inv-frame-'+invSlotFrame);
@@ -5285,6 +5333,19 @@
     const h = Math.floor(totalMin/60), m = totalMin%60;
     return h>0 ? `${h}h${String(m).padStart(2,'0')}m` : `${Math.max(m, ms>0?1:0)}m`;
   }
+  // Resolve o HTML do ícone de um item pra Lixeira/Armazém -- mesma lógica
+  // usada pela Mochila em renderInventory (gema > foto de equipamento >
+  // foto de material sem slot > SVG genérico). Faltava o 3º caso aqui, por
+  // isso itens de loot (sem .slot, sem .icon) apareciam sem foto real no
+  // Armazém/Lixeira mesmo já tendo a foto certa na Mochila.
+  function resolveItemIconHtml(it){
+    const gemIconUrl = GEM_ICON_URL[it.id];
+    const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+    if(gemIconUrl) return `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`;
+    if(it.icon) return `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`;
+    if(!it.slot) return `<img class="item-icon" data-rarity-color="${rarityColor}" src="${itemIconUrl(it.id)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleLootIconError(this)" />`;
+    return `<span class="item-icon" style="color:${rarityColor};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+  }
   function renderTrashItems(grid, cap){
     cap.textContent = `Lixeira de Itens: ${trash.length}/${trashCapacity}`;
     grid.innerHTML = '';
@@ -5313,9 +5374,7 @@
       slot.style.borderColor = rarityColor;
       slot.style.cursor = 'pointer';
       slot.title = 'Recuperar pra Mochila (precisa de espaço livre)';
-      const iconHtml = it.icon
-        ? `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`
-        : `<span class="item-icon" style="color:${rarityColor};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+      const iconHtml = resolveItemIconHtml(it);
       slot.innerHTML = `${iconHtml}
         <span class="trash-timer">${fmtTrashRemaining(it.expiresAt)}</span>
         ${it.qty>1?`<span class="qty">${it.qty}</span>`:''}
@@ -5347,9 +5406,7 @@
     slot.style.borderColor = rarityColor;
     slot.style.cursor = 'pointer';
     slot.title = actionLabel;
-    const iconHtml = it.icon
-      ? `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`
-      : `<span class="item-icon" style="color:${rarityColor};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
+    const iconHtml = resolveItemIconHtml(it);
     slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}`;
     slot.addEventListener('click', onClick);
     slot.addEventListener('mouseenter', ()=>{
@@ -6665,7 +6722,7 @@
     const list = document.getElementById('friends-list');
     if(!friends.length){ list.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum amigo adicionado ainda.</div>`; return; }
     list.innerHTML = friends.map(f=>`
-      <div class="friend-row"><span><span class="fdot ${f.online?'online':''}"></span>${f.username}</span><button class="party-btn danger" data-remove-friend="${f.username}">Remover</button></div>
+      <div class="friend-row"><span><span class="fdot ${f.online?'online':''}"></span>${f.nick || f.username}</span><button class="party-btn danger" data-remove-friend="${f.username}">Remover</button></div>
     `).join('');
     list.querySelectorAll('[data-remove-friend]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'friend:remove', targetUsername: btn.dataset.removeFriend }));
@@ -6838,13 +6895,29 @@
   }
   document.getElementById('btn-open-enchant').addEventListener('click', ()=>{ enchantModal.classList.toggle('open'); renderEnchant(); });
   function renderEnchantIfOpen(){ if(enchantModal.classList.contains('open')) renderEnchant(); }
+  // Bug reportado: clicar numa aba (ex. "Elmo") às vezes deixava a descrição
+  // "presa" na aba anterior (ex. continuava mostrando "Nenhum item equipado
+  // em Colar" mesmo com "Elmo" selecionado). Causa: as abas são recriadas do
+  // zero (tabs.innerHTML=...) a cada renderEnchantIfOpen (throttled a 250ms,
+  // mas ainda assim recria o DOM) e o listener de clique era religado em
+  // CADA re-render, direto no elemento da aba -- se um snapshot chegava e
+  // reconstruía as abas bem no meio do clique do jogador (mousedown antes,
+  // mouseup depois da reconstrução), o elemento original já não existia mais
+  // no DOM no momento do mouseup e o 'click' simplesmente não disparava
+  // (mesma família do bug já corrigido no Bestiário, só que numa janela
+  // menor). Fix: 1 listener DELEGADO no container pai (#enchant-slot-tabs),
+  // que esse sim nunca é recriado -- sobrevive a qualquer reconstrução das
+  // abas filhas, então o clique sempre chega em enchantSelectedSlot.
+  const enchantTabsEl = document.getElementById('enchant-slot-tabs');
+  enchantTabsEl.addEventListener('click', (e)=>{
+    const tab = e.target.closest('[data-enchant-slot]');
+    if(!tab) return;
+    enchantSelectedSlot = tab.dataset.enchantSlot;
+    renderEnchant();
+  });
   function renderEnchant(){
     if(!enchantModal.classList.contains('open')) return;
-    const tabs = document.getElementById('enchant-slot-tabs');
-    tabs.innerHTML = ENCHANT_SLOTS.map(s=>`<div class="enchant-slot-tab ${s===enchantSelectedSlot?'active':''}" data-enchant-slot="${s}">${ENCHANT_SLOT_LABEL[s]}${equipment[s]?'':' (vazio)'}</div>`).join('');
-    tabs.querySelectorAll('[data-enchant-slot]').forEach(tab=>{
-      tab.addEventListener('click', ()=>{ enchantSelectedSlot = tab.dataset.enchantSlot; renderEnchant(); });
-    });
+    enchantTabsEl.innerHTML = ENCHANT_SLOTS.map(s=>`<div class="enchant-slot-tab ${s===enchantSelectedSlot?'active':''}" data-enchant-slot="${s}">${ENCHANT_SLOT_LABEL[s]}${equipment[s]?'':' (vazio)'}</div>`).join('');
     const body = document.getElementById('enchant-body');
     const item = equipment[enchantSelectedSlot];
     if(!item){
@@ -7302,11 +7375,14 @@
 
   // hit-test contra jogadores remotos visíveis no bucket atual (mesma regra do draw())
   function hitTestRemotePlayer(clickX, clickY){
+    // Retorna o NICK (não o username da conta) -- é o que o menu de contexto
+    // mostra e o que os campos de convite/adicionar já esperam receber (ver
+    // resolveOnlineUsername no servidor, que agora casa por nick primeiro).
     for(const [uname, rp] of remotePlayers){
       const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
       if(!sameBucket) continue;
       const s = worldToScreen(rp.x, rp.y);
-      if(Math.hypot(clickX-s.x, clickY-(s.y-18*SPRITE_SCALE)) < 16*SPRITE_SCALE) return uname;
+      if(Math.hypot(clickX-s.x, clickY-(s.y-18*SPRITE_SCALE)) < 16*SPRITE_SCALE) return rp.nick || uname;
     }
     return null;
   }
@@ -7319,7 +7395,11 @@
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
     const world = screenToWorld(clickX, clickY);
-    player.x = world.x; player.y = world.y; // resposta visual imediata; o servidor confirma no próximo snapshot
+    // Bug reportado: clicar no mapa TELEPORTAVA na hora (player.x/y setado
+    // direto) em vez de andar até lá. Agora anda de verdade (mesma
+    // velocidade do WASD, via autoWalk) -- interruptible:true deixa
+    // apertar WASD a qualquer momento cancelar e retomar controle manual.
+    startAutoWalkToPos(world, null, { interruptible: true });
   });
 
   // Botão DIREITO: abre o menu de contexto se acertar um jogador remoto;
