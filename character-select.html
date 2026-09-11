@@ -74,8 +74,12 @@
   #new-char-link:hover{ color:var(--gold-bright); }
 
   /* ---------- Criação de personagem (estilo Ragnarok: grade de penteados + paleta de cor) ---------- */
-  #char-create-view{ width:640px; padding:26px 30px; display:none; }
-  .create-layout{ display:flex; gap:22px; }
+  /* Painel mais largo que os 640px de sempre pra caber a grade de 8
+     arquétipos (passo 2) lado a lado com o retrato — o passo 1 (aparência)
+     continua com o mesmo layout de 640px, só recentralizado (ver
+     .create-layout max-width abaixo) pra não esticar sozinho. */
+  #char-create-view{ width:760px; padding:26px 30px; display:none; }
+  .create-layout{ display:flex; gap:22px; max-width:640px; margin:0 auto; }
   .create-left{ width:170px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
   #create-preview{ width:150px; height:190px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
   .toggle-row{ display:flex; gap:8px; width:100%; }
@@ -118,6 +122,48 @@
   #create-btn:disabled{ opacity:.4; cursor:not-allowed; }
   #back-to-select-link{ display:block; text-align:center; margin-top:10px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); cursor:pointer; text-decoration:underline; }
   #back-to-select-link:hover{ color:var(--gold-bright); }
+  .nav-link{ display:block; text-align:center; margin-top:10px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); cursor:pointer; text-decoration:underline; }
+  .nav-link:hover{ color:var(--gold-bright); }
+  #next-to-archetype-btn{
+    width:100%; margin-top:6px; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
+    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display);
+    font-size:14px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
+  }
+  #next-to-archetype-btn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* ---------- Passo 2 da criação: escolha de Arquétipo (8 classes reais do
+     Ravendawn — Holy/Warfare/Archery/Protection/Shadow/Spiritual/Wizardry/
+     Witchcraft) — grade com ícone+tema por card, painel de detalhe com a
+     descrição real e 3 magias de destaque de cada um, e retrato ao vivo já
+     vestindo o traje do arquétipo em foco (mesmo motor de recolorir usado
+     no mundo, ver getRecoloredArmor). ---------- */
+  #create-step-archetype{ display:none; }
+  .archetype-top{ display:flex; gap:20px; margin-bottom:14px; }
+  .archetype-preview-col{ width:170px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  #archetype-preview{ width:150px; height:190px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
+  .archetype-name-tag{ font-family:var(--font-display); font-size:13px; color:var(--gold-bright); text-align:center; }
+  .archetype-role-tag{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-align:center; letter-spacing:.03em; }
+  .archetype-grid{ flex:1; display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; align-content:start; }
+  .archetype-card{
+    border:1px solid var(--gold-deep); border-radius:8px; background:rgba(0,0,0,.3); cursor:pointer;
+    padding:9px 4px 7px; display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center;
+  }
+  .archetype-card img{ width:34px; height:34px; image-rendering:pixelated; }
+  .archetype-card .arch-name{ font-family:var(--font-display); font-size:10.5px; color:var(--ink); line-height:1.2; }
+  .archetype-card .arch-theme{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
+  .archetype-card:hover{ border-color:var(--gold-bright); }
+  .archetype-card.selected{ border-color:var(--gold-bright); background:rgba(191,161,95,.14); box-shadow:0 0 0 1px var(--gold-bright) inset, 0 0 10px rgba(240,211,138,.25); }
+  .archetype-detail{ border:1px solid var(--gold-deep); border-radius:8px; background:rgba(0,0,0,.22); padding:12px 16px; margin-bottom:14px; min-height:140px; }
+  .archetype-detail-empty{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-dim); text-align:center; padding:36px 0; }
+  .arch-detail-title{ font-family:var(--font-display); font-size:15px; color:var(--gold-bright); }
+  .arch-detail-role{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin:2px 0 8px; letter-spacing:.03em; text-transform:uppercase; }
+  .arch-detail-desc{ font-family:var(--font-body); font-size:12.5px; line-height:1.5; color:var(--ink); margin-bottom:10px; }
+  .arch-detail-spells-label{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; }
+  .arch-spell-row{ margin-bottom:6px; }
+  .arch-spell-name{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); }
+  .arch-spell-kind{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); margin-left:6px; }
+  .arch-spell-desc{ font-family:var(--font-body); font-size:11px; color:var(--ink-dim); line-height:1.4; }
+  #create-btn.archetype-confirm{ margin-top:0; }
 
   .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:14px; display:none; }
   .msg.show{ display:block; }
@@ -149,31 +195,54 @@
   <div id="new-char-link">+ Criar novo herói</div>
 </div>
 
-<!-- SEM PERSONAGEM (ou criando um novo): grade de penteados + paleta de cor, estilo Ragnarok -->
+<!-- SEM PERSONAGEM (ou criando um novo): passo 1 (aparência, estilo Ragnarok) +
+     passo 2 (escolha de Arquétipo, com detalhe de cada um antes de escolher) -->
 <div id="char-create-view" class="glass">
   <h1 class="title">Criação de Personagem</h1>
   <div class="msg" id="create-msg"></div>
 
-  <div class="create-layout">
-    <div class="create-left">
-      <canvas id="create-preview" width="150" height="190"></canvas>
-      <div class="toggle-row" id="gender-toggle">
-        <div class="toggle-btn active" data-gender="male">♂ Masc.</div>
-        <div class="toggle-btn" data-gender="female">♀ Fem.</div>
+  <!-- PASSO 1: aparência (gênero, penteado, cor, nick) -->
+  <div id="create-step-appearance">
+    <div class="create-layout">
+      <div class="create-left">
+        <canvas id="create-preview" width="150" height="190"></canvas>
+        <div class="toggle-row" id="gender-toggle">
+          <div class="toggle-btn active" data-gender="male">♂ Masc.</div>
+          <div class="toggle-btn" data-gender="female">♀ Fem.</div>
+        </div>
+        <div class="field">
+          <label>Nick (apelido único do herói)</label>
+          <input type="text" id="nick-input" maxlength="20" placeholder="Ex: Kael">
+        </div>
       </div>
-      <div class="field">
-        <label>Nick (apelido único do herói)</label>
-        <input type="text" id="nick-input" maxlength="20" placeholder="Ex: Kael">
+      <div class="create-right">
+        <div class="section-label">Penteado</div>
+        <div id="hair-style-grid"></div>
+        <div class="section-label">Cor do Cabelo</div>
+        <div id="hair-color-row"></div>
       </div>
     </div>
-    <div class="create-right">
-      <div class="section-label">Penteado</div>
-      <div id="hair-style-grid"></div>
-      <div class="section-label">Cor do Cabelo</div>
-      <div id="hair-color-row"></div>
-      <button id="create-btn">Criar Personagem</button>
-      <div id="back-to-select-link" style="display:none;">← Voltar pra seleção</div>
+    <button id="next-to-archetype-btn">Próximo: Escolher Arquétipo →</button>
+    <div id="back-to-select-link" class="nav-link" style="display:none;">← Voltar pra seleção</div>
+  </div>
+
+  <!-- PASSO 2: Arquétipo — 8 classes reais, com detalhe de cada uma antes de
+       escolher (tema, papel em combate e magias de destaque reais) e
+       retrato ao vivo já com o traje daquele arquétipo. -->
+  <div id="create-step-archetype">
+    <div class="archetype-top">
+      <div class="archetype-preview-col">
+        <canvas id="archetype-preview" width="150" height="190"></canvas>
+        <div class="archetype-name-tag" id="archetype-name-tag">Escolha um arquétipo</div>
+        <div class="archetype-role-tag" id="archetype-role-tag"></div>
+      </div>
+      <div class="archetype-grid" id="archetype-grid"></div>
     </div>
+    <div class="archetype-detail" id="archetype-detail">
+      <div class="archetype-detail-empty">Clique num arquétipo pra ver os detalhes antes de escolher.</div>
+    </div>
+    <button id="create-btn" class="archetype-confirm" disabled>Criar Personagem</button>
+    <div id="back-to-appearance-link" class="nav-link">← Voltar pra aparência</div>
   </div>
 </div>
 
@@ -299,6 +368,10 @@
       return entry;
     }
     function bodySprite(gender){ return load('b_'+gender, `player/bodies ${gender}/${gender}_base.png`); }
+    // Atlas base+mask de um Arquétipo (ver getRecoloredArmor mais abaixo) --
+    // mesma convenção de assets/player/outfits_template/<id>_<kind>.png já
+    // usada no mundo (world-prototype.html).
+    function outfitTemplateSprite(outfitId, kind){ return load('a_'+outfitId+'_'+kind, `player/outfits_template/${outfitId}_${kind}.png`); }
     // 8 cores reais no repositório pra AMBOS os gêneros hoje (confirmado:
     // player/heads male|female/{black,blue,brown,green,purple,red,white,yellow}.png)
     // — cada arquivo é uma grade de 19 penteados (linhas), não 1 penteado só.
@@ -348,15 +421,212 @@
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       return { dw, dh, dx, dy, topY:dy };
     }
-    return { bodySprite, headSprite, getHeadStyleFrame, drawFrameContainFit, drawHeadStyleContainFit };
+    return { bodySprite, headSprite, outfitTemplateSprite, getHeadStyleFrame, drawFrameContainFit, drawHeadStyleContainFit };
   })();
+
+  /* =========================================================
+     RECOLORIR DE OUTFIT EM TEMPO REAL (mirror reduzido de getRecoloredArmor
+     em world-prototype.html — mesmo algoritmo, só aqui pra desenhar o
+     retrato de criação já com o traje do arquétipo escolhido, ANTES de
+     entrar no mundo). Layer 0 = arte base fixa, layer 1 = máscara de
+     template (Cabeça=amarelo/Corpo=vermelho/Pernas=verde/Pés=azul) tingida
+     pela paleta de cor — aqui sempre com a cor PADRÃO (índice 0 = branco em
+     todas as 4 partes, mesmo default de buildDefaultProgress no servidor),
+     já que o jogador ainda não chegou na aba de Cores do Inventário.
+     ========================================================= */
+  const COSMETIC_COLOR_PALETTE = [
+    '#FFFFFF', '#F1D2A9', '#D89B6E', '#9C6B3F', '#5C3A21',
+    '#E8C547', '#E2542B', '#C23B3B', '#8B2E5F', '#5B2C87',
+    '#3B4FA0', '#2E7DB8', '#2E9E8F', '#3F9B4A', '#6B8F2E',
+    '#8A8A8A', '#4A4A4A', '#1E1E1E', '#7A5C3E',
+  ];
+  const DEFAULT_COSMETIC_COLORS = { head: 0, body: 0, legs: 0, feet: 0 };
+  const OUTFIT_COLOR_REGIONS = [['head', 60/360], ['body', 0/360], ['legs', 120/360], ['feet', 240/360]];
+  function hexToRgbTriplet(hex){
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||'').trim());
+    if(!m) return { r:255, g:255, b:255 };
+    const n = parseInt(m[1], 16);
+    return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+  }
+  function rgbToHsvTriplet(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0;
+    if(d!==0){
+      if(max===r) h=((g-b)/d)%6;
+      else if(max===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h/=6; if(h<0) h+=1;
+    }
+    const s = max===0 ? 0 : d/max;
+    return { h, s, v:max };
+  }
+  function hsvToRgbTriplet(h,s,v){
+    const i = Math.floor(h*6), f = h*6-i;
+    const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
+    let r,g,b;
+    switch(i%6){
+      case 0: r=v; g=t; b=p; break;
+      case 1: r=q; g=v; b=p; break;
+      case 2: r=p; g=v; b=t; break;
+      case 3: r=p; g=q; b=v; break;
+      case 4: r=t; g=p; b=v; break;
+      default: r=v; g=p; b=q; break;
+    }
+    return { r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255) };
+  }
+  function nearestOutfitRegion(h){
+    let best=null, bestD=999;
+    OUTFIT_COLOR_REGIONS.forEach(([name, rh])=>{
+      const d = Math.min(Math.abs(h-rh), 1-Math.abs(h-rh));
+      if(d<bestD){ bestD=d; best=name; }
+    });
+    return best;
+  }
+  const _recolorCache = {};
+  const _recolorCacheOrder = [];
+  function getRecoloredArmor(outfitId, colors){
+    const c = colors || DEFAULT_COSMETIC_COLORS;
+    const key = outfitId+'|'+c.head+','+c.body+','+c.legs+','+c.feet;
+    if(_recolorCache[key]) return _recolorCache[key];
+    const baseEntry = SpriteManager.outfitTemplateSprite(outfitId, 'base');
+    const maskEntry = SpriteManager.outfitTemplateSprite(outfitId, 'mask');
+    if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
+    const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
+    if(!w || !h) return null;
+    const targetHsv = {};
+    ['head','body','legs','feet'].forEach(part=>{
+      const rgb = hexToRgbTriplet(COSMETIC_COLOR_PALETTE[c[part]] || COSMETIC_COLOR_PALETTE[0]);
+      targetHsv[part] = rgbToHsvTriplet(rgb.r, rgb.g, rgb.b);
+    });
+    const mc = document.createElement('canvas'); mc.width=w; mc.height=h;
+    const mcx = mc.getContext('2d');
+    mcx.drawImage(maskEntry.img, 0, 0);
+    let imgData;
+    try{ imgData = mcx.getImageData(0,0,w,h); } catch(e){ return null; }
+    const data = imgData.data;
+    for(let i=0;i<data.length;i+=4){
+      const a = data[i+3];
+      if(a===0) continue;
+      const hsv = rgbToHsvTriplet(data[i], data[i+1], data[i+2]);
+      if(hsv.s < 0.12) continue;
+      const region = nearestOutfitRegion(hsv.h);
+      const t = targetHsv[region];
+      const nv = Math.max(0, Math.min(1, hsv.v*(0.35+0.65*t.v)));
+      const rgb = hsvToRgbTriplet(t.h, t.s, nv);
+      data[i]=rgb.r; data[i+1]=rgb.g; data[i+2]=rgb.b;
+    }
+    mcx.putImageData(imgData, 0, 0);
+    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    const cx = canvas.getContext('2d');
+    cx.drawImage(baseEntry.img, 0, 0);
+    cx.drawImage(mc, 0, 0);
+    const entry = { loaded:true, img:canvas, frame:baseEntry.frame };
+    _recolorCache[key] = entry;
+    _recolorCacheOrder.push(key);
+    if(_recolorCacheOrder.length > 20){ delete _recolorCache[_recolorCacheOrder.shift()]; }
+    return entry;
+  }
+
+  /* =========================================================
+     ARQUÉTIPOS — escolha na criação do personagem (pedido do usuário: antes
+     só acontecia na 1ª vez que o jogador abria a Árvore de Habilidades
+     dentro do jogo; agora o jogador vê os 8 e escolhe já aqui, com detalhe
+     de cada um antes de decidir). Espelha huntEngine.CLASSABLE_ARCHETYPE_IDS
+     (mesmos 8 arquétipos "de classe" reais do Ravendawn — ver
+     claude/tibia-ravendawn-asset-extraction-notas.md) — id bate 1:1 com o id
+     do outfit correspondente em OUTFIT_CATALOG (server), então escolher o
+     arquétipo aqui já resolve o "boneco inicia com a outfit padrão".
+     Textos de tema/papel escritos com base no levantamento já feito do jogo
+     de referência; as 3 magias de destaque de cada um são REAIS, copiadas
+     verbatim de data/ravendawn-archetype-spells.json (mesma fonte usada na
+     Árvore de Habilidades in-game, ver RAVENDAWN_SPELLS em
+     world-prototype.html) — 2 Ativas + 1 Legacy por arquétipo, não é texto
+     inventado. */
+  function archetypeIconUrl(id){ return `${URL_BASE}ravendawn/icons/archetypes/90x90/${id}.png`; }
+  const ARCHETYPE_INFO = {
+    holy: {
+      label: 'Holy', theme: 'Sagrado', role: 'Cura / Suporte',
+      desc: 'Suporte de cura: mantém o grupo vivo com magias de restauração poderosas e, em momentos críticos, pode virar um avatar sagrado temporário que cura em área e concede invulnerabilidade.',
+      spells: [
+        { name: 'Flash Heal', kind: 'Ativa', desc: 'Cura o alvo em 125% Healing Power de vida. Cada terceira Flash Heal concede 50% Healing Power de cura adicional ao alvo, e sua próxima conjuração será instantânea.' },
+        { name: 'Smite', kind: 'Ativa', desc: 'Causa 90% Spell Power de dano mágico ao alvo. Cada terceiro Smite causará 30% de dano adicional.' },
+        { name: "Dawn's Apotheosis", kind: 'Legacy', desc: 'Transforma você em um avatar do poder sagrado da Alvorada por 6 segundos: cura um membro do grupo numa grande área a cada 0,5s por 100% Healing Power, com invulnerabilidade e imunidade a controle de grupo.' },
+      ],
+    },
+    warfare: {
+      label: 'Warfare', theme: 'Guerra', role: 'Corpo a Corpo / Lifesteal',
+      desc: 'Guerreiro corpo a corpo agressivo: golpes fortes de arma que roubam vida a cada poucos acertos, ideal pra quem quer bater de perto e se sustentar sozinho em combate.',
+      spells: [
+        { name: 'Brutal Strike', kind: 'Ativa', desc: 'Causa 100% Weapon Power de dano de arma ao alvo. Cada terceira Brutal Strike cura 50% Weapon Power de sua vida.' },
+        { name: 'Guillotine', kind: 'Ativa', desc: 'Causa 50% Weapon Power de dano de arma ao alvo. Aumenta o dano em 45% Weapon Power para cada 10 Aether consumidos.' },
+        { name: 'Chaos Chains', kind: 'Legacy', desc: 'Correntes puxam todos os alvos em área grande até você, causando 300% Weapon Power de dano, 60% de Lentidão por 2s e Sangramento por 4s (90% Weapon Power por segundo).' },
+      ],
+    },
+    archery: {
+      label: 'Archery', theme: 'Arqueria', role: 'À Distância / Kiting',
+      desc: 'Atirador à distância: flechas rápidas e venenos que desgastam o alvo enquanto mantém distância segura do combate corpo a corpo.',
+      spells: [
+        { name: 'Wind Arrow', kind: 'Ativa', desc: 'Atira uma flecha que causa 85% Weapon Power de dano de arma ao alvo. Cada terceira Wind Arrow atira uma flecha adicional com 50% de dano.' },
+        { name: 'Viper Arrow', kind: 'Ativa', desc: 'Atira uma flecha que causa 60% Adaptive Power de dano e aplica Envenenamento (5% Adaptive Power por segundo durante 8 segundos).' },
+        { name: 'Celestial Barrage', kind: 'Legacy', desc: 'Dispara 3 ondas de flechas (210% Weapon Power cada) que enraízam os alvos por 3s; você fica invulnerável e imune a controle de grupo durante a canalização.' },
+      ],
+    },
+    protection: {
+      label: 'Protection', theme: 'Proteção', role: 'Tanque / Absorção de Dano',
+      desc: 'Tanque: absorve dano com escudos pesados e atordoa/desacelera inimigos, segurando a linha de frente pro resto do grupo.',
+      spells: [
+        { name: 'Bash', kind: 'Ativa', desc: 'Gira sua arma com força, causando 100% Weapon Power de dano. Cada terceiro Bash causa dano em área e 20% de Lentidão por 2 segundos.' },
+        { name: "Spirit's Resolve", kind: 'Ativa', desc: 'Coloca um escudo de 300% Defense Power em você por 4 segundos.' },
+        { name: 'Eternal Retribution', kind: 'Legacy', desc: 'Um martelo cai no alvo, causando até 300% Weapon Power de dano em área e Atordoamento por 2 segundos aos alvos atingidos.' },
+      ],
+    },
+    shadow: {
+      label: 'Shadow', theme: 'Sombra', role: 'Furtividade / Veneno',
+      desc: 'Assassino furtivo: golpes rápidos com sangramento e crítico garantido, culminando numa habilidade que te torna invulnerável enquanto retalha vários alvos em sequência.',
+      spells: [
+        { name: 'Quick Slash', kind: 'Ativa', desc: 'Corta o alvo, causando 105% Weapon Power de dano de arma. Cada terceira Quick Slash tem chance garantida de acerto crítico.' },
+        { name: 'Shadowstrike', kind: 'Ativa', desc: 'Apunhala o alvo, causando 50% Weapon Power de dano e aplicando Sangramento (15% Weapon Power por segundo durante 5 segundos).' },
+        { name: "Reaper's Eclipse", kind: 'Legacy', desc: 'Desaparece e retalha até 6 alvos na tela, causando 400% Weapon Power de dano a cada um e reduzindo a cura recebida deles em 30%; fica invulnerável enquanto ativa.' },
+      ],
+    },
+    spiritual: {
+      label: 'Spiritual', theme: 'Espiritual', role: 'Suporte Místico / Buffs',
+      desc: 'Suporte místico: dano em área com ricochete entre alvos, cura contínua pro grupo e uma transformação que limpa efeitos de controle e concede velocidade.',
+      spells: [
+        { name: 'Cyclone', kind: 'Ativa', desc: 'Conjura um ciclone que causa 80% Spell Power de dano e ricocheteia a 2 outros alvos numa área média, causando 45% Spell Power a cada um.' },
+        { name: 'Regenerate', kind: 'Ativa', desc: 'Cura um alvo em 55% Healing Power de vida por segundo durante 8 segundos.' },
+        { name: 'Eye of the Storm', kind: 'Legacy', desc: 'Transforma-se em um Ciclone por 5 segundos, ganhando 50% de Velocidade de Movimento e imunidade a controle de grupo; retorna com uma barreira de 400% Healing Power por 10 segundos.' },
+      ],
+    },
+    wizardry: {
+      label: 'Wizardry', theme: 'Feitiçaria', role: 'Dano Mágico Elemental',
+      desc: 'Mago de dano elemental: bolas de fogo e dardos de gelo que acumulam efeitos e explodem em dano alto, culminando numa chuva de meteoros devastadora em área.',
+      spells: [
+        { name: 'Fireball', kind: 'Ativa', desc: 'Lança uma bola de fogo que causa 70% Spell Power de dano e aplica acúmulos que continuam causando dano ao longo do tempo (máx. 3).' },
+        { name: 'Frostbolt', kind: 'Ativa', desc: 'Atira um dardo glacial que causa 85% Spell Power de dano mágico. Cada terceiro dardo causa dano adicional e 30% de Lentidão.' },
+        { name: 'Cataclysm', kind: 'Legacy', desc: '11 meteoros caem aleatoriamente numa área grande ao seu redor, causando um total de 1000% Spell Power de dano mágico.' },
+      ],
+    },
+    witchcraft: {
+      label: 'Witchcraft', theme: 'Bruxaria', role: 'Vampirismo / Explorar Fraquezas',
+      desc: 'Bruxa de desgaste: maldições e pulsos que reduzem a defesa do alvo e corroem sua vida aos poucos com efeitos contínuos, roubando parte do dano causado.',
+      spells: [
+        { name: 'Arcane Pulse', kind: 'Ativa', desc: 'Causa 70% Spell Power de dano mágico e aplica um acúmulo que reduz a Spell Defense do alvo (máx. 3 acúmulos).' },
+        { name: 'Curse', kind: 'Ativa', desc: 'Aplica uma Maldição que causa 20% Spell Power de dano mágico ao alvo a cada segundo por 12 segundos.' },
+        { name: "Witch's Call", kind: 'Legacy', desc: 'Lança corvos numa área média por 8 segundos, causando dano contínuo e Lentidão; você recupera 10% do dano causado pelos corvos.' },
+      ],
+    },
+  };
+  const ARCHETYPE_ID_LIST = ['holy', 'warfare', 'archery', 'protection', 'shadow', 'spiritual', 'wizardry', 'witchcraft'];
+
 
   // Composita corpo+cabeça num canvas qualquer (retrato da criação, thumbnail
   // do slot de seleção, etc.) — mesma lógica de drawCharacterLayers do
   // world-prototype.html, só sem outfit/asa/aura (não existem antes de entrar
   // no mundo). Cai num boneco procedural simples enquanto o sprite ainda não
   // terminou de carregar (load() é assíncrono) ou numa eventual falha de rede.
-  function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId){
+  function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId, outfitId){
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0,0,w,h);
@@ -364,6 +634,14 @@
     ctx.beginPath(); ctx.ellipse(cx, feetY+6, w*0.22, 5, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
     const body = SpriteManager.bodySprite(gender);
     const bodyDraw = SpriteManager.drawFrameContainFit(ctx, body, cx, feetY, w*0.34, h*0.46);
+    // Traje do Arquétipo (se algum já foi escolhido no passo 2) -- mesma
+    // camada/ordem de drawCharacterLayers no mundo: cobre o mesmo recorte do
+    // corpo, sempre com a cor PADRÃO (ver DEFAULT_COSMETIC_COLORS) já que a
+    // customização de cor só existe depois, dentro do jogo.
+    if(outfitId){
+      const armor = getRecoloredArmor(outfitId, DEFAULT_COSMETIC_COLORS);
+      if(armor) SpriteManager.drawFrameContainFit(ctx, armor, cx, feetY, w*0.34, h*0.46);
+    }
     const corCabelo = HAIR_COLOR_NAMES[(Number(hairColorId)||1)-1] || 'black';
     const head = SpriteManager.headSprite(gender, corCabelo);
     const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - h*0.30) + h*0.045;
@@ -484,18 +762,34 @@
   let createViewInitialized = false;
   function setupCreateView(cameFromSelect){
     document.getElementById('back-to-select-link').style.display = cameFromSelect ? 'block' : 'none';
+    // Sempre volta pro passo 1 (aparência) ao reabrir a tela de criação —
+    // evita reaparecer no meio da escolha de Arquétipo de uma tentativa
+    // anterior (ex.: usuário criou um herói, voltou, clicou "+ Criar novo
+    // herói" de novo).
+    document.getElementById('create-step-appearance').style.display = 'block';
+    document.getElementById('create-step-archetype').style.display = 'none';
     if(createViewInitialized) return; // listeners já ligados — só a visibilidade muda ao ir/voltar
     createViewInitialized = true;
 
     let gender = 'male';
     let hairStyleId = 1;
     let hairColorId = 1;
+    let selectedArchetypeId = null;
 
     const previewCanvas = document.getElementById('create-preview');
     function refreshPreview(){
       drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId);
     }
     scheduleRedraw(refreshPreview);
+
+    // Retrato do PASSO 2 — mesmo desenhista, mas já com o traje do
+    // arquétipo em foco (outfitId) por cima do corpo/cabelo escolhidos no
+    // passo 1, exatamente como o boneco vai aparecer ao entrar no mundo.
+    const archetypePreviewCanvas = document.getElementById('archetype-preview');
+    function refreshArchetypePreview(){
+      drawCharacterPreview(archetypePreviewCanvas, gender, hairColorId, hairStyleId, selectedArchetypeId);
+    }
+    scheduleRedraw(refreshArchetypePreview);
 
     // Grade de penteados: 1 canvas por estilo (1-19), mostrando o recorte
     // real do atlas já tingido na cor atualmente selecionada — clicar troca
@@ -554,6 +848,7 @@
         gender = btn.dataset.gender;
         refreshStyleGrid();
         refreshPreview();
+        refreshArchetypePreview();
       });
     });
 
@@ -567,21 +862,91 @@
       genero_invalido:'Escolha um gênero válido.',
       cabelo_invalido:'Escolha uma cor de cabelo válida.',
       penteado_invalido:'Escolha um penteado válido.',
+      arquetipo_invalido:'Escolha um arquétipo válido.',
       nick_em_uso:'Esse nick já está em uso — escolha outro.',
       token_invalido:'Sessão expirada. Faça login novamente.',
       erro_interno:'Erro no servidor. Tente novamente.',
       resposta_invalida:'Não foi possível falar com o servidor.',
     };
 
-    document.getElementById('create-btn').addEventListener('click', async ()=>{
+    /* =========================================================
+       PASSO 2 — grade de 8 Arquétipos + painel de detalhe (pedido do
+       usuário: "de uma forma que o jogador consiga verificar os detalhes de
+       cada arquétipo, antes de escolher"). Clicar num card seleciona (fica
+       com borda dourada), atualiza o painel de detalhe com tema/papel/magias
+       reais e redesenha o retrato já vestindo o traje daquele arquétipo.
+       ========================================================= */
+    const archetypeGrid = document.getElementById('archetype-grid');
+    const archetypeDetail = document.getElementById('archetype-detail');
+    const archetypeNameTag = document.getElementById('archetype-name-tag');
+    const archetypeRoleTag = document.getElementById('archetype-role-tag');
+    const createBtn = document.getElementById('create-btn');
+    const archetypeCards = [];
+
+    function renderArchetypeDetail(archId){
+      const info = ARCHETYPE_INFO[archId];
+      if(!info){
+        archetypeDetail.innerHTML = `<div class="archetype-detail-empty">Clique num arquétipo pra ver os detalhes antes de escolher.</div>`;
+        return;
+      }
+      const spellsHtml = info.spells.map(sp => `
+        <div class="arch-spell-row">
+          <span class="arch-spell-name">${sp.name}</span><span class="arch-spell-kind">${sp.kind}</span>
+          <div class="arch-spell-desc">${sp.desc}</div>
+        </div>
+      `).join('');
+      archetypeDetail.innerHTML = `
+        <div class="arch-detail-title">${info.label} <span style="color:var(--ink-dim); font-family:var(--font-mono); font-size:11px;">— ${info.theme}</span></div>
+        <div class="arch-detail-role">${info.role}</div>
+        <div class="arch-detail-desc">${info.desc}</div>
+        <div class="arch-detail-spells-label">Magias de destaque</div>
+        ${spellsHtml}
+      `;
+    }
+
+    ARCHETYPE_ID_LIST.forEach(archId=>{
+      const info = ARCHETYPE_INFO[archId];
+      const card = document.createElement('div');
+      card.className = 'archetype-card';
+      card.innerHTML = `<img src="${archetypeIconUrl(archId)}" onerror="this.style.display='none'"><div class="arch-name">${info.label}</div><div class="arch-theme">${info.theme}</div>`;
+      card.addEventListener('click', ()=>{
+        selectedArchetypeId = archId;
+        archetypeCards.forEach(c=>c.card.classList.remove('selected'));
+        card.classList.add('selected');
+        renderArchetypeDetail(archId);
+        archetypeNameTag.textContent = `${info.label} — ${info.theme}`;
+        archetypeRoleTag.textContent = info.role;
+        createBtn.disabled = false;
+        refreshArchetypePreview();
+      });
+      archetypeGrid.appendChild(card);
+      archetypeCards.push({ card, archId });
+    });
+
+    document.getElementById('next-to-archetype-btn').addEventListener('click', ()=>{
       const msgEl = document.getElementById('create-msg');
       msgEl.className = 'msg';
       const nick = document.getElementById('nick-input').value.trim();
       if(nick.length < 3){ msgEl.textContent = ERROR_LABELS.nick_invalido; msgEl.className='msg show error'; return; }
+      document.getElementById('create-step-appearance').style.display = 'none';
+      document.getElementById('create-step-archetype').style.display = 'block';
+      refreshArchetypePreview();
+    });
+    document.getElementById('back-to-appearance-link').addEventListener('click', ()=>{
+      document.getElementById('create-step-archetype').style.display = 'none';
+      document.getElementById('create-step-appearance').style.display = 'block';
+    });
+
+    createBtn.addEventListener('click', async ()=>{
+      const msgEl = document.getElementById('create-msg');
+      msgEl.className = 'msg';
+      const nick = document.getElementById('nick-input').value.trim();
+      if(nick.length < 3){ msgEl.textContent = ERROR_LABELS.nick_invalido; msgEl.className='msg show error'; return; }
+      if(!selectedArchetypeId){ msgEl.textContent = ERROR_LABELS.arquetipo_invalido; msgEl.className='msg show error'; return; }
 
       const data = await api('/api/characters/create', {
         method:'POST',
-        body: JSON.stringify({ nick, gender, hairId: hairColorId, hairStyleId }),
+        body: JSON.stringify({ nick, gender, hairId: hairColorId, hairStyleId, archetypeId: selectedArchetypeId }),
       });
       if(!data.ok){
         msgEl.textContent = ERROR_LABELS[data.error] || 'Não foi possível criar o personagem.';

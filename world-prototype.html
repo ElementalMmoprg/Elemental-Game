@@ -463,7 +463,7 @@
     grid-template-areas:
       ".       topC   topR"
       "midL    midC   midR"
-      "botL    botC   .";
+      "botL    botC   botR";
   }
   .equip-grid3 [data-equip="helmet"]{ grid-area:topC; }
   .equip-grid3 [data-equip="amulet"]{ grid-area:topR; }
@@ -472,6 +472,7 @@
   .equip-grid3 [data-equip="offhand"]{ grid-area:midR; }
   .equip-grid3 [data-equip="ring"]{ grid-area:botL; }
   .equip-grid3 [data-equip="boots"]{ grid-area:botC; }
+  .equip-grid3 [data-equip="legs"]{ grid-area:botR; }
   /* vazio até equipar algo — só o ícone (slot-icon) fica invisível, a caixa
      do slot continua ali pra poder soltar (drop) um item da Mochila nela */
   .equip-slot .slot-icon{ visibility:hidden; }
@@ -815,6 +816,20 @@
   .enchant-stats-box{ background:rgba(0,0,0,.3); border:1px solid rgba(191,161,95,.2); border-radius:4px; padding:8px; margin:8px 0; font-family:var(--font-mono); font-size:10px; line-height:1.6; }
   .enchant-affix{ color:#b98af0; }
 
+  /* ============ PROFISSÕES (Forja/Carpintaria/Tecelagem) ============ */
+  #professions-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; display:none; z-index:17; }
+  #professions-modal.open{ display:block; }
+  #professions-body{ max-height:60vh; overflow-y:auto; }
+  .profession-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+  .profession-tab{ padding:4px 8px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
+  .profession-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
+  .profession-level-line{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:10px; }
+  .profession-recipe-box{ background:rgba(0,0,0,.3); border:1px solid rgba(191,161,95,.2); border-radius:4px; padding:8px; margin-bottom:8px; }
+  .profession-recipe-box .prec-name{ font-family:var(--font-mono); font-size:11px; margin-bottom:4px; }
+  .profession-recipe-box .prec-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; padding:2px 0; }
+  .profession-recipe-box .prec-row .ok{ color:var(--ok); }
+  .profession-recipe-box .prec-row .missing{ color:#ff9a80; }
+
   /* ============ PETS + GACHA ============ */
   #pets-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; height:520px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
   #pets-modal.open{ display:flex; }
@@ -952,9 +967,11 @@
         </div>
         <div style="border-top:1px solid var(--gold-deep);margin:8px 0;"></div>
         <div class="panel-title" style="font-size:10px;margin-bottom:6px;">Transferir do Banco</div>
-        <input type="text" class="trade-gold-input" id="bank-transfer-name-input" placeholder="Nome do jogador">
-        <input type="number" min="1" class="trade-gold-input" id="bank-transfer-amount-input" placeholder="Quantidade" style="margin-top:6px;">
-        <button type="button" class="treino-inline-btn" id="bank-transfer-btn" style="width:100%;margin-top:6px;">Transferir</button>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <input type="text" class="trade-gold-input" id="bank-transfer-name-input" placeholder="Nome do jogador" style="width:100%;margin-bottom:0;">
+          <input type="number" min="1" class="trade-gold-input" id="bank-transfer-amount-input" placeholder="Quantidade" style="width:100%;margin-bottom:0;">
+          <button type="button" class="treino-inline-btn" id="bank-transfer-btn" style="width:100%;">Transferir</button>
+        </div>
         <div id="bank-msg" class="italic-note"></div>
       </div>
     </div>
@@ -1108,6 +1125,17 @@
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🏆 Rank Geral<span class="rule"></span><span class="win-close-x" data-close-win="rank-modal">✕</span></div>
     <div id="rank-my-line"></div>
     <div id="rank-list"></div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- PROFISSÕES — Forja/Carpintaria/Tecelagem: craftar equipamento a partir
+       de material dropado por monstro (ver huntEngine.craftItem/PROFESSION_RECIPES). -->
+  <div id="professions-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🔨 Profissões<span class="rule"></span><span class="win-close-x" data-close-win="professions-modal">✕</span></div>
+    <div style="padding:0 14px 14px;">
+      <div class="profession-tabs" id="profession-tabs"></div>
+      <div id="professions-body"></div>
+    </div>
     <div class="win-resize"></div>
   </div>
 
@@ -1281,6 +1309,7 @@
         <div class="inv-stat-row"><span class="inv-stat-icon">🌀</span><span class="inv-stat-label">Esquiva</span><b id="inv-stat-dodge">0%</b></div>
         <div class="inv-stat-row"><span class="inv-stat-icon">🔮</span><span class="inv-stat-label">Dano Mágico</span><b id="inv-stat-magicdmg">0%</b></div>
         <div class="inv-stat-row"><span class="inv-stat-icon">🗡️</span><span class="inv-stat-label">Dano Físico</span><b id="inv-stat-physdmg">0%</b></div>
+        <div class="inv-stat-row"><span class="inv-stat-icon">🛡️</span><span class="inv-stat-label">Conjunto</span><b id="inv-stat-setbonus">Nenhum</b></div>
       </div>
       <div id="inv-equip-col">
         <div id="inv-char-name">—</div>
@@ -1307,6 +1336,7 @@
           <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="slot-tag">Offhand</span></div>
           <div class="equip-slot" data-equip="ring" title="Anel"><span class="slot-icon" data-icon-slot="ring"></span><span class="slot-tag">Anel</span></div>
           <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="slot-tag">Botas</span></div>
+          <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="slot-tag">Calças</span></div>
         </div>
       </div>
       <div id="inv-items-col">
@@ -1409,6 +1439,7 @@
         <div class="service-plate-btn" id="btn-open-depot" title="Armazém (Depot)">Depot</div>
         <div class="service-plate-btn" id="btn-open-quicksell" title="Venda Rápida">Venda Rápida</div>
         <div class="service-plate-btn" id="btn-open-blessings" title="Bênçãos">Bênçãos</div>
+        <div class="service-plate-btn" id="btn-open-professions" title="Profissões (Forja/Carpintaria/Tecelagem)">Profissões</div>
       </div>
       <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
     </div>
@@ -1726,7 +1757,7 @@
   const prestige = { bronzeStars:0, silverStars:0, goldStars:0, diamondRank:false };
   let isPremium = false;
   let premiumExpiresAt = null;
-  const training = { magia:0, defesa:0, esquiva:0, critico:0, sword:0, axe:0, club:0, distance:0 };
+  const training = { magia:0, defesa:0, esquiva:0, critico:0, sword:0, axe:0, club:0, distance:0, dagger:0, staff:0 };
   let trainingBank = 0;
   let usedFreeTrainingReset = false;
   const TRAINING_RESET_COST_CLIENT = 100; // espelha TRAINING_RESET_COST_ELEMENTAL_COIN no servidor
@@ -1744,7 +1775,7 @@
   let quickSellMarks = [];
   let blessingsCount = 0, blessingProtectionPct = 0, nextBlessingCost = null;
   let invSlotFrame = 1; // Visual escolhido pro slot da Bolsa/Mochila (1-6, ver huntEngine.setInvSlotFrame)
-  let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, ring:null, amulet:null };
+  let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, ring:null, amulet:null, legs:null };
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
   let party = null; // { id, leaderUsername, members:[...] }
   let rateio = null; // projecao ao vivo do Rateio de custo em grupo (ver getRateioSnapshot no servidor) -- null = desligado/sem grupo
@@ -1760,6 +1791,7 @@
   let elementalCoins = 0;
   let towers = { central:0, fogo:0, agua:0, terra:0, ar:0, luz:0, trevas:0 };
   let materials = { enchantCrystal:0, enchantProtector:0, antiBreakWard:0 }; // Cristal + Bênção do Ferreiro + Selo Inquebrável
+  let professions = { forja:{level:1,xp:0}, carpintaria:{level:1,xp:0}, tecelagem:{level:1,xp:0} }; // Forja/Carpintaria/Tecelagem
   let rankScore = 0; // Rank Geral — nível efetivo*10 + soma dos andares de Torre (ver huntEngine.computeRankScore)
   let rankTop = [], rankMyPosition = null; // preenchidos sob demanda por 'rank:get' (ver renderRank)
   let pets = { owned:[], active:null, pityCounter:0 };
@@ -3619,6 +3651,7 @@
     if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
     if(msg.materials) materials = msg.materials;
+    if(msg.professions) professions = msg.professions;
     if(typeof msg.rankScore === 'number') rankScore = msg.rankScore;
     if(msg.pets) pets = msg.pets;
     if(msg.battlePass) battlePass = msg.battlePass;
@@ -3685,7 +3718,7 @@
       renderTargetModeOptions();
       refreshTacticsUI();
       renderAttrs(); renderParty(); renderInventoryIfOpen(); renderWikiIfOpen(); renderAltar(); renderFriends(); renderShop();
-      renderCoinShopIfOpen(); renderEnchantIfOpen(); updateRankPill();
+      renderCoinShopIfOpen(); renderEnchantIfOpen(); renderProfessionsIfOpen(); updateRankPill();
       renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen();
       if(currentTrade) renderTrade();
       if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="treino"]').classList.contains('active')) renderTreinoTab();
@@ -4014,6 +4047,16 @@
       else if(msg.reason === 'ouro_insuficiente') logLoot('⚠️ Ouro insuficiente para essa compra.');
       else logLoot(`⚠️ Compra falhou: ${msg.reason}`);
       renderEnchantIfOpen();
+    }
+    if(msg.forType === 'profession:craft'){
+      if(msg.ok){
+        logLoot(`🔨 Criou ${msg.itemName}!${msg.leveledUp?` ${PROFESSION_LABEL[msg.profession]} subiu pro nível ${msg.level}!`:''}`);
+      } else {
+        const reasonMap = { profissao_invalida:'profissão inválida.', receita_invalida:'receita inválida.', apenas_na_cidade_principal:'criar itens só funciona na Cidade Principal.', nivel_insuficiente:'nível de profissão insuficiente pra essa receita.', ouro_insuficiente:'ouro insuficiente.', material_insuficiente:`falta material: ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||''}.` };
+        logLoot(`⚠️ Não foi possível criar o item: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderInventoryIfOpen();
+      renderProfessionsIfOpen();
     }
     if(msg.forType === 'item:enchant'){
       if(msg.ok && msg.success) logLoot(`✨ Refinamento bem-sucedido! Item agora está +${msg.item.enchantLevel}.`);
@@ -5265,6 +5308,7 @@
     boots:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v9l-5 3v4h15c0-3-2-4-5-5l-2-1V3H9z"/></svg>',
     ring:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="M9 9l3-6 3 6"/></svg>',
     amulet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l6 5 6-5"/><circle cx="12" cy="16" r="5"/></svg>',
+    legs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8v6l1 13h-4l-1-10-1 10H7L8 8V2z"/></svg>',
   };
   const POTION_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M10 2v5l-4 8a4 4 0 0 0 4 6h4a4 4 0 0 0 4-6l-4-8V2"/><path d="M8 15h8"/></svg>';
   const MATERIAL_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 5-2 10-6 5-6-5L4 7l8-5z"/></svg>';
@@ -5460,7 +5504,12 @@
     // quando chamado de novo por um snapshot chegando com o mouse ainda em cima
     // de um item) — mesma causa da tooltip presa que já corrigimos na árvore de
     // habilidades, então a mesma solução: esconder aqui antes de reconstruir.
-    invItemTooltip.style.display = 'none';
+    // EXCETO se a tooltip for de um .equip-slot (paperdoll) -- esses slots são
+    // fixos no DOM e não são reconstruídos por este render, então escondê-los
+    // aqui só fazia a tooltip do item equipado sumir sozinha a cada ~250ms
+    // mesmo com o mouse parado em cima, sem nenhum novo mouseenter pra
+    // trazê-la de volta.
+    if(!document.querySelector('.equip-slot[data-equip]:hover')) invItemTooltip.style.display = 'none';
     document.querySelectorAll('.equip-slot[data-equip]').forEach(el=>{
       const key = el.dataset.equip; const item = equipment[key];
       el.classList.toggle('filled', !!item);
@@ -5499,6 +5548,7 @@
     document.getElementById('inv-stat-dodge').textContent = `${(cs.dodgeChancePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-magicdmg').textContent = `${(cs.magicDamagePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-physdmg').textContent = `${(cs.physicalDamagePct||0).toFixed(1)}%`;
+    document.getElementById('inv-stat-setbonus').textContent = cs.setBonusLabel || 'Nenhum';
 
     // Retrato do personagem — reaproveita o MESMO desenhista de sprite do
     // mundo (corpo+outfit+cabeça, com fallback procedural), só que numa tela
@@ -6162,6 +6212,7 @@
     { key:'magia', label:'Magia' }, { key:'defesa', label:'Defesa' }, { key:'esquiva', label:'Esquiva' },
     { key:'critico', label:'Crítico' }, { key:'sword', label:'Sword' }, { key:'axe', label:'Axe' },
     { key:'club', label:'Club' }, { key:'distance', label:'Distance' },
+    { key:'dagger', label:'Adaga' }, { key:'staff', label:'Cajado' },
   ];
   // Espelha huntEngine.getTrainingCap: 50 base, +10 por estrela (Bronze/Prata/Ouro), +50 fixo no Diamante.
   function getTrainingCap(){ const s = prestige.bronzeStars+prestige.silverStars+prestige.goldStars; return 50 + s*10 + (prestige.diamondRank?50:0); }
@@ -6836,10 +6887,10 @@
      nada aqui é confiável pra validação, só espelha o mesmo cálculo).
      ========================================================= */
   const enchantModal = document.getElementById('enchant-modal');
-  const ENCHANT_SLOTS = ['weapon','offhand','helmet','armor','boots','ring','amulet'];
-  const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', ring:'Anel', amulet:'Colar' };
+  const ENCHANT_SLOTS = ['weapon','offhand','helmet','armor','boots','legs','ring','amulet'];
+  const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', legs:'Calças', ring:'Anel', amulet:'Colar' };
   const RARITY_STAT_MULT = { comum:1, incomum:1.4, rara:2, 'épica':3, 'lendária':4.5 };
-  const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3} };
+  const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, legs:{def:5}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3} };
   const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %' };
   const ENCHANT_MAX_LEVEL = 10;
   const ENCHANT_SUCCESS_CHANCE = { 1:1.0, 2:.95, 3:.9, 4:.8, 5:.7, 6:.6, 7:.5, 8:.4, 9:.3, 10:.2 };
@@ -6930,7 +6981,8 @@
     const atMax = level >= ENCHANT_MAX_LEVEL;
     const baseChance = ENCHANT_SUCCESS_CHANCE[nextLevel] != null ? ENCHANT_SUCCESS_CHANCE[nextLevel] : 0.2;
     const canBreak = nextLevel >= ENCHANT_BREAK_FROM_LEVEL;
-    const hasCrystal = (materials.enchantCrystal||0) >= 1;
+    const crystalsNeeded = ENCHANT_CRYSTAL_COST_BY_LEVEL[nextLevel] || 1;
+    const hasCrystal = (materials.enchantCrystal||0) >= crystalsNeeded;
     const hasProtector = (materials.enchantProtector||0) >= 1;
     const hasWard = (materials.antiBreakWard||0) >= 1;
     // limpa a escolha se o material acabou/não é mais aplicável nesse nível
@@ -6992,6 +7044,111 @@
     }
   }
   function inCityForShop(){ return location === 'city'; }
+
+  /* =========================================================
+     PROFISSÕES — Forja/Carpintaria/Tecelagem: painel de craft. Catálogo
+     abaixo é só um espelho (nome/raridade/custo/material) de
+     huntEngine.CRAFTABLE_ITEMS/PROFESSION_RECIPES pra exibição -- quem
+     valida e crafta de verdade é sempre o servidor (case 'profession:craft'
+     em server.js -> huntEngine.craftItem).
+     ========================================================= */
+  const professionsModal = document.getElementById('professions-modal');
+  const PROFESSION_LABEL = { forja:'Forja', carpintaria:'Carpintaria', tecelagem:'Tecelagem' };
+  const PROFESSION_MATERIAL_LABEL = { minerio_ferro:'Minério de Ferro', barra_aco:'Barra de Aço', madeira_bruta:'Madeira Bruta', madeira_nobre:'Madeira Nobre', fio_de_la:'Fio de Lã', seda_encantada:'Seda Encantada' };
+  const CRAFTABLE_ITEMS_CLIENT = {
+    d_dagger_common:{ name:'Adaga Enferrujada', rarity:'comum' }, d_dagger_uncommon:{ name:'Adaga do Batedor', rarity:'incomum' }, d_dagger_rare:{ name:'Adaga do Assassino', rarity:'rara' }, d_dagger_epic:{ name:'Adaga da Víbora', rarity:'épica' }, d_dagger_legendary:{ name:'Adaga das Sombras', rarity:'lendária' },
+    l_legs_common:{ name:'Calças de Couro Batido', rarity:'comum' }, l_legs_uncommon:{ name:'Calças de Viajante', rarity:'incomum' }, l_legs_rare:{ name:'Calças Reforçadas', rarity:'rara' }, l_legs_epic:{ name:'Calças do Vigia', rarity:'épica' }, l_legs_legendary:{ name:'Calças do Protetor', rarity:'lendária' },
+    s_shield_common:{ name:'Escudo de Madeira', rarity:'comum' }, s_shield_uncommon:{ name:'Escudo com Cravos', rarity:'incomum' }, s_shield_rare:{ name:'Escudo Reforçado', rarity:'rara' }, s_shield_epic:{ name:'Escudo da Muralha', rarity:'épica' }, s_shield_legendary:{ name:'Escudo do Guardião', rarity:'lendária' },
+    c_staff_common:{ name:'Cajado de Madeira', rarity:'comum' }, c_staff_uncommon:{ name:'Cajado Rúnico', rarity:'incomum' }, c_staff_rare:{ name:'Cajado Entalhado', rarity:'rara' }, c_staff_epic:{ name:'Cajado da Tempestade', rarity:'épica' }, c_staff_legendary:{ name:'Cajado Ancestral', rarity:'lendária' },
+    r_ring_common:{ name:'Anel de Fio Trançado', rarity:'comum' }, r_ring_uncommon:{ name:'Anel de Prata Trançada', rarity:'incomum' }, r_ring_rare:{ name:'Anel Entrelaçado', rarity:'rara' }, r_ring_epic:{ name:'Anel do Arcano', rarity:'épica' }, r_ring_legendary:{ name:'Anel do Tecelão Ancião', rarity:'lendária' },
+    m_amulet_common:{ name:'Amuleto de Lã', rarity:'comum' }, m_amulet_uncommon:{ name:'Amuleto Trançado', rarity:'incomum' }, m_amulet_rare:{ name:'Amuleto Encantado', rarity:'rara' }, m_amulet_epic:{ name:'Amuleto do Guardião Tecido', rarity:'épica' }, m_amulet_legendary:{ name:'Amuleto do Tecelão Ancião', rarity:'lendária' },
+  };
+  const PROFESSION_RECIPES_CLIENT = {
+    forja: [
+      { id:'forja_dagger_comum', resultItem:'d_dagger_common', levelReq:1, goldCost:150, materials:[{id:'minerio_ferro',qty:6}] },
+      { id:'forja_dagger_incomum', resultItem:'d_dagger_uncommon', levelReq:25, goldCost:300, materials:[{id:'minerio_ferro',qty:10}] },
+      { id:'forja_dagger_rara', resultItem:'d_dagger_rare', levelReq:50, goldCost:600, materials:[{id:'minerio_ferro',qty:6},{id:'barra_aco',qty:4}] },
+      { id:'forja_dagger_epica', resultItem:'d_dagger_epic', levelReq:75, goldCost:1200, materials:[{id:'minerio_ferro',qty:4},{id:'barra_aco',qty:8}] },
+      { id:'forja_dagger_lendaria', resultItem:'d_dagger_legendary', levelReq:100, goldCost:2200, materials:[{id:'barra_aco',qty:14}] },
+      { id:'forja_legs_comum', resultItem:'l_legs_common', levelReq:1, goldCost:150, materials:[{id:'minerio_ferro',qty:6}] },
+      { id:'forja_legs_incomum', resultItem:'l_legs_uncommon', levelReq:25, goldCost:300, materials:[{id:'minerio_ferro',qty:10}] },
+      { id:'forja_legs_rara', resultItem:'l_legs_rare', levelReq:50, goldCost:600, materials:[{id:'minerio_ferro',qty:6},{id:'barra_aco',qty:4}] },
+      { id:'forja_legs_epica', resultItem:'l_legs_epic', levelReq:75, goldCost:1200, materials:[{id:'minerio_ferro',qty:4},{id:'barra_aco',qty:8}] },
+      { id:'forja_legs_lendaria', resultItem:'l_legs_legendary', levelReq:100, goldCost:2200, materials:[{id:'barra_aco',qty:14}] },
+      { id:'forja_shield_comum', resultItem:'s_shield_common', levelReq:1, goldCost:150, materials:[{id:'minerio_ferro',qty:6}] },
+      { id:'forja_shield_incomum', resultItem:'s_shield_uncommon', levelReq:25, goldCost:300, materials:[{id:'minerio_ferro',qty:10}] },
+      { id:'forja_shield_rara', resultItem:'s_shield_rare', levelReq:50, goldCost:600, materials:[{id:'minerio_ferro',qty:6},{id:'barra_aco',qty:4}] },
+      { id:'forja_shield_epica', resultItem:'s_shield_epic', levelReq:75, goldCost:1200, materials:[{id:'minerio_ferro',qty:4},{id:'barra_aco',qty:8}] },
+      { id:'forja_shield_lendaria', resultItem:'s_shield_legendary', levelReq:100, goldCost:2200, materials:[{id:'barra_aco',qty:14}] },
+    ],
+    carpintaria: [
+      { id:'carpintaria_staff_comum', resultItem:'c_staff_common', levelReq:1, goldCost:150, materials:[{id:'madeira_bruta',qty:6}] },
+      { id:'carpintaria_staff_incomum', resultItem:'c_staff_uncommon', levelReq:25, goldCost:300, materials:[{id:'madeira_bruta',qty:10}] },
+      { id:'carpintaria_staff_rara', resultItem:'c_staff_rare', levelReq:50, goldCost:600, materials:[{id:'madeira_bruta',qty:6},{id:'madeira_nobre',qty:4}] },
+      { id:'carpintaria_staff_epica', resultItem:'c_staff_epic', levelReq:75, goldCost:1200, materials:[{id:'madeira_bruta',qty:4},{id:'madeira_nobre',qty:8}] },
+      { id:'carpintaria_staff_lendaria', resultItem:'c_staff_legendary', levelReq:100, goldCost:2200, materials:[{id:'madeira_nobre',qty:14}] },
+    ],
+    tecelagem: [
+      { id:'tecelagem_ring_comum', resultItem:'r_ring_common', levelReq:1, goldCost:150, materials:[{id:'fio_de_la',qty:6}] },
+      { id:'tecelagem_ring_incomum', resultItem:'r_ring_uncommon', levelReq:25, goldCost:300, materials:[{id:'fio_de_la',qty:10}] },
+      { id:'tecelagem_ring_rara', resultItem:'r_ring_rare', levelReq:50, goldCost:600, materials:[{id:'fio_de_la',qty:6},{id:'seda_encantada',qty:4}] },
+      { id:'tecelagem_ring_epica', resultItem:'r_ring_epic', levelReq:75, goldCost:1200, materials:[{id:'fio_de_la',qty:4},{id:'seda_encantada',qty:8}] },
+      { id:'tecelagem_ring_lendaria', resultItem:'r_ring_legendary', levelReq:100, goldCost:2200, materials:[{id:'seda_encantada',qty:14}] },
+      { id:'tecelagem_amulet_comum', resultItem:'m_amulet_common', levelReq:1, goldCost:150, materials:[{id:'fio_de_la',qty:6}] },
+      { id:'tecelagem_amulet_incomum', resultItem:'m_amulet_uncommon', levelReq:25, goldCost:300, materials:[{id:'fio_de_la',qty:10}] },
+      { id:'tecelagem_amulet_rara', resultItem:'m_amulet_rare', levelReq:50, goldCost:600, materials:[{id:'fio_de_la',qty:6},{id:'seda_encantada',qty:4}] },
+      { id:'tecelagem_amulet_epica', resultItem:'m_amulet_epic', levelReq:75, goldCost:1200, materials:[{id:'fio_de_la',qty:4},{id:'seda_encantada',qty:8}] },
+      { id:'tecelagem_amulet_lendaria', resultItem:'m_amulet_legendary', levelReq:100, goldCost:2200, materials:[{id:'seda_encantada',qty:14}] },
+    ],
+  };
+  function bagQty(id){ return bag.filter(it=>it.id===id).reduce((s,it)=>s+(it.qty||1),0); }
+  let professionSelectedTab = 'forja';
+  const professionTabsEl = document.getElementById('profession-tabs');
+  // Mesmo padrão de listener DELEGADO no container pai usado no Refinamento
+  // (seção 10 das notas do projeto) -- as abas são recriadas a cada render,
+  // então religar o clique direto nelas de novo abriria a mesma corrida de
+  // clique-no-meio-da-reconstrução já corrigida lá.
+  professionTabsEl.addEventListener('click', (e)=>{
+    const tab = e.target.closest('[data-profession-tab]');
+    if(!tab) return;
+    professionSelectedTab = tab.dataset.professionTab;
+    renderProfessions();
+  });
+  document.getElementById('btn-open-professions').addEventListener('click', ()=>{ professionsModal.classList.toggle('open'); renderProfessions(); });
+  function renderProfessionsIfOpen(){ if(professionsModal.classList.contains('open')) renderProfessions(); }
+  function renderProfessions(){
+    if(!professionsModal.classList.contains('open')) return;
+    professionTabsEl.innerHTML = Object.keys(PROFESSION_LABEL).map(p=>`<div class="profession-tab ${p===professionSelectedTab?'active':''}" data-profession-tab="${p}">${PROFESSION_LABEL[p]}</div>`).join('');
+    const body = document.getElementById('professions-body');
+    const prof = professions[professionSelectedTab] || { level:1, xp:0 };
+    const recipes = PROFESSION_RECIPES_CLIENT[professionSelectedTab] || [];
+    const rows = recipes.map(r=>{
+      const itemDef = CRAFTABLE_ITEMS_CLIENT[r.resultItem];
+      const locked = prof.level < r.levelReq;
+      const matLines = r.materials.map(m=>{
+        const have = bagQty(m.id);
+        const ok = have >= m.qty;
+        return `<div class="prec-row"><span>${PROFESSION_MATERIAL_LABEL[m.id]||m.id}</span><span class="${ok?'ok':'missing'}">${have}/${m.qty}</span></div>`;
+      }).join('');
+      const hasGold = (player.gold + player.bankGold) >= r.goldCost;
+      const canCraft = !locked && hasGold && r.materials.every(m=>bagQty(m.id) >= m.qty);
+      return `
+        <div class="profession-recipe-box">
+          <div class="prec-name" style="color:${RARITY_COLORS[itemDef.rarity]||'var(--ink)'}">${itemDef.name} (${itemDef.rarity})${locked?` — requer Nível ${r.levelReq} de ${PROFESSION_LABEL[professionSelectedTab]}`:''}</div>
+          <div class="prec-row"><span>Custo</span><span class="${hasGold?'ok':'missing'}">${r.goldCost} Gold</span></div>
+          ${matLines}
+          <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" ${canCraft?'':'disabled'}>Criar</button>
+        </div>`;
+    }).join('');
+    body.innerHTML = `
+      <div class="profession-level-line">Nível ${prof.level}/100 — ${prof.xp} XP acumulado</div>
+      ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Criar itens só funciona na Cidade Principal</div>` : ''}
+      ${rows}
+    `;
+    body.querySelectorAll('[data-craft-recipe]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe }));
+    });
+  }
 
   /* =========================================================
      PETS + GACHA — catálogo espelhado de huntEngine.PETS_CATALOG só
