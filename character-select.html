@@ -73,13 +73,14 @@
   #new-char-link{ display:block; text-align:center; margin-top:12px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); cursor:pointer; text-decoration:underline; }
   #new-char-link:hover{ color:var(--gold-bright); }
 
-  /* ---------- Criação de personagem (estilo Ragnarok: grade de penteados + paleta de cor) ---------- */
-  /* Painel mais largo que os 640px de sempre pra caber a grade de 8
-     arquétipos (passo 2) lado a lado com o retrato — o passo 1 (aparência)
-     continua com o mesmo layout de 640px, só recentralizado (ver
-     .create-layout max-width abaixo) pra não esticar sozinho. */
+  /* ---------- Criação de personagem: tela ÚNICA (substitui de vez a antiga
+     tela em 2 passos com a grade grande de retratos de penteado, estilo
+     Ragnarok, que o jogador pediu pra remover). Gênero + nick + cabelo (com
+     grade de cor, mantida a pedido do jogador) ficam compactos à esquerda;
+     a escolha de Arquétipo -- as 8 classes reais do Ravendawn, com detalhe
+     de cada uma antes de decidir -- é o elemento principal à direita. */
   #char-create-view{ width:760px; padding:26px 30px; display:none; }
-  .create-layout{ display:flex; gap:22px; max-width:640px; margin:0 auto; }
+  .create-layout{ display:flex; gap:22px; }
   .create-left{ width:170px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
   #create-preview{ width:150px; height:190px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
   .toggle-row{ display:flex; gap:8px; width:100%; }
@@ -99,18 +100,17 @@
 
   .create-right{ flex:1; min-width:0; }
   .section-label{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); letter-spacing:.04em; margin:0 0 7px; text-transform:uppercase; }
-  #hair-style-grid{
-    display:grid; grid-template-columns:repeat(5, 1fr); gap:7px; max-height:198px; overflow-y:auto;
-    padding:3px; margin-bottom:14px;
+  .hairstyle-cycler{ display:flex; align-items:center; gap:8px; }
+  .hairstyle-cycler canvas{ width:40px; height:40px; image-rendering:pixelated; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); flex-shrink:0; }
+  .hairstyle-arrow{
+    width:26px; height:26px; border-radius:50%; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3);
+    color:var(--gold-bright); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:12px; flex-shrink:0;
   }
-  .hair-style-cell{
-    aspect-ratio:1; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3);
-    cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
-  }
-  .hair-style-cell canvas{ image-rendering:pixelated; }
-  .hair-style-cell:hover{ border-color:var(--gold-bright); }
-  .hair-style-cell.active{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright) inset, 0 0 8px rgba(240,211,138,.3); }
-  #hair-color-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .hairstyle-arrow:hover{ border-color:var(--gold-bright); }
+  .hairstyle-label{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); flex:1; text-align:center; }
+  #hair-color-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .preview-archetype-tag{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); text-align:center; min-height:14px; }
   .hair-color-dot{ width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.4); }
   .hair-color-dot.active{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright), 0 0 8px rgba(240,211,138,.5); }
 
@@ -124,26 +124,16 @@
   #back-to-select-link:hover{ color:var(--gold-bright); }
   .nav-link{ display:block; text-align:center; margin-top:10px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); cursor:pointer; text-decoration:underline; }
   .nav-link:hover{ color:var(--gold-bright); }
-  #next-to-archetype-btn{
-    width:100%; margin-top:6px; padding:13px; border-radius:6px; border:1px solid var(--gold-bright);
-    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--gold-bright); font-family:var(--font-display);
-    font-size:14px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
-  }
-  #next-to-archetype-btn:disabled{ opacity:.4; cursor:not-allowed; }
-
-  /* ---------- Passo 2 da criação: escolha de Arquétipo (8 classes reais do
-     Ravendawn — Holy/Warfare/Archery/Protection/Shadow/Spiritual/Wizardry/
-     Witchcraft) — grade com ícone+tema por card, painel de detalhe com a
-     descrição real e 3 magias de destaque de cada um, e retrato ao vivo já
-     vestindo o traje do arquétipo em foco (mesmo motor de recolorir usado
-     no mundo, ver getRecoloredArmor). ---------- */
-  #create-step-archetype{ display:none; }
-  .archetype-top{ display:flex; gap:20px; margin-bottom:14px; }
-  .archetype-preview-col{ width:170px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:6px; }
-  #archetype-preview{ width:150px; height:190px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
-  .archetype-name-tag{ font-family:var(--font-display); font-size:13px; color:var(--gold-bright); text-align:center; }
-  .archetype-role-tag{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-align:center; letter-spacing:.03em; }
-  .archetype-grid{ flex:1; display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; align-content:start; }
+  /* ---------- Escolha de Arquétipo (8 classes reais do Ravendawn --
+     Holy/Warfare/Archery/Protection/Shadow/Spiritual/Wizardry/Witchcraft) --
+     é o elemento PRINCIPAL da tela de criação agora (pedido do jogador: "de
+     uma forma que o jogador consiga verificar os detalhes de cada arquétipo,
+     antes de escolher"). Grade com ícone+tema por card, painel de detalhe
+     com a descrição real e 3 magias de destaque de cada um; o retrato único
+     à esquerda (ver #create-preview) já desenha o traje do arquétipo em
+     foco por cima do corpo/cabelo escolhidos, mesmo motor de recolorir
+     usado no mundo (ver getRecoloredArmor). ---------- */
+  .archetype-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:9px; align-content:start; margin-bottom:14px; }
   .archetype-card{
     border:1px solid var(--gold-deep); border-radius:8px; background:rgba(0,0,0,.3); cursor:pointer;
     padding:9px 4px 7px; display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center;
@@ -153,7 +143,7 @@
   .archetype-card .arch-theme{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
   .archetype-card:hover{ border-color:var(--gold-bright); }
   .archetype-card.selected{ border-color:var(--gold-bright); background:rgba(191,161,95,.14); box-shadow:0 0 0 1px var(--gold-bright) inset, 0 0 10px rgba(240,211,138,.25); }
-  .archetype-detail{ border:1px solid var(--gold-deep); border-radius:8px; background:rgba(0,0,0,.22); padding:12px 16px; margin-bottom:14px; min-height:140px; }
+  .archetype-detail{ border:1px solid var(--gold-deep); border-radius:8px; background:rgba(0,0,0,.22); padding:12px 16px; min-height:140px; }
   .archetype-detail-empty{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-dim); text-align:center; padding:36px 0; }
   .arch-detail-title{ font-family:var(--font-display); font-size:15px; color:var(--gold-bright); }
   .arch-detail-role{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin:2px 0 8px; letter-spacing:.03em; text-transform:uppercase; }
@@ -163,7 +153,6 @@
   .arch-spell-name{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); }
   .arch-spell-kind{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); margin-left:6px; }
   .arch-spell-desc{ font-family:var(--font-body); font-size:11px; color:var(--ink-dim); line-height:1.4; }
-  #create-btn.archetype-confirm{ margin-top:0; }
 
   .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:14px; display:none; }
   .msg.show{ display:block; }
@@ -195,55 +184,52 @@
   <div id="new-char-link">+ Criar novo herói</div>
 </div>
 
-<!-- SEM PERSONAGEM (ou criando um novo): passo 1 (aparência, estilo Ragnarok) +
-     passo 2 (escolha de Arquétipo, com detalhe de cada um antes de escolher) -->
+<!-- SEM PERSONAGEM (ou criando um novo): tela ÚNICA de criação. A antiga
+     tela (grade grande de retratos de penteado, estilo Ragnarok) foi
+     removida por completo -- gênero, nick e cabelo (com grade de cor,
+     mantida a pedido do jogador) ficam compactos à esquerda; a escolha de
+     Arquétipo -- as 8 classes reais do Ravendawn, com detalhe de cada uma
+     antes de decidir -- é o elemento principal à direita. -->
 <div id="char-create-view" class="glass">
   <h1 class="title">Criação de Personagem</h1>
   <div class="msg" id="create-msg"></div>
 
-  <!-- PASSO 1: aparência (gênero, penteado, cor, nick) -->
-  <div id="create-step-appearance">
-    <div class="create-layout">
-      <div class="create-left">
-        <canvas id="create-preview" width="150" height="190"></canvas>
-        <div class="toggle-row" id="gender-toggle">
-          <div class="toggle-btn active" data-gender="male">♂ Masc.</div>
-          <div class="toggle-btn" data-gender="female">♀ Fem.</div>
-        </div>
-        <div class="field">
-          <label>Nick (apelido único do herói)</label>
-          <input type="text" id="nick-input" maxlength="20" placeholder="Ex: Kael">
+  <div class="create-layout">
+    <div class="create-left">
+      <canvas id="create-preview" width="150" height="190"></canvas>
+      <div class="preview-archetype-tag" id="preview-archetype-tag">Escolha um arquétipo →</div>
+      <div class="toggle-row" id="gender-toggle">
+        <div class="toggle-btn active" data-gender="male">♂ Masc.</div>
+        <div class="toggle-btn" data-gender="female">♀ Fem.</div>
+      </div>
+      <div class="field">
+        <label>Nick (apelido único do herói)</label>
+        <input type="text" id="nick-input" maxlength="20" placeholder="Ex: Kael">
+      </div>
+      <div class="field">
+        <label>Penteado</label>
+        <div class="hairstyle-cycler">
+          <div class="hairstyle-arrow" id="hairstyle-prev">◀</div>
+          <canvas id="hairstyle-preview" width="40" height="40"></canvas>
+          <div class="hairstyle-label" id="hairstyle-label">1/19</div>
+          <div class="hairstyle-arrow" id="hairstyle-next">▶</div>
         </div>
       </div>
-      <div class="create-right">
-        <div class="section-label">Penteado</div>
-        <div id="hair-style-grid"></div>
-        <div class="section-label">Cor do Cabelo</div>
+      <div class="field">
+        <label>Cor do Cabelo</label>
         <div id="hair-color-row"></div>
       </div>
     </div>
-    <button id="next-to-archetype-btn">Próximo: Escolher Arquétipo →</button>
-    <div id="back-to-select-link" class="nav-link" style="display:none;">← Voltar pra seleção</div>
-  </div>
-
-  <!-- PASSO 2: Arquétipo — 8 classes reais, com detalhe de cada uma antes de
-       escolher (tema, papel em combate e magias de destaque reais) e
-       retrato ao vivo já com o traje daquele arquétipo. -->
-  <div id="create-step-archetype">
-    <div class="archetype-top">
-      <div class="archetype-preview-col">
-        <canvas id="archetype-preview" width="150" height="190"></canvas>
-        <div class="archetype-name-tag" id="archetype-name-tag">Escolha um arquétipo</div>
-        <div class="archetype-role-tag" id="archetype-role-tag"></div>
-      </div>
+    <div class="create-right">
+      <div class="section-label">Arquétipo — escolha sua classe</div>
       <div class="archetype-grid" id="archetype-grid"></div>
+      <div class="archetype-detail" id="archetype-detail">
+        <div class="archetype-detail-empty">Clique num arquétipo pra ver os detalhes antes de escolher.</div>
+      </div>
     </div>
-    <div class="archetype-detail" id="archetype-detail">
-      <div class="archetype-detail-empty">Clique num arquétipo pra ver os detalhes antes de escolher.</div>
-    </div>
-    <button id="create-btn" class="archetype-confirm" disabled>Criar Personagem</button>
-    <div id="back-to-appearance-link" class="nav-link">← Voltar pra aparência</div>
   </div>
+  <button id="create-btn" disabled>Criar Personagem</button>
+  <div id="back-to-select-link" class="nav-link" style="display:none;">← Voltar pra seleção</div>
 </div>
 
 <script>
@@ -762,13 +748,7 @@
   let createViewInitialized = false;
   function setupCreateView(cameFromSelect){
     document.getElementById('back-to-select-link').style.display = cameFromSelect ? 'block' : 'none';
-    // Sempre volta pro passo 1 (aparência) ao reabrir a tela de criação —
-    // evita reaparecer no meio da escolha de Arquétipo de uma tentativa
-    // anterior (ex.: usuário criou um herói, voltou, clicou "+ Criar novo
-    // herói" de novo).
-    document.getElementById('create-step-appearance').style.display = 'block';
-    document.getElementById('create-step-archetype').style.display = 'none';
-    if(createViewInitialized) return; // listeners já ligados — só a visibilidade muda ao ir/voltar
+    if(createViewInitialized) return; // listeners já ligados — só a visibilidade do link acima muda
     createViewInitialized = true;
 
     let gender = 'male';
@@ -778,48 +758,37 @@
 
     const previewCanvas = document.getElementById('create-preview');
     function refreshPreview(){
-      drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId);
+      // outfitId (5º parâmetro) só entra quando algum arquétipo já foi
+      // escolhido — antes disso o boneco aparece só com corpo+cabelo.
+      drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId, selectedArchetypeId);
     }
     scheduleRedraw(refreshPreview);
 
-    // Retrato do PASSO 2 — mesmo desenhista, mas já com o traje do
-    // arquétipo em foco (outfitId) por cima do corpo/cabelo escolhidos no
-    // passo 1, exatamente como o boneco vai aparecer ao entrar no mundo.
-    const archetypePreviewCanvas = document.getElementById('archetype-preview');
-    function refreshArchetypePreview(){
-      drawCharacterPreview(archetypePreviewCanvas, gender, hairColorId, hairStyleId, selectedArchetypeId);
-    }
-    scheduleRedraw(refreshArchetypePreview);
-
-    // Grade de penteados: 1 canvas por estilo (1-19), mostrando o recorte
-    // real do atlas já tingido na cor atualmente selecionada — clicar troca
-    // o penteado escolhido.
-    const grid = document.getElementById('hair-style-grid');
-    const styleCells = [];
-    for(let styleId=1; styleId<=HAIR_STYLE_COUNT; styleId++){
-      const cell = document.createElement('div');
-      cell.className = 'hair-style-cell' + (styleId===1?' active':'');
-      const c = document.createElement('canvas'); c.width=40; c.height=40;
-      cell.appendChild(c);
-      cell.addEventListener('click', ()=>{
-        hairStyleId = styleId;
-        styleCells.forEach(x=>x.cell.classList.remove('active'));
-        cell.classList.add('active');
-        refreshPreview();
-      });
-      grid.appendChild(cell);
-      styleCells.push({ cell, canvas:c, styleId });
-    }
-    function refreshStyleGrid(){
+    // Ciclador de penteado: 1 preview pequeno + setas, em vez da antiga
+    // grade grande de 19 retratos (estilo Ragnarok, removida a pedido do
+    // jogador) — continua usando o recorte real do atlas, tingido na cor
+    // atualmente selecionada.
+    const hairstylePreviewCanvas = document.getElementById('hairstyle-preview');
+    const hairstyleLabel = document.getElementById('hairstyle-label');
+    function refreshHairstylePreview(){
       const corCabelo = HAIR_COLOR_NAMES[hairColorId-1] || 'black';
       const head = SpriteManager.headSprite(gender, corCabelo);
-      styleCells.forEach(({canvas, styleId})=>{
-        const cctx = canvas.getContext('2d');
-        cctx.clearRect(0,0,40,40);
-        SpriteManager.drawHeadStyleContainFit(cctx, head, styleId, 20, 34, 32, 32);
-      });
+      const hctx = hairstylePreviewCanvas.getContext('2d');
+      hctx.clearRect(0,0,40,40);
+      SpriteManager.drawHeadStyleContainFit(hctx, head, hairStyleId, 20, 34, 32, 32);
+      hairstyleLabel.textContent = `${hairStyleId}/${HAIR_STYLE_COUNT}`;
     }
-    scheduleRedraw(refreshStyleGrid);
+    scheduleRedraw(refreshHairstylePreview);
+    document.getElementById('hairstyle-prev').addEventListener('click', ()=>{
+      hairStyleId = hairStyleId<=1 ? HAIR_STYLE_COUNT : hairStyleId-1;
+      refreshHairstylePreview();
+      refreshPreview();
+    });
+    document.getElementById('hairstyle-next').addEventListener('click', ()=>{
+      hairStyleId = hairStyleId>=HAIR_STYLE_COUNT ? 1 : hairStyleId+1;
+      refreshHairstylePreview();
+      refreshPreview();
+    });
 
     // Paleta de cor: 8 bolinhas (cor aproximada só pra UI da bolinha — a arte
     // real de cada cor mora no arquivo carregado por headSprite acima).
@@ -835,7 +804,7 @@
         hairColorId = id;
         colorRow.querySelectorAll('.hair-color-dot').forEach(d=>d.classList.remove('active'));
         dot.classList.add('active');
-        refreshStyleGrid();
+        refreshHairstylePreview();
         refreshPreview();
       });
       colorRow.appendChild(dot);
@@ -846,9 +815,8 @@
         document.querySelectorAll('#gender-toggle .toggle-btn').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         gender = btn.dataset.gender;
-        refreshStyleGrid();
+        refreshHairstylePreview();
         refreshPreview();
-        refreshArchetypePreview();
       });
     });
 
@@ -878,8 +846,6 @@
        ========================================================= */
     const archetypeGrid = document.getElementById('archetype-grid');
     const archetypeDetail = document.getElementById('archetype-detail');
-    const archetypeNameTag = document.getElementById('archetype-name-tag');
-    const archetypeRoleTag = document.getElementById('archetype-role-tag');
     const createBtn = document.getElementById('create-btn');
     const archetypeCards = [];
 
@@ -914,27 +880,12 @@
         archetypeCards.forEach(c=>c.card.classList.remove('selected'));
         card.classList.add('selected');
         renderArchetypeDetail(archId);
-        archetypeNameTag.textContent = `${info.label} — ${info.theme}`;
-        archetypeRoleTag.textContent = info.role;
+        document.getElementById('preview-archetype-tag').textContent = `${info.label} — ${info.theme}`;
         createBtn.disabled = false;
-        refreshArchetypePreview();
+        refreshPreview();
       });
       archetypeGrid.appendChild(card);
       archetypeCards.push({ card, archId });
-    });
-
-    document.getElementById('next-to-archetype-btn').addEventListener('click', ()=>{
-      const msgEl = document.getElementById('create-msg');
-      msgEl.className = 'msg';
-      const nick = document.getElementById('nick-input').value.trim();
-      if(nick.length < 3){ msgEl.textContent = ERROR_LABELS.nick_invalido; msgEl.className='msg show error'; return; }
-      document.getElementById('create-step-appearance').style.display = 'none';
-      document.getElementById('create-step-archetype').style.display = 'block';
-      refreshArchetypePreview();
-    });
-    document.getElementById('back-to-appearance-link').addEventListener('click', ()=>{
-      document.getElementById('create-step-archetype').style.display = 'none';
-      document.getElementById('create-step-appearance').style.display = 'block';
     });
 
     createBtn.addEventListener('click', async ()=>{
