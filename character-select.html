@@ -81,8 +81,8 @@
      de cada uma antes de decidir -- é o elemento principal à direita. */
   #char-create-view{ width:760px; padding:26px 30px; display:none; }
   .create-layout{ display:flex; gap:22px; }
-  .create-left{ width:170px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
-  #create-preview{ width:150px; height:190px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
+  .create-left{ width:230px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  #create-preview{ width:210px; height:266px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
   .toggle-row{ display:flex; gap:8px; width:100%; }
   .toggle-btn{
     flex:1; padding:9px; text-align:center; border-radius:6px; border:1px solid var(--gold-deep);
@@ -192,7 +192,7 @@
 
   <div class="create-layout">
     <div class="create-left">
-      <canvas id="create-preview" width="150" height="190"></canvas>
+      <canvas id="create-preview" width="210" height="266"></canvas>
       <div class="preview-archetype-tag" id="preview-archetype-tag">Escolha um arquétipo →</div>
       <div class="toggle-row" id="gender-toggle">
         <div class="toggle-btn active" data-gender="male">♂ Masc.</div>
@@ -376,7 +376,15 @@
         const c = document.createElement('canvas'); c.width=w; c.height=h;
         const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
         const data = cctx.getImageData(0,0,w,h).data;
-        function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
+        // Só ALFA decide fundo aqui -- os atlas de outfit_template usam
+        // transparência real (confirmado inspecionando os PNGs originais
+        // pixel a pixel, base+mask). A heurística antiga também tratava como
+        // "fundo" qualquer pixel quase-branco OPACO (ex. (254,254,254,255),
+        // um brilho/reflexo real que existe na pose de alguns arquétipos) --
+        // isso cortava conteúdo de verdade perto da borda do recorte em vez
+        // de só a folga transparente, contribuindo pro "corta um pedaço"
+        // relatado pelo usuário.
+        function isBg(x,y){ const i=(y*w+x)*4; return data[i+3] < 10; }
         function cropCell(cellX0, cellY0){
           const xLim = Math.min(w, cellX0+cell), yLim = Math.min(h, cellY0+cell);
           let minX=xLim, minY=yLim, maxX=cellX0-1, maxY=cellY0-1;
@@ -496,47 +504,38 @@
     '#8A8A8A', '#4A4A4A', '#1E1E1E', '#7A5C3E',
   ];
   const DEFAULT_COSMETIC_COLORS = { head: 0, body: 0, legs: 0, feet: 0 };
-  const OUTFIT_COLOR_REGIONS = [['head', 60/360], ['body', 0/360], ['legs', 120/360], ['feet', 240/360]];
   function hexToRgbTriplet(hex){
     const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||'').trim());
     if(!m) return { r:255, g:255, b:255 };
     const n = parseInt(m[1], 16);
     return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
   }
-  function rgbToHsvTriplet(r,g,b){
-    r/=255; g/=255; b/=255;
-    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
-    let h=0;
-    if(d!==0){
-      if(max===r) h=((g-b)/d)%6;
-      else if(max===g) h=(b-r)/d+2;
-      else h=(r-g)/d+4;
-      h/=6; if(h<0) h+=1;
-    }
-    const s = max===0 ? 0 : d/max;
-    return { h, s, v:max };
-  }
-  function hsvToRgbTriplet(h,s,v){
-    const i = Math.floor(h*6), f = h*6-i;
-    const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
-    let r,g,b;
-    switch(i%6){
-      case 0: r=v; g=t; b=p; break;
-      case 1: r=q; g=v; b=p; break;
-      case 2: r=p; g=v; b=t; break;
-      case 3: r=p; g=q; b=v; break;
-      case 4: r=t; g=p; b=v; break;
-      default: r=v; g=p; b=q; break;
-    }
-    return { r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255) };
-  }
-  function nearestOutfitRegion(h){
-    let best=null, bestD=999;
-    OUTFIT_COLOR_REGIONS.forEach(([name, rh])=>{
-      const d = Math.min(Math.abs(h-rh), 1-Math.abs(h-rh));
-      if(d<bestD){ bestD=d; best=name; }
-    });
-    return best;
+  // Color Swapping por Máscara, igual ao Tibia de verdade -- pedido explícito
+  // do usuário depois do sistema antigo (HSV/matiz-mais-próximo) sair errado
+  // (traje branco/lavado, cores destruindo a pixel art). Confirmado
+  // inspecionando os PNGs originais pixel a pixel (base+mask dos 8
+  // arquétipos, via device_stage_files):
+  //  - mask.png só tem 4 cores PURAS e 100% opacas, sem anti-aliasing:
+  //    amarelo(255,255,0)=Head, vermelho(255,0,0)=Body/Torso,
+  //    verde(0,255,0)=Legs, azul(0,0,255)=Feet -- todo o resto é
+  //    transparente (alfa 0), nunca uma cor "quase" pura.
+  //  - base.png já É a sprite em tons de cinza (grayscale) que guarda o
+  //    sombreamento (r praticamente igual a g e igual a b, variando de 0 a
+  //    ~244, com um pouquinho de ruído de anti-aliasing/compressão), EXATAMENTE
+  //    onde a máscara marca uma das 4 partes -- fora dessas áreas (pele,
+  //    detalhes fixos, arma) o base.png já vem com a cor final de verdade e
+  //    NÃO deve ser tocado.
+  // Algoritmo: pra cada pixel onde a máscara acerta uma das 4 cores puras,
+  // troca o pixel da base pela cor escolhida pelo usuário MULTIPLICADA pela
+  // luminosidade do cinza original (gray/255) -- isso preserva luz e sombra
+  // do sombreamento original em vez de destruir a pixel art com um filtro
+  // genérico de matiz. Fora da máscara, o pixel da base sai intacto.
+  function classifyMaskRegion(r,g,b){
+    if(r>200 && g>200 && b<80) return 'head';   // amarelo puro
+    if(r>200 && g<80 && b<80) return 'body';    // vermelho puro
+    if(r<80 && g>200 && b<80) return 'legs';    // verde puro
+    if(r<80 && g<80 && b>200) return 'feet';    // azul puro
+    return null;
   }
   const _recolorCache = {};
   const _recolorCacheOrder = [];
@@ -549,34 +548,35 @@
     if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
     const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
     if(!w || !h) return null;
-    const targetHsv = {};
+    const targetRgb = {};
     ['head','body','legs','feet'].forEach(part=>{
-      const rgb = hexToRgbTriplet(COSMETIC_COLOR_PALETTE[c[part]] || COSMETIC_COLOR_PALETTE[0]);
-      targetHsv[part] = rgbToHsvTriplet(rgb.r, rgb.g, rgb.b);
+      targetRgb[part] = hexToRgbTriplet(COSMETIC_COLOR_PALETTE[c[part]] || COSMETIC_COLOR_PALETTE[0]);
     });
+    const bc = document.createElement('canvas'); bc.width=w; bc.height=h;
+    const bcx = bc.getContext('2d');
+    bcx.drawImage(baseEntry.img, 0, 0);
+    let baseData;
+    try{ baseData = bcx.getImageData(0,0,w,h); } catch(e){ return null; }
+    const bdata = baseData.data;
     const mc = document.createElement('canvas'); mc.width=w; mc.height=h;
     const mcx = mc.getContext('2d');
     mcx.drawImage(maskEntry.img, 0, 0);
-    let imgData;
-    try{ imgData = mcx.getImageData(0,0,w,h); } catch(e){ return null; }
-    const data = imgData.data;
-    for(let i=0;i<data.length;i+=4){
-      const a = data[i+3];
-      if(a===0) continue;
-      const hsv = rgbToHsvTriplet(data[i], data[i+1], data[i+2]);
-      if(hsv.s < 0.12) continue;
-      const region = nearestOutfitRegion(hsv.h);
-      const t = targetHsv[region];
-      const nv = Math.max(0, Math.min(1, hsv.v*(0.35+0.65*t.v)));
-      const rgb = hsvToRgbTriplet(t.h, t.s, nv);
-      data[i]=rgb.r; data[i+1]=rgb.g; data[i+2]=rgb.b;
+    let maskData;
+    try{ maskData = mcx.getImageData(0,0,w,h); } catch(e){ return null; }
+    const mdata = maskData.data;
+    for(let i=0;i<bdata.length;i+=4){
+      if(bdata[i+3] < 5) continue; // pixel transparente na base -- nada a colorir
+      if(mdata[i+3] < 5) continue; // fora da máscara -- mantém a arte fixa da base intacta
+      const region = classifyMaskRegion(mdata[i], mdata[i+1], mdata[i+2]);
+      if(!region) continue;
+      const t = targetRgb[region];
+      const gray = bdata[i] / 255; // base já é puro cinza (r=g=b) nessas áreas
+      bdata[i]   = Math.round(t.r * gray);
+      bdata[i+1] = Math.round(t.g * gray);
+      bdata[i+2] = Math.round(t.b * gray);
     }
-    mcx.putImageData(imgData, 0, 0);
-    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-    const cx = canvas.getContext('2d');
-    cx.drawImage(baseEntry.img, 0, 0);
-    cx.drawImage(mc, 0, 0);
-    const entry = { loaded:true, img:canvas, frame:baseEntry.frame };
+    bcx.putImageData(baseData, 0, 0);
+    const entry = { loaded:true, img:bc, frame:baseEntry.frame };
     _recolorCache[key] = entry;
     _recolorCacheOrder.push(key);
     if(_recolorCacheOrder.length > 20){ delete _recolorCache[_recolorCacheOrder.shift()]; }
@@ -696,9 +696,10 @@
     // escolheu nesta própria tela (ver buildOutfitColorRow) -- cai em
     // DEFAULT_COSMETIC_COLORS (branco) só se ninguém passar nada.
     let bodyDraw = null;
+    let isArchetypeBody = false;
     if(outfitId){
       const armor = getRecoloredArmor(outfitId, colors || DEFAULT_COSMETIC_COLORS);
-      if(armor) bodyDraw = SpriteManager.drawFrameContainFit(ctx, armor, cx, feetY, w*0.34, h*0.46);
+      if(armor){ bodyDraw = SpriteManager.drawFrameContainFit(ctx, armor, cx, feetY, w*0.34, h*0.46); isArchetypeBody = !!bodyDraw; }
     }
     if(!bodyDraw){
       // Sem arquétipo escolhido ainda (ou traje ainda carregando) -- corpo
@@ -706,19 +707,31 @@
       const body = SpriteManager.bodySprite(gender);
       bodyDraw = SpriteManager.drawFrameContainFit(ctx, body, cx, feetY, w*0.34, h*0.46);
     }
+    // A sprite base do traje de Arquétipo já É o personagem inteiro,
+    // CABEÇA INCLUÍDA (confirmado pixel a pixel: a região "amarelo=Head" da
+    // máscara fica bem no topo do recorte da própria base.png, junto com
+    // corpo/pernas/pés na mesma pose) -- desenhar a cabeça/cabelo escolhida
+    // separadamente por cima, como sempre foi feito pro corpo genérico, é
+    // exatamente o que causava a "cabeça flutuando" desconectada relatada
+    // pelo usuário (duas cabeças, uma da base do traje e outra do atlas de
+    // cabelo, cada uma na sua posição). Com um traje de Arquétipo carregado,
+    // a cabeça/cabelo customizável simplesmente não desenha mais.
     const corCabelo = HAIR_COLOR_NAMES[(Number(hairColorId)||1)-1] || 'black';
-    const head = SpriteManager.headSprite(gender, corCabelo);
-    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - h*0.30) + h*0.045;
-    const headDraw = SpriteManager.drawHeadStyleContainFit(ctx, head, hairStyleId||1, cx, headBottomY, w*0.26, w*0.26);
-    if(!bodyDraw){
-      ctx.fillStyle = gender==='female' ? '#8a4a6a' : '#5a6b8a';
-      ctx.fillRect(cx-w*0.1, feetY-h*0.32, w*0.2, h*0.2);
-      ctx.fillRect(cx-w*0.08, feetY-h*0.14, w*0.06,h*0.14); ctx.fillRect(cx+w*0.02, feetY-h*0.14, w*0.06,h*0.14);
-    }
-    if(!headDraw){
-      ctx.beginPath(); ctx.arc(cx, headBottomY - w*0.09, w*0.09, 0, Math.PI*2); ctx.fillStyle='#e0b98a'; ctx.fill();
-      ctx.fillStyle = HAIR_COLOR_RGB[corCabelo] ? `rgb(${HAIR_COLOR_RGB[corCabelo].join(',')})` : '#2a2118';
-      ctx.beginPath(); ctx.arc(cx, headBottomY - w*0.11, w*0.095, Math.PI, Math.PI*2); ctx.fill();
+    let headDraw = null;
+    if(!isArchetypeBody){
+      const head = SpriteManager.headSprite(gender, corCabelo);
+      const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - h*0.30) + h*0.045;
+      headDraw = SpriteManager.drawHeadStyleContainFit(ctx, head, hairStyleId||1, cx, headBottomY, w*0.26, w*0.26);
+      if(!bodyDraw){
+        ctx.fillStyle = gender==='female' ? '#8a4a6a' : '#5a6b8a';
+        ctx.fillRect(cx-w*0.1, feetY-h*0.32, w*0.2, h*0.2);
+        ctx.fillRect(cx-w*0.08, feetY-h*0.14, w*0.06,h*0.14); ctx.fillRect(cx+w*0.02, feetY-h*0.14, w*0.06,h*0.14);
+      }
+      if(!headDraw){
+        ctx.beginPath(); ctx.arc(cx, headBottomY - w*0.09, w*0.09, 0, Math.PI*2); ctx.fillStyle='#e0b98a'; ctx.fill();
+        ctx.fillStyle = HAIR_COLOR_RGB[corCabelo] ? `rgb(${HAIR_COLOR_RGB[corCabelo].join(',')})` : '#2a2118';
+        ctx.beginPath(); ctx.arc(cx, headBottomY - w*0.11, w*0.095, Math.PI, Math.PI*2); ctx.fill();
+      }
     }
   }
   // Redesenha qualquer canvas que ainda dependa de um sprite que não tinha

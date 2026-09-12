@@ -2024,7 +2024,15 @@
         const c = document.createElement('canvas'); c.width=w; c.height=h;
         const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
         const data = cctx.getImageData(0,0,w,h).data;
-        function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
+        // Só ALFA decide fundo aqui -- os atlas de outfit_template usam
+        // transparência real (confirmado inspecionando os PNGs originais
+        // pixel a pixel, base+mask dos 8 arquétipos). A heurística antiga
+        // também tratava como "fundo" qualquer pixel quase-branco OPACO (ex.
+        // (254,254,254,255), um brilho/reflexo real de alguns arquétipos) --
+        // isso cortava conteúdo de verdade perto da borda do recorte em vez
+        // de só a folga transparente, contribuindo pro "corta um pedaço"
+        // relatado pelo usuário.
+        function isBg(x,y){ const i=(y*w+x)*4; return data[i+3] < 10; }
         function cropCell(cellX0, cellY0){
           const xLim = Math.min(w, cellX0+cell), yLim = Math.min(h, cellY0+cell);
           let minX=xLim, minY=yLim, maxX=cellX0-1, maxY=cellY0-1;
@@ -2438,58 +2446,38 @@
   // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
   const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
   // ---- RECOLORIR DE OUTFIT EM TEMPO REAL (arquetipos) ----
-  // Mesmo algoritmo provado em tibia_recolor2.py (script Python usado só pra
-  // validar a ideia, nunca commitado como pintura definitiva das sprites --
-  // ver notas do projeto "tibia-ravendawn-asset-extraction"): o layer 1
-  // (mascara) de cada arquetipo usa 4 matizes fixos -- Cabeça=amarelo(~60°),
-  // Corpo=vermelho(~0°), Pernas=verde(~120°), Pés=azul(~240°) -- com a
-  // INTENSIDADE (value do HSV) já carregando o sombreado original da arte.
-  // Pra cada pixel da mascara: acha a região mais próxima por matiz, troca
-  // matiz+saturação pela cor escolhida (palette), mas preserva o sombreado
-  // combinando o value original com o value da cor-alvo (senão uma cor-alvo
-  // escura -- ex.: preto -- nunca fica realmente escura). Pixels de baixa
-  // saturação (contorno/anti-aliasing em cinza) não são tingidos.
-  const OUTFIT_COLOR_REGIONS = [['head', 60/360], ['body', 0/360], ['legs', 120/360], ['feet', 240/360]];
+  // Color Swapping por Máscara, igual ao Tibia de verdade -- pedido explícito
+  // do usuário depois do sistema antigo (HSV/matiz-mais-próximo) sair errado
+  // (traje branco/lavado no personagem "teste1" dentro do mundo, cores
+  // destruindo a pixel art). Confirmado inspecionando os PNGs originais
+  // pixel a pixel (base+mask dos 8 arquétipos, via device_stage_files):
+  //  - mask.png só tem 4 cores PURAS e 100% opacas, sem anti-aliasing:
+  //    amarelo(255,255,0)=Head, vermelho(255,0,0)=Body/Torso,
+  //    verde(0,255,0)=Legs, azul(0,0,255)=Feet -- todo o resto é
+  //    transparente (alfa 0), nunca uma cor "quase" pura.
+  //  - base.png já É a sprite em tons de cinza (grayscale) que guarda o
+  //    sombreamento (r praticamente igual a g e igual a b, variando de 0 a
+  //    ~244, com um pouquinho de ruído de anti-aliasing/compressão), EXATAMENTE
+  //    onde a máscara marca uma das 4 partes -- fora dessas áreas (pele,
+  //    detalhes fixos, arma) o base.png já vem com a cor final de verdade e
+  //    NÃO deve ser tocado.
+  // Algoritmo: pra cada pixel onde a máscara acerta uma das 4 cores puras,
+  // troca o pixel da base pela cor escolhida pelo usuário MULTIPLICADA pela
+  // luminosidade do cinza original (gray/255) -- isso preserva luz e sombra
+  // do sombreamento original em vez de destruir a pixel art com um filtro
+  // genérico de matiz. Fora da máscara, o pixel da base sai intacto.
   function hexToRgbTriplet(hex){
     const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||'').trim());
     if(!m) return { r:255, g:255, b:255 };
     const n = parseInt(m[1], 16);
     return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
   }
-  function rgbToHsvTriplet(r,g,b){
-    r/=255; g/=255; b/=255;
-    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
-    let h=0;
-    if(d!==0){
-      if(max===r) h=((g-b)/d)%6;
-      else if(max===g) h=(b-r)/d+2;
-      else h=(r-g)/d+4;
-      h/=6; if(h<0) h+=1;
-    }
-    const s = max===0 ? 0 : d/max;
-    return { h, s, v:max };
-  }
-  function hsvToRgbTriplet(h,s,v){
-    const i = Math.floor(h*6), f = h*6-i;
-    const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
-    let r,g,b;
-    switch(i%6){
-      case 0: r=v; g=t; b=p; break;
-      case 1: r=q; g=v; b=p; break;
-      case 2: r=p; g=v; b=t; break;
-      case 3: r=p; g=q; b=v; break;
-      case 4: r=t; g=p; b=v; break;
-      default: r=v; g=p; b=q; break;
-    }
-    return { r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255) };
-  }
-  function nearestOutfitRegion(h){
-    let best=null, bestD=999;
-    OUTFIT_COLOR_REGIONS.forEach(([name, rh])=>{
-      const d = Math.min(Math.abs(h-rh), 1-Math.abs(h-rh));
-      if(d<bestD){ bestD=d; best=name; }
-    });
-    return best;
+  function classifyMaskRegion(r,g,b){
+    if(r>200 && g>200 && b<80) return 'head';   // amarelo puro
+    if(r>200 && g<80 && b<80) return 'body';    // vermelho puro
+    if(r<80 && g>200 && b<80) return 'legs';    // verde puro
+    if(r<80 && g<80 && b>200) return 'feet';    // azul puro
+    return null;
   }
   // Cache por combinação (outfit + as 4 cores) -- recolorir é getImageData +
   // loop por pixel, caro demais pra rodar todo frame; cada combinação só é
@@ -2508,38 +2496,39 @@
     if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
     const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
     if(!w || !h) return null;
-    const targetHsv = {};
+    const targetRgb = {};
     ['head','body','legs','feet'].forEach(part=>{
-      const rgb = hexToRgbTriplet(palette[c[part]] || palette[0]);
-      targetHsv[part] = rgbToHsvTriplet(rgb.r, rgb.g, rgb.b);
+      targetRgb[part] = hexToRgbTriplet(palette[c[part]] || palette[0]);
     });
+    const bc = document.createElement('canvas'); bc.width=w; bc.height=h;
+    const bcx = bc.getContext('2d');
+    bcx.drawImage(baseEntry.img, 0, 0);
+    let baseData;
+    try{ baseData = bcx.getImageData(0,0,w,h); } catch(e){ return null; } // CORS/tainted -- nunca trava o jogo, so nao recolore
+    const bdata = baseData.data;
     const mc = document.createElement('canvas'); mc.width=w; mc.height=h;
     const mcx = mc.getContext('2d');
     mcx.drawImage(maskEntry.img, 0, 0);
-    let imgData;
-    try{ imgData = mcx.getImageData(0,0,w,h); } catch(e){ return null; } // CORS/tainted -- nunca trava o jogo, so nao recolore
-    const data = imgData.data;
-    for(let i=0;i<data.length;i+=4){
-      const a = data[i+3];
-      if(a===0) continue;
-      const hsv = rgbToHsvTriplet(data[i], data[i+1], data[i+2]);
-      if(hsv.s < 0.12) continue;
-      const region = nearestOutfitRegion(hsv.h);
-      const t = targetHsv[region];
-      const nv = Math.max(0, Math.min(1, hsv.v*(0.35+0.65*t.v)));
-      const rgb = hsvToRgbTriplet(t.h, t.s, nv);
-      data[i]=rgb.r; data[i+1]=rgb.g; data[i+2]=rgb.b;
+    let maskData;
+    try{ maskData = mcx.getImageData(0,0,w,h); } catch(e){ return null; }
+    const mdata = maskData.data;
+    for(let i=0;i<bdata.length;i+=4){
+      if(bdata[i+3] < 5) continue; // pixel transparente na base -- nada a colorir
+      if(mdata[i+3] < 5) continue; // fora da máscara -- mantém a arte fixa da base intacta
+      const region = classifyMaskRegion(mdata[i], mdata[i+1], mdata[i+2]);
+      if(!region) continue;
+      const t = targetRgb[region];
+      const gray = bdata[i] / 255; // base já é puro cinza (r=g=b) nessas áreas
+      bdata[i]   = Math.round(t.r * gray);
+      bdata[i+1] = Math.round(t.g * gray);
+      bdata[i+2] = Math.round(t.b * gray);
     }
-    mcx.putImageData(imgData, 0, 0);
-    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-    const cx = canvas.getContext('2d');
-    cx.drawImage(baseEntry.img, 0, 0);
-    cx.drawImage(mc, 0, 0);
+    bcx.putImageData(baseData, 0, 0);
     // "entry" fake reaproveitando frame/dirFrames do base (mask tem a MESMA
     // grade -- gerados juntos pelo mesmo script) -- drawBodyDirFrame/
     // drawFrameContainFit desenham um canvas exatamente como desenhariam
     // uma <img>, ctx.drawImage aceita os dois.
-    const entry = { loaded:true, img:canvas, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
+    const entry = { loaded:true, img:bc, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
     _recolorCache[key] = entry;
     _recolorCacheOrder.push(key);
     if(_recolorCacheOrder.length > 60){ delete _recolorCache[_recolorCacheOrder.shift()]; }
@@ -2604,16 +2593,29 @@
     const archetypeArmor = isArchetypeOutfit
       ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
       : null;
+    // Proporção do personagem estilo Tibia (pedido do usuário): a largura
+    // fica igual (~1 tile), mas a ALTURA disponível pro corpo dobra só no
+    // MUNDO (targetCtx vazio -- o retrato do Inventário/criação usa outro
+    // canvas fixo, não mexe aqui) -- os pés continuam ancorados em
+    // (s.x, feetY) e o corpo cresce PRA CIMA a partir daí (ver
+    // drawFrameContainFit/drawBodyDirFrame), então o efeito é o personagem
+    // ficar visualmente mais alto, com cabeça/tronco se projetando pro tile
+    // de cima -- sem precisar mudar a ordem de desenho: drawList já ordena
+    // tudo (chão, cenário, personagens) pela posição Y da base (pé), então
+    // quem está numa linha "mais pro norte" (y menor) já desenha ANTES e
+    // fica atrás de quem estiver na frente, exatamente como o Tibia real.
+    const bodyMaxW = 34*scl;
+    const bodyMaxH = targetCtx ? 46*scl : 46*scl*2;
     let bodyDraw;
     if(archetypeArmor){
       bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 34*scl, 46*scl);
+        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, bodyMaxW, bodyMaxH, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, bodyMaxW, bodyMaxH);
     } else {
       const body = SpriteManager.bodySprite(genero);
       bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
+        ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, bodyMaxW, bodyMaxH, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, bodyMaxW, bodyMaxH);
     }
     drewBody = !!bodyDraw;
     // Trajes ANTIGOS (não-Arquétipo, armorSprite: PNG único, camada de roupa
@@ -2622,29 +2624,41 @@
     if(outfitId && outfitId !== 'padrao' && !isArchetypeOutfit){
       const armorLegacy = SpriteManager.armorSprite(genero, outfitId);
       if(armorLegacy){
-        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
-        else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, 34*scl, 46*scl);
+        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, bodyMaxW, bodyMaxH, drawWalkAnim.pose);
+        else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, bodyMaxW, bodyMaxH);
       }
     }
-    const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
-    const headAtlas = SpriteManager.headSprite(genero, corCabelo);
-    // Cabeça senta em cima do topo ESTÁVEL do corpo (ver comentário de
-    // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
-    // corpo não carregou, cai pro topo aproximado que o boneco procedural já
-    // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
-    // usada tanto pro corpo quanto pra cabeça, é o pivô único que a projeção
-    // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
-    // já move como um objeto rígido — corpo e cabeça não têm posições
-    // independentes, as duas derivam do MESMO s.x/feetY.
-    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30*scl) + 8*scl;
-    // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
-    // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
-    // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
-    // igual ao default do servidor pra personagens antigos.
-    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
+    // A sprite base do traje de Arquétipo já É o personagem inteiro, CABEÇA
+    // INCLUÍDA (confirmado pixel a pixel: a região "amarelo=Head" da máscara
+    // fica bem no topo do recorte da própria base.png, junto com corpo/
+    // pernas/pés na mesma pose) -- desenhar a cabeça/cabelo escolhida
+    // separadamente por cima, como sempre foi feito pro corpo genérico, é
+    // exatamente o que causava a "cabeça flutuando" desconectada relatada
+    // pelo usuário. Com um traje de Arquétipo carregado, a cabeça/cabelo
+    // customizável simplesmente não desenha mais (igual já foi corrigido no
+    // retrato de criação, ver drawCharacterPreview em character-select.html).
+    let headDraw = null;
+    if(!archetypeArmor){
+      const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
+      const headAtlas = SpriteManager.headSprite(genero, corCabelo);
+      // Cabeça senta em cima do topo ESTÁVEL do corpo (ver comentário de
+      // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
+      // corpo não carregou, cai pro topo aproximado que o boneco procedural já
+      // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
+      // usada tanto pro corpo quanto pra cabeça, é o pivô único que a projeção
+      // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
+      // já move como um objeto rígido — corpo e cabeça não têm posições
+      // independentes, as duas derivam do MESMO s.x/feetY.
+      const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30*scl) + 8*scl;
+      // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
+      // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
+      // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
+      // igual ao default do servidor pra personagens antigos.
+      headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
+    }
     drewHead = !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11*scl, 15*scl, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
-    if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
+    if(!drewHead && !archetypeArmor){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(mirror){ tctx.restore(); }
     // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
@@ -3284,7 +3298,7 @@
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
         drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
-      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
+      }, headCart:{x:rp.x,y:rp.y}, headLift:54*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
     drawList.push({ baseCart:{x:player.x,y:player.y}, draw:()=>{
@@ -3310,7 +3324,7 @@
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
         : anim;
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
-    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
+    }, headCart:{x:player.x,y:player.y}, headLift:66*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     drawList.forEach(item=> item.draw());
