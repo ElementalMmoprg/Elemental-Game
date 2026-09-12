@@ -2024,15 +2024,7 @@
         const c = document.createElement('canvas'); c.width=w; c.height=h;
         const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
         const data = cctx.getImageData(0,0,w,h).data;
-        // Só ALFA decide fundo aqui -- os atlas de outfit_template usam
-        // transparência real (confirmado inspecionando os PNGs originais
-        // pixel a pixel, base+mask dos 8 arquétipos). A heurística antiga
-        // também tratava como "fundo" qualquer pixel quase-branco OPACO (ex.
-        // (254,254,254,255), um brilho/reflexo real de alguns arquétipos) --
-        // isso cortava conteúdo de verdade perto da borda do recorte em vez
-        // de só a folga transparente, contribuindo pro "corta um pedaço"
-        // relatado pelo usuário.
-        function isBg(x,y){ const i=(y*w+x)*4; return data[i+3] < 10; }
+        function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
         function cropCell(cellX0, cellY0){
           const xLim = Math.min(w, cellX0+cell), yLim = Math.min(h, cellY0+cell);
           let minX=xLim, minY=yLim, maxX=cellX0-1, maxY=cellY0-1;
@@ -2446,38 +2438,58 @@
   // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
   const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
   // ---- RECOLORIR DE OUTFIT EM TEMPO REAL (arquetipos) ----
-  // Color Swapping por Máscara, igual ao Tibia de verdade -- pedido explícito
-  // do usuário depois do sistema antigo (HSV/matiz-mais-próximo) sair errado
-  // (traje branco/lavado no personagem "teste1" dentro do mundo, cores
-  // destruindo a pixel art). Confirmado inspecionando os PNGs originais
-  // pixel a pixel (base+mask dos 8 arquétipos, via device_stage_files):
-  //  - mask.png só tem 4 cores PURAS e 100% opacas, sem anti-aliasing:
-  //    amarelo(255,255,0)=Head, vermelho(255,0,0)=Body/Torso,
-  //    verde(0,255,0)=Legs, azul(0,0,255)=Feet -- todo o resto é
-  //    transparente (alfa 0), nunca uma cor "quase" pura.
-  //  - base.png já É a sprite em tons de cinza (grayscale) que guarda o
-  //    sombreamento (r praticamente igual a g e igual a b, variando de 0 a
-  //    ~244, com um pouquinho de ruído de anti-aliasing/compressão), EXATAMENTE
-  //    onde a máscara marca uma das 4 partes -- fora dessas áreas (pele,
-  //    detalhes fixos, arma) o base.png já vem com a cor final de verdade e
-  //    NÃO deve ser tocado.
-  // Algoritmo: pra cada pixel onde a máscara acerta uma das 4 cores puras,
-  // troca o pixel da base pela cor escolhida pelo usuário MULTIPLICADA pela
-  // luminosidade do cinza original (gray/255) -- isso preserva luz e sombra
-  // do sombreamento original em vez de destruir a pixel art com um filtro
-  // genérico de matiz. Fora da máscara, o pixel da base sai intacto.
+  // Mesmo algoritmo provado em tibia_recolor2.py (script Python usado só pra
+  // validar a ideia, nunca commitado como pintura definitiva das sprites --
+  // ver notas do projeto "tibia-ravendawn-asset-extraction"): o layer 1
+  // (mascara) de cada arquetipo usa 4 matizes fixos -- Cabeça=amarelo(~60°),
+  // Corpo=vermelho(~0°), Pernas=verde(~120°), Pés=azul(~240°) -- com a
+  // INTENSIDADE (value do HSV) já carregando o sombreado original da arte.
+  // Pra cada pixel da mascara: acha a região mais próxima por matiz, troca
+  // matiz+saturação pela cor escolhida (palette), mas preserva o sombreado
+  // combinando o value original com o value da cor-alvo (senão uma cor-alvo
+  // escura -- ex.: preto -- nunca fica realmente escura). Pixels de baixa
+  // saturação (contorno/anti-aliasing em cinza) não são tingidos.
+  const OUTFIT_COLOR_REGIONS = [['head', 60/360], ['body', 0/360], ['legs', 120/360], ['feet', 240/360]];
   function hexToRgbTriplet(hex){
     const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||'').trim());
     if(!m) return { r:255, g:255, b:255 };
     const n = parseInt(m[1], 16);
     return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
   }
-  function classifyMaskRegion(r,g,b){
-    if(r>200 && g>200 && b<80) return 'head';   // amarelo puro
-    if(r>200 && g<80 && b<80) return 'body';    // vermelho puro
-    if(r<80 && g>200 && b<80) return 'legs';    // verde puro
-    if(r<80 && g<80 && b>200) return 'feet';    // azul puro
-    return null;
+  function rgbToHsvTriplet(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0;
+    if(d!==0){
+      if(max===r) h=((g-b)/d)%6;
+      else if(max===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h/=6; if(h<0) h+=1;
+    }
+    const s = max===0 ? 0 : d/max;
+    return { h, s, v:max };
+  }
+  function hsvToRgbTriplet(h,s,v){
+    const i = Math.floor(h*6), f = h*6-i;
+    const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
+    let r,g,b;
+    switch(i%6){
+      case 0: r=v; g=t; b=p; break;
+      case 1: r=q; g=v; b=p; break;
+      case 2: r=p; g=v; b=t; break;
+      case 3: r=p; g=q; b=v; break;
+      case 4: r=t; g=p; b=v; break;
+      default: r=v; g=p; b=q; break;
+    }
+    return { r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255) };
+  }
+  function nearestOutfitRegion(h){
+    let best=null, bestD=999;
+    OUTFIT_COLOR_REGIONS.forEach(([name, rh])=>{
+      const d = Math.min(Math.abs(h-rh), 1-Math.abs(h-rh));
+      if(d<bestD){ bestD=d; best=name; }
+    });
+    return best;
   }
   // Cache por combinação (outfit + as 4 cores) -- recolorir é getImageData +
   // loop por pixel, caro demais pra rodar todo frame; cada combinação só é
@@ -2496,39 +2508,38 @@
     if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
     const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
     if(!w || !h) return null;
-    const targetRgb = {};
+    const targetHsv = {};
     ['head','body','legs','feet'].forEach(part=>{
-      targetRgb[part] = hexToRgbTriplet(palette[c[part]] || palette[0]);
+      const rgb = hexToRgbTriplet(palette[c[part]] || palette[0]);
+      targetHsv[part] = rgbToHsvTriplet(rgb.r, rgb.g, rgb.b);
     });
-    const bc = document.createElement('canvas'); bc.width=w; bc.height=h;
-    const bcx = bc.getContext('2d');
-    bcx.drawImage(baseEntry.img, 0, 0);
-    let baseData;
-    try{ baseData = bcx.getImageData(0,0,w,h); } catch(e){ return null; } // CORS/tainted -- nunca trava o jogo, so nao recolore
-    const bdata = baseData.data;
     const mc = document.createElement('canvas'); mc.width=w; mc.height=h;
     const mcx = mc.getContext('2d');
     mcx.drawImage(maskEntry.img, 0, 0);
-    let maskData;
-    try{ maskData = mcx.getImageData(0,0,w,h); } catch(e){ return null; }
-    const mdata = maskData.data;
-    for(let i=0;i<bdata.length;i+=4){
-      if(bdata[i+3] < 5) continue; // pixel transparente na base -- nada a colorir
-      if(mdata[i+3] < 5) continue; // fora da máscara -- mantém a arte fixa da base intacta
-      const region = classifyMaskRegion(mdata[i], mdata[i+1], mdata[i+2]);
-      if(!region) continue;
-      const t = targetRgb[region];
-      const gray = bdata[i] / 255; // base já é puro cinza (r=g=b) nessas áreas
-      bdata[i]   = Math.round(t.r * gray);
-      bdata[i+1] = Math.round(t.g * gray);
-      bdata[i+2] = Math.round(t.b * gray);
+    let imgData;
+    try{ imgData = mcx.getImageData(0,0,w,h); } catch(e){ return null; } // CORS/tainted -- nunca trava o jogo, so nao recolore
+    const data = imgData.data;
+    for(let i=0;i<data.length;i+=4){
+      const a = data[i+3];
+      if(a===0) continue;
+      const hsv = rgbToHsvTriplet(data[i], data[i+1], data[i+2]);
+      if(hsv.s < 0.12) continue;
+      const region = nearestOutfitRegion(hsv.h);
+      const t = targetHsv[region];
+      const nv = Math.max(0, Math.min(1, hsv.v*(0.35+0.65*t.v)));
+      const rgb = hsvToRgbTriplet(t.h, t.s, nv);
+      data[i]=rgb.r; data[i+1]=rgb.g; data[i+2]=rgb.b;
     }
-    bcx.putImageData(baseData, 0, 0);
+    mcx.putImageData(imgData, 0, 0);
+    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    const cx = canvas.getContext('2d');
+    cx.drawImage(baseEntry.img, 0, 0);
+    cx.drawImage(mc, 0, 0);
     // "entry" fake reaproveitando frame/dirFrames do base (mask tem a MESMA
     // grade -- gerados juntos pelo mesmo script) -- drawBodyDirFrame/
     // drawFrameContainFit desenham um canvas exatamente como desenhariam
     // uma <img>, ctx.drawImage aceita os dois.
-    const entry = { loaded:true, img:bc, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
+    const entry = { loaded:true, img:canvas, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
     _recolorCache[key] = entry;
     _recolorCacheOrder.push(key);
     if(_recolorCacheOrder.length > 60){ delete _recolorCache[_recolorCacheOrder.shift()]; }
@@ -2593,29 +2604,16 @@
     const archetypeArmor = isArchetypeOutfit
       ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
       : null;
-    // Proporção do personagem estilo Tibia (pedido do usuário): a largura
-    // fica igual (~1 tile), mas a ALTURA disponível pro corpo dobra só no
-    // MUNDO (targetCtx vazio -- o retrato do Inventário/criação usa outro
-    // canvas fixo, não mexe aqui) -- os pés continuam ancorados em
-    // (s.x, feetY) e o corpo cresce PRA CIMA a partir daí (ver
-    // drawFrameContainFit/drawBodyDirFrame), então o efeito é o personagem
-    // ficar visualmente mais alto, com cabeça/tronco se projetando pro tile
-    // de cima -- sem precisar mudar a ordem de desenho: drawList já ordena
-    // tudo (chão, cenário, personagens) pela posição Y da base (pé), então
-    // quem está numa linha "mais pro norte" (y menor) já desenha ANTES e
-    // fica atrás de quem estiver na frente, exatamente como o Tibia real.
-    const bodyMaxW = 34*scl;
-    const bodyMaxH = targetCtx ? 46*scl : 46*scl*2;
     let bodyDraw;
     if(archetypeArmor){
       bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, bodyMaxW, bodyMaxH, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, bodyMaxW, bodyMaxH);
+        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 34*scl, 46*scl);
     } else {
       const body = SpriteManager.bodySprite(genero);
       bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, bodyMaxW, bodyMaxH, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, bodyMaxW, bodyMaxH);
+        ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
     }
     drewBody = !!bodyDraw;
     // Trajes ANTIGOS (não-Arquétipo, armorSprite: PNG único, camada de roupa
@@ -2624,41 +2622,29 @@
     if(outfitId && outfitId !== 'padrao' && !isArchetypeOutfit){
       const armorLegacy = SpriteManager.armorSprite(genero, outfitId);
       if(armorLegacy){
-        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, bodyMaxW, bodyMaxH, drawWalkAnim.pose);
-        else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, bodyMaxW, bodyMaxH);
+        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
+        else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, 34*scl, 46*scl);
       }
     }
-    // A sprite base do traje de Arquétipo já É o personagem inteiro, CABEÇA
-    // INCLUÍDA (confirmado pixel a pixel: a região "amarelo=Head" da máscara
-    // fica bem no topo do recorte da própria base.png, junto com corpo/
-    // pernas/pés na mesma pose) -- desenhar a cabeça/cabelo escolhida
-    // separadamente por cima, como sempre foi feito pro corpo genérico, é
-    // exatamente o que causava a "cabeça flutuando" desconectada relatada
-    // pelo usuário. Com um traje de Arquétipo carregado, a cabeça/cabelo
-    // customizável simplesmente não desenha mais (igual já foi corrigido no
-    // retrato de criação, ver drawCharacterPreview em character-select.html).
-    let headDraw = null;
-    if(!archetypeArmor){
-      const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
-      const headAtlas = SpriteManager.headSprite(genero, corCabelo);
-      // Cabeça senta em cima do topo ESTÁVEL do corpo (ver comentário de
-      // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
-      // corpo não carregou, cai pro topo aproximado que o boneco procedural já
-      // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
-      // usada tanto pro corpo quanto pra cabeça, é o pivô único que a projeção
-      // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
-      // já move como um objeto rígido — corpo e cabeça não têm posições
-      // independentes, as duas derivam do MESMO s.x/feetY.
-      const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30*scl) + 8*scl;
-      // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
-      // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
-      // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
-      // igual ao default do servidor pra personagens antigos.
-      headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
-    }
+    const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
+    const headAtlas = SpriteManager.headSprite(genero, corCabelo);
+    // Cabeça senta em cima do topo ESTÁVEL do corpo (ver comentário de
+    // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
+    // corpo não carregou, cai pro topo aproximado que o boneco procedural já
+    // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
+    // usada tanto pro corpo quanto pra cabeça, é o pivô único que a projeção
+    // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
+    // já move como um objeto rígido — corpo e cabeça não têm posições
+    // independentes, as duas derivam do MESMO s.x/feetY.
+    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30*scl) + 8*scl;
+    // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
+    // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
+    // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
+    // igual ao default do servidor pra personagens antigos.
+    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
     drewHead = !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11*scl, 15*scl, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
-    if(!drewHead && !archetypeArmor){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
+    if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(mirror){ tctx.restore(); }
     // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
@@ -2682,70 +2668,24 @@
      ========================================================= */
   const canvas = document.getElementById('world-canvas');
   const ctx = canvas.getContext('2d');
-  // Zoom de Pixel Art (Escala de Viewport) — 2026-09, reescrito depois que a
-  // tentativa anterior (janela 15×11 recortada com clip + tarja preta fora
-  // dela) quebrou o jogo de verdade pro usuário: mapa cortado com fundo
-  // preto, tiles bugados, personagem continuando minúsculo. Pedido explícito
-  // do usuário pra corrigir: SEM clip, SEM tarja/letterbox — o mundo
-  // ampliado deve preencher a área escura inteira da interface (o canvas
-  // inteiro), com a câmera sempre centralizada no jogador. VIEW_TILES_X/Y
-  // continuam existindo só como REFERÊNCIA pra escolher um fator de zoom
-  // inteiro que garanta pelo menos ~15×11 tiles visíveis (telas mais largas
-  // que 15:11 mostram mais colunas dos lados pra preencher a tela toda, em
-  // vez de sobrar moldura preta) — isso é o "Tamanho Lógico" do pedido do
-  // usuário. viewW/viewH guardam o tamanho em pixels DE CSS (lógicos) — o
+  // Câmera de tela cheia com viewport estendido: o canvas SEMPRE cobre
+  // 100% da janela do navegador (fullscreen incluso — o browser dispara
+  // 'resize' ao entrar/sair do fullscreen igual a qualquer redimensionamento),
+  // e a grade de tiles/sprites simplesmente revela mais coisa nas bordas em
+  // telas maiores (ver bounds em draw()) em vez de esticar/encolher o que já
+  // tinha. viewW/viewH guardam o tamanho em pixels DE CSS (lógicos) — o
   // canvas.width/height reais ficam em pixels de DISPOSITIVO (* devicePixelRatio)
   // só pra ficar nítido em telas retina/hidpi; ctx.setTransform devolve o
   // sistema de coordenadas pra pixel-de-CSS, então NENHUM outro desenho no
   // arquivo precisa saber disso — todo o resto do código já desenha em
   // pixel-de-CSS como sempre desenhou.
   let viewW = window.innerWidth, viewH = window.innerHeight;
-  // ==========================================================================
-  // ZOOM GLOBAL INTEIRO (pedido do usuário: "ctx.scale(3,3) ou multiplicar os
-  // tamanhos finais de renderização por 3 ou 4") — em vez de um ctx.scale()
-  // global (que exigiria reescrever toda coordenada de mouse/clique pro
-  // espaço escalado), a mesma ampliação é obtida multiplicando o tamanho de
-  // desenho de CADA elemento (tile, personagem, monstro, cenário) por
-  // TILE_SCREEN_PX/WORLD_SCALE/SPRITE_SCALE — efeito idêntico, sem precisar
-  // converter coordenadas de input em nenhum outro lugar do arquivo. Essas 3
-  // variáveis são `let` porque são recalculadas a cada resize (recomputeZoom()).
-  const VIEW_TILES_X = 15, VIEW_TILES_Y = 11;
-  const BASE_TILE_PX = 32;
-  let ZOOM_FACTOR = 2;
-  const TILE_STEP = 34; // tamanho de 1 tile do chão, em unidades de mundo
-  let TILE_SCREEN_PX = BASE_TILE_PX * ZOOM_FACTOR; // tamanho do SQM na tela, em pixels -- recalculado em recomputeZoom()
-  let WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
-  // SPRITE_SCALE mantém personagem/monstro/cenário na MESMA proporção visual
-  // em relação ao tile de sempre (calibrados em cima de WORLD_SCALE=1.55),
-  // não importa o ZOOM_FACTOR atual.
-  let SPRITE_SCALE = WORLD_SCALE / 1.55;
-  function recomputeZoom(){
-    const fitX = viewW / (VIEW_TILES_X * BASE_TILE_PX);
-    const fitY = viewH / (VIEW_TILES_Y * BASE_TILE_PX);
-    // Nearest Neighbor precisa de fator INTEIRO pra não borrar o pixel art
-    // ampliado -- arredonda pra baixo e nunca deixa passar de 1..6 (pedido
-    // do usuário: 2x/3x/4x é a faixa típica; 1x fica como piso de segurança
-    // pra janelas bem pequenas, 6x como teto pra monitores gigantes).
-    ZOOM_FACTOR = Math.max(1, Math.min(6, Math.floor(Math.min(fitX, fitY)) || 1));
-    TILE_SCREEN_PX = BASE_TILE_PX * ZOOM_FACTOR;
-    WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
-    SPRITE_SCALE = WORLD_SCALE / 1.55;
-  }
   function resize(){
     const dpr = window.devicePixelRatio || 1;
     viewW = window.innerWidth; viewH = window.innerHeight;
     canvas.style.width = viewW + 'px'; canvas.style.height = viewH + 'px';
     canvas.width = Math.round(viewW * dpr); canvas.height = Math.round(viewH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // Filtro Nítido -- mantém a pixel art nítida ao ampliar, sem borrão
-    // (equivalente a CSS image-rendering:pixelated, aplicado no contexto 2D).
-    // Precisa ser reaplicado depois de TODO resize: mudar canvas.width/height
-    // reseta o contexto (inclusive esta flag) nos browsers principais.
-    ctx.imageSmoothingEnabled = false;
-    ctx.webkitImageSmoothingEnabled = false;
-    ctx.mozImageSmoothingEnabled = false;
-    ctx.msImageSmoothingEnabled = false;
-    recomputeZoom();
   }
   window.addEventListener('resize', resize); resize();
 
@@ -2759,6 +2699,26 @@
   // proporção de eixo diferente, chão em diamante em vez de quadrado) — a
   // partir daqui, posição de mundo e posição de tela diferem só por escala e
   // deslocamento, nunca por um ângulo.
+  // WORLD_SCALE faz o papel que ISO_SCALE fazia (zoom da câmera), só que sem
+  // nenhum cisalhamento — mantive o mesmo valor (1.08) pra não precisar
+  // reajustar tamanho de sprite/UI que já estava calibrado em cima dele.
+  // 2026-09: câmera de tela cheia com viewport estendido, estilo Huntera —
+  // pedido explícito do usuário: SQM (tile) com tamanho FIXO e grande em
+  // pixels de tela (não encolhe em telas maiores), e a câmera revela mais
+  // tiles nas bordas em telas grandes/fullscreen em vez de esticar/encolher
+  // o que já está na tela. TILE_SCREEN_PX é esse tamanho fixo; WORLD_SCALE
+  // (o "zoom", em unidades de tela por unidade de mundo) é derivado dele +
+  // TILE_STEP, então nunca fica descolado do tile de verdade.
+  const TILE_STEP = 34; // tamanho de 1 tile do chão, em unidades de mundo
+  const TILE_SCREEN_PX = 64; // tamanho FIXO do SQM na tela, em pixels (pedido: 48 ou 64 — usamos 64, estilo Huntera)
+  const WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
+  // Antes desta mudança, WORLD_SCALE era 1.55 e todo sprite/hitbox/offset de
+  // personagem, monstro e cenário abaixo foi calibrado em cima desse valor
+  // em pixels FIXOS (34x46 do corpo, 68x68 do monstro etc.) — SPRITE_SCALE
+  // é o fator que mantém esses elementos na MESMA proporção visual de antes
+  // em relação ao tile, agora que o tile ficou maior (senão os sprites
+  // ficariam pequenos demais perto de um SQM de 64px).
+  const SPRITE_SCALE = WORLD_SCALE / 1.55;
   // Escala pura, sem deslocamento de câmera — serve tanto pra montar
   // worldToScreen (que soma o offset) quanto pra qualquer lugar que precise
   // de uma função monotônica e estável da posição de mundo SEM o
@@ -2774,12 +2734,10 @@
   }
   // Câmera segue o personagem: o offset centraliza sempre a posição atual de
   // player.x/player.y (atualizada pelo servidor e, de forma otimista, pelo
-  // clique de movimento/WASD) no meio do CANVAS INTEIRO -- o jogador fica
-  // sempre exatamente no centro da tela, e o mundo ampliado (ZOOM_FACTOR)
-  // preenche toda a área ao redor dele, sem moldura/tarja nenhuma.
+  // clique de movimento/WASD) no meio do canvas.
   function getCameraOffset(){
     const p = worldToScreenRaw(player.x, player.y);
-    return { x: viewW/2 - p.x, y: viewH/2 - p.y + 40*(ZOOM_FACTOR/2) };
+    return { x: viewW/2 - p.x, y: viewH/2 - p.y + 40 };
   }
   const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
   // Praça da Cidade Principal — mesma técnica de sempre (blocos de cenário
@@ -3083,6 +3041,15 @@
         // de "usei uma habilidade/ataquei" que estava faltando por completo.
         spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
         castPoseUntil = now() + CAST_POSE_MS;
+        // Spell FX de verdade (ver SpellFxManager acima) — só pra magia com
+        // archetypeId (ataque corpo-a-corpo puro, fx.t==='playerHit', não
+        // manda archetypeId, então não entra aqui). fx.ranged (magia com
+        // range>1, ver castSpell) decide projétil-até-o-alvo vs. estouro
+        // direto no tile do monstro (magia de contato/curta distância).
+        if(isMagic && fx.archetypeId && m){
+          if(fx.ranged) SpellFxManager.spawnMissile(fx.archetypeId, 'attack', player.x, player.y, m.x, m.y, fx.element);
+          else SpellFxManager.spawnAreaEffect(fx.archetypeId, 'attack', m.x, m.y, fx.element);
+        }
       } else if(fx.t === 'monsterHit'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), `${fx.special?'⚡ ':''}-${fx.dmg}`, fx.special ? '#ff8a3d' : '#ff5a5a');
         if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
@@ -3092,10 +3059,12 @@
         spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
         castPoseUntil = now() + CAST_POSE_MS;
+        if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'heal', player.x, player.y, fx.element);
       } else if(fx.t === 'shield'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), 'Escudo!', '#8fd0ff');
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
         castPoseUntil = now() + CAST_POSE_MS;
+        if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
       } else if(fx.t === 'death'){
         // Consequências de morte (ver onPlayerDeath em huntEngine.js) — XP/
         // atributos/chance de item cair, todos reduzidos pela proteção das
@@ -3114,6 +3083,168 @@
       }
     });
   }
+
+  /* =========================================================
+     SISTEMA DE ANIMAÇÃO DE MAGIAS (Spell FX) — Area Effects + Missiles
+     =========================================================
+     Pedido do usuário: animação de VERDADE pra magia (sequência de frames
+     em cima do alvo pras magias de área, projétil viajando do conjurador
+     até o alvo pras de distância) — o anel/flash genérico de
+     processCombatFx acima (fxRings/monsterHitFlash) continua existindo do
+     jeito que está, isso aqui é uma camada NOVA por cima, não substitui
+     nada.
+
+     CONVENÇÃO DE ARQUIVO — igual à de auras (ver auraFrame no
+     SpriteManager): 1 pasta por efeito, 1 PNG por frame, numerado
+     (`effects/<id>/f00.png`, `f01.png`...) e 1 PNG por míssil
+     (`missiles/<id>.png`). Já temos as sheets BRUTAS do Tibia decodificadas
+     em tibia-dat-parser/outfit_sheets/{effects_sheet.png,missiles_sheet.png}
+     (mesma extração dos outfits — ver tibia-ravendawn-asset-extraction-
+     notas.md), mas ainda como atlas empacotado sem nome por magia; recortar
+     cada efeito nomeado (bola de fogo, feixe sagrado, flecha...) dali é o
+     mesmo tipo de trabalho manual que fizemos pros outfits e fica
+     PENDENTE. Por isso este sistema já tenta carregar o PNG real pela
+     convenção acima e, se o arquivo ainda não existir (loaded=false — o
+     próprio SpriteManager.load trata 404 como "não carregou", nunca
+     quebra), cai automaticamente num efeito PROCEDURAL (anel+partículas
+     desenhados no Canvas, na cor do arquétipo/elemento real da magia) —
+     é o mesmíssimo padrão que o jogo já usa pra monstro sem sprite
+     (bolinha+ícone) e outfit sem asset (fallback procedural): a animação
+     funciona HOJE pra toda magia e fica melhor sozinha assim que a arte
+     real for extraída pra pasta certa, sem precisar tocar neste código de
+     novo.
+     ========================================================= */
+  function effectFrame(effectKey, frameIdx){ return SpriteManager.load('fx_'+effectKey+'_'+frameIdx, `effects/${effectKey}/f${String(frameIdx).padStart(2,'0')}.png`); }
+  function missileImg(missileKey){ return SpriteManager.load('ms_'+missileKey, `missiles/${missileKey}.png`); }
+
+  // Catálogo visual por Arquétipo real (8 — ver ARCHETYPE_IDS no servidor)
+  // + "kind" da magia (attack/heal/defense): cor de fallback procedural +
+  // chave de pasta/arquivo que a arte real vai usar quando for extraída.
+  // effectKey/missileKey são só NOME DE CONVENÇÃO — não precisam existir
+  // ainda (ver fallback acima). `null` em heal/defense/missileKey = esse
+  // arquétipo não tem magia desse tipo (ou não é à distância).
+  const SPELL_VISUALS = {
+    warfare:    { color: '#e0563c', attack: { effectKey: 'warfare_attack',    missileKey: null,           frames: 5, frameMs: 70 }, heal: null, defense: { effectKey: 'warfare_defense',    frames: 5, frameMs: 90 } },
+    holy:       { color: '#ffe27a', attack: { effectKey: 'holy_attack',       missileKey: 'holy_bolt',     frames: 6, frameMs: 80 }, heal: { effectKey: 'holy_heal', frames: 6, frameMs: 90 }, defense: { effectKey: 'holy_defense',       frames: 5, frameMs: 90 } },
+    protection: { color: '#8fd0ff', attack: { effectKey: 'protection_attack', missileKey: null,           frames: 5, frameMs: 80 }, heal: null, defense: { effectKey: 'protection_defense', frames: 5, frameMs: 90 } },
+    archery:    { color: '#c9d97a', attack: { effectKey: 'archery_attack',    missileKey: 'arrow',         frames: 1, frameMs: 60 }, heal: null, defense: null },
+    wizardry:   { color: '#a37bff', attack: { effectKey: 'wizardry_attack',   missileKey: 'arcane_bolt',   frames: 6, frameMs: 70 }, heal: null, defense: { effectKey: 'wizardry_defense',   frames: 5, frameMs: 90 } },
+    shadow:     { color: '#8a5ac9', attack: { effectKey: 'shadow_attack',     missileKey: 'shadow_bolt',   frames: 6, frameMs: 75 }, heal: null, defense: null },
+    spiritual:  { color: '#7ee08a', attack: { effectKey: 'spiritual_attack',  missileKey: 'nature_bolt',   frames: 6, frameMs: 80 }, heal: { effectKey: 'spiritual_heal', frames: 6, frameMs: 90 }, defense: null },
+    witchcraft: { color: '#b96fd6', attack: { effectKey: 'witchcraft_attack', missileKey: 'curse_bolt',    frames: 6, frameMs: 85 }, heal: null, defense: null },
+  };
+  // `element` real (COMBAT_FIREDAMAGE etc., extraído do Lua — ver `element`
+  // em pushCombatFx/castSpell no huntEngine.js) só AFINA a cor do fallback
+  // procedural quando presente; a arte real, quando existir, é escolhida
+  // pelo arquétipo+kind acima, não por elemento.
+  const ELEMENT_FALLBACK_COLOR = {
+    COMBAT_FIREDAMAGE: '#ff8a3d', COMBAT_ICEDAMAGE: '#8fd0ff', COMBAT_ENERGYDAMAGE: '#c9a6ff',
+    COMBAT_EARTHDAMAGE: '#8a6a3d', COMBAT_HOLYDAMAGE: '#ffe27a', COMBAT_DEATHDAMAGE: '#8a5ac9',
+    COMBAT_PHYSICALDAMAGE: '#f2f2f2',
+  };
+  function spellVisualFor(archetypeId, kind){ const v = SPELL_VISUALS[archetypeId]; return (v && v[kind]) || null; }
+  function spellFallbackColor(archetypeId, element){ return (element && ELEMENT_FALLBACK_COLOR[element]) || (SPELL_VISUALS[archetypeId] || {}).color || '#8fd0ff'; }
+
+  /* ---- Area Effect: sequência de frames rodando 1x sobre o tile de mundo
+     (x,y) — do monstro OU do jogador, dependendo de quem foi afetado (ver
+     spawnAreaEffect abaixo, que resolve a âncora antes de criar). ---- */
+  class SpellAreaEffect {
+    constructor(effectKey, color, worldX, worldY, frames, frameMs){
+      this.effectKey = effectKey; this.color = color;
+      this.x = worldX; this.y = worldY;
+      this.frames = Math.max(1, frames || 1); this.frameMs = frameMs || 80;
+      this.bornAt = now();
+    }
+    get elapsed(){ return now() - this.bornAt; }
+    get finished(){ return this.elapsed > this.frames * this.frameMs; }
+    draw(toScreen){
+      const s = toScreen(this.x, this.y);
+      const anchorY = s.y - 14 * SPRITE_SCALE; // sobe um pouco do chão puro pra ficar centrado no corpo, igual monsterHitFlash
+      if(this.effectKey){
+        const frameIdx = Math.min(this.frames - 1, Math.floor(this.elapsed / this.frameMs));
+        const sp = effectFrame(this.effectKey, frameIdx);
+        if(sp.loaded){
+          const box = 46 * SPRITE_SCALE;
+          ctx.drawImage(sp.img, s.x - box/2, anchorY - box/2, box, box);
+          return;
+        }
+      }
+      // fallback procedural (sprite real ainda não existe pra este effectKey,
+      // ou magia sem effectKey definido): anel expandindo + núcleo, some
+      // suavemente — dá o "rodou uma magia aqui" sem precisar de arte.
+      const t = this.elapsed / (this.frames * this.frameMs);
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      ctx.beginPath(); ctx.arc(s.x, anchorY, (10 + 18 * t) * SPRITE_SCALE, 0, Math.PI * 2);
+      ctx.strokeStyle = this.color; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = this.color; ctx.globalAlpha = Math.max(0, (1 - t) * 0.35);
+      ctx.beginPath(); ctx.arc(s.x, anchorY, (10 + 18 * t) * SPRITE_SCALE * 0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ---- Missile / Distance Effect: viaja em linha reta do conjurador até o
+     alvo — tempo de voo proporcional à distância real (constante de
+     velocidade abaixo), gira pra sempre apontar na direção do movimento, e
+     ao chegar dispara onArrive() (normalmente spawna o Area Effect de
+     impacto em cima do alvo). ---- */
+  const SPELL_MISSILE_SPEED_PX_S = 520;
+  class SpellMissile {
+    constructor(missileKey, color, fromX, fromY, toX, toY, onArrive){
+      this.missileKey = missileKey; this.color = color;
+      this.fromX = fromX; this.fromY = fromY; this.toX = toX; this.toY = toY;
+      this.angle = Math.atan2(toY - fromY, toX - fromX);
+      this.onArrive = onArrive;
+      const dist = Math.hypot(toX - fromX, toY - fromY) || 1;
+      this.durationMs = Math.max(90, (dist / SPELL_MISSILE_SPEED_PX_S) * 1000);
+      this.bornAt = now();
+      this.arrived = false;
+    }
+    get t(){ return Math.min(1, (now() - this.bornAt) / this.durationMs); }
+    get finished(){ return this.arrived; }
+    draw(toScreen){
+      const t = this.t;
+      const wx = this.fromX + (this.toX - this.fromX) * t, wy = this.fromY + (this.toY - this.fromY) * t;
+      const s = toScreen(wx, wy);
+      const anchorY = s.y - 14 * SPRITE_SCALE;
+      const size = 12 * SPRITE_SCALE;
+      const sp = this.missileKey ? missileImg(this.missileKey) : null;
+      ctx.save(); ctx.translate(s.x, anchorY); ctx.rotate(this.angle);
+      if(sp && sp.loaded){
+        ctx.drawImage(sp.img, -size/2, -size/2, size, size);
+      } else {
+        // fallback procedural: elipse "esticada" na direção do voo, na cor
+        // do arquétipo/elemento — já dá a leitura de "projétil" sem sprite.
+        ctx.beginPath(); ctx.ellipse(0, 0, size * 0.55, size * 0.28, 0, 0, Math.PI * 2);
+        ctx.fillStyle = this.color; ctx.fill();
+      }
+      ctx.restore();
+      if(t >= 1 && !this.arrived){ this.arrived = true; if(this.onArrive) this.onArrive(); }
+    }
+  }
+
+  // Gerenciador único: quem chama de fora (processCombatFx) só sabe
+  // arquétipo/kind/coordenadas de mundo — a escolha de arte real vs.
+  // fallback, e a lógica de "só a partir daqui existe missil" (spawnMissile
+  // sempre agenda o Area Effect de impacto sozinho via onArrive) ficam
+  // encapsuladas aqui.
+  const SpellFxManager = {
+    areaEffects: [], missiles: [],
+    spawnAreaEffect(archetypeId, kind, worldX, worldY, element){
+      const v = spellVisualFor(archetypeId, kind);
+      const color = spellFallbackColor(archetypeId, element);
+      this.areaEffects.push(new SpellAreaEffect(v && v.effectKey, color, worldX, worldY, v ? v.frames : 6, v ? v.frameMs : 80));
+    },
+    spawnMissile(archetypeId, kind, fromX, fromY, toX, toY, element){
+      const v = spellVisualFor(archetypeId, kind);
+      const color = spellFallbackColor(archetypeId, element);
+      this.missiles.push(new SpellMissile(v && v.missileKey, color, fromX, fromY, toX, toY,
+        () => this.spawnAreaEffect(archetypeId, kind, toX, toY, element))); // impacto = mesmo Area Effect do alvo
+    },
+    draw(toScreen){
+      for(let i = this.areaEffects.length - 1; i >= 0; i--){ const e = this.areaEffects[i]; e.draw(toScreen); if(e.finished) this.areaEffects.splice(i, 1); }
+      for(let i = this.missiles.length - 1; i >= 0; i--){ const m = this.missiles[i]; m.draw(toScreen); if(m.finished) this.missiles.splice(i, 1); }
+    },
+  };
 
   // Animação de andar: acompanha, por personagem (jogador local + cada
   // remoto, indexados por uma chave estável — ver chamadores), pra ONDE ele
@@ -3163,13 +3294,8 @@
   }
 
   function draw(){
-    // Sem clip nem tarja/letterbox (removidos -- foram a causa do "mapa
-    // cortado com fundo preto" reportado pelo usuário): o chão preenche o
-    // canvas INTEIRO, a câmera fica sempre centralizada no jogador (ver
-    // getCameraOffset), e o zoom (TILE_SCREEN_PX/WORLD_SCALE) amplia tudo
-    // igual -- mundo e personagem crescem juntos preenchendo a tela toda.
     ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
-    ctx.fillRect(0, 0, viewW, viewH);
+    ctx.fillRect(0,0,viewW,viewH);
     const toScreen = worldToScreen;
 
     // Torre Elemental: cada torre tem sua própria "área quadrada" (pedido do
@@ -3184,11 +3310,12 @@
       : (activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS);
     let minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
     let minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
-    // União com os bounds do CANVAS INTEIRO (tela cheia, sem clip/gameRect) --
-    // o chão de fallback sempre cobre exatamente o que está visível na tela,
-    // por maior ou menor que a janela seja. Torre Elemental fica de fora de
-    // propósito: a arena é um quadrado fechado por design (ver comentário
-    // acima), não faz sentido desenhar chão além da muralha dela.
+    // Câmera de tela cheia com viewport estendido: em telas grandes/
+    // fullscreen o chão precisa cobrir 100% da tela, nunca só a área do
+    // conteúdo (cidade/lure points) — une os dois bounds em vez de travar
+    // num raio fixo tipo "15x11". Torre Elemental fica de fora de propósito:
+    // a arena é um quadrado fechado por design (ver comentário acima), não
+    // faz sentido desenhar chão além da muralha dela.
     if(!isTowerArena){
       const viewTL = screenToWorld(0, 0);
       const viewBR = screenToWorld(viewW, viewH);
@@ -3330,7 +3457,7 @@
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
         drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
-      }, headCart:{x:rp.x,y:rp.y}, headLift:54*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
+      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
     });
 
     drawList.push({ baseCart:{x:player.x,y:player.y}, draw:()=>{
@@ -3356,10 +3483,16 @@
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
         : anim;
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
-    }, headCart:{x:player.x,y:player.y}, headLift:66*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
+    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     drawList.forEach(item=> item.draw());
+
+    // Spell FX (Area Effects + Missiles, ver SpellFxManager acima) — desenha
+    // por CIMA de todo mundo/chão que acabou de sair (pedido explícito do
+    // usuário), mas ainda ABAIXO de nick/hp-bar/texto flutuante logo abaixo,
+    // pra esses nunca ficarem escondidos atrás de um efeito grande.
+    SpellFxManager.draw(toScreen);
 
     updateAndDrawAuraParticles(toScreen);
 
@@ -7191,80 +7324,40 @@
   const professionsModal = document.getElementById('professions-modal');
   const PROFESSION_LABEL = { forja:'Forja', carpintaria:'Carpintaria', tecelagem:'Tecelagem' };
   const PROFESSION_MATERIAL_LABEL = { minerio_ferro:'Minério de Ferro', barra_aco:'Barra de Aço', madeira_bruta:'Madeira Bruta', madeira_nobre:'Madeira Nobre', fio_de_la:'Fio de Lã', seda_encantada:'Seda Encantada' };
-  // Espelho de CRAFT_RARITY_TIERS/SUFFIX em huntEngine.js -- precisam existir
-  // antes do gerador logo abaixo, que os usa pra expandir cada arma base em
-  // 5 itens (1 por raridade), igual ao lado servidor.
+  const CRAFTABLE_ITEMS_CLIENT = {
+    d_dagger_common:{ name:'Adaga Enferrujada', rarity:'comum' }, d_dagger_uncommon:{ name:'Adaga do Batedor', rarity:'incomum' }, d_dagger_rare:{ name:'Adaga do Assassino', rarity:'rara' }, d_dagger_epic:{ name:'Adaga da Víbora', rarity:'épica' }, d_dagger_legendary:{ name:'Adaga das Sombras', rarity:'lendária' },
+    l_legs_common:{ name:'Calças de Couro Batido', rarity:'comum' }, l_legs_uncommon:{ name:'Calças de Viajante', rarity:'incomum' }, l_legs_rare:{ name:'Calças Reforçadas', rarity:'rara' }, l_legs_epic:{ name:'Calças do Vigia', rarity:'épica' }, l_legs_legendary:{ name:'Calças do Protetor', rarity:'lendária' },
+    s_shield_common:{ name:'Escudo de Madeira', rarity:'comum' }, s_shield_uncommon:{ name:'Escudo com Cravos', rarity:'incomum' }, s_shield_rare:{ name:'Escudo Reforçado', rarity:'rara' }, s_shield_epic:{ name:'Escudo da Muralha', rarity:'épica' }, s_shield_legendary:{ name:'Escudo do Guardião', rarity:'lendária' },
+    c_staff_common:{ name:'Cajado de Madeira', rarity:'comum' }, c_staff_uncommon:{ name:'Cajado Rúnico', rarity:'incomum' }, c_staff_rare:{ name:'Cajado Entalhado', rarity:'rara' }, c_staff_epic:{ name:'Cajado da Tempestade', rarity:'épica' }, c_staff_legendary:{ name:'Cajado Ancestral', rarity:'lendária' },
+    r_ring_common:{ name:'Anel de Fio Trançado', rarity:'comum' }, r_ring_uncommon:{ name:'Anel de Prata Trançada', rarity:'incomum' }, r_ring_rare:{ name:'Anel Entrelaçado', rarity:'rara' }, r_ring_epic:{ name:'Anel do Arcano', rarity:'épica' }, r_ring_legendary:{ name:'Anel do Tecelão Ancião', rarity:'lendária' },
+    m_amulet_common:{ name:'Amuleto de Lã', rarity:'comum' }, m_amulet_uncommon:{ name:'Amuleto Trançado', rarity:'incomum' }, m_amulet_rare:{ name:'Amuleto Encantado', rarity:'rara' }, m_amulet_epic:{ name:'Amuleto do Guardião Tecido', rarity:'épica' }, m_amulet_legendary:{ name:'Amuleto do Tecelão Ancião', rarity:'lendária' },
+  };
+  // Modelo NOVO (pedido do usuário -- ver comentário grandão equivalente em
+  // huntEngine.js acima de PROFESSION_RECIPES): 1 receita por TIPO de item,
+  // custo fixo, e a raridade do resultado sai SORTEADA no servidor (nunca
+  // escolhida) -- ver rollCraftRarity em huntEngine.js. Este espelho só
+  // precisa do nome genérico + custo/material; CRAFT_RARITY_*_CLIENT abaixo
+  // reproduz a MESMA tabela de pesos do servidor só pra mostrar as chances
+  // (%) na UI -- quem decide de verdade o resultado é sempre o servidor.
+  const PROFESSION_RECIPES_CLIENT = {
+    forja: [
+      { id:'forja_dagger', name:'Adaga', resultBase:'d_dagger', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
+      { id:'forja_legs', name:'Calças', resultBase:'l_legs', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
+      { id:'forja_shield', name:'Escudo', resultBase:'s_shield', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
+    ],
+    carpintaria: [
+      { id:'carpintaria_staff', name:'Cajado', resultBase:'c_staff', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}] },
+    ],
+    tecelagem: [
+      { id:'tecelagem_ring', name:'Anel', resultBase:'r_ring', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
+      { id:'tecelagem_amulet', name:'Amuleto', resultBase:'m_amulet', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
+    ],
+  };
+  // Espelho de CRAFT_RARITY_TIERS/WEIGHTS_LOW/HIGH em huntEngine.js -- só
+  // pra CALCULAR e MOSTRAR as % de chance na UI (transparência pro
+  // jogador); o sorteio de verdade acontece no servidor.
   const CRAFT_RARITY_TIERS_CLIENT = ['comum', 'incomum', 'rara', 'épica', 'lendária'];
   const CRAFT_RARITY_SUFFIX_CLIENT = { comum:'common', incomum:'uncommon', rara:'rare', 'épica':'epic', 'lendária':'legendary' };
-  const CRAFT_RARITY_LABEL_CLIENT = { comum:'Comum', incomum:'Incomum', rara:'Rara', 'épica':'Épica', 'lendária':'Lendária' };
-  // CORRIGIDO (2026-09-12): espelho fiel de CRAFT_BASE_WEAPONS em
-  // huntEngine.js -- o usuário apontou que os 5 nomes por categoria (ex.
-  // "Adaga Enferrujada"..."Adaga das Sombras") são 5 ARMAS DIFERENTES, não 5
-  // raridades de uma arma só; cada uma tem suas próprias 5 raridades
-  // independentes. Isso faz a Forja mostrar 5 caixas clicáveis separadas por
-  // categoria (uma por arma nomeada), cada uma sorteando sua raridade ao
-  // criar -- ver renderProfessions() logo abaixo, que já itera 1 caixa por
-  // RECEITA sem precisar de nenhuma mudança estrutural, já que agora
-  // PROFESSION_RECIPES_CLIENT tem 1 receita por arma (5 por categoria) em vez
-  // de 1 por categoria. Espada/Machado/Maça/Arco são as 4 categorias novas
-  // que saíram da loja do Ferreiro Bran e viraram craftáveis na Forja/
-  // Carpintaria (mesmos nomes/descrições reais de antes).
-  const CRAFT_BASE_WEAPONS_CLIENT = {
-    d_dagger: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
-      { id:'d_dagger_enferrujada', name:'Adaga Enferrujada' }, { id:'d_dagger_batedor', name:'Adaga do Batedor' }, { id:'d_dagger_assassino', name:'Adaga do Assassino' }, { id:'d_dagger_vibora', name:'Adaga da Víbora' }, { id:'d_dagger_sombras', name:'Adaga das Sombras' },
-    ]},
-    l_legs: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
-      { id:'l_legs_couro_batido', name:'Calças de Couro Batido' }, { id:'l_legs_viajante', name:'Calças de Viajante' }, { id:'l_legs_reforcadas', name:'Calças Reforçadas' }, { id:'l_legs_vigia', name:'Calças do Vigia' }, { id:'l_legs_protetor', name:'Calças do Protetor' },
-    ]},
-    s_shield: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
-      { id:'s_shield_madeira', name:'Escudo de Madeira' }, { id:'s_shield_cravos', name:'Escudo com Cravos' }, { id:'s_shield_reforcado', name:'Escudo Reforçado' }, { id:'s_shield_muralha', name:'Escudo da Muralha' }, { id:'s_shield_guardiao', name:'Escudo do Guardião' },
-    ]},
-    c_staff: { profession:'carpintaria', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}], items:[
-      { id:'c_staff_madeira', name:'Cajado de Madeira' }, { id:'c_staff_runico', name:'Cajado Rúnico' }, { id:'c_staff_entalhado', name:'Cajado Entalhado' }, { id:'c_staff_tempestade', name:'Cajado da Tempestade' }, { id:'c_staff_ancestral', name:'Cajado Ancestral' },
-    ]},
-    r_ring: { profession:'tecelagem', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}], items:[
-      { id:'r_ring_fio_trancado', name:'Anel de Fio Trançado' }, { id:'r_ring_prata_trancada', name:'Anel de Prata Trançada' }, { id:'r_ring_entrelacado', name:'Anel Entrelaçado' }, { id:'r_ring_arcano', name:'Anel do Arcano' }, { id:'r_ring_tecelao_anciao', name:'Anel do Tecelão Ancião' },
-    ]},
-    m_amulet: { profession:'tecelagem', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}], items:[
-      { id:'m_amulet_la', name:'Amuleto de Lã' }, { id:'m_amulet_trancado', name:'Amuleto Trançado' }, { id:'m_amulet_encantado', name:'Amuleto Encantado' }, { id:'m_amulet_guardiao_tecido', name:'Amuleto do Guardião Tecido' }, { id:'m_amulet_tecelao_anciao', name:'Amuleto do Tecelão Ancião' },
-    ]},
-    w_sword: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
-      { id:'w_sword_rough_sword', name:'Rough Sword' }, { id:'w_sword_wardens_sword', name:'Warden\'s Sword' }, { id:'w_sword_lawbreakers_sword', name:'Lawbreaker\'s Sword' }, { id:'w_sword_crusaders_longsword', name:'Crusader\'s Longsword' }, { id:'w_sword_guardians_longsword', name:'Guardian\'s Longsword' },
-    ]},
-    w_axe: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
-      { id:'w_axe_wicked_axe', name:'Wicked Axe' }, { id:'w_axe_marauders_axe', name:'Marauder\'s Axe' }, { id:'w_axe_dread_axe', name:'Dread Axe' }, { id:'w_axe_stormcarver_axe', name:'Stormcarver Axe' }, { id:'w_axe_hellblade_axe', name:'Hellblade Axe' },
-    ]},
-    w_club: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
-      { id:'w_club_solid_mace', name:'Solid Mace' }, { id:'w_club_studded_flail', name:'Studded Flail' }, { id:'w_club_shieldbreakers_flail', name:'Shieldbreaker\'s Flail' }, { id:'w_club_ravenguard_morningstar', name:'Ravenguard Morningstar' }, { id:'w_club_enforcers_mace', name:'Enforcer\'s Mace' },
-    ]},
-    w_distance: { profession:'carpintaria', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}], items:[
-      { id:'w_distance_oakwood_bow', name:'Oakwood Bow' }, { id:'w_distance_vipers_bow', name:'Viper\'s Bow' }, { id:'w_distance_black_ash_bow', name:'Black Ash Bow' }, { id:'w_distance_bullseye_bow', name:'Bullseye Bow' }, { id:'w_distance_predator_bow', name:'Predator Bow' },
-    ]},
-  };
-  // Gera CRAFTABLE_ITEMS_CLIENT (só nome/raridade, pro texto da caixa de
-  // odds) e PROFESSION_RECIPES_CLIENT (1 receita por ARMA NOMEADA -- 5 por
-  // categoria) a partir de CRAFT_BASE_WEAPONS_CLIENT, mesma lógica de
-  // buildCraftableItemsAndRecipes() em huntEngine.js -- quem valida/crafta
-  // de verdade continua sendo sempre o servidor.
-  const CRAFTABLE_ITEMS_CLIENT = {};
-  const PROFESSION_RECIPES_CLIENT = {};
-  Object.values(CRAFT_BASE_WEAPONS_CLIENT).forEach(category => {
-    if(!PROFESSION_RECIPES_CLIENT[category.profession]) PROFESSION_RECIPES_CLIENT[category.profession] = [];
-    category.items.forEach(base => {
-      CRAFT_RARITY_TIERS_CLIENT.forEach(tier => {
-        const itemId = `${base.id}_${CRAFT_RARITY_SUFFIX_CLIENT[tier]}`;
-        CRAFTABLE_ITEMS_CLIENT[itemId] = { name: `${base.name} (${CRAFT_RARITY_LABEL_CLIENT[tier]})`, rarity: tier };
-      });
-      PROFESSION_RECIPES_CLIENT[category.profession].push({
-        id: `${category.profession}_${base.id}`,
-        name: base.name,
-        resultBase: base.id,
-        levelReq: category.levelReq,
-        goldCost: category.goldCost,
-        materials: category.materials,
-      });
-    });
-  });
   const CRAFT_RARITY_WEIGHTS_LOW_CLIENT = [55, 28, 12, 4, 1];
   const CRAFT_RARITY_WEIGHTS_HIGH_CLIENT = [25, 30, 25, 13, 7];
   function craftRarityOddsClient(profLevel){
