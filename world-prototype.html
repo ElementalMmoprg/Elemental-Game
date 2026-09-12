@@ -1980,12 +1980,53 @@
         return { sx, sy, sw, sh };
       }catch(e){ return null; }
     }
+    // Atlas de OUTFIT DE ARQUÉTIPO (outfits_template/<id>_base|mask.png,
+    // gerado por gen_archetype_atlas.py -- ver
+    // claude/tibia-ravendawn-asset-extraction-notas.md) é DIFERENTE do atlas
+    // de corpo/armadura antigo (bodies/armors, feito à mão com folga real
+    // entre quadros): aqui os quadros são compostos em blocos de EXATAMENTE
+    // 64x64px cada (outfit w=2,h=2 já composto -- ver "BUG CRÍTICO" no doc
+    // acima) e concatenados numa grade fixa de 3 linhas (baixo/cima/direita)
+    // sem garantia de margem transparente entre quadros vizinhos -- a pose
+    // real desses outfits (agachada, segurando arma erguida) chega perto
+    // o bastante da borda da célula pra grudar visualmente no quadro ao
+    // lado quando o recorte é feito por DETECÇÃO DE CONTEÚDO
+    // (computeAutoFrame/computeBodyDirFrames, que dependem de uma linha/
+    // coluna totalmente vazia pra saber onde um quadro termina e o próximo
+    // começa) -- 2+ quadros/direções acabavam sendo lidos como 1 só,
+    // aparecendo misturados/borrados (o "erro branco" reportado pelo
+    // usuário na tela de criação). Corte por GRADE FIXA em vez de conteúdo
+    // resolve de vez, já que a geometria (3 linhas, células de 64px) é
+    // conhecida de antemão, não precisa ser adivinhada pixel a pixel.
+    function computeOutfitCellFrames(img){
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if(!w || !h) return null;
+      const rows = 3; // baixo, cima, direita -- ver gen_archetype_atlas.py
+      const cell = Math.round(h/rows) || 64;
+      const cols = Math.max(1, Math.round(w/cell));
+      const dirNames = ['down','up','right'];
+      const out = {};
+      dirNames.forEach((name, rowIdx)=>{
+        const frames = [];
+        for(let c=0;c<cols;c++) frames.push({ sx:c*cell, sy:rowIdx*cell, sw:cell, sh:cell });
+        out[name] = frames;
+      });
+      return out;
+    }
     function load(key, relPath){
       if(cache[key]) return cache[key];
       const entry = { img:new Image(), loaded:false, failed:false, frame:null, styleFrames:null, dirFrames:null };
       entry.img.crossOrigin = 'anonymous';
       entry.img.onload  = ()=>{
         entry.loaded = true;
+        // Atlas de outfit de Arquétipo (ver computeOutfitCellFrames acima) --
+        // grade fixa, não detecção de conteúdo (ver comentário grandão lá).
+        const isArchetypeOutfitAtlas = key.charAt(0)==='a' && key.charAt(1)==='_' && (key.slice(-5)==='_base' || key.slice(-5)==='_mask');
+        if(isArchetypeOutfitAtlas){
+          entry.dirFrames = computeOutfitCellFrames(entry.img);
+          entry.frame = entry.dirFrames && entry.dirFrames.down && entry.dirFrames.down[0];
+          return;
+        }
         entry.frame = computeAutoFrame(entry.img);
         // 'h_' = atlas de cabeça (ver headSprite) — só esses têm grade de
         // vários penteados empilhados; os demais (corpo/armadura/monstro/asa)
@@ -1996,13 +2037,11 @@
         // já é a linha 0 coluna 0 (o mesmo "parado de pé" de sempre), então
         // nada muda pra quem ainda não usa animação — dirFrames é só um
         // extra pro drawBodyDirFrame usar.
-        // 'a_' = atlas de armadura (ver armorSprite) — confirmado visualmente
-        // (ex.: player/armors male/sorcerer.png) que os arquivos de outfit
-        // têm a MESMA estrutura de grade (4 linhas de direção x N quadros)
-        // que o atlas de corpo, então reaproveita o mesmo detector — sem
-        // isso a armadura ficava travada num quadro só (parado) enquanto o
-        // corpo por baixo já andava, dando a impressão de roupa "colada"
-        // sem animação própria.
+        // 'a_' = atlas de armadura ANTIGA (ver armorSprite, ex.: player/armors
+        // male/sorcerer.png, feita à mão, com folga real entre quadros) —
+        // continua usando o detector por conteúdo normalmente; só o atlas
+        // NOVO de Arquétipo (isArchetypeOutfitAtlas acima) precisou da grade
+        // fixa.
         if((key.charAt(0)==='b' || key.charAt(0)==='a') && key.charAt(1)==='_') entry.dirFrames = computeBodyDirFrames(entry.img);
       };
       entry.img.onerror = ()=> entry.failed = true; // cai pro desenho procedural

@@ -153,6 +153,11 @@
   .arch-spell-name{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); }
   .arch-spell-kind{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); margin-left:6px; }
   .arch-spell-desc{ font-family:var(--font-body); font-size:11px; color:var(--ink-dim); line-height:1.4; }
+  .outfit-color-group{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .outfit-color-label{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); width:42px; flex-shrink:0; }
+  .outfit-color-row{ display:flex; gap:6px; flex-wrap:wrap; }
+  .outfit-color-dot{ width:19px; height:19px; border-radius:50%; border:2px solid transparent; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.4); }
+  .outfit-color-dot.active{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright), 0 0 8px rgba(240,211,138,.5); }
 
   .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:14px; display:none; }
   .msg.show{ display:block; }
@@ -225,6 +230,21 @@
       <div class="archetype-grid" id="archetype-grid"></div>
       <div class="archetype-detail" id="archetype-detail">
         <div class="archetype-detail-empty">Clique num arquétipo pra ver os detalhes antes de escolher.</div>
+      </div>
+      <div class="outfit-colors-block" id="outfit-colors-block" style="display:none;">
+        <div class="section-label" style="margin-top:12px;">Cor do Traje</div>
+        <div class="outfit-color-group">
+          <span class="outfit-color-label">Blusa</span>
+          <div class="outfit-color-row" id="outfit-color-body"></div>
+        </div>
+        <div class="outfit-color-group">
+          <span class="outfit-color-label">Calça</span>
+          <div class="outfit-color-row" id="outfit-color-legs"></div>
+        </div>
+        <div class="outfit-color-group">
+          <span class="outfit-color-label">Bota</span>
+          <div class="outfit-color-row" id="outfit-color-feet"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -343,11 +363,47 @@
         }).filter(Boolean);
       }catch(e){ return []; }
     }
+    // Atlas de outfit de Arquétipo (player/outfits_template/<id>_base|mask.png)
+    // é gerado por script numa grade FIXA de 3 linhas (baixo/cima/direita) x
+    // células de 64px cada (outfit w=2,h=2 já composto) -- SEM garantia de
+    // margem transparente entre quadros vizinhos, ao contrário do atlas de
+    // corpo/cabeça feito à mão. A pose real desses outfits (agachada,
+    // segurando arma erguida) chega perto o bastante da borda da célula pra
+    // grudar visualmente no quadro ao lado quando o recorte é feito por
+    // DETECÇÃO DE CONTEÚDO (computeAutoFrame, que espera uma linha/coluna
+    // totalmente vazia separando um quadro do outro) -- 2+ quadros/direções
+    // acabavam lidos como 1 só, aparecendo misturados/borrados no retrato
+    // (relatado pelo usuário como "erros brancos"). Corte por GRADE FIXA
+    // resolve isso, já que a geometria é conhecida de antemão.
+    function computeOutfitCellFrames(img){
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if(!w || !h) return null;
+      const rows = 3, cell = Math.round(h/rows) || 64;
+      const cols = Math.max(1, Math.round(w/cell));
+      const dirNames = ['down','up','right'];
+      const out = {};
+      dirNames.forEach((name, rowIdx)=>{
+        const frames = [];
+        for(let c=0;c<cols;c++) frames.push({ sx:c*cell, sy:rowIdx*cell, sw:cell, sh:cell });
+        out[name] = frames;
+      });
+      return out;
+    }
     function load(key, relPath){
       if(cache[key]) return cache[key];
       const entry = { img:new Image(), loaded:false, failed:false, frame:null, styleFrames:null };
       entry.img.crossOrigin = 'anonymous';
-      entry.img.onload = ()=>{ entry.loaded=true; entry.frame=computeAutoFrame(entry.img); if(key.indexOf('h_')===0) entry.styleFrames=computeHeadStyleFrames(entry.img); };
+      entry.img.onload = ()=>{
+        entry.loaded=true;
+        const isArchetypeOutfitAtlas = key.charAt(0)==='a' && key.charAt(1)==='_' && (key.slice(-5)==='_base' || key.slice(-5)==='_mask');
+        if(isArchetypeOutfitAtlas){
+          const cellFrames = computeOutfitCellFrames(entry.img);
+          entry.frame = cellFrames && cellFrames.down && cellFrames.down[0];
+          return;
+        }
+        entry.frame=computeAutoFrame(entry.img);
+        if(key.indexOf('h_')===0) entry.styleFrames=computeHeadStyleFrames(entry.img);
+      };
       entry.img.onerror = ()=> entry.failed = true;
       entry.img.src = URL_BASE + relPath;
       cache[key] = entry;
@@ -612,7 +668,7 @@
   // world-prototype.html, só sem outfit/asa/aura (não existem antes de entrar
   // no mundo). Cai num boneco procedural simples enquanto o sprite ainda não
   // terminou de carregar (load() é assíncrono) ou numa eventual falha de rede.
-  function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId, outfitId){
+  function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId, outfitId, colors){
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0,0,w,h);
@@ -620,12 +676,14 @@
     ctx.beginPath(); ctx.ellipse(cx, feetY+6, w*0.22, 5, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
     const body = SpriteManager.bodySprite(gender);
     const bodyDraw = SpriteManager.drawFrameContainFit(ctx, body, cx, feetY, w*0.34, h*0.46);
-    // Traje do Arquétipo (se algum já foi escolhido no passo 2) -- mesma
-    // camada/ordem de drawCharacterLayers no mundo: cobre o mesmo recorte do
-    // corpo, sempre com a cor PADRÃO (ver DEFAULT_COSMETIC_COLORS) já que a
-    // customização de cor só existe depois, dentro do jogo.
+    // Traje do Arquétipo (se algum já foi escolhido) -- mesma camada/ordem de
+    // drawCharacterLayers no mundo: cobre o mesmo recorte do corpo. `colors`
+    // (Blusa/Calça/Bota) vem do que o jogador escolheu nesta própria tela
+    // (ver buildOutfitColorRow) -- cai em DEFAULT_COSMETIC_COLORS (branco)
+    // só se ninguém passar nada (compatibilidade com quem ainda chama sem o
+    // 6º parâmetro).
     if(outfitId){
-      const armor = getRecoloredArmor(outfitId, DEFAULT_COSMETIC_COLORS);
+      const armor = getRecoloredArmor(outfitId, colors || DEFAULT_COSMETIC_COLORS);
       if(armor) SpriteManager.drawFrameContainFit(ctx, armor, cx, feetY, w*0.34, h*0.46);
     }
     const corCabelo = HAIR_COLOR_NAMES[(Number(hairColorId)||1)-1] || 'black';
@@ -755,14 +813,43 @@
     let hairStyleId = 1;
     let hairColorId = 1;
     let selectedArchetypeId = null;
+    // Cor de Blusa/Calça/Bota do traje (índice na mesma COSMETIC_COLOR_PALETTE
+    // de 19 cores já usada no jogo) -- pedido do jogador: escolher isso JÁ na
+    // criação, do jeito Tibia de verdade, em vez de só depois via aba Cores
+    // do Inventário. Índice 0 = branco/cor original do traje (ver
+    // COSMETIC_COLOR_PALETTE), igual ao default de sempre.
+    let bodyColorId = 0, legsColorId = 0, feetColorId = 0;
 
     const previewCanvas = document.getElementById('create-preview');
     function refreshPreview(){
       // outfitId (5º parâmetro) só entra quando algum arquétipo já foi
       // escolhido — antes disso o boneco aparece só com corpo+cabelo.
-      drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId, selectedArchetypeId);
+      drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId, selectedArchetypeId, { head:0, body:bodyColorId, legs:legsColorId, feet:feetColorId });
     }
     scheduleRedraw(refreshPreview);
+
+    // Grade de cor do traje -- 3 linhas (Blusa/Calça/Bota), 19 bolinhas cada
+    // (mesma paleta do jogo). Só aparece depois que um Arquétipo é escolhido
+    // (ver card.addEventListener mais abaixo) -- sem traje equipado não há o
+    // que colorir. onPick já redesenha o retrato em tempo real.
+    function buildOutfitColorRow(containerId, onPick){
+      const row = document.getElementById(containerId);
+      COSMETIC_COLOR_PALETTE.forEach((hex, idx)=>{
+        const dot = document.createElement('div');
+        dot.className = 'outfit-color-dot' + (idx===0 ? ' active' : '');
+        dot.style.background = hex;
+        dot.addEventListener('click', ()=>{
+          row.querySelectorAll('.outfit-color-dot').forEach(d=>d.classList.remove('active'));
+          dot.classList.add('active');
+          onPick(idx);
+          refreshPreview();
+        });
+        row.appendChild(dot);
+      });
+    }
+    buildOutfitColorRow('outfit-color-body', (idx)=>{ bodyColorId = idx; });
+    buildOutfitColorRow('outfit-color-legs', (idx)=>{ legsColorId = idx; });
+    buildOutfitColorRow('outfit-color-feet', (idx)=>{ feetColorId = idx; });
 
     // Ciclador de penteado: 1 preview pequeno + setas, em vez da antiga
     // grade grande de 19 retratos (estilo Ragnarok, removida a pedido do
@@ -882,6 +969,7 @@
         renderArchetypeDetail(archId);
         document.getElementById('preview-archetype-tag').textContent = `${info.label} — ${info.theme}`;
         createBtn.disabled = false;
+        document.getElementById('outfit-colors-block').style.display = 'block';
         refreshPreview();
       });
       archetypeGrid.appendChild(card);
@@ -897,7 +985,7 @@
 
       const data = await api('/api/characters/create', {
         method:'POST',
-        body: JSON.stringify({ nick, gender, hairId: hairColorId, hairStyleId, archetypeId: selectedArchetypeId }),
+        body: JSON.stringify({ nick, gender, hairId: hairColorId, hairStyleId, archetypeId: selectedArchetypeId, bodyColorId, legsColorId, feetColorId }),
       });
       if(!data.ok){
         msgEl.textContent = ERROR_LABELS[data.error] || 'Não foi possível criar o personagem.';
