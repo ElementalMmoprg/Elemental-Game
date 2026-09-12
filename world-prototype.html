@@ -7191,40 +7191,80 @@
   const professionsModal = document.getElementById('professions-modal');
   const PROFESSION_LABEL = { forja:'Forja', carpintaria:'Carpintaria', tecelagem:'Tecelagem' };
   const PROFESSION_MATERIAL_LABEL = { minerio_ferro:'Minério de Ferro', barra_aco:'Barra de Aço', madeira_bruta:'Madeira Bruta', madeira_nobre:'Madeira Nobre', fio_de_la:'Fio de Lã', seda_encantada:'Seda Encantada' };
-  const CRAFTABLE_ITEMS_CLIENT = {
-    d_dagger_common:{ name:'Adaga Enferrujada', rarity:'comum' }, d_dagger_uncommon:{ name:'Adaga do Batedor', rarity:'incomum' }, d_dagger_rare:{ name:'Adaga do Assassino', rarity:'rara' }, d_dagger_epic:{ name:'Adaga da Víbora', rarity:'épica' }, d_dagger_legendary:{ name:'Adaga das Sombras', rarity:'lendária' },
-    l_legs_common:{ name:'Calças de Couro Batido', rarity:'comum' }, l_legs_uncommon:{ name:'Calças de Viajante', rarity:'incomum' }, l_legs_rare:{ name:'Calças Reforçadas', rarity:'rara' }, l_legs_epic:{ name:'Calças do Vigia', rarity:'épica' }, l_legs_legendary:{ name:'Calças do Protetor', rarity:'lendária' },
-    s_shield_common:{ name:'Escudo de Madeira', rarity:'comum' }, s_shield_uncommon:{ name:'Escudo com Cravos', rarity:'incomum' }, s_shield_rare:{ name:'Escudo Reforçado', rarity:'rara' }, s_shield_epic:{ name:'Escudo da Muralha', rarity:'épica' }, s_shield_legendary:{ name:'Escudo do Guardião', rarity:'lendária' },
-    c_staff_common:{ name:'Cajado de Madeira', rarity:'comum' }, c_staff_uncommon:{ name:'Cajado Rúnico', rarity:'incomum' }, c_staff_rare:{ name:'Cajado Entalhado', rarity:'rara' }, c_staff_epic:{ name:'Cajado da Tempestade', rarity:'épica' }, c_staff_legendary:{ name:'Cajado Ancestral', rarity:'lendária' },
-    r_ring_common:{ name:'Anel de Fio Trançado', rarity:'comum' }, r_ring_uncommon:{ name:'Anel de Prata Trançada', rarity:'incomum' }, r_ring_rare:{ name:'Anel Entrelaçado', rarity:'rara' }, r_ring_epic:{ name:'Anel do Arcano', rarity:'épica' }, r_ring_legendary:{ name:'Anel do Tecelão Ancião', rarity:'lendária' },
-    m_amulet_common:{ name:'Amuleto de Lã', rarity:'comum' }, m_amulet_uncommon:{ name:'Amuleto Trançado', rarity:'incomum' }, m_amulet_rare:{ name:'Amuleto Encantado', rarity:'rara' }, m_amulet_epic:{ name:'Amuleto do Guardião Tecido', rarity:'épica' }, m_amulet_legendary:{ name:'Amuleto do Tecelão Ancião', rarity:'lendária' },
-  };
-  // Modelo NOVO (pedido do usuário -- ver comentário grandão equivalente em
-  // huntEngine.js acima de PROFESSION_RECIPES): 1 receita por TIPO de item,
-  // custo fixo, e a raridade do resultado sai SORTEADA no servidor (nunca
-  // escolhida) -- ver rollCraftRarity em huntEngine.js. Este espelho só
-  // precisa do nome genérico + custo/material; CRAFT_RARITY_*_CLIENT abaixo
-  // reproduz a MESMA tabela de pesos do servidor só pra mostrar as chances
-  // (%) na UI -- quem decide de verdade o resultado é sempre o servidor.
-  const PROFESSION_RECIPES_CLIENT = {
-    forja: [
-      { id:'forja_dagger', name:'Adaga', resultBase:'d_dagger', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
-      { id:'forja_legs', name:'Calças', resultBase:'l_legs', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
-      { id:'forja_shield', name:'Escudo', resultBase:'s_shield', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
-    ],
-    carpintaria: [
-      { id:'carpintaria_staff', name:'Cajado', resultBase:'c_staff', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}] },
-    ],
-    tecelagem: [
-      { id:'tecelagem_ring', name:'Anel', resultBase:'r_ring', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
-      { id:'tecelagem_amulet', name:'Amuleto', resultBase:'m_amulet', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
-    ],
-  };
-  // Espelho de CRAFT_RARITY_TIERS/WEIGHTS_LOW/HIGH em huntEngine.js -- só
-  // pra CALCULAR e MOSTRAR as % de chance na UI (transparência pro
-  // jogador); o sorteio de verdade acontece no servidor.
+  // Espelho de CRAFT_RARITY_TIERS/SUFFIX em huntEngine.js -- precisam existir
+  // antes do gerador logo abaixo, que os usa pra expandir cada arma base em
+  // 5 itens (1 por raridade), igual ao lado servidor.
   const CRAFT_RARITY_TIERS_CLIENT = ['comum', 'incomum', 'rara', 'épica', 'lendária'];
   const CRAFT_RARITY_SUFFIX_CLIENT = { comum:'common', incomum:'uncommon', rara:'rare', 'épica':'epic', 'lendária':'legendary' };
+  const CRAFT_RARITY_LABEL_CLIENT = { comum:'Comum', incomum:'Incomum', rara:'Rara', 'épica':'Épica', 'lendária':'Lendária' };
+  // CORRIGIDO (2026-09-12): espelho fiel de CRAFT_BASE_WEAPONS em
+  // huntEngine.js -- o usuário apontou que os 5 nomes por categoria (ex.
+  // "Adaga Enferrujada"..."Adaga das Sombras") são 5 ARMAS DIFERENTES, não 5
+  // raridades de uma arma só; cada uma tem suas próprias 5 raridades
+  // independentes. Isso faz a Forja mostrar 5 caixas clicáveis separadas por
+  // categoria (uma por arma nomeada), cada uma sorteando sua raridade ao
+  // criar -- ver renderProfessions() logo abaixo, que já itera 1 caixa por
+  // RECEITA sem precisar de nenhuma mudança estrutural, já que agora
+  // PROFESSION_RECIPES_CLIENT tem 1 receita por arma (5 por categoria) em vez
+  // de 1 por categoria. Espada/Machado/Maça/Arco são as 4 categorias novas
+  // que saíram da loja do Ferreiro Bran e viraram craftáveis na Forja/
+  // Carpintaria (mesmos nomes/descrições reais de antes).
+  const CRAFT_BASE_WEAPONS_CLIENT = {
+    d_dagger: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
+      { id:'d_dagger_enferrujada', name:'Adaga Enferrujada' }, { id:'d_dagger_batedor', name:'Adaga do Batedor' }, { id:'d_dagger_assassino', name:'Adaga do Assassino' }, { id:'d_dagger_vibora', name:'Adaga da Víbora' }, { id:'d_dagger_sombras', name:'Adaga das Sombras' },
+    ]},
+    l_legs: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
+      { id:'l_legs_couro_batido', name:'Calças de Couro Batido' }, { id:'l_legs_viajante', name:'Calças de Viajante' }, { id:'l_legs_reforcadas', name:'Calças Reforçadas' }, { id:'l_legs_vigia', name:'Calças do Vigia' }, { id:'l_legs_protetor', name:'Calças do Protetor' },
+    ]},
+    s_shield: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
+      { id:'s_shield_madeira', name:'Escudo de Madeira' }, { id:'s_shield_cravos', name:'Escudo com Cravos' }, { id:'s_shield_reforcado', name:'Escudo Reforçado' }, { id:'s_shield_muralha', name:'Escudo da Muralha' }, { id:'s_shield_guardiao', name:'Escudo do Guardião' },
+    ]},
+    c_staff: { profession:'carpintaria', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}], items:[
+      { id:'c_staff_madeira', name:'Cajado de Madeira' }, { id:'c_staff_runico', name:'Cajado Rúnico' }, { id:'c_staff_entalhado', name:'Cajado Entalhado' }, { id:'c_staff_tempestade', name:'Cajado da Tempestade' }, { id:'c_staff_ancestral', name:'Cajado Ancestral' },
+    ]},
+    r_ring: { profession:'tecelagem', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}], items:[
+      { id:'r_ring_fio_trancado', name:'Anel de Fio Trançado' }, { id:'r_ring_prata_trancada', name:'Anel de Prata Trançada' }, { id:'r_ring_entrelacado', name:'Anel Entrelaçado' }, { id:'r_ring_arcano', name:'Anel do Arcano' }, { id:'r_ring_tecelao_anciao', name:'Anel do Tecelão Ancião' },
+    ]},
+    m_amulet: { profession:'tecelagem', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}], items:[
+      { id:'m_amulet_la', name:'Amuleto de Lã' }, { id:'m_amulet_trancado', name:'Amuleto Trançado' }, { id:'m_amulet_encantado', name:'Amuleto Encantado' }, { id:'m_amulet_guardiao_tecido', name:'Amuleto do Guardião Tecido' }, { id:'m_amulet_tecelao_anciao', name:'Amuleto do Tecelão Ancião' },
+    ]},
+    w_sword: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
+      { id:'w_sword_rough_sword', name:'Rough Sword' }, { id:'w_sword_wardens_sword', name:'Warden\'s Sword' }, { id:'w_sword_lawbreakers_sword', name:'Lawbreaker\'s Sword' }, { id:'w_sword_crusaders_longsword', name:'Crusader\'s Longsword' }, { id:'w_sword_guardians_longsword', name:'Guardian\'s Longsword' },
+    ]},
+    w_axe: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
+      { id:'w_axe_wicked_axe', name:'Wicked Axe' }, { id:'w_axe_marauders_axe', name:'Marauder\'s Axe' }, { id:'w_axe_dread_axe', name:'Dread Axe' }, { id:'w_axe_stormcarver_axe', name:'Stormcarver Axe' }, { id:'w_axe_hellblade_axe', name:'Hellblade Axe' },
+    ]},
+    w_club: { profession:'forja', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}], items:[
+      { id:'w_club_solid_mace', name:'Solid Mace' }, { id:'w_club_studded_flail', name:'Studded Flail' }, { id:'w_club_shieldbreakers_flail', name:'Shieldbreaker\'s Flail' }, { id:'w_club_ravenguard_morningstar', name:'Ravenguard Morningstar' }, { id:'w_club_enforcers_mace', name:'Enforcer\'s Mace' },
+    ]},
+    w_distance: { profession:'carpintaria', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}], items:[
+      { id:'w_distance_oakwood_bow', name:'Oakwood Bow' }, { id:'w_distance_vipers_bow', name:'Viper\'s Bow' }, { id:'w_distance_black_ash_bow', name:'Black Ash Bow' }, { id:'w_distance_bullseye_bow', name:'Bullseye Bow' }, { id:'w_distance_predator_bow', name:'Predator Bow' },
+    ]},
+  };
+  // Gera CRAFTABLE_ITEMS_CLIENT (só nome/raridade, pro texto da caixa de
+  // odds) e PROFESSION_RECIPES_CLIENT (1 receita por ARMA NOMEADA -- 5 por
+  // categoria) a partir de CRAFT_BASE_WEAPONS_CLIENT, mesma lógica de
+  // buildCraftableItemsAndRecipes() em huntEngine.js -- quem valida/crafta
+  // de verdade continua sendo sempre o servidor.
+  const CRAFTABLE_ITEMS_CLIENT = {};
+  const PROFESSION_RECIPES_CLIENT = {};
+  Object.values(CRAFT_BASE_WEAPONS_CLIENT).forEach(category => {
+    if(!PROFESSION_RECIPES_CLIENT[category.profession]) PROFESSION_RECIPES_CLIENT[category.profession] = [];
+    category.items.forEach(base => {
+      CRAFT_RARITY_TIERS_CLIENT.forEach(tier => {
+        const itemId = `${base.id}_${CRAFT_RARITY_SUFFIX_CLIENT[tier]}`;
+        CRAFTABLE_ITEMS_CLIENT[itemId] = { name: `${base.name} (${CRAFT_RARITY_LABEL_CLIENT[tier]})`, rarity: tier };
+      });
+      PROFESSION_RECIPES_CLIENT[category.profession].push({
+        id: `${category.profession}_${base.id}`,
+        name: base.name,
+        resultBase: base.id,
+        levelReq: category.levelReq,
+        goldCost: category.goldCost,
+        materials: category.materials,
+      });
+    });
+  });
   const CRAFT_RARITY_WEIGHTS_LOW_CLIENT = [55, 28, 12, 4, 1];
   const CRAFT_RARITY_WEIGHTS_HIGH_CLIENT = [25, 30, 25, 13, 7];
   function craftRarityOddsClient(profLevel){
