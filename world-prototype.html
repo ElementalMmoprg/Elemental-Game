@@ -2682,12 +2682,18 @@
      ========================================================= */
   const canvas = document.getElementById('world-canvas');
   const ctx = canvas.getContext('2d');
-  // Câmera de tela cheia com viewport estendido: o canvas SEMPRE cobre
-  // 100% da janela do navegador (fullscreen incluso — o browser dispara
-  // 'resize' ao entrar/sair do fullscreen igual a qualquer redimensionamento),
-  // e a grade de tiles/sprites simplesmente revela mais coisa nas bordas em
-  // telas maiores (ver bounds em draw()) em vez de esticar/encolher o que já
-  // tinha. viewW/viewH guardam o tamanho em pixels DE CSS (lógicos) — o
+  // Zoom de Pixel Art (Escala de Viewport) — 2026-09, reescrito depois que a
+  // tentativa anterior (janela 15×11 recortada com clip + tarja preta fora
+  // dela) quebrou o jogo de verdade pro usuário: mapa cortado com fundo
+  // preto, tiles bugados, personagem continuando minúsculo. Pedido explícito
+  // do usuário pra corrigir: SEM clip, SEM tarja/letterbox — o mundo
+  // ampliado deve preencher a área escura inteira da interface (o canvas
+  // inteiro), com a câmera sempre centralizada no jogador. VIEW_TILES_X/Y
+  // continuam existindo só como REFERÊNCIA pra escolher um fator de zoom
+  // inteiro que garanta pelo menos ~15×11 tiles visíveis (telas mais largas
+  // que 15:11 mostram mais colunas dos lados pra preencher a tela toda, em
+  // vez de sobrar moldura preta) — isso é o "Tamanho Lógico" do pedido do
+  // usuário. viewW/viewH guardam o tamanho em pixels DE CSS (lógicos) — o
   // canvas.width/height reais ficam em pixels de DISPOSITIVO (* devicePixelRatio)
   // só pra ficar nítido em telas retina/hidpi; ctx.setTransform devolve o
   // sistema de coordenadas pra pixel-de-CSS, então NENHUM outro desenho no
@@ -2695,22 +2701,14 @@
   // pixel-de-CSS como sempre desenhou.
   let viewW = window.innerWidth, viewH = window.innerHeight;
   // ==========================================================================
-  // JANELA DE JOGO FIXA 15×11 TILES (ESTILO TIBIA CLÁSSICO) — 2026-09: pedido
-  // explícito do usuário depois de ver a câmera de tela cheia revelando mais
-  // de 50 colunas de tile numa tela grande (tudo minúsculo). O Tibia original
-  // SEMPRE renderiza uma grade lógica fixa de 15×11 tiles, não importa o
-  // tamanho da janela do cliente — telas maiores só ampliam essa mesma área
-  // (fator de escala inteiro), nunca revelam mais mundo. VIEW_TILES_X/Y é
-  // essa grade; BASE_TILE_PX é o tamanho "nativo" de 1 tile antes do zoom
-  // (mesma escala de referência de sempre, 32px); ZOOM_FACTOR (2x/3x/4x,
-  // recalculado a cada resize) é o quanto essa grade é esticada pra caber na
-  // janela de verdade, escolhido pelo eixo mais apertado (largura OU altura)
-  // pra nunca estourar os 15×11 tiles em nenhum dos dois eixos. TILE_SCREEN_PX/
-  // WORLD_SCALE/SPRITE_SCALE deixam de ser `const` fixo e passam a ser
-  // recalculados dentro de recomputeZoom() (chamada por resize()) — todo o
-  // resto do arquivo já lê essas 3 variáveis pra desenhar QUALQUER coisa
-  // (personagem, monstro, cenário, UI no canvas), então nada mais precisou
-  // mudar pra escalar junto.
+  // ZOOM GLOBAL INTEIRO (pedido do usuário: "ctx.scale(3,3) ou multiplicar os
+  // tamanhos finais de renderização por 3 ou 4") — em vez de um ctx.scale()
+  // global (que exigiria reescrever toda coordenada de mouse/clique pro
+  // espaço escalado), a mesma ampliação é obtida multiplicando o tamanho de
+  // desenho de CADA elemento (tile, personagem, monstro, cenário) por
+  // TILE_SCREEN_PX/WORLD_SCALE/SPRITE_SCALE — efeito idêntico, sem precisar
+  // converter coordenadas de input em nenhum outro lugar do arquivo. Essas 3
+  // variáveis são `let` porque são recalculadas a cada resize (recomputeZoom()).
   const VIEW_TILES_X = 15, VIEW_TILES_Y = 11;
   const BASE_TILE_PX = 32;
   let ZOOM_FACTOR = 2;
@@ -2721,13 +2719,6 @@
   // em relação ao tile de sempre (calibrados em cima de WORLD_SCALE=1.55),
   // não importa o ZOOM_FACTOR atual.
   let SPRITE_SCALE = WORLD_SCALE / 1.55;
-  // Retângulo (em pixels de CSS) onde o mundo de verdade é desenhado dentro
-  // do canvas -- exatamente VIEW_TILES_X*TILE_SCREEN_PX × VIEW_TILES_Y*
-  // TILE_SCREEN_PX, centralizado; o resto do canvas (quando a janela não bate
-  // exatamente na proporção 15:11) fica como tarja preta (letterbox), igual
-  // um emulador escalando uma resolução fixa -- nunca esticamos/cortamos o
-  // conteúdo, só sobra/falta moldura.
-  let gameRect = { x: 0, y: 0, w: 0, h: 0 };
   function recomputeZoom(){
     const fitX = viewW / (VIEW_TILES_X * BASE_TILE_PX);
     const fitY = viewH / (VIEW_TILES_Y * BASE_TILE_PX);
@@ -2739,8 +2730,6 @@
     TILE_SCREEN_PX = BASE_TILE_PX * ZOOM_FACTOR;
     WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
     SPRITE_SCALE = WORLD_SCALE / 1.55;
-    const w = VIEW_TILES_X * TILE_SCREEN_PX, h = VIEW_TILES_Y * TILE_SCREEN_PX;
-    gameRect = { x: (viewW - w) / 2, y: (viewH - h) / 2, w, h };
   }
   function resize(){
     const dpr = window.devicePixelRatio || 1;
@@ -2748,10 +2737,10 @@
     canvas.style.width = viewW + 'px'; canvas.style.height = viewH + 'px';
     canvas.width = Math.round(viewW * dpr); canvas.height = Math.round(viewH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // Nearest Neighbor -- mantém a pixel art nítida ao ampliar (Tibia real
-    // nunca borra o sprite/tile num zoom inteiro). Precisa ser reaplicado
-    // depois de TODO resize: mudar canvas.width/height reseta o contexto
-    // (inclusive esta flag) nos browsers principais.
+    // Filtro Nítido -- mantém a pixel art nítida ao ampliar, sem borrão
+    // (equivalente a CSS image-rendering:pixelated, aplicado no contexto 2D).
+    // Precisa ser reaplicado depois de TODO resize: mudar canvas.width/height
+    // reseta o contexto (inclusive esta flag) nos browsers principais.
     ctx.imageSmoothingEnabled = false;
     ctx.webkitImageSmoothingEnabled = false;
     ctx.mozImageSmoothingEnabled = false;
@@ -2785,14 +2774,12 @@
   }
   // Câmera segue o personagem: o offset centraliza sempre a posição atual de
   // player.x/player.y (atualizada pelo servidor e, de forma otimista, pelo
-  // clique de movimento/WASD) no meio da JANELA DE JOGO 15×11 (gameRect),
-  // não mais no meio do canvas/janela do navegador inteira -- é isso que
-  // trava a grade em exatamente 15×11 tiles visíveis, com o resto do canvas
-  // (se sobrar, telas com proporção diferente de 15:11) ficando como tarja
-  // preta fora do clip (ver draw()).
+  // clique de movimento/WASD) no meio do CANVAS INTEIRO -- o jogador fica
+  // sempre exatamente no centro da tela, e o mundo ampliado (ZOOM_FACTOR)
+  // preenche toda a área ao redor dele, sem moldura/tarja nenhuma.
   function getCameraOffset(){
     const p = worldToScreenRaw(player.x, player.y);
-    return { x: gameRect.x + gameRect.w/2 - p.x, y: gameRect.y + gameRect.h/2 - p.y + 40*(ZOOM_FACTOR/2) };
+    return { x: viewW/2 - p.x, y: viewH/2 - p.y + 40*(ZOOM_FACTOR/2) };
   }
   const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
   // Praça da Cidade Principal — mesma técnica de sempre (blocos de cenário
@@ -3176,20 +3163,13 @@
   }
 
   function draw(){
-    // Tarja preta (letterbox) no canvas INTEIRO primeiro -- some se a janela
-    // bater exatamente na proporção 15:11, senão preenche a moldura que sobra
-    // nas laterais/topo-baixo fora da janela de jogo fixa (gameRect).
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0,0,viewW,viewH);
-    // Tudo daqui pra frente (mundo, personagens, efeitos) fica recortado
-    // (clip) dentro de gameRect -- exatamente VIEW_TILES_X×VIEW_TILES_Y tiles,
-    // nunca mais nem menos, seja qual for o tamanho da janela do navegador
-    // (pedido do usuário: "renderiza estritamente 15x11 tiles"). ctx.restore()
-    // no fim de draw() devolve o clip antes do próximo frame.
-    ctx.save();
-    ctx.beginPath(); ctx.rect(gameRect.x, gameRect.y, gameRect.w, gameRect.h); ctx.clip();
+    // Sem clip nem tarja/letterbox (removidos -- foram a causa do "mapa
+    // cortado com fundo preto" reportado pelo usuário): o chão preenche o
+    // canvas INTEIRO, a câmera fica sempre centralizada no jogador (ver
+    // getCameraOffset), e o zoom (TILE_SCREEN_PX/WORLD_SCALE) amplia tudo
+    // igual -- mundo e personagem crescem juntos preenchendo a tela toda.
     ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
-    ctx.fillRect(gameRect.x, gameRect.y, gameRect.w, gameRect.h);
+    ctx.fillRect(0, 0, viewW, viewH);
     const toScreen = worldToScreen;
 
     // Torre Elemental: cada torre tem sua própria "área quadrada" (pedido do
@@ -3204,16 +3184,14 @@
       : (activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS);
     let minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
     let minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
-    // Janela de jogo FIXA 15×11 (gameRect) -- ao contrário da versão antiga
-    // (câmera de tela cheia, que unia os bounds com o viewport INTEIRO e
-    // acabava revelando dezenas de colunas de tile em monitores grandes),
-    // agora só une com o retângulo em tela de gameRect -- exatamente 15×11
-    // tiles ao redor do jogador, nunca mais que isso. Torre Elemental fica de
-    // fora de propósito: a arena é um quadrado fechado por design (ver
-    // comentário acima), não faz sentido desenhar chão além da muralha dela.
+    // União com os bounds do CANVAS INTEIRO (tela cheia, sem clip/gameRect) --
+    // o chão de fallback sempre cobre exatamente o que está visível na tela,
+    // por maior ou menor que a janela seja. Torre Elemental fica de fora de
+    // propósito: a arena é um quadrado fechado por design (ver comentário
+    // acima), não faz sentido desenhar chão além da muralha dela.
     if(!isTowerArena){
-      const viewTL = screenToWorld(gameRect.x, gameRect.y);
-      const viewBR = screenToWorld(gameRect.x + gameRect.w, gameRect.y + gameRect.h);
+      const viewTL = screenToWorld(0, 0);
+      const viewBR = screenToWorld(viewW, viewH);
       const pad = TILE_STEP; // 1 tile de folga além da borda visível, evita "piscar" tile cortado ao mover
       minX = Math.min(minX, viewTL.x - pad); maxX = Math.max(maxX, viewBR.x + pad);
       minY = Math.min(minY, viewTL.y - pad); maxY = Math.max(maxY, viewBR.y + pad);
@@ -3428,8 +3406,6 @@
         }
       });
     }
-
-    ctx.restore(); // fecha o clip de gameRect aberto no início de draw()
 
     requestAnimationFrame(loop);
   }
