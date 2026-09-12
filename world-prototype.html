@@ -1998,20 +1998,57 @@
     // usuário na tela de criação). Corte por GRADE FIXA em vez de conteúdo
     // resolve de vez, já que a geometria (3 linhas, células de 64px) é
     // conhecida de antemão, não precisa ser adivinhada pixel a pixel.
+    // ATUALIZAÇÃO: usar a célula de 64x64 INTEIRA como quadro final (sem
+    // cortar a folga/padding transparente que sobra dentro dela) fazia o
+    // personagem sair pequeno/encolhido lá dentro do quadro -- e como o
+    // corpo padrão (bodySprite) era desenhado por BAIXO primeiro (recortado
+    // rente, sem folga, então "maior" visualmente), o resultado era o corpo
+    // genérico aparecendo maior ao redor do traje encolhido: o resquício de
+    // "boneco genérico"/"sprite do ragnarok" que o usuário reportou mesmo
+    // depois do traje do Arquétipo já estar aparecendo. Resolvido em duas
+    // frentes: (1) aqui, um recorte por CONTEÚDO travado dentro dos limites
+    // da própria célula (nunca vaza pra célula vizinha -- não reintroduz o
+    // bug antigo -- mas tira a folga de dentro dela); (2) em
+    // drawCharacterLayers mais abaixo, o corpo padrão deixou de ser
+    // desenhado por baixo de um traje de Arquétipo (que já é um sprite de
+    // corpo INTEIRO, não uma camada de roupa) -- só entra como placeholder
+    // enquanto o traje ainda está carregando.
     function computeOutfitCellFrames(img){
-      const w = img.naturalWidth, h = img.naturalHeight;
-      if(!w || !h) return null;
-      const rows = 3; // baixo, cima, direita -- ver gen_archetype_atlas.py
-      const cell = Math.round(h/rows) || 64;
-      const cols = Math.max(1, Math.round(w/cell));
-      const dirNames = ['down','up','right'];
-      const out = {};
-      dirNames.forEach((name, rowIdx)=>{
-        const frames = [];
-        for(let c=0;c<cols;c++) frames.push({ sx:c*cell, sy:rowIdx*cell, sw:cell, sh:cell });
-        out[name] = frames;
-      });
-      return out;
+      try{
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if(!w || !h) return null;
+        const rows = 3; // baixo, cima, direita -- ver gen_archetype_atlas.py
+        const cell = Math.round(h/rows) || 64;
+        const cols = Math.max(1, Math.round(w/cell));
+        const dirNames = ['down','up','right'];
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
+        const data = cctx.getImageData(0,0,w,h).data;
+        function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
+        function cropCell(cellX0, cellY0){
+          const xLim = Math.min(w, cellX0+cell), yLim = Math.min(h, cellY0+cell);
+          let minX=xLim, minY=yLim, maxX=cellX0-1, maxY=cellY0-1;
+          for(let y=cellY0; y<yLim; y++){
+            for(let x=cellX0; x<xLim; x++){
+              if(!isBg(x,y)){
+                if(x<minX) minX=x; if(x>maxX) maxX=x;
+                if(y<minY) minY=y; if(y>maxY) maxY=y;
+              }
+            }
+          }
+          if(maxX<minX || maxY<minY) return { sx:cellX0, sy:cellY0, sw:cell, sh:cell }; // célula vazia -- cai pro quadro cheio
+          const pad = 3;
+          const sx = Math.max(cellX0, minX-pad), sy = Math.max(cellY0, minY-pad);
+          return { sx, sy, sw: Math.min(xLim, maxX+1+pad)-sx, sh: Math.min(yLim, maxY+1+pad)-sy };
+        }
+        const out = {};
+        dirNames.forEach((name, rowIdx)=>{
+          const frames = [];
+          for(let cIdx=0; cIdx<cols; cIdx++) frames.push(cropCell(cIdx*cell, rowIdx*cell));
+          out[name] = frames;
+        });
+        return out;
+      }catch(e){ return null; }
     }
     function load(key, relPath){
       if(cache[key]) return cache[key];
@@ -2550,29 +2587,43 @@
     // QUAL quadro do ciclo de andar usar — sem ele (retrato do Inventário,
     // por exemplo, que não se move) cai no "parado de pé" de sempre.
     const feetY = s.y + breathe;
-    const body = SpriteManager.bodySprite(genero);
-    const bodyDraw = drawWalkAnim
-      ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
-      : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
+    // Arquetipos (OUTFIT_CATALOG[].recolorable:true) usam o atlas base+mask
+    // recolorido em tempo real (ver getRecoloredArmor acima) — e esse atlas
+    // já é um sprite de CORPO INTEIRO vestido (não uma camada de roupa por
+    // cima de um corpo genérico por baixo, como os trajes antigos de
+    // armorSprite). Desenhar o corpo padrão embaixo de um traje de
+    // Arquétipo só duplicava/vazava ao redor dele (o resquício "boneco
+    // genérico"/"sprite do ragnarok" reportado pelo usuário mesmo já com o
+    // traje aparecendo) — então, quando o traje é um Arquétipo E já
+    // carregou, o corpo padrão nem é desenhado: só o traje. Enquanto ainda
+    // está carregando (1ª rede, assíncrono) ou pra trajes antigos
+    // (armorSprite, camada de roupa de verdade), o corpo padrão continua
+    // sendo a base de sempre.
+    const outfitDef = (outfitId && outfitId !== 'padrao') ? outfitCatalog.find(o => o.id === outfitId) : null;
+    const isArchetypeOutfit = !!(outfitDef && outfitDef.recolorable);
+    const archetypeArmor = isArchetypeOutfit
+      ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
+      : null;
+    let bodyDraw;
+    if(archetypeArmor){
+      bodyDraw = drawWalkAnim
+        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 34*scl, 46*scl);
+    } else {
+      const body = SpriteManager.bodySprite(genero);
+      bodyDraw = drawWalkAnim
+        ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
+    }
     drewBody = !!bodyDraw;
-    if(outfitId && outfitId !== 'padrao'){
-      // Arquetipos (OUTFIT_CATALOG[].recolorable:true) usam o atlas base+mask
-      // recolorido em tempo real (ver getRecoloredArmor acima) em vez do PNG
-      // único de sempre — o resto (contain-fit / dirFrame) é idêntico,
-      // porque a "entry" que getRecoloredArmor devolve tem a mesma forma
-      // (loaded/img/frame/dirFrames) que SpriteManager.armorSprite devolveria.
-      const outfitDef = outfitCatalog.find(o => o.id === outfitId);
-      const armor = (outfitDef && outfitDef.recolorable)
-        ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
-        : SpriteManager.armorSprite(genero, outfitId);
-      // Armadura cobre o MESMO recorte do corpo — usa a altura real do corpo
-      // (ou o próprio tamanho-alvo se o corpo não carregou) pra alinhar.
-      // Mesma lógica do corpo: com ciclo de andar ativo (drawWalkAnim),
-      // acompanha dir/frameIdx pelo atlas da própria armadura em vez de
-      // ficar sempre no quadro "parado" (ver dirFrames acima).
-      if(armor){
-        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
-        else SpriteManager.drawFrameContainFit(tctx, armor, s.x, feetY, 34*scl, 46*scl);
+    // Trajes ANTIGOS (não-Arquétipo, armorSprite: PNG único, camada de roupa
+    // de verdade) continuam desenhados por CIMA do corpo padrão que já saiu
+    // acima — comportamento inalterado pra 'assassin'/'priest'/etc.
+    if(outfitId && outfitId !== 'padrao' && !isArchetypeOutfit){
+      const armorLegacy = SpriteManager.armorSprite(genero, outfitId);
+      if(armorLegacy){
+        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
+        else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, 34*scl, 46*scl);
       }
     }
     const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
@@ -4089,7 +4140,7 @@
     }
     if(msg.forType === 'profession:craft'){
       if(msg.ok){
-        logLoot(`🔨 Criou ${msg.itemName}!${msg.leveledUp?` ${PROFESSION_LABEL[msg.profession]} subiu pro nível ${msg.level}!`:''}`);
+        logLoot(`🔨 Criou ${msg.itemName} (${msg.rarity})!${msg.leveledUp?` ${PROFESSION_LABEL[msg.profession]} subiu pro nível ${msg.level}!`:''}`);
       } else {
         const reasonMap = { profissao_invalida:'profissão inválida.', receita_invalida:'receita inválida.', apenas_na_cidade_principal:'criar itens só funciona na Cidade Principal.', nivel_insuficiente:'nível de profissão insuficiente pra essa receita.', ouro_insuficiente:'ouro insuficiente.', material_insuficiente:`falta material: ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||''}.` };
         logLoot(`⚠️ Não foi possível criar o item: ${reasonMap[msg.reason] || msg.reason}`);
@@ -7102,44 +7153,40 @@
     r_ring_common:{ name:'Anel de Fio Trançado', rarity:'comum' }, r_ring_uncommon:{ name:'Anel de Prata Trançada', rarity:'incomum' }, r_ring_rare:{ name:'Anel Entrelaçado', rarity:'rara' }, r_ring_epic:{ name:'Anel do Arcano', rarity:'épica' }, r_ring_legendary:{ name:'Anel do Tecelão Ancião', rarity:'lendária' },
     m_amulet_common:{ name:'Amuleto de Lã', rarity:'comum' }, m_amulet_uncommon:{ name:'Amuleto Trançado', rarity:'incomum' }, m_amulet_rare:{ name:'Amuleto Encantado', rarity:'rara' }, m_amulet_epic:{ name:'Amuleto do Guardião Tecido', rarity:'épica' }, m_amulet_legendary:{ name:'Amuleto do Tecelão Ancião', rarity:'lendária' },
   };
+  // Modelo NOVO (pedido do usuário -- ver comentário grandão equivalente em
+  // huntEngine.js acima de PROFESSION_RECIPES): 1 receita por TIPO de item,
+  // custo fixo, e a raridade do resultado sai SORTEADA no servidor (nunca
+  // escolhida) -- ver rollCraftRarity em huntEngine.js. Este espelho só
+  // precisa do nome genérico + custo/material; CRAFT_RARITY_*_CLIENT abaixo
+  // reproduz a MESMA tabela de pesos do servidor só pra mostrar as chances
+  // (%) na UI -- quem decide de verdade o resultado é sempre o servidor.
   const PROFESSION_RECIPES_CLIENT = {
     forja: [
-      { id:'forja_dagger_comum', resultItem:'d_dagger_common', levelReq:1, goldCost:150, materials:[{id:'minerio_ferro',qty:6}] },
-      { id:'forja_dagger_incomum', resultItem:'d_dagger_uncommon', levelReq:25, goldCost:300, materials:[{id:'minerio_ferro',qty:10}] },
-      { id:'forja_dagger_rara', resultItem:'d_dagger_rare', levelReq:50, goldCost:600, materials:[{id:'minerio_ferro',qty:6},{id:'barra_aco',qty:4}] },
-      { id:'forja_dagger_epica', resultItem:'d_dagger_epic', levelReq:75, goldCost:1200, materials:[{id:'minerio_ferro',qty:4},{id:'barra_aco',qty:8}] },
-      { id:'forja_dagger_lendaria', resultItem:'d_dagger_legendary', levelReq:100, goldCost:2200, materials:[{id:'barra_aco',qty:14}] },
-      { id:'forja_legs_comum', resultItem:'l_legs_common', levelReq:1, goldCost:150, materials:[{id:'minerio_ferro',qty:6}] },
-      { id:'forja_legs_incomum', resultItem:'l_legs_uncommon', levelReq:25, goldCost:300, materials:[{id:'minerio_ferro',qty:10}] },
-      { id:'forja_legs_rara', resultItem:'l_legs_rare', levelReq:50, goldCost:600, materials:[{id:'minerio_ferro',qty:6},{id:'barra_aco',qty:4}] },
-      { id:'forja_legs_epica', resultItem:'l_legs_epic', levelReq:75, goldCost:1200, materials:[{id:'minerio_ferro',qty:4},{id:'barra_aco',qty:8}] },
-      { id:'forja_legs_lendaria', resultItem:'l_legs_legendary', levelReq:100, goldCost:2200, materials:[{id:'barra_aco',qty:14}] },
-      { id:'forja_shield_comum', resultItem:'s_shield_common', levelReq:1, goldCost:150, materials:[{id:'minerio_ferro',qty:6}] },
-      { id:'forja_shield_incomum', resultItem:'s_shield_uncommon', levelReq:25, goldCost:300, materials:[{id:'minerio_ferro',qty:10}] },
-      { id:'forja_shield_rara', resultItem:'s_shield_rare', levelReq:50, goldCost:600, materials:[{id:'minerio_ferro',qty:6},{id:'barra_aco',qty:4}] },
-      { id:'forja_shield_epica', resultItem:'s_shield_epic', levelReq:75, goldCost:1200, materials:[{id:'minerio_ferro',qty:4},{id:'barra_aco',qty:8}] },
-      { id:'forja_shield_lendaria', resultItem:'s_shield_legendary', levelReq:100, goldCost:2200, materials:[{id:'barra_aco',qty:14}] },
+      { id:'forja_dagger', name:'Adaga', resultBase:'d_dagger', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
+      { id:'forja_legs', name:'Calças', resultBase:'l_legs', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
+      { id:'forja_shield', name:'Escudo', resultBase:'s_shield', levelReq:1, goldCost:400, materials:[{id:'minerio_ferro',qty:10}] },
     ],
     carpintaria: [
-      { id:'carpintaria_staff_comum', resultItem:'c_staff_common', levelReq:1, goldCost:150, materials:[{id:'madeira_bruta',qty:6}] },
-      { id:'carpintaria_staff_incomum', resultItem:'c_staff_uncommon', levelReq:25, goldCost:300, materials:[{id:'madeira_bruta',qty:10}] },
-      { id:'carpintaria_staff_rara', resultItem:'c_staff_rare', levelReq:50, goldCost:600, materials:[{id:'madeira_bruta',qty:6},{id:'madeira_nobre',qty:4}] },
-      { id:'carpintaria_staff_epica', resultItem:'c_staff_epic', levelReq:75, goldCost:1200, materials:[{id:'madeira_bruta',qty:4},{id:'madeira_nobre',qty:8}] },
-      { id:'carpintaria_staff_lendaria', resultItem:'c_staff_legendary', levelReq:100, goldCost:2200, materials:[{id:'madeira_nobre',qty:14}] },
+      { id:'carpintaria_staff', name:'Cajado', resultBase:'c_staff', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}] },
     ],
     tecelagem: [
-      { id:'tecelagem_ring_comum', resultItem:'r_ring_common', levelReq:1, goldCost:150, materials:[{id:'fio_de_la',qty:6}] },
-      { id:'tecelagem_ring_incomum', resultItem:'r_ring_uncommon', levelReq:25, goldCost:300, materials:[{id:'fio_de_la',qty:10}] },
-      { id:'tecelagem_ring_rara', resultItem:'r_ring_rare', levelReq:50, goldCost:600, materials:[{id:'fio_de_la',qty:6},{id:'seda_encantada',qty:4}] },
-      { id:'tecelagem_ring_epica', resultItem:'r_ring_epic', levelReq:75, goldCost:1200, materials:[{id:'fio_de_la',qty:4},{id:'seda_encantada',qty:8}] },
-      { id:'tecelagem_ring_lendaria', resultItem:'r_ring_legendary', levelReq:100, goldCost:2200, materials:[{id:'seda_encantada',qty:14}] },
-      { id:'tecelagem_amulet_comum', resultItem:'m_amulet_common', levelReq:1, goldCost:150, materials:[{id:'fio_de_la',qty:6}] },
-      { id:'tecelagem_amulet_incomum', resultItem:'m_amulet_uncommon', levelReq:25, goldCost:300, materials:[{id:'fio_de_la',qty:10}] },
-      { id:'tecelagem_amulet_rara', resultItem:'m_amulet_rare', levelReq:50, goldCost:600, materials:[{id:'fio_de_la',qty:6},{id:'seda_encantada',qty:4}] },
-      { id:'tecelagem_amulet_epica', resultItem:'m_amulet_epic', levelReq:75, goldCost:1200, materials:[{id:'fio_de_la',qty:4},{id:'seda_encantada',qty:8}] },
-      { id:'tecelagem_amulet_lendaria', resultItem:'m_amulet_legendary', levelReq:100, goldCost:2200, materials:[{id:'seda_encantada',qty:14}] },
+      { id:'tecelagem_ring', name:'Anel', resultBase:'r_ring', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
+      { id:'tecelagem_amulet', name:'Amuleto', resultBase:'m_amulet', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
     ],
   };
+  // Espelho de CRAFT_RARITY_TIERS/WEIGHTS_LOW/HIGH em huntEngine.js -- só
+  // pra CALCULAR e MOSTRAR as % de chance na UI (transparência pro
+  // jogador); o sorteio de verdade acontece no servidor.
+  const CRAFT_RARITY_TIERS_CLIENT = ['comum', 'incomum', 'rara', 'épica', 'lendária'];
+  const CRAFT_RARITY_SUFFIX_CLIENT = { comum:'common', incomum:'uncommon', rara:'rare', 'épica':'epic', 'lendária':'legendary' };
+  const CRAFT_RARITY_WEIGHTS_LOW_CLIENT = [55, 28, 12, 4, 1];
+  const CRAFT_RARITY_WEIGHTS_HIGH_CLIENT = [25, 30, 25, 13, 7];
+  function craftRarityOddsClient(profLevel){
+    const t = Math.max(0, Math.min(1, ((profLevel || 1) - 1) / 99));
+    const weights = CRAFT_RARITY_TIERS_CLIENT.map((_, i) => CRAFT_RARITY_WEIGHTS_LOW_CLIENT[i] + (CRAFT_RARITY_WEIGHTS_HIGH_CLIENT[i] - CRAFT_RARITY_WEIGHTS_LOW_CLIENT[i]) * t);
+    const total = weights.reduce((a, b) => a + b, 0);
+    return CRAFT_RARITY_TIERS_CLIENT.map((tier, i) => ({ tier, pct: weights[i] / total * 100 }));
+  }
   function bagQty(id){ return bag.filter(it=>it.id===id).reduce((s,it)=>s+(it.qty||1),0); }
   let professionSelectedTab = 'forja';
   const professionTabsEl = document.getElementById('profession-tabs');
@@ -7162,7 +7209,6 @@
     const prof = professions[professionSelectedTab] || { level:1, xp:0 };
     const recipes = PROFESSION_RECIPES_CLIENT[professionSelectedTab] || [];
     const rows = recipes.map(r=>{
-      const itemDef = CRAFTABLE_ITEMS_CLIENT[r.resultItem];
       const locked = prof.level < r.levelReq;
       const matLines = r.materials.map(m=>{
         const have = bagQty(m.id);
@@ -7171,11 +7217,20 @@
       }).join('');
       const hasGold = (player.gold + player.bankGold) >= r.goldCost;
       const canCraft = !locked && hasGold && r.materials.every(m=>bagQty(m.id) >= m.qty);
+      // Raridade sai sorteada (não é mais fixa por receita) -- mostra as
+      // chances de cada resultado possível pro nível ATUAL de profissão,
+      // pra dar transparência de verdade (ver craftRarityOddsClient acima).
+      const oddsLines = craftRarityOddsClient(prof.level).map(o=>{
+        const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`];
+        return `<div class="prec-row"><span style="color:${RARITY_COLORS[o.tier]||'var(--ink)'}">${item ? item.name : o.tier}</span><span>${o.pct.toFixed(1)}%</span></div>`;
+      }).join('');
       return `
         <div class="profession-recipe-box">
-          <div class="prec-name" style="color:${RARITY_COLORS[itemDef.rarity]||'var(--ink)'}">${itemDef.name} (${itemDef.rarity})${locked?` — requer Nível ${r.levelReq} de ${PROFESSION_LABEL[professionSelectedTab]}`:''}</div>
+          <div class="prec-name">${r.name}${locked?` — requer Nível ${r.levelReq} de ${PROFESSION_LABEL[professionSelectedTab]}`:''}</div>
           <div class="prec-row"><span>Custo</span><span class="${hasGold?'ok':'missing'}">${r.goldCost} Gold</span></div>
           ${matLines}
+          <div class="prec-row" style="opacity:.75;font-size:11px;margin-top:2px;">Raridade sorteada ao criar:</div>
+          ${oddsLines}
           <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" ${canCraft?'':'disabled'}>Criar</button>
         </div>`;
     }).join('');
