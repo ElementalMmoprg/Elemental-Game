@@ -3065,6 +3065,16 @@
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
         castPoseUntil = now() + CAST_POSE_MS;
         if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
+      } else if(fx.t === 'buff'){
+        // Magias de buff puro (Spirit Shield/Living Saint/Haste etc. — ver
+        // classifySpellEffect kind:'buff' em huntEngine.js) reaproveitam o
+        // mesmo visual de anel/pose do Escudo — feedback claro de "algo
+        // aconteceu" mesmo sem sprite dedicado ainda pra cada uma.
+        const buffLabel = { atkPct: 'Ataque', defPct: 'Defesa', magicDmgPct: 'Magia', healingPowerPct: 'Cura' }[fx.statKey] || 'Buff';
+        spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.pct}% ${buffLabel}`, '#ffd27a');
+        spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,210,122,.75)', 32, 420);
+        castPoseUntil = now() + CAST_POSE_MS;
+        if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
       } else if(fx.t === 'death'){
         // Consequências de morte (ver onPlayerDeath em huntEngine.js) — XP/
         // atributos/chance de item cair, todos reduzidos pela proteção das
