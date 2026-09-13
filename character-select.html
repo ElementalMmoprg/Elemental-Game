@@ -82,7 +82,10 @@
   #char-create-view{ width:760px; padding:26px 30px; display:none; }
   .create-layout{ display:flex; gap:22px; }
   .create-left{ width:230px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
-  #create-preview{ width:210px; height:266px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
+  /* Retrato de criação MAIOR (pedido do jogador) -- 210x266 deixava o
+     personagem pequeno com muito vazio ao redor; 210x340 dá mais espaço
+     vertical pro contain-fit (ver drawCharacterPreview) usar de verdade. */
+  #create-preview{ width:210px; height:340px; background:radial-gradient(ellipse at 50% 30%,#201808,#0a0704 75%); border:1px solid var(--gold-deep); border-radius:8px; }
   .toggle-row{ display:flex; gap:8px; width:100%; }
   .toggle-btn{
     flex:1; padding:9px; text-align:center; border-radius:6px; border:1px solid var(--gold-deep);
@@ -192,7 +195,7 @@
 
   <div class="create-layout">
     <div class="create-left">
-      <canvas id="create-preview" width="210" height="266"></canvas>
+      <canvas id="create-preview" width="210" height="340"></canvas>
       <div class="preview-archetype-tag" id="preview-archetype-tag">Escolha um arquétipo →</div>
       <div class="toggle-row" id="gender-toggle">
         <div class="toggle-btn active" data-gender="male">♂ Masc.</div>
@@ -422,8 +425,14 @@
         entry.loaded=true;
         const isArchetypeOutfitAtlas = key.charAt(0)==='a' && key.charAt(1)==='_' && (key.slice(-5)==='_base' || key.slice(-5)==='_mask');
         if(isArchetypeOutfitAtlas){
-          const cellFrames = computeOutfitCellFrames(entry.img);
-          entry.frame = cellFrames && cellFrames.down && cellFrames.down[0];
+          // dirFrames guardado (não só o 1º quadro) pra dar pra animar o
+          // ciclo de andar no retrato -- ver drawBodyDirFrame abaixo (mesma
+          // ideia de world-prototype.html, só que sem o teto de
+          // BODY_WALK_SAFE_FRAMES: aqui é SEMPRE o atlas novo de Arquétipo,
+          // que não mistura pose/ação na mesma linha, então usa todos os
+          // quadros direto).
+          entry.dirFrames = computeOutfitCellFrames(entry.img);
+          entry.frame = entry.dirFrames && entry.dirFrames.down && entry.dirFrames.down[0];
           return;
         }
         entry.frame=computeAutoFrame(entry.img);
@@ -488,7 +497,22 @@
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       return { dw, dh, dx, dy, topY:dy };
     }
-    return { bodySprite, headSprite, outfitTemplateSprite, getHeadStyleFrame, drawFrameContainFit, drawHeadStyleContainFit };
+    // Desenha o traje de Arquétipo animando o ciclo de andar (dir+frameIdx)
+    // em vez de só o quadro parado -- mesma ideia de drawBodyDirFrame em
+    // world-prototype.html (ESCALA fixa calculada uma vez a partir do
+    // quadro de referência parado, pra perna/braço abrindo durante o passo
+    // não fazer o personagem "pulsar" de tamanho a cada quadro).
+    function drawBodyDirFrame(targetCtx, entry, dir, frameIdx, cx, bottomY, maxW, maxH){
+      if(!entry.loaded || !entry.frame) return null;
+      const ref = entry.frame;
+      const scale = Math.min(maxW/ref.sw, maxH/ref.sh);
+      const all = entry.dirFrames && entry.dirFrames[dir];
+      const f = (all && all.length) ? all[((Math.floor(Number(frameIdx))||0) % all.length + all.length) % all.length] : ref;
+      const dw = f.sw*scale, dh = f.sh*scale, dx = cx - dw/2, dy = bottomY - dh;
+      targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+      return { dw, dh, dx, dy, topY: bottomY - (ref.sh*scale) };
+    }
+    return { bodySprite, headSprite, outfitTemplateSprite, getHeadStyleFrame, drawFrameContainFit, drawHeadStyleContainFit, drawBodyDirFrame };
   })();
 
   /* =========================================================
@@ -580,7 +604,11 @@
       bdata[i+2] = Math.round(t.b * gray);
     }
     bcx.putImageData(baseData, 0, 0);
-    const entry = { loaded:true, img:bc, frame:baseEntry.frame };
+    // dirFrames reaproveita o MESMO recorte já calculado em baseEntry (a
+    // grade/posição dos quadros não muda ao recolorir, só os pixels) --
+    // dá pro retrato animar o ciclo de andar do traje já colorido, ver
+    // drawBodyDirFrame.
+    const entry = { loaded:true, img:bc, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
     _recolorCache[key] = entry;
     _recolorCacheOrder.push(key);
     if(_recolorCacheOrder.length > 20){ delete _recolorCache[_recolorCacheOrder.shift()]; }
@@ -685,31 +713,43 @@
   // world-prototype.html, só sem outfit/asa/aura (não existem antes de entrar
   // no mundo). Cai num boneco procedural simples enquanto o sprite ainda não
   // terminou de carregar (load() é assíncrono) ou numa eventual falha de rede.
-  function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId, outfitId, colors){
+  function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId, outfitId, colors, walkAnim){
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0,0,w,h);
     const cx = w/2, feetY = h-14;
-    ctx.beginPath(); ctx.ellipse(cx, feetY+6, w*0.22, 5, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx, feetY+6, w*0.28, 6, 0,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fill();
     // Traje do Arquétipo (se algum já foi escolhido) é um sprite de CORPO
     // INTEIRO já vestido (ver getRecoloredArmor: base+mask compõem o boneco
     // inteiro, não só uma camada de roupa) -- desenhar o corpo padrão por
     // baixo dele só duplicava/vazava ao redor (o resquício "boneco
     // genérico"/"sprite do ragnarok" que o usuário reportou mesmo depois do
-    // traje aparecer). `colors` (Blusa/Calça/Bota) vem do que o jogador
-    // escolheu nesta própria tela (ver buildOutfitColorRow) -- cai em
-    // DEFAULT_COSMETIC_COLORS (branco) só se ninguém passar nada.
+    // traje aparecer). `colors` (Cabeça/Blusa/Calça/Bota) vem do que o
+    // jogador escolheu nesta própria tela (ver buildOutfitColorRow) -- cai
+    // em DEFAULT_COSMETIC_COLORS (branco) só se ninguém passar nada.
+    // Retrato MAIOR dentro do quadro (pedido do usuário) -- 0.34/0.46 do
+    // canvas ficava pequeno demais com bastante vazio ao redor; 0.66/0.92
+    // ainda deixa uma margem mas usa a maior parte do quadro.
+    const maxW = w*0.66, maxH = h*0.92;
     let bodyDraw = null;
     let isArchetypeBody = false;
     if(outfitId){
       const armor = getRecoloredArmor(outfitId, colors || DEFAULT_COSMETIC_COLORS);
-      if(armor){ bodyDraw = SpriteManager.drawFrameContainFit(ctx, armor, cx, feetY, w*0.34, h*0.46); isArchetypeBody = !!bodyDraw; }
+      if(armor){
+        // walkAnim ({dir,frameIdx}, ver setInterval em setupCreateView) anima
+        // o ciclo de andar do traje já carregado — sem ele (ou enquanto o
+        // traje ainda está carregando) cai no quadro parado de sempre.
+        bodyDraw = walkAnim
+          ? SpriteManager.drawBodyDirFrame(ctx, armor, walkAnim.dir, walkAnim.frameIdx, cx, feetY, maxW, maxH)
+          : SpriteManager.drawFrameContainFit(ctx, armor, cx, feetY, maxW, maxH);
+        isArchetypeBody = !!bodyDraw;
+      }
     }
     if(!bodyDraw){
       // Sem arquétipo escolhido ainda (ou traje ainda carregando) -- corpo
       // genérico só como placeholder temporário, nunca por baixo do traje.
       const body = SpriteManager.bodySprite(gender);
-      bodyDraw = SpriteManager.drawFrameContainFit(ctx, body, cx, feetY, w*0.34, h*0.46);
+      bodyDraw = SpriteManager.drawFrameContainFit(ctx, body, cx, feetY, maxW, maxH);
     }
     // A sprite base do traje de Arquétipo já É o personagem inteiro,
     // CABEÇA INCLUÍDA (confirmado pixel a pixel: a região "amarelo=Head" da
@@ -854,22 +894,43 @@
     // igual ao Tibia de verdade. O campo continua existindo no payload/DB
     // (hairStyleId) só por compatibilidade com personagens já criados.
     const hairStyleId = 1;
-    let hairColorId = 1;
+    // hairId antigo (arquivo/atlas de cabelo separado) não desenha mais nada
+    // desde que o corpo virou o traje de Arquétipo inteiro (cabeça
+    // incluída) — mantido como constante só porque o servidor ainda valida/
+    // guarda esse campo (ver db.js createCharacter). A cor de cabeça/capuz
+    // de verdade agora é headColorId logo abaixo, mesma fórmula das outras
+    // 3 partes do traje.
+    const hairColorId = 1;
     let selectedArchetypeId = null;
-    // Cor de Blusa/Calça/Bota do traje (índice na mesma COSMETIC_COLOR_PALETTE
-    // de 19 cores já usada no jogo) -- pedido do jogador: escolher isso JÁ na
-    // criação, do jeito Tibia de verdade, em vez de só depois via aba Cores
-    // do Inventário. Índice 0 = branco/cor original do traje (ver
-    // COSMETIC_COLOR_PALETTE), igual ao default de sempre.
-    let bodyColorId = 0, legsColorId = 0, feetColorId = 0;
+    // Cor de Cabeça/Blusa/Calça/Bota do traje (índice na mesma
+    // COSMETIC_COLOR_PALETTE de 19 cores já usada no jogo) -- pedido do
+    // jogador: escolher isso JÁ na criação, do jeito Tibia de verdade, em
+    // vez de só depois via aba Cores do Inventário. Índice 0 = branco/cor
+    // original do traje (ver COSMETIC_COLOR_PALETTE), igual ao default de
+    // sempre. ATUALIZADO: headColorId substitui o antigo "Cor do Cabelo"
+    // (hairColorId acima), que não tinha efeito visual nenhum nesta tela
+    // desde que o traje de Arquétipo passou a incluir a cabeça — agora usa
+    // a MESMA fórmula de recolorir por máscara das outras 3 partes.
+    let headColorId = 0, bodyColorId = 0, legsColorId = 0, feetColorId = 0;
 
+    // Animação do ciclo de andar no retrato (pedido do jogador: "colocar a
+    // foto do personagem maior dentro com animação dele andando") -- sempre
+    // de frente pra câmera ('down', a mesma direção que a tela de criação
+    // sempre usou pro quadro parado) avançando 1 quadro a cada tick. Sem
+    // outfit escolhido ainda o corpo genérico não anima (drawCharacterPreview
+    // só usa walkAnim quando desenha via drawBodyDirFrame, que exige
+    // outfitId) — fica só no quadro parado de sempre, sem prejuízo.
+    let previewFrameIdx = 0;
     const previewCanvas = document.getElementById('create-preview');
     function refreshPreview(){
       // outfitId (5º parâmetro) só entra quando algum arquétipo já foi
       // escolhido — antes disso o boneco aparece só com corpo+cabelo.
-      drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId, selectedArchetypeId, { head:0, body:bodyColorId, legs:legsColorId, feet:feetColorId });
+      drawCharacterPreview(previewCanvas, gender, hairColorId, hairStyleId, selectedArchetypeId,
+        { head:headColorId, body:bodyColorId, legs:legsColorId, feet:feetColorId },
+        { dir:'down', frameIdx:previewFrameIdx });
     }
     scheduleRedraw(refreshPreview);
+    setInterval(()=>{ previewFrameIdx++; refreshPreview(); }, 160);
 
     // Grade de cor do traje -- 3 linhas (Blusa/Calça/Bota), 19 bolinhas cada
     // (mesma paleta do jogo). Só aparece depois que um Arquétipo é escolhido
@@ -893,25 +954,13 @@
     buildOutfitColorRow('outfit-color-body', (idx)=>{ bodyColorId = idx; });
     buildOutfitColorRow('outfit-color-legs', (idx)=>{ legsColorId = idx; });
     buildOutfitColorRow('outfit-color-feet', (idx)=>{ feetColorId = idx; });
-
-    // Paleta de cor: 8 bolinhas (cor aproximada só pra UI da bolinha — a arte
-    // real de cada cor mora no arquivo carregado por headSprite acima).
-    // Clicar troca qual arquivo é carregado pra grade inteira + o retrato.
-    const colorRow = document.getElementById('hair-color-row');
-    HAIR_COLOR_NAMES.forEach((name, i)=>{
-      const id = i+1;
-      const dot = document.createElement('div');
-      dot.className = 'hair-color-dot' + (id===1?' active':'');
-      dot.style.background = `rgb(${HAIR_COLOR_RGB[name].join(',')})`;
-      dot.title = HAIR_COLOR_LABEL[name];
-      dot.addEventListener('click', ()=>{
-        hairColorId = id;
-        colorRow.querySelectorAll('.hair-color-dot').forEach(d=>d.classList.remove('active'));
-        dot.classList.add('active');
-        refreshPreview();
-      });
-      colorRow.appendChild(dot);
-    });
+    // "Cor do Cabelo" (rótulo mantido, o jogador já conhece esse nome) agora
+    // usa a MESMA fórmula/paleta das outras 3 partes do traje (ver
+    // buildOutfitColorRow acima) em vez do sistema antigo de arquivo de
+    // cabelo separado (HAIR_COLOR_NAMES/hairColorId), que não desenha mais
+    // nada desde que o traje de Arquétipo passou a incluir a cabeça —
+    // corrige o "a cor do cabelo não está mudando" reportado.
+    buildOutfitColorRow('hair-color-row', (idx)=>{ headColorId = idx; });
 
     document.querySelectorAll('#gender-toggle .toggle-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -1000,7 +1049,7 @@
 
       const data = await api('/api/characters/create', {
         method:'POST',
-        body: JSON.stringify({ nick, gender, hairId: hairColorId, hairStyleId, archetypeId: selectedArchetypeId, bodyColorId, legsColorId, feetColorId }),
+        body: JSON.stringify({ nick, gender, hairId: hairColorId, hairStyleId, archetypeId: selectedArchetypeId, bodyColorId, legsColorId, feetColorId, headColorId }),
       });
       if(!data.ok){
         msgEl.textContent = ERROR_LABELS[data.error] || 'Não foi possível criar o personagem.';

@@ -2644,23 +2644,42 @@
         else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, 34*scl, 46*scl);
       }
     }
-    const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
-    const headAtlas = SpriteManager.headSprite(genero, corCabelo);
-    // Cabeça senta em cima do topo ESTÁVEL do corpo (ver comentário de
-    // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
-    // corpo não carregou, cai pro topo aproximado que o boneco procedural já
-    // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
-    // usada tanto pro corpo quanto pra cabeça, é o pivô único que a projeção
-    // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
-    // já move como um objeto rígido — corpo e cabeça não têm posições
-    // independentes, as duas derivam do MESMO s.x/feetY.
-    const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30*scl) + 8*scl;
-    // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
-    // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
-    // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
-    // igual ao default do servidor pra personagens antigos.
-    const headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
-    drewHead = !!headDraw;
+    // Traje de Arquétipo JÁ carregado = o sprite inteiro (corpo+cabeça
+    // embutida, ver getRecoloredArmor) — desenhar a cabeça/cabelo genérica
+    // por cima duplicava a cabeça (uma da base do traje, outra do atlas de
+    // cabelo) e, pior: como os arquivos de cabeça genérica
+    // (player/heads */*.png) foram DELETADOS de propósito (ver
+    // claude/bug-sprite-personagem-nao-carrega-notas.md), esse sprite
+    // NUNCA carrega — headDraw sempre falhava e caía no fallback da bolinha
+    // dourada (`#d3ab54` abaixo), que é exatamente o "ponto amarelo no meio
+    // do personagem" reportado pelo usuário mesmo com o traje já aparecendo.
+    // Enquanto o traje ainda está CARREGANDO (archetypeArmor null na
+    // primeira rede) o corpo também cai no genérico (ver bodyDraw acima),
+    // então nesse meio-tempo a cabeça genérica antiga continua entrando
+    // normalmente como parte do boneco de transição.
+    const isArchetypeHeadIncluded = isArchetypeOutfit && !!archetypeArmor;
+    let headDraw = null;
+    if(!isArchetypeHeadIncluded){
+      const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
+      const headAtlas = SpriteManager.headSprite(genero, corCabelo);
+      // Cabeça senta em cima do topo ESTÁVEL do corpo (ver comentário de
+      // drawBodyDirFrame/topY) com uma pequena sobreposição de "pescoço"; se o
+      // corpo não carregou, cai pro topo aproximado que o boneco procedural já
+      // usava. Isso, mais a ancoragem centro-inferior (cx-dw/2, bottomY-dh) já
+      // usada tanto pro corpo quanto pra cabeça, é o pivô único que a projeção
+      // de mundo-pra-tela (translate pra s.x,s.y projetado, ver worldToScreen)
+      // já move como um objeto rígido — corpo e cabeça não têm posições
+      // independentes, as duas derivam do MESMO s.x/feetY.
+      const headBottomY = (bodyDraw ? bodyDraw.topY : feetY - 30*scl) + 8*scl;
+      // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
+      // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
+      // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
+      // igual ao default do servidor pra personagens antigos.
+      headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
+    }
+    // isArchetypeHeadIncluded conta como "cabeça desenhada" pro fallback
+    // logo abaixo NÃO acender a bolinha dourada por cima do traje.
+    drewHead = isArchetypeHeadIncluded ? true : !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11*scl, 15*scl, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(mirror){ tctx.restore(); }
