@@ -370,9 +370,13 @@
       try{
         const w = img.naturalWidth, h = img.naturalHeight;
         if(!w || !h) return null;
-        const rows = 3, cell = Math.round(h/rows) || 64;
+        // ATUALIZADO (2026-09-13): atlas novo tem as 4 direções REAIS (ver
+        // claude/outfit-atlas-4-direcoes-notas.md no projeto) -- só mudou de
+        // 3 pra 4 linhas, resto da função (grade fixa + crop por conteúdo
+        // dentro da célula) continua igual.
+        const rows = 4, cell = Math.round(h/rows) || 64;
         const cols = Math.max(1, Math.round(w/cell));
-        const dirNames = ['down','up','right'];
+        const dirNames = ['down','up','right','left'];
         const c = document.createElement('canvas'); c.width=w; c.height=h;
         const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
         const data = cctx.getImageData(0,0,w,h).data;
