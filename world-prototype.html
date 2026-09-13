@@ -2017,10 +2017,15 @@
       try{
         const w = img.naturalWidth, h = img.naturalHeight;
         if(!w || !h) return null;
-        const rows = 3; // baixo, cima, direita -- ver gen_archetype_atlas.py
+        // ATUALIZADO (2026-09-13): atlas novo tem as 4 direções REAIS (sem
+        // espelhar 'right' pra virar 'left') -- ver
+        // claude/outfit-atlas-4-direcoes-notas.md no projeto. Continua grade
+        // fixa (não detecção de conteúdo entre linhas), só mudou de 3 pra 4
+        // linhas -- o resto da função não precisa saber disso.
+        const rows = 4; // baixo, cima, direita, esquerda
         const cell = Math.round(h/rows) || 64;
         const cols = Math.max(1, Math.round(w/cell));
-        const dirNames = ['down','up','right'];
+        const dirNames = ['down','up','right','left'];
         const c = document.createElement('canvas'); c.width=w; c.height=h;
         const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
         const data = cctx.getImageData(0,0,w,h).data;
@@ -2062,6 +2067,11 @@
         if(isArchetypeOutfitAtlas){
           entry.dirFrames = computeOutfitCellFrames(entry.img);
           entry.frame = entry.dirFrames && entry.dirFrames.down && entry.dirFrames.down[0];
+          // fullWalkFrames: essa linha inteira do atlas é ciclo de andar
+          // puro (sem pose/ação misturada depois, ao contrário do atlas
+          // antigo de corpo/armadura) -- ver getBodyDirFrame abaixo, que usa
+          // essa flag pra NÃO cortar o ciclo em BODY_WALK_SAFE_FRAMES.
+          entry.fullWalkFrames = true;
           return;
         }
         entry.frame = computeAutoFrame(entry.img);
@@ -2385,10 +2395,18 @@
       // do jogador). O modulo normal abaixo nunca alcança esse índice de
       // propósito (protege o ciclo de andar de "vazar" pra essas poses).
       if(usePose){
+        // Atlas de Arquétipo (fullWalkFrames): não existe quadro de pose
+        // extra depois do ciclo de andar (todas as colunas são passos de
+        // andar mesmo) -- cai pro quadro parado de referência.
+        if(entry.fullWalkFrames) return entry.frame;
         const poseIdx = Math.min(all.length-1, BODY_WALK_SAFE_FRAMES[dir] || 0);
         return all[poseIdx] || entry.frame;
       }
-      const cap = Math.max(1, Math.min(all.length, BODY_WALK_SAFE_FRAMES[dir] || all.length));
+      // Atlas de Arquétipo: usa TODOS os quadros da linha (são todos ciclo de
+      // andar puro, ver load() acima) -- só o atlas antigo de corpo/armadura
+      // (que mistura pose/ação na mesma linha) precisa do teto de
+      // BODY_WALK_SAFE_FRAMES.
+      const cap = entry.fullWalkFrames ? all.length : Math.max(1, Math.min(all.length, BODY_WALK_SAFE_FRAMES[dir] || all.length));
       const idx = ((Math.floor(Number(frameIdx)||0) % cap) + cap) % cap;
       return all[idx] || entry.frame;
     }
