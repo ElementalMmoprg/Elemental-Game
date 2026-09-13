@@ -27,6 +27,19 @@
     backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
     border:1px solid var(--gold); border-radius:10px;
     box-shadow:0 0 0 1px rgba(191,161,95,.14) inset, 0 20px 60px rgba(0,0,0,.6);
+    /* body é `overflow:hidden` + `align-items:center` pra sempre centralizar
+       o painel na tela -- então quando o CONTEÚDO do painel é mais alto que
+       a janela (a tela de criação, com a grade de Arquétipo + detalhe +
+       cores do traje, facilmente passa disso em notebooks/janelas menores),
+       o excesso era cortado IGUAL em cima e embaixo pelo body (exatamente o
+       "não aparece a parte de cima/de baixo, nem o botão Confirmar"
+       reportado) em vez de simplesmente rolar. Limitando a altura do
+       PRÓPRIO painel à janela e deixando ELE rolar (não o body) garante que
+       cabeçalho e botão de baixo (Criar Personagem) sempre fiquem
+       alcançáveis, com scroll interno só quando precisar.
+       max-height, não height: um painel menor que a tela continua com a
+       altura natural, apenas centralizado como sempre. */
+    max-height:94vh; overflow-y:auto;
   }
   #top-bar{ position:absolute; top:18px; left:0; right:0; display:flex; justify-content:space-between; padding:0 24px; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); }
   #top-bar b{ color:var(--gold-bright); }
