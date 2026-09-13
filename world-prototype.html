@@ -2456,58 +2456,40 @@
   // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
   const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
   // ---- RECOLORIR DE OUTFIT EM TEMPO REAL (arquetipos) ----
-  // Mesmo algoritmo provado em tibia_recolor2.py (script Python usado só pra
-  // validar a ideia, nunca commitado como pintura definitiva das sprites --
-  // ver notas do projeto "tibia-ravendawn-asset-extraction"): o layer 1
-  // (mascara) de cada arquetipo usa 4 matizes fixos -- Cabeça=amarelo(~60°),
-  // Corpo=vermelho(~0°), Pernas=verde(~120°), Pés=azul(~240°) -- com a
-  // INTENSIDADE (value do HSV) já carregando o sombreado original da arte.
-  // Pra cada pixel da mascara: acha a região mais próxima por matiz, troca
-  // matiz+saturação pela cor escolhida (palette), mas preserva o sombreado
-  // combinando o value original com o value da cor-alvo (senão uma cor-alvo
-  // escura -- ex.: preto -- nunca fica realmente escura). Pixels de baixa
-  // saturação (contorno/anti-aliasing em cinza) não são tingidos.
-  const OUTFIT_COLOR_REGIONS = [['head', 60/360], ['body', 0/360], ['legs', 120/360], ['feet', 240/360]];
+  // Color Swapping por Máscara, igual ao Tibia de verdade -- MESMO algoritmo
+  // já corrigido em character-select.html depois que o sistema antigo (HSV/
+  // matiz-mais-próximo, que ficava aqui embaixo) saiu errado (traje branco/
+  // lavado, cores destruindo a pixel art) -- só que nunca tinha sido portado
+  // pro mundo, então o jogo continuava rodando a versão velha e quebrada
+  // ("cores bugadas" reportado mesmo já com o traje/tamanho certos).
+  // Confirmado inspecionando os PNGs originais pixel a pixel (base+mask dos
+  // 8 arquétipos):
+  //  - mask.png só tem 4 cores PURAS e 100% opacas, sem anti-aliasing:
+  //    amarelo(255,255,0)=Head, vermelho(255,0,0)=Body/Torso,
+  //    verde(0,255,0)=Legs, azul(0,0,255)=Feet -- todo o resto é
+  //    transparente (alfa 0), nunca uma cor "quase" pura.
+  //  - base.png já É a sprite em tons de cinza (grayscale) que guarda o
+  //    sombreamento, EXATAMENTE onde a máscara marca uma das 4 partes --
+  //    fora dessas áreas (pele, detalhes fixos, arma) o base.png já vem com
+  //    a cor final de verdade e NÃO deve ser tocado.
+  // Algoritmo: pra cada pixel onde a máscara acerta uma das 4 cores puras,
+  // troca o pixel da base pela cor escolhida (palette) MULTIPLICADA pela
+  // luminosidade do cinza original (gray/255) -- preserva luz/sombra do
+  // sombreamento original em vez de destruir a pixel art com um filtro
+  // genérico de matiz (era isso que fazia índice 0/branco virar um remendo
+  // cinza-lavado sem contraste nenhum na roupa).
   function hexToRgbTriplet(hex){
     const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||'').trim());
     if(!m) return { r:255, g:255, b:255 };
     const n = parseInt(m[1], 16);
     return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
   }
-  function rgbToHsvTriplet(r,g,b){
-    r/=255; g/=255; b/=255;
-    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
-    let h=0;
-    if(d!==0){
-      if(max===r) h=((g-b)/d)%6;
-      else if(max===g) h=(b-r)/d+2;
-      else h=(r-g)/d+4;
-      h/=6; if(h<0) h+=1;
-    }
-    const s = max===0 ? 0 : d/max;
-    return { h, s, v:max };
-  }
-  function hsvToRgbTriplet(h,s,v){
-    const i = Math.floor(h*6), f = h*6-i;
-    const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
-    let r,g,b;
-    switch(i%6){
-      case 0: r=v; g=t; b=p; break;
-      case 1: r=q; g=v; b=p; break;
-      case 2: r=p; g=v; b=t; break;
-      case 3: r=p; g=q; b=v; break;
-      case 4: r=t; g=p; b=v; break;
-      default: r=v; g=p; b=q; break;
-    }
-    return { r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255) };
-  }
-  function nearestOutfitRegion(h){
-    let best=null, bestD=999;
-    OUTFIT_COLOR_REGIONS.forEach(([name, rh])=>{
-      const d = Math.min(Math.abs(h-rh), 1-Math.abs(h-rh));
-      if(d<bestD){ bestD=d; best=name; }
-    });
-    return best;
+  function classifyMaskRegion(r,g,b){
+    if(r>200 && g>200 && b<80) return 'head';   // amarelo puro
+    if(r>200 && g<80 && b<80) return 'body';    // vermelho puro
+    if(r<80 && g>200 && b<80) return 'legs';    // verde puro
+    if(r<80 && g<80 && b>200) return 'feet';    // azul puro
+    return null;
   }
   // Cache por combinação (outfit + as 4 cores) -- recolorir é getImageData +
   // loop por pixel, caro demais pra rodar todo frame; cada combinação só é
@@ -2526,38 +2508,39 @@
     if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
     const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
     if(!w || !h) return null;
-    const targetHsv = {};
+    const targetRgb = {};
     ['head','body','legs','feet'].forEach(part=>{
-      const rgb = hexToRgbTriplet(palette[c[part]] || palette[0]);
-      targetHsv[part] = rgbToHsvTriplet(rgb.r, rgb.g, rgb.b);
+      targetRgb[part] = hexToRgbTriplet(palette[c[part]] || palette[0]);
     });
+    const bc = document.createElement('canvas'); bc.width=w; bc.height=h;
+    const bcx = bc.getContext('2d');
+    bcx.drawImage(baseEntry.img, 0, 0);
+    let baseData;
+    try{ baseData = bcx.getImageData(0,0,w,h); } catch(e){ return null; } // CORS/tainted -- nunca trava o jogo, so nao recolore
+    const bdata = baseData.data;
     const mc = document.createElement('canvas'); mc.width=w; mc.height=h;
     const mcx = mc.getContext('2d');
     mcx.drawImage(maskEntry.img, 0, 0);
-    let imgData;
-    try{ imgData = mcx.getImageData(0,0,w,h); } catch(e){ return null; } // CORS/tainted -- nunca trava o jogo, so nao recolore
-    const data = imgData.data;
-    for(let i=0;i<data.length;i+=4){
-      const a = data[i+3];
-      if(a===0) continue;
-      const hsv = rgbToHsvTriplet(data[i], data[i+1], data[i+2]);
-      if(hsv.s < 0.12) continue;
-      const region = nearestOutfitRegion(hsv.h);
-      const t = targetHsv[region];
-      const nv = Math.max(0, Math.min(1, hsv.v*(0.35+0.65*t.v)));
-      const rgb = hsvToRgbTriplet(t.h, t.s, nv);
-      data[i]=rgb.r; data[i+1]=rgb.g; data[i+2]=rgb.b;
+    let maskData;
+    try{ maskData = mcx.getImageData(0,0,w,h); } catch(e){ return null; }
+    const mdata = maskData.data;
+    for(let i=0;i<bdata.length;i+=4){
+      if(bdata[i+3] < 5) continue; // pixel transparente na base -- nada a colorir
+      if(mdata[i+3] < 5) continue; // fora da máscara -- mantém a arte fixa da base intacta
+      const region = classifyMaskRegion(mdata[i], mdata[i+1], mdata[i+2]);
+      if(!region) continue;
+      const t = targetRgb[region];
+      const gray = bdata[i] / 255; // base já é puro cinza (r=g=b) nessas áreas
+      bdata[i]   = Math.round(t.r * gray);
+      bdata[i+1] = Math.round(t.g * gray);
+      bdata[i+2] = Math.round(t.b * gray);
     }
-    mcx.putImageData(imgData, 0, 0);
-    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-    const cx = canvas.getContext('2d');
-    cx.drawImage(baseEntry.img, 0, 0);
-    cx.drawImage(mc, 0, 0);
+    bcx.putImageData(baseData, 0, 0);
     // "entry" fake reaproveitando frame/dirFrames do base (mask tem a MESMA
     // grade -- gerados juntos pelo mesmo script) -- drawBodyDirFrame/
     // drawFrameContainFit desenham um canvas exatamente como desenhariam
     // uma <img>, ctx.drawImage aceita os dois.
-    const entry = { loaded:true, img:canvas, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
+    const entry = { loaded:true, img:bc, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
     _recolorCache[key] = entry;
     _recolorCacheOrder.push(key);
     if(_recolorCacheOrder.length > 60){ delete _recolorCache[_recolorCacheOrder.shift()]; }
@@ -2576,18 +2559,34 @@
     const scl = targetCtx ? 1 : SPRITE_SCALE;
     const genero = gender === 'female' ? 'female' : 'male';
     let drewBody = false, drewHead = false;
-    // Truque estilo Tibia: o atlas de corpo só tem 3 recortes realmente úteis
-    // pro ciclo de andar (Sul/frente, Norte/costas, Leste/perfil — ver
-    // decisão em updateWalkAnim). "Esquerda" não usa a linha real da
-    // esquerda do atlas: é o MESMO quadro de Leste espelhado horizontalmente
-    // (ctx.scale(-1,1)). O espelhamento envolve TUDO — asa, corpo, armadura
-    // e cabeça — dentro de um ÚNICO ctx.save/translate/scale/restore
-    // ancorado em s.x (o pé do personagem), então as camadas viram juntas
-    // como se fossem um objeto 3D só, sem chance de uma camada espelhar e
-    // outra não (era esse desalinhamento entre corpo e cabeça, cada um
-    // resolvendo sua própria posição sem um pivô compartilhado, que causava
-    // a separação/afundamento reportado).
-    const mirror = !!(walkAnim && walkAnim.dir === 'left');
+    // Precisa saber ANTES do espelhamento se o traje é um Arquétipo já
+    // carregado (atlas outfits_template, com as 4 direções REAIS -- ver
+    // claude/outfit-atlas-4-direcoes-notas.md) -- ver comentário do mirror
+    // logo abaixo pra entender por quê.
+    const outfitDef = (outfitId && outfitId !== 'padrao') ? outfitCatalog.find(o => o.id === outfitId) : null;
+    const isArchetypeOutfit = !!(outfitDef && outfitDef.recolorable);
+    const archetypeArmor = isArchetypeOutfit
+      ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
+      : null;
+    // Truque estilo Tibia: o atlas ANTIGO de corpo padrão/armadura só tem 3
+    // recortes realmente úteis pro ciclo de andar (Sul/frente, Norte/costas,
+    // Leste/perfil — ver decisão em updateWalkAnim); "Oeste" nunca existiu de
+    // verdade nele, e sempre foi o MESMO quadro de Leste espelhado
+    // horizontalmente (ctx.scale(-1,1)). O atlas NOVO de Arquétipo já tem as
+    // 4 direções REAIS desenhadas à parte (down/up/right/left, sem
+    // espelhamento nenhum -- pedido explícito do usuário: mãos, arma e
+    // sombreamento da pixel art ficam invertidos quando você espelha uma
+    // pose real, e é exatamente por isso que "Oeste" ficava com visual
+    // estranho/"deitado" mesmo com "Leste" correto). Por isso só espelha
+    // quando o traje NÃO tem as 4 direções reais (corpo padrão / trajes
+    // antigos de armorSprite) — um Arquétipo já carregado usa direto o
+    // recorte de 'left' do próprio atlas, sem nenhuma transformação de
+    // matriz. Isso envolve TUDO — asa, corpo, armadura e cabeça — dentro de
+    // um ÚNICO ctx.save/translate/scale/restore ancorado em s.x (o pé do
+    // personagem) só quando o espelho ainda é necessário, então as camadas
+    // viram juntas como se fossem um objeto 3D só.
+    const hasRealLeftFrames = isArchetypeOutfit && !!archetypeArmor;
+    const mirror = !hasRealLeftFrames && !!(walkAnim && walkAnim.dir === 'left');
     const drawWalkAnim = mirror ? { dir:'right', frameIdx: walkAnim.frameIdx, pose: walkAnim.pose } : walkAnim;
     if(mirror){ tctx.save(); tctx.translate(s.x, 0); tctx.scale(-1, 1); tctx.translate(-s.x, 0); }
     // Asas desenham ANTES do corpo (ficam atrás do personagem) — sem
@@ -2617,21 +2616,20 @@
     // está carregando (1ª rede, assíncrono) ou pra trajes antigos
     // (armorSprite, camada de roupa de verdade), o corpo padrão continua
     // sendo a base de sempre.
-    const outfitDef = (outfitId && outfitId !== 'padrao') ? outfitCatalog.find(o => o.id === outfitId) : null;
-    const isArchetypeOutfit = !!(outfitDef && outfitDef.recolorable);
-    const archetypeArmor = isArchetypeOutfit
-      ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
-      : null;
+    // Caixa 48x64 (era 34x46 -- pedido do usuário pra ficar do tamanho do
+    // Huntera): sobe só o TETO de quanto o contain-fit pode ampliar o
+    // personagem, a proporção real de cada sprite continua vindo do próprio
+    // recorte (ver drawFrameContainFit/drawBodyDirFrame), então não distorce.
     let bodyDraw;
     if(archetypeArmor){
       bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 34*scl, 46*scl);
+        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 48*scl, 64*scl, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 48*scl, 64*scl);
     } else {
       const body = SpriteManager.bodySprite(genero);
       bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 34*scl, 46*scl);
+        ? SpriteManager.drawBodyDirFrame(tctx, body, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 48*scl, 64*scl, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, body, s.x, feetY, 48*scl, 64*scl);
     }
     drewBody = !!bodyDraw;
     // Trajes ANTIGOS (não-Arquétipo, armorSprite: PNG único, camada de roupa
@@ -2640,8 +2638,8 @@
     if(outfitId && outfitId !== 'padrao' && !isArchetypeOutfit){
       const armorLegacy = SpriteManager.armorSprite(genero, outfitId);
       if(armorLegacy){
-        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 34*scl, 46*scl, drawWalkAnim.pose);
-        else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, 34*scl, 46*scl);
+        if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 48*scl, 64*scl, drawWalkAnim.pose);
+        else SpriteManager.drawFrameContainFit(tctx, armorLegacy, s.x, feetY, 48*scl, 64*scl);
       }
     }
     // Traje de Arquétipo JÁ carregado = o sprite inteiro (corpo+cabeça
@@ -2657,7 +2655,10 @@
     // primeira rede) o corpo também cai no genérico (ver bodyDraw acima),
     // então nesse meio-tempo a cabeça genérica antiga continua entrando
     // normalmente como parte do boneco de transição.
-    const isArchetypeHeadIncluded = isArchetypeOutfit && !!archetypeArmor;
+    // hasRealLeftFrames (calculado lá em cima, antes do espelho) já É
+    // exatamente "Arquétipo + traje carregado" — reaproveitado aqui como
+    // isArchetypeHeadIncluded.
+    const isArchetypeHeadIncluded = hasRealLeftFrames;
     let headDraw = null;
     if(!isArchetypeHeadIncluded){
       const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
@@ -2674,8 +2675,9 @@
       // hairStyleId escolhe QUAL das 19 linhas do atlas carregado (a cor já
       // veio pronta do arquivo certo via headAtlas acima). Sem hairStyleId
       // (chamadores antigos/retrato ainda não atualizados) cai no estilo 1,
-      // igual ao default do servidor pra personagens antigos.
-      headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 26*scl, 26*scl, drawWalkAnim && drawWalkAnim.dir);
+      // igual ao default do servidor pra personagens antigos. Caixa 36x36
+      // (era 26x26) pra acompanhar o corpo maior (era 34x46 -> 48x64).
+      headDraw = SpriteManager.drawHeadStyleContainFit(tctx, headAtlas, hairStyleId||1, s.x, headBottomY, 36*scl, 36*scl, drawWalkAnim && drawWalkAnim.dir);
     }
     // isArchetypeHeadIncluded conta como "cabeça desenhada" pro fallback
     // logo abaixo NÃO acender a bolinha dourada por cima do traje.
