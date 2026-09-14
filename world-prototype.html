@@ -513,6 +513,24 @@
   .item-slot .slot-mini-btn:hover{ border-color:var(--gold-bright); }
   .item-slot .rarity-dot{ position:absolute; top:2px; left:2px; width:6px; height:6px; border-radius:50%; }
   #inv-capacity-line{ padding:6px 14px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); border-top:1px solid rgba(191,161,95,.2); }
+  /* Infusão (Tier+Grade) — moldura octogonal real do Ravendawn (grade_frame.png,
+     ui/windows/character/bgGrade.png) usada como MÁSCARA (a arte original é quase
+     branca/sem cor própria) pintada via background-color numa cor por faixa de
+     Grade, sobreposta ao slot; + selo "G{n}" no canto livre (topo-direita —
+     .qty já usa bottom-direita, .trash-timer/.slot-mini-btn usam a esquerda). */
+  .item-slot .grade-frame, .equip-slot .grade-frame{ position:absolute; inset:0; pointer-events:none; z-index:1;
+    -webkit-mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/grade_frame.png);
+    -webkit-mask-size:100% 100%; -webkit-mask-repeat:no-repeat; -webkit-mask-position:center;
+    mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/grade_frame.png);
+    mask-size:100% 100%; mask-repeat:no-repeat; mask-position:center; }
+  .item-slot .grade-badge{ position:absolute; top:1px; right:3px; font-family:var(--font-mono); font-size:8px; font-weight:bold; color:#fff; text-shadow:0 0 2px #000,0 0 3px #000; z-index:2; pointer-events:none; }
+  .equip-slot .grade-badge{ position:absolute; top:-2px; right:0; font-family:var(--font-mono); font-size:8px; font-weight:bold; color:#fff; text-shadow:0 0 2px #000,0 0 3px #000; z-index:2; pointer-events:none; }
+  /* Ícones reais do dump da Ravendawn (silhueta escura em PNG) usados como MÁSCARA
+     colorida via currentColor — mesma técnica do SVG stroke="currentColor" que já
+     usávamos, pra herdar a cor de raridade (ou o creme padrão --ink) automaticamente. */
+  .ravendawn-mask-icon{ display:inline-block; background-color:currentColor;
+    -webkit-mask-repeat:no-repeat; -webkit-mask-position:center; -webkit-mask-size:contain;
+    mask-repeat:no-repeat; mask-position:center; mask-size:contain; vertical-align:middle; }
 
   /* ============ WIKI / CYCLOPEDIA (Itens + Bestiário) ============ */
   #wiki-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:640px; max-width:94vw; height:560px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:23; }
@@ -991,6 +1009,7 @@
       <div class="tb-icon" id="btn-open-skilltree" title="Árvore de Habilidades"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/skilltree.png" alt=""></div>
       <div class="tb-icon" id="btn-open-towers" title="Torres Elementais"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/tower.png" alt=""></div>
       <div class="tb-icon" id="btn-open-enchant" title="Refinamento"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
+      <div class="tb-icon" id="btn-open-infusion" title="Infusão (Tier + Grade)">🔮</div>
       <div class="tb-icon" id="btn-open-pets" title="Pets"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/pets.png" alt=""></div>
       <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
       <div class="tb-icon" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
@@ -1152,6 +1171,18 @@
     <div style="padding:0 14px 14px;">
       <div class="enchant-slot-tabs" id="enchant-slot-tabs"></div>
       <div id="enchant-body"></div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- INFUSÃO — Tier (fixo, vem da raridade) + Grade (0-9, sobe com
+       Fragmento de Infusão + Prata, SEM risco de quebra), estilo Ravendawn.
+       Sistema PARALELO ao Refinamento acima -- os dois coexistem. -->
+  <div id="infusion-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🔮 Infusão<span class="rule"></span><span class="win-close-x" data-close-win="infusion-modal">✕</span></div>
+    <div style="padding:0 14px 14px;">
+      <div class="enchant-slot-tabs" id="infusion-slot-tabs"></div>
+      <div id="infusion-body"></div>
     </div>
     <div class="win-resize"></div>
   </div>
@@ -1335,14 +1366,14 @@
           <div class="equip-slot" data-cosmetic="wings" title="Asas"><span class="slot-icon">🪽</span><span class="slot-tag">Asas</span></div>
         </div>
         <div class="equip-grid3">
-          <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon" data-icon-slot="helmet"></span><span class="slot-tag">Elmo</span></div>
-          <div class="equip-slot" data-equip="amulet" title="Amuleto"><span class="slot-icon" data-icon-slot="amulet"></span><span class="slot-tag">Amuleto</span></div>
-          <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon" data-icon-slot="weapon"></span><span class="slot-tag">Arma</span></div>
-          <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon" data-icon-slot="armor"></span><span class="slot-tag">Armadura</span></div>
-          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="slot-tag">Offhand</span></div>
-          <div class="equip-slot" data-equip="ring" title="Anel"><span class="slot-icon" data-icon-slot="ring"></span><span class="slot-tag">Anel</span></div>
-          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="slot-tag">Botas</span></div>
-          <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="slot-tag">Calças</span></div>
+          <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon" data-icon-slot="helmet"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Elmo</span></div>
+          <div class="equip-slot" data-equip="amulet" title="Amuleto"><span class="slot-icon" data-icon-slot="amulet"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Amuleto</span></div>
+          <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon" data-icon-slot="weapon"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Arma</span></div>
+          <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon" data-icon-slot="armor"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Armadura</span></div>
+          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Offhand</span></div>
+          <div class="equip-slot" data-equip="ring" title="Anel"><span class="slot-icon" data-icon-slot="ring"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Anel</span></div>
+          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Botas</span></div>
+          <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Calças</span></div>
         </div>
       </div>
       <div id="inv-items-col">
@@ -1796,7 +1827,7 @@
   let skillPoints = { total:0, spent:0 };
   let elementalCoins = 0;
   let towers = { central:0, fogo:0, agua:0, terra:0, ar:0, luz:0, trevas:0 };
-  let materials = { enchantCrystal:0, enchantProtector:0, antiBreakWard:0 }; // Cristal + Bênção do Ferreiro + Selo Inquebrável
+  let materials = { enchantCrystal:0, enchantProtector:0, antiBreakWard:0, infusionShard:0 }; // Cristal + Bênção do Ferreiro + Selo Inquebrável + Fragmento de Infusão
   let professions = { forja:{level:1,xp:0}, carpintaria:{level:1,xp:0}, tecelagem:{level:1,xp:0} }; // Forja/Carpintaria/Tecelagem
   let rankScore = 0; // Rank Geral — nível efetivo*10 + soma dos andares de Torre (ver huntEngine.computeRankScore)
   let rankTop = [], rankMyPosition = null; // preenchidos sob demanda por 'rank:get' (ver renderRank)
@@ -3175,18 +3206,18 @@
      em tibia-dat-parser/outfit_sheets/{effects_sheet.png,missiles_sheet.png}
      (mesma extração dos outfits — ver tibia-ravendawn-asset-extraction-
      notas.md), mas ainda como atlas empacotado sem nome por magia; recortar
-     cada efeito nomeado (bola de fogo, feixe sagrado, flecha...) dali é o
-     mesmo tipo de trabalho manual que fizemos pros outfits e fica
-     PENDENTE. Por isso este sistema já tenta carregar o PNG real pela
-     convenção acima e, se o arquivo ainda não existir (loaded=false — o
-     próprio SpriteManager.load trata 404 como "não carregou", nunca
-     quebra), cai automaticamente num efeito PROCEDURAL (anel+partículas
-     desenhados no Canvas, na cor do arquétipo/elemento real da magia) —
-     é o mesmíssimo padrão que o jogo já usa pra monstro sem sprite
-     (bolinha+ícone) e outfit sem asset (fallback procedural): a animação
-     funciona HOJE pra toda magia e fica melhor sozinha assim que a arte
-     real for extraída pra pasta certa, sem precisar tocar neste código de
-     novo.
+     cada efeito nomeado (bola de fogo, feixe sagrado, flecha...) dali era o
+     mesmo tipo de trabalho manual que fizemos pros outfits — JÁ FEITO pros
+     14 effectKeys + 6 missileKeys abaixo (ver claude/spell-fx-sistema-
+     notas.md pro mapeamento id→elemento e a técnica de recolorização). Se
+     o arquivo ainda não existir pra algum effectKey/missileKey futuro
+     (loaded=false — o próprio SpriteManager.load trata 404 como "não
+     carregou", nunca quebra), cai automaticamente num efeito PROCEDURAL
+     (anel+partículas desenhados no Canvas, na cor do arquétipo/elemento
+     real da magia) — é o mesmíssimo padrão que o jogo já usa pra monstro
+     sem sprite (bolinha+ícone) e outfit sem asset (fallback procedural):
+     serve de rede de segurança pra qualquer chave nova que ainda não
+     tenha arte extraída.
      ========================================================= */
   function effectFrame(effectKey, frameIdx){ return SpriteManager.load('fx_'+effectKey+'_'+frameIdx, `effects/${effectKey}/f${String(frameIdx).padStart(2,'0')}.png`); }
   function missileImg(missileKey){ return SpriteManager.load('ms_'+missileKey, `missiles/${missileKey}.png`); }
@@ -3198,14 +3229,14 @@
   // ainda (ver fallback acima). `null` em heal/defense/missileKey = esse
   // arquétipo não tem magia desse tipo (ou não é à distância).
   const SPELL_VISUALS = {
-    warfare:    { color: '#e0563c', attack: { effectKey: 'warfare_attack',    missileKey: null,           frames: 5, frameMs: 70 }, heal: null, defense: { effectKey: 'warfare_defense',    frames: 5, frameMs: 90 } },
-    holy:       { color: '#ffe27a', attack: { effectKey: 'holy_attack',       missileKey: 'holy_bolt',     frames: 6, frameMs: 80 }, heal: { effectKey: 'holy_heal', frames: 6, frameMs: 90 }, defense: { effectKey: 'holy_defense',       frames: 5, frameMs: 90 } },
-    protection: { color: '#8fd0ff', attack: { effectKey: 'protection_attack', missileKey: null,           frames: 5, frameMs: 80 }, heal: null, defense: { effectKey: 'protection_defense', frames: 5, frameMs: 90 } },
+    warfare:    { color: '#e0563c', attack: { effectKey: 'warfare_attack',    missileKey: null,           frames: 2, frameMs: 110 }, heal: null, defense: { effectKey: 'warfare_defense',    frames: 2, frameMs: 130 } },
+    holy:       { color: '#ffe27a', attack: { effectKey: 'holy_attack',       missileKey: 'holy_bolt',     frames: 2, frameMs: 120 }, heal: { effectKey: 'holy_heal', frames: 2, frameMs: 140 }, defense: { effectKey: 'holy_defense',       frames: 2, frameMs: 120 } },
+    protection: { color: '#8fd0ff', attack: { effectKey: 'protection_attack', missileKey: null,           frames: 2, frameMs: 120 }, heal: null, defense: { effectKey: 'protection_defense', frames: 2, frameMs: 130 } },
     archery:    { color: '#c9d97a', attack: { effectKey: 'archery_attack',    missileKey: 'arrow',         frames: 1, frameMs: 60 }, heal: null, defense: null },
-    wizardry:   { color: '#a37bff', attack: { effectKey: 'wizardry_attack',   missileKey: 'arcane_bolt',   frames: 6, frameMs: 70 }, heal: null, defense: { effectKey: 'wizardry_defense',   frames: 5, frameMs: 90 } },
-    shadow:     { color: '#8a5ac9', attack: { effectKey: 'shadow_attack',     missileKey: 'shadow_bolt',   frames: 6, frameMs: 75 }, heal: null, defense: null },
-    spiritual:  { color: '#7ee08a', attack: { effectKey: 'spiritual_attack',  missileKey: 'nature_bolt',   frames: 6, frameMs: 80 }, heal: { effectKey: 'spiritual_heal', frames: 6, frameMs: 90 }, defense: null },
-    witchcraft: { color: '#b96fd6', attack: { effectKey: 'witchcraft_attack', missileKey: 'curse_bolt',    frames: 6, frameMs: 85 }, heal: null, defense: null },
+    wizardry:   { color: '#a37bff', attack: { effectKey: 'wizardry_attack',   missileKey: 'arcane_bolt',   frames: 2, frameMs: 110 }, heal: null, defense: { effectKey: 'wizardry_defense',   frames: 2, frameMs: 130 } },
+    shadow:     { color: '#8a5ac9', attack: { effectKey: 'shadow_attack',     missileKey: 'shadow_bolt',   frames: 2, frameMs: 115 }, heal: null, defense: null },
+    spiritual:  { color: '#7ee08a', attack: { effectKey: 'spiritual_attack',  missileKey: 'nature_bolt',   frames: 2, frameMs: 120 }, heal: { effectKey: 'spiritual_heal', frames: 2, frameMs: 140 }, defense: null },
+    witchcraft: { color: '#b96fd6', attack: { effectKey: 'witchcraft_attack', missileKey: 'curse_bolt',    frames: 2, frameMs: 125 }, heal: null, defense: null },
   };
   // `element` real (COMBAT_FIREDAMAGE etc., extraído do Lua — ver `element`
   // em pushCombatFx/castSpell no huntEngine.js) só AFINA a cor do fallback
@@ -4411,6 +4442,24 @@
       }
       renderInventoryIfOpen();
       renderEnchantIfOpen();
+    }
+    if(msg.forType === 'item:infuse'){
+      if(msg.ok) logLoot(`🔮 Infusão bem-sucedida! Grade ${msg.grade} (Tier ${msg.tier}).`);
+      else {
+        const reasonMap = { slot_invalido:'slot inválido.', slot_vazio:'não há item equipado nesse slot.', item_nao_infundivel:'esse item não pode ser infundido.', grade_maxima:'esse item já está na Grade máxima (9).', sem_fragmento:`você precisa de ${(msg.cost&&msg.cost.shards)||1} Fragmento(s) de Infusão.`, ouro_insuficiente:`você precisa de ${(msg.cost&&msg.cost.gold)||0} de Prata.` };
+        logLoot(`⚠️ Não foi possível infundir: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderInventoryIfOpen();
+      renderInfusionIfOpen();
+    }
+    if(msg.forType === 'item:recycleInfusion'){
+      if(msg.ok) logLoot(`♻️ Infusão reciclada: +${msg.refunded} Fragmento(s) de Infusão devolvidos.`);
+      else {
+        const reasonMap = { slot_invalido:'slot inválido.', slot_vazio:'não há item equipado nesse slot.', sem_investimento:'esse item não tem nenhuma Infusão pra reciclar.' };
+        logLoot(`⚠️ Não foi possível reciclar: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderInventoryIfOpen();
+      renderInfusionIfOpen();
     }
     if(msg.forType === 'depot:store' || msg.forType === 'depot:retrieve'){
       if(!msg.ok){
@@ -5644,11 +5693,15 @@
   });
   // Sair do Jogo -- desloga de verdade (mesmo comportamento do "Sair" da
   // tela de seleção de personagem: limpa token/username/character do
-  // localStorage e manda pro login). Com confirmação (showConfirmModal, ver
-  // mais abaixo) porque desconecta de uma caçada/grupo em andamento sem
-  // aviso senão.
+  // localStorage e manda pro login). O jogo é idle: desconectar (fechar a
+  // aba, cair de conexão, ou este botão -- tudo cai no MESMO ws.on('close')
+  // do servidor) NÃO para a caçada automática -- o personagem continua
+  // caçando sozinho, e quem tiver ele no Grupo continua vendo posição/HP/
+  // animação normalmente (só com um "(offline)" no nick). O aviso de
+  // confirmação existe só pra deixar isso claro (evita o susto de achar que
+  // "sair" interrompe tudo), não porque a ação seja arriscada de verdade.
   document.getElementById('btn-exit-game').addEventListener('click', async ()=>{
-    if(!(await showConfirmModal('Sair do jogo? Você será desconectado e voltará pra tela de login.'))) return;
+    if(!(await showConfirmModal('Sair do jogo? Você será desconectado neste navegador, mas seu personagem continua caçando sozinho normalmente (e assim aparece pro seu Grupo) até você voltar.'))) return;
     localStorage.removeItem(LS_TOKEN);
     localStorage.removeItem(LS_USERNAME);
     localStorage.removeItem(LS_CHARACTER);
@@ -5657,10 +5710,64 @@
   document.getElementById('wiki-item-search').addEventListener('input', renderWikiItems);
   document.getElementById('wiki-monster-search').addEventListener('input', renderWikiMonsters);
   document.getElementById('bestiary-reward-close').addEventListener('click', ()=> document.getElementById('bestiary-reward-modal').classList.remove('open'));
+  // Assets reais do dump da Ravendawn (assets/ravendawn-ui/, ver
+  // claude/forja-ravendawn-tier-grade-notas.md) — ícones de slot vazio,
+  // ícones de atributo e a moldura de Grade da Infusão. Tudo com fallback
+  // gracioso: se o arquivo não existir ainda no CDN, o SVG genérico (abaixo)
+  // ou nada aparece no lugar, nunca um ícone quebrado.
+  const RAVENDAWN_UI_BASE = URL_BASE + 'ravendawn-ui/';
+  const EQUIP_SLOT_ICON_URL = {
+    helmet: RAVENDAWN_UI_BASE + 'equip_helmet.png',
+    armor: RAVENDAWN_UI_BASE + 'equip_armor.png',
+    boots: RAVENDAWN_UI_BASE + 'equip_boots.png',
+    legs: RAVENDAWN_UI_BASE + 'equip_legs.png',
+    amulet: RAVENDAWN_UI_BASE + 'equip_amulet.png',
+    weapon: RAVENDAWN_UI_BASE + 'equip_weapon.png',
+    offhand: RAVENDAWN_UI_BASE + 'equip_offhand.png',
+    ring: RAVENDAWN_UI_BASE + 'equip_ring.png',
+  };
+  const STAT_ICON_URL = {
+    might: RAVENDAWN_UI_BASE + 'stat_might.png',
+    intelligence: RAVENDAWN_UI_BASE + 'stat_intelligence.png',
+    dexterity: RAVENDAWN_UI_BASE + 'stat_dexterity.png',
+    wisdom: RAVENDAWN_UI_BASE + 'stat_wisdom.png',
+    vitality: RAVENDAWN_UI_BASE + 'stat_vitality.png',
+  };
+  // Cor da moldura de Grade por faixa (1-3 bronze, 4-6 prata/azul, 7-9
+  // dourado) — a fonte (bgGrade.png) não documenta cores oficiais por Grade,
+  // então esta é uma escolha nossa (aproximação, igual o restante dos pesos
+  // da Infusão) só pra dar uma leitura visual rápida de "quão evoluído" o
+  // item está sem precisar abrir o painel.
+  const GRADE_BAND_COLOR = ['#b5723a','#b5723a','#b5723a','#9fb8d6','#9fb8d6','#9fb8d6','#e6c15c','#e6c15c','#e6c15c'];
+  function gradeBandColor(grade){ return GRADE_BAND_COLOR[Math.min(9,Math.max(1,grade))-1] || '#b5723a'; }
+  // HTML da moldura+selo de Grade sobreposto num .item-slot/.equip-slot —
+  // usado tanto na Mochila quanto no boneco de equipamento (paperdoll).
+  function infusionOverlayHtml(item){
+    const grade = item && item.infusionGrade;
+    if(!grade) return '';
+    return `<span class="grade-frame" style="background:${gradeBandColor(grade)};"></span><span class="grade-badge">G${grade}</span>`;
+  }
+  // Ícone real de slot vazio (silhueta do dump Ravendawn, colorida via
+  // currentColor) com fallback pro SVG genérico se o PNG não existir.
+  function equipSlotPlaceholderHtml(slotKey){
+    const url = EQUIP_SLOT_ICON_URL[slotKey];
+    if(!url) return ITEM_TYPE_ICON_SVG[slotKey] || '';
+    return `<span class="ravendawn-mask-icon" style="width:26px;height:26px;-webkit-mask-image:url('${url}');mask-image:url('${url}');"></span>`;
+  }
+  // Ícone pequeno de atributo (Might/Intelligence/Dexterity/Wisdom/Vitality)
+  // pra usar ao lado do texto no painel de Infusão, no lugar de só a palavra.
+  function statIconHtml(statKey){
+    const url = STAT_ICON_URL[statKey];
+    if(!url) return '';
+    return `<span class="ravendawn-mask-icon" style="width:11px;height:11px;margin-right:2px;-webkit-mask-image:url('${url}');mask-image:url('${url}');"></span>`;
+  }
   // Ícones desenhados em SVG (sem depender de nenhuma arte externa) por TIPO
   // de equipamento — nosso sistema gera itens por slot+raridade, não por item
   // nomeado único, então um ícone por slot já cobre o inventário inteiro.
   // currentColor deixa colorir por raridade só trocando o "color" do wrapper.
+  // Mantido como FALLBACK: usado quando o PNG real (equipSlotPlaceholderHtml)
+  // não carrega, e ainda usado direto pelos handleXError abaixo (itens com
+  // foto quebrada) e nos ícones de item já equipado/na Mochila sem ícone próprio.
   const ITEM_TYPE_ICON_SVG = {
     weapon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2l8 8-2 2-8-8 2-2z"/><path d="M14 10 4 20"/><path d="M3 21l2-4 2 2-4 2z"/><path d="M17 5l2 2"/></svg>',
     offhand:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/><path d="M12 6v12"/></svg>',
@@ -5705,7 +5812,7 @@
   // Preenche os 7 ícones do boneco de equipamento uma vez só (são sempre os
   // mesmos 7 slots fixos no DOM, só o conteúdo do slot muda com o tempo).
   document.querySelectorAll('.equip-slot[data-icon-slot]').forEach(el=>{
-    el.querySelector('.slot-icon').innerHTML = ITEM_TYPE_ICON_SVG[el.dataset.iconSlot] || '';
+    el.querySelector('.slot-icon').innerHTML = equipSlotPlaceholderHtml(el.dataset.iconSlot);
   });
   function sumEquipStat(key){
     let total = 0;
@@ -5783,11 +5890,13 @@
       slot.innerHTML = `${iconHtml}
         <span class="trash-timer">${fmtTrashRemaining(it.expiresAt)}</span>
         ${it.qty>1?`<span class="qty">${it.qty}</span>`:''}
+        ${infusionOverlayHtml(it)}
         ${location==='city' ? `<span class="slot-mini-btn" data-trash-sell="${i}" title="Vender">🪙</span>` : ''}`;
       slot.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:i }));
       slot.addEventListener('mouseenter', ()=>{
         const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
-        invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${it.qty>1?` · x${it.qty}`:''}<span class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</span>`;
+        const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
+        invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${infusionLine}${it.qty>1?` · x${it.qty}`:''}<span class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</span>`;
         invItemTooltip.style.display = 'block';
       });
       slot.addEventListener('mousemove', positionInvTooltip);
@@ -5812,11 +5921,12 @@
     slot.style.cursor = 'pointer';
     slot.title = actionLabel;
     const iconHtml = resolveItemIconHtml(it);
-    slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}`;
+    slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}`;
     slot.addEventListener('click', onClick);
     slot.addEventListener('mouseenter', ()=>{
       const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
-      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${it.qty>1?` · x${it.qty}`:''}`;
+      const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
+      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${infusionLine}${it.qty>1?` · x${it.qty}`:''}`;
       invItemTooltip.style.display = 'block';
     });
     slot.addEventListener('mousemove', positionInvTooltip);
@@ -5880,8 +5990,13 @@
       if(item && item.icon){
         iconSpan.innerHTML = `<img src="${equipIconUrl(item.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="this.parentElement.innerHTML=(ITEM_TYPE_ICON_SVG[this.parentElement.dataset.iconSlot]||'');" />`;
       } else {
-        iconSpan.innerHTML = ITEM_TYPE_ICON_SVG[iconSpan.dataset.iconSlot] || '';
+        iconSpan.innerHTML = equipSlotPlaceholderHtml(iconSpan.dataset.iconSlot);
       }
+      // Grade da Infusão no boneco de equipamento — moldura+selo "G{n}" no
+      // mesmo slot fixo (ver .grade-overlay-holder no HTML), só quando o
+      // item equipado nesse slot já tem alguma Grade investida.
+      const overlayHolder = el.querySelector('.grade-overlay-holder');
+      if(overlayHolder) overlayHolder.innerHTML = infusionOverlayHtml(item);
     });
     document.querySelectorAll('.equip-slot[data-cosmetic]').forEach(el=>{
       // cosmetics[key] guarda só o ID do catálogo (não um item de bag como os
@@ -5948,7 +6063,7 @@
           : (invTab === 'mochila' && !it.slot)
             ? `<img class="item-icon" data-rarity-color="${rarityColor}" src="${itemIconUrl(it.id)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleLootIconError(this)" />`
             : `<span class="item-icon" style="color:${rarityColor};">${invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
-      slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}`;
+      slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}`;
       // só itens da Mochila com "slot" definido (arma/elmo/etc) são equipáveis —
       // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
       if(invTab==='mochila' && it.slot){
@@ -5968,11 +6083,12 @@
         const stats = it.slot ? getItemTotalStatsClient(it) : {};
         const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
         const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
+        const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
         const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
         // poção (Bolsa): cura% real igual o Auto-Uso usa (POTION_CATALOG no
         // servidor) — antes o tooltip da Bolsa não mostrava NENHUM status.
         const healLine = (invTab==='bolsa' && it.healPct) ? `<span class="hint">Cura ${Math.round(it.healPct*100)}% de ${it.kind==='mana'?'Mana':'Vida'}</span>` : '';
-        invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${enchantLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}${healLine}`;
+        invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}${healLine}`;
         invItemTooltip.style.display = 'block';
       });
       slot.addEventListener('mousemove', positionInvTooltip);
@@ -6080,8 +6196,9 @@
       const stats = getItemTotalStatsClient(item);
       const rarityLabel = (item.rarity||'comum').replace(/^./, c=>c.toUpperCase());
       const enchantLine = item.enchantLevel ? ` · +${item.enchantLevel}` : '';
+      const infusionLine = item.infusionGrade ? ` · Grade ${item.infusionGrade}` : '';
       const descLine = item.description ? `<span class="hint" style="font-style:italic;">${item.description}</span>` : '';
-      invItemTooltip.innerHTML = `<b>${item.name || item.id}</b>${rarityLabel}${enchantLine}${descLine}<span class="hint">${formatStats(stats)}</span>`;
+      invItemTooltip.innerHTML = `<b>${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats)}</span>`;
       invItemTooltip.style.display = 'block';
     });
     el.addEventListener('mousemove', positionInvTooltip);
@@ -7405,6 +7522,86 @@
     }
   }
   function inCityForShop(){ return location === 'city'; }
+
+  /* =========================================================
+     INFUSÃO — Tier (fixo, vem da raridade) + Grade (0-9, sobe com
+     Fragmento de Infusão + Prata, SEM risco de quebra). Sistema PARALELO
+     ao Refinamento acima (não mexe em enchantLevel/bonusStats). Espelha
+     ITEM_TIER_BY_RARITY/TIER_ATTRIBUTE_SLOTS/getInfusionCost do
+     huntEngine.js só pra PREVIEW no cliente — quem valida e aplica de
+     verdade é sempre o servidor (case 'item:infuse'/'item:recycleInfusion'
+     em server.js -> huntEngine.infuseItem/recycleInfusion). Ver
+     claude/forja-ravendawn-tier-grade-notas.md pra pesquisa/design.
+     ========================================================= */
+  const infusionModal = document.getElementById('infusion-modal');
+  const ITEM_TIER_BY_RARITY = { comum:1, incomum:2, rara:3, 'épica':4, 'lendária':5 };
+  const TIER_ATTRIBUTE_SLOTS = { 1:{primary:0,secondary:0}, 2:{primary:1,secondary:0}, 3:{primary:2,secondary:0}, 4:{primary:2,secondary:1}, 5:{primary:2,secondary:2}, 6:{primary:2,secondary:3} };
+  const INFUSION_MAX_GRADE = 9;
+  const PRIMARY_STAT_LABEL = { might:'Might', intelligence:'Intelligence', dexterity:'Dexterity', wisdom:'Wisdom', vitality:'Vitality' };
+  function getItemTierClient(item){ return (item && ITEM_TIER_BY_RARITY[item.rarity]) || 0; }
+  function getInfusionCostClient(item, nextGrade){ const tier = getItemTierClient(item)||1; return { shards: nextGrade, gold: Math.round(nextGrade*tier*35) }; }
+  let infusionSelectedSlot = 'weapon';
+  document.getElementById('btn-open-infusion').addEventListener('click', ()=>{ infusionModal.classList.toggle('open'); renderInfusion(); });
+  function renderInfusionIfOpen(){ if(infusionModal.classList.contains('open')) renderInfusion(); }
+  const infusionTabsEl = document.getElementById('infusion-slot-tabs');
+  infusionTabsEl.addEventListener('click', (e)=>{
+    const tab = e.target.closest('[data-infusion-slot]');
+    if(!tab) return;
+    infusionSelectedSlot = tab.dataset.infusionSlot;
+    renderInfusion();
+  });
+  function renderInfusion(){
+    if(!infusionModal.classList.contains('open')) return;
+    infusionTabsEl.innerHTML = ENCHANT_SLOTS.map(s=>`<div class="enchant-slot-tab ${s===infusionSelectedSlot?'active':''}" data-infusion-slot="${s}">${ENCHANT_SLOT_LABEL[s]}${equipment[s]?'':' (vazio)'}</div>`).join('');
+    const body = document.getElementById('infusion-body');
+    const item = equipment[infusionSelectedSlot];
+    if(!item){
+      body.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);padding:10px 0;">Nenhum item equipado em ${ENCHANT_SLOT_LABEL[infusionSelectedSlot]}.</div>`;
+      return;
+    }
+    const tier = getItemTierClient(item);
+    const grade = item.infusionGrade || 0;
+    const nextGrade = grade + 1;
+    const atMax = grade >= INFUSION_MAX_GRADE;
+    const slots = TIER_ATTRIBUTE_SLOTS[tier] || { primary:0, secondary:0 };
+    const cost = getInfusionCostClient(item, nextGrade);
+    const hasShards = (materials.infusionShard||0) >= cost.shards;
+    const hasGold = player.gold >= cost.gold;
+    const invested = item.infusionInvested || 0;
+    const primaryStats = (item.infusionStats && item.infusionStats.primary) || [];
+    const secondaryStats = (item.infusionStats && item.infusionStats.secondary) || [];
+    const gradeMult = 1 + grade*0.10;
+    body.innerHTML = `
+      <div class="enchant-req-row"><span>Item</span><span style="color:${RARITY_COLORS[item.rarity]||'var(--ink)'}">${item.name} (${item.rarity})</span></div>
+      <div class="enchant-req-row"><span>Tier</span><span class="ok">${tier} <span style="color:var(--ink-dim);">(${slots.primary} primário${slots.primary===1?'':'s'} + ${slots.secondary} secundário${slots.secondary===1?'':'s'})</span></span></div>
+      <div class="enchant-req-row"><span>Grade</span><span class="${grade>0?'ok':''}">${atMax ? 'Grade 9 (MÁXIMA)' : `Grade ${grade} → Grade ${nextGrade}`}</span></div>
+      ${(primaryStats.length||secondaryStats.length) ? `<div class="enchant-stats-box">Atributos da Infusão (Grade atual):
+        ${primaryStats.map(p=>`${statIconHtml(p.stat)}${PRIMARY_STAT_LABEL[p.stat]||p.stat} +${Math.round(p.base*gradeMult*10)/10}`).join(' · ')}
+        ${primaryStats.length && secondaryStats.length ? ' · ' : ''}
+        ${secondaryStats.map(s=>`${s.label} +${Math.round(s.value*gradeMult*10)/10}`).join(' · ')}
+      </div>` : (tier>0 ? `<div class="enchant-stats-box" style="color:var(--ink-dim);">${tier<=1?'Tier 1 não rola atributos (só o status base do item sobe com a Grade).':'Infundir pela 1ª vez sorteia os atributos deste item.'}</div>` : '')}
+      ${!atMax ? `
+      <div class="enchant-req-row"><span>Progressão</span><span>Garantida — Infusão nunca falha nem quebra o item</span></div>
+      <div class="enchant-req-row" style="align-items:center;"><span><img src="${RAVENDAWN_UI_BASE}warforge_shard.png" style="width:13px;height:13px;vertical-align:-2px;object-fit:contain;margin-right:3px;" onerror="this.style.display='none'"/>Fragmento de Infusão (precisa de ${cost.shards})</span><span class="${hasShards?'ok':'missing'}">${materials.infusionShard||0}</span></div>
+      <div class="enchant-req-row" style="align-items:center;"><span>Prata</span><span class="${hasGold?'ok':'missing'}">${cost.gold.toLocaleString('pt-BR')}</span></div>
+      <div style="font-size:9px;color:var(--ink-dim);margin:2px 0 8px;">Fragmento de Infusão dropa de qualquer criatura durante a caçada — não se compra na loja.</div>
+      <button class="skill-save-btn" id="infusion-go-btn" style="width:100%;margin-top:4px;" ${hasShards&&hasGold?'':'disabled'}>🔮 Infundir (Grade ${grade} → ${nextGrade})</button>
+      ` : ''}
+      ${invested>0 ? `<button class="party-btn" id="infusion-recycle-btn" style="width:100%;margin-top:8px;">♻️ Reciclar Infusão (devolve ${invested} Fragmento(s), zera a Grade)</button>` : ''}
+    `;
+    if(!atMax){
+      const goBtn = document.getElementById('infusion-go-btn');
+      if(goBtn) goBtn.addEventListener('click', ()=>{
+        if(!confirm(`Infundir de Grade ${grade} pra Grade ${nextGrade} por ${cost.shards} Fragmento(s) + ${cost.gold.toLocaleString('pt-BR')} de Prata? Progressão garantida, sem risco.`)) return;
+        sendWS({ type:'item:infuse', slot: infusionSelectedSlot });
+      });
+    }
+    const recycleBtn = document.getElementById('infusion-recycle-btn');
+    if(recycleBtn) recycleBtn.addEventListener('click', ()=>{
+      if(!confirm(`Reciclar a Infusão deste item? Ele volta pra Grade 0 (perde os atributos rolados) e você recebe de volta os ${invested} Fragmento(s) já investidos.`)) return;
+      sendWS({ type:'item:recycleInfusion', slot: infusionSelectedSlot });
+    });
+  }
 
   /* =========================================================
      PROFISSÕES — Forja/Carpintaria/Tecelagem: painel de craft. Catálogo
