@@ -495,6 +495,10 @@
        (vazio)  | Botas  | (vazio)
      ========================================================= */
   .cosmetics-row{ display:flex; justify-content:center; gap:6px; margin-bottom:20px; }
+  /* Prévia real do Outfit equipado dentro do slot 46x46 — o canvas continua
+     desenhando na resolução do retrato (90x150, mesma matemática de âncora
+     de drawCharacterLayers) e só é ENCOLHIDO visualmente aqui via CSS. */
+  .cosmetic-outfit-canvas{ width:32px; height:44px; image-rendering:pixelated; pointer-events:none; }
   .equip-grid3{
     display:grid;
     grid-template-columns:repeat(3, 46px);
@@ -592,6 +596,18 @@
   .wiki-item-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
   .wiki-item-name{ font-family:var(--font-display); font-size:11.5px; color:var(--gold-bright); }
   .wiki-item-source{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
+  /* Grid de tipos de criatura (tela de entrada do Bestiário) — badge circular
+     preto com o emoji do tipo dentro, igual ao estilo da wiki de referência
+     (ravenquest.wiki.br/wiki/Criaturas), + nome embaixo + contagem de
+     espécies cadastradas naquele tipo. */
+  #wiki-types-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; overflow-y:auto; align-content:start; padding:4px 0; }
+  .wiki-type-card{ display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px 4px; border-radius:6px; cursor:pointer; text-align:center; }
+  .wiki-type-card:hover .wiki-type-badge{ border-color:var(--gold-bright); box-shadow:0 0 8px rgba(240,211,138,.35); }
+  .wiki-type-badge{ width:48px; height:48px; border-radius:50%; background:#141210; border:2px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .wiki-type-card.empty{ opacity:.45; }
+  .wiki-type-name{ font-family:var(--font-display); font-size:10px; color:var(--gold-bright); text-transform:uppercase; letter-spacing:.03em; }
+  .wiki-type-count{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
+  #wiki-type-heading{ font-family:var(--font-display); font-size:12px; color:var(--gold-bright); text-transform:uppercase; letter-spacing:.05em; margin-top:-2px; }
   #wiki-monster-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px; overflow-y:auto; align-content:start; }
   .wiki-monster-card{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 6px; border-radius:6px; background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); cursor:pointer; text-align:center; }
   .wiki-monster-card:hover{ border-color:var(--gold-bright); }
@@ -915,6 +931,14 @@
   /* ============ ENCANTAMENTO (estilo Ragnarok) ============ */
   #enchant-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; display:none; z-index:17; }
   #enchant-modal.open{ display:block; }
+  /* BUG (reportado pelo usuário): #infusion-modal nunca ganhou esta regra —
+     sem "top/left/transform/z-index/display:none", o modal ficava sem
+     posição própria (herdava o fluxo normal do documento) e sem "display:none"
+     por padrão, então em vez de aparecer centralizado por cima de tudo ao
+     clicar no ícone 🔮, ficava "atrás"/escondido dos outros elementos da UI.
+     Mesmo padrão exato do #enchant-modal logo acima (são sistemas irmãos). */
+  #infusion-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; display:none; z-index:17; }
+  #infusion-modal.open{ display:block; }
   .enchant-slot-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
   .enchant-slot-tab{ padding:4px 8px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
   .enchant-slot-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
@@ -923,6 +947,31 @@
   .enchant-req-row .missing{ color:#ff9a80; }
   .enchant-stats-box{ background:rgba(0,0,0,.3); border:1px solid rgba(191,161,95,.2); border-radius:4px; padding:8px; margin:8px 0; font-family:var(--font-mono); font-size:10px; line-height:1.6; }
   .enchant-affix{ color:#b98af0; }
+
+  /* ============ INFUSÃO (Tier+Grade) — UI estilo Ravendawn (2026-09-14, 4ª leva) ============
+     Pedido do usuário: "adiciona a ui dele igual ao do ravendawn". Reaproveita a
+     mesma técnica de máscara (grade_frame.png) e a paleta por faixa (GRADE_BAND_COLOR)
+     que já eram usadas nos slots da Mochila/boneco (ver infusionOverlayHtml), só que
+     numa prévia grande dentro do próprio painel, + fileiras de "pips" (mesmo espírito
+     visual dos .wiki-monster-tierdots do Bestiário) pra Tier (1-6) e Grade (1-9). */
+  .infusion-preview{ display:flex; gap:12px; align-items:center; padding:10px; background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); border-radius:6px; margin-bottom:10px; }
+  .infusion-preview-icon{ position:relative; width:58px; height:58px; flex-shrink:0; border-radius:8px; background:rgba(0,0,0,.4); border:2px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; }
+  .infusion-preview-icon img.item-icon{ width:38px; height:38px; object-fit:contain; }
+  .infusion-preview-icon .grade-frame{ position:absolute; inset:-2px; pointer-events:none; z-index:1; border-radius:8px;
+    -webkit-mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/grade_frame.png);
+    -webkit-mask-size:100% 100%; -webkit-mask-repeat:no-repeat; -webkit-mask-position:center;
+    mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/grade_frame.png);
+    mask-size:100% 100%; mask-repeat:no-repeat; mask-position:center; }
+  .infusion-preview-icon .grade-badge-big{ position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); background:#1a1610; color:#fff; font-family:var(--font-mono); font-size:9px; font-weight:bold; padding:1px 6px; border-radius:8px; border:1px solid var(--gold-bright); white-space:nowrap; z-index:2; }
+  .infusion-preview-info{ flex:1; min-width:0; }
+  .infusion-preview-name{ font-family:var(--font-display); font-size:12px; letter-spacing:.03em; margin-bottom:4px; }
+  .infusion-pip-row{ display:flex; align-items:center; gap:5px; margin-top:5px; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
+  .infusion-pips{ display:flex; gap:3px; }
+  .infusion-pips span{ width:7px; height:7px; border-radius:50%; background:#241f18; border:1px solid rgba(191,161,95,.35); display:block; }
+  .infusion-pips span.done{ border-color:transparent; }
+  .infusion-pips span.next{ background:rgba(240,211,138,.2); border-color:var(--gold-bright); box-shadow:0 0 4px rgba(240,211,138,.5); }
+  .infusion-progress-bar{ height:7px; border-radius:4px; background:rgba(0,0,0,.4); border:1px solid var(--gold-deep); overflow:hidden; margin:2px 0 10px; }
+  .infusion-progress-fill{ height:100%; background:linear-gradient(90deg,#8a6a2e,#e6c15c); }
 
   /* ============ PROFISSÕES (Forja/Carpintaria/Tecelagem) ============ */
   #professions-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; display:none; z-index:17; }
@@ -1369,7 +1418,17 @@
         <input type="text" id="wiki-item-search" placeholder="Buscar item...">
         <div id="wiki-item-list"></div>
       </div>
+      <!-- Tela de entrada do Bestiário: grid de TIPOS de criatura (pedido do
+           usuário, inspirado em ravenquest.wiki.br/wiki/Criaturas — clicar
+           num tipo abre só os monstros daquele tipo, ver wiki-bestiario-view
+           abaixo). Classificação por tipo é nossa (ver CREATURE_TYPES_CLIENT),
+           os monstros do jogo não existem na wiki de referência. -->
+      <div id="wiki-types-view" class="wiki-view" style="display:none;">
+        <div id="wiki-types-grid"></div>
+      </div>
       <div id="wiki-bestiario-view" class="wiki-view" style="display:none;">
+        <div class="wiki-back-btn" id="wiki-type-back-btn">‹ Voltar aos Tipos</div>
+        <div id="wiki-type-heading"></div>
         <input type="text" id="wiki-monster-search" placeholder="Buscar monstro...">
         <div id="wiki-monster-grid"></div>
       </div>
@@ -1460,9 +1519,16 @@
              Anel fica embaixo da Arma (nunca perto da cabeça). Cada slot
              começa vazio (ícone escondido via .slot-icon) — só aparece
              quando de fato tem item equipado; arraste um item da Mochila
-             pra cá pra equipar, ou clique num slot ocupado pra desequipar. -->
+             pra cá pra equipar, ou clique num slot ocupado pra desequipar.
+             Clicar em qualquer um dos 3 abre direto a aba Outfit certa do
+             Modal de Personagem (ver setup no final de renderInventory).
+             Outfit sempre tem valor (default 'padrao'), então usa uma
+             PRÉVIA REAL renderizada (mesmo desenhista do retrato, sem Asas/
+             Aura pra não confundir com os outros 2 slots) em vez de emoji;
+             Aura/Asas herdam o ícone real (sprite própria/ícone da Loja)
+             quando equipados, ou o emoji de antes quando vazios. -->
         <div class="cosmetics-row">
-          <div class="equip-slot" data-cosmetic="outfit" title="Outfit"><span class="slot-icon">👕</span><span class="slot-tag">Outfit</span></div>
+          <div class="equip-slot" data-cosmetic="outfit" title="Outfit"><canvas class="cosmetic-outfit-canvas" width="90" height="150"></canvas><span class="slot-tag">Outfit</span></div>
           <div class="equip-slot" data-cosmetic="aura" title="Aura"><span class="slot-icon">✨</span><span class="slot-tag">Aura</span></div>
           <div class="equip-slot" data-cosmetic="wings" title="Asas"><span class="slot-icon">🪽</span><span class="slot-tag">Asas</span></div>
         </div>
@@ -1747,33 +1813,33 @@
      em si vem sempre do servidor quando online)
      ========================================================= */
   const HUNTS = [
-    { id:"boar", name:"Boar Warrens", level:"20-40", record:'—', possibleLoot:[{id:"boar_steak",name:"Boar Steak",rarity:"rara"},{id:"boar_ears",name:"Boar Ears",rarity:"incomum"},{id:"boar_head",name:"Boar Head",rarity:"incomum"},{id:"boar_pelt",name:"Boar Pelt",rarity:"incomum"},{id:"boar_tusks",name:"Boar Tusks",rarity:"incomum"}], monsterTypes:[{name:"Boar",icon:"🐗",img:URL_BASE+'ravendawn/icons/status/bullrush_boar_runt.png',weakTo:["Fogo"],spriteId:2807},{name:"Boar Runt",icon:"🐗",img:URL_BASE+'ravendawn/icons/status/bullrush_boar_runt.png',weakTo:["Fogo"],spriteId:2808}] },
-    { id:"bear", name:"Bear Hollow", level:"25-45", record:'—', possibleLoot:[{id:"brown_bear_pelt",name:"Brown Bear Pelt",rarity:"rara"},{id:"flexible_stick",name:"Flexible Stick",rarity:"rara"},{id:"hide",name:"Hide",rarity:"rara"},{id:"apex_predator_claw",name:"Apex Predator Claw",rarity:"incomum"},{id:"bear_paw",name:"Bear Paw",rarity:"incomum"}], monsterTypes:[{name:"Brown Bear",icon:"🐻",weakTo:["Fogo"],spriteId:2090},{name:"Dire Bear",icon:"🐻",img:URL_BASE+'ravendawn/icons/status/berserk_dire_bear.png',weakTo:["Fogo","Trevas"],spriteId:2091}] },
-    { id:"wolf", name:"Wolf Den", level:"25-45", record:'—', possibleLoot:[{id:"arctic_fur_pelt",name:"Arctic Fur Pelt",rarity:"rara"},{id:"hide",name:"Hide",rarity:"rara"},{id:"apex_predator_claw",name:"Apex Predator Claw",rarity:"incomum"},{id:"predator_tooth",name:"Predator Tooth",rarity:"incomum"},{id:"spool_of_hair",name:"Spool of hair",rarity:"incomum"}], monsterTypes:[{name:"Arctic Wolf",icon:"🐺",weakTo:["Fogo"],spriteId:2140},{name:"Dire Wolf",icon:"🐺",weakTo:["Fogo","Trevas"],spriteId:2137}] },
-    { id:"blaze", name:"Blaze Spider Nest", level:"25-45", record:'—', possibleLoot:[{id:"arachnid_trophy",name:"Arachnid Trophy",rarity:"lendária"},{id:"swiftseer_band_fragment",name:"Swiftseer Band Fragment",rarity:"lendária"},{id:"red_spider_silk",name:"Red Spider Silk",rarity:"rara"},{id:"smoldering_embers",name:"Smoldering Embers",rarity:"rara"},{id:"spider_eggs",name:"Spider Eggs",rarity:"rara"}], monsterTypes:[{name:"Blaze Broodmother",icon:"🕷️",weakTo:["Água"],spriteId:2131},{name:"Blaze Spider",icon:"🕷️",weakTo:["Água"],spriteId:2125},{name:"Blaze Spiderling",icon:"🕷️",weakTo:["Água"],spriteId:2119}] },
-    { id:"bog", name:"Bog Spider Marsh", level:"25-45", record:'—', possibleLoot:[{id:"arachnid_trophy",name:"Arachnid Trophy",rarity:"lendária"},{id:"crowmaiden_trophy",name:"Crowmaiden Trophy",rarity:"lendária"},{id:"eldritch_coil_fragment",name:"Eldritch Coil Fragment",rarity:"lendária"},{id:"swiftseer_band_fragment",name:"Swiftseer Band Fragment",rarity:"lendária"},{id:"human_effigy",name:"Human Effigy",rarity:"épica"}], monsterTypes:[{name:"Bog Broodmother",icon:"🕷️",weakTo:["Fogo"],spriteId:2129},{name:"Bog Hag",icon:"🕷️",weakTo:["Fogo","Luz"],spriteId:5158},{name:"Bog Spider",icon:"🕷️",img:URL_BASE+'ravendawn/icons/status/antihealing_venom_bog_spider.png',weakTo:["Fogo"],spriteId:2123},{name:"Bog Spiderling",icon:"🕷️",weakTo:["Fogo"],spriteId:2117}] },
-    { id:"brotherhood", name:"Brotherhood Hideout", level:"25-45", record:'—', possibleLoot:[{id:"rohna_brotherhood_trophy",name:"Rohna Brotherhood Trophy",rarity:"lendária"},{id:"brotherhood_lieutenant_ring",name:"Brotherhood Lieutenant Ring",rarity:"rara"},{id:"encrypted_notebook",name:"Encrypted Notebook",rarity:"rara"},{id:"aloe_bandages",name:"Aloe Bandages",rarity:"incomum"},{id:"arrow_quiver",name:"Arrow Quiver",rarity:"incomum"}], monsterTypes:[{name:"Brotherhood Marksman",icon:"⚔️",weakTo:["Trevas"],spriteId:2278},{name:"Brotherhood Mender",icon:"⚔️",weakTo:["Trevas"],spriteId:2351},{name:"Brotherhood Ranger",icon:"⚔️",weakTo:["Trevas"],spriteId:2572},{name:"Brotherhood Sorcerer",icon:"⚔️",weakTo:["Água"],spriteId:2714},{name:"Brotherhood Swordsman",icon:"⚔️",weakTo:["Trevas"],spriteId:2817},{name:"Brotherhood Tracker",icon:"⚔️",weakTo:["Trevas"],spriteId:2278}] },
-    { id:"captain", name:"Captains' Cove", level:"25-45", record:'—', possibleLoot:[{id:"hookmask_trophy",name:"Hookmask Trophy",rarity:"lendária"},{id:"pirate_trophy",name:"Pirate Trophy",rarity:"lendária"},{id:"the_corsairs_ambrosia",name:"The Corsair's Ambrosia",rarity:"lendária"},{id:"bizarre_mask",name:"Bizarre Mask",rarity:"épica"},{id:"strange_potion",name:"Strange Potion",rarity:"épica"}], monsterTypes:[{name:"Captain Adamastor",icon:"🏴‍☠️",weakTo:["Ar"],spriteId:5827},{name:"Captain Boone",icon:"🏴‍☠️",weakTo:["Ar"],spriteId:2607},{name:"Captain Krugg",icon:"🏴‍☠️",weakTo:["Ar"],spriteId:2606}] },
-    { id:"cave", name:"Cave Spider Den", level:"25-45", record:'—', possibleLoot:[{id:"arachnid_trophy",name:"Arachnid Trophy",rarity:"lendária"},{id:"swiftseer_band_fragment",name:"Swiftseer Band Fragment",rarity:"lendária"},{id:"cave_spider_leg",name:"Cave Spider Leg",rarity:"rara"},{id:"spider_eggs",name:"Spider Eggs",rarity:"rara"},{id:"spider_fangs",name:"Spider Fangs",rarity:"rara"}], monsterTypes:[{name:"Cave Broodmother",icon:"🕷️",weakTo:["Fogo"],spriteId:2130},{name:"Cave Spider",icon:"🕷️",img:URL_BASE+'ravendawn/icons/status/shadowbind_cave_spider.png',weakTo:["Fogo"],spriteId:2124},{name:"Cave Spiderling",icon:"🕷️",weakTo:["Fogo"],spriteId:2118}] },
-    { id:"coldstone", name:"Coldstone Burrow", level:"25-45", record:'—', possibleLoot:[{id:"fox_trophy",name:"Fox Trophy",rarity:"lendária"},{id:"igneous_ice_shard",name:"Igneous Ice Shard",rarity:"épica"},{id:"ripper_fang",name:"Ripper Fang",rarity:"épica"},{id:"elemental_crystal",name:"Elemental Crystal",rarity:"rara"},{id:"fox_fur",name:"Fox Fur",rarity:"rara"}], monsterTypes:[{name:"Coldstone Cub",icon:"🦊",weakTo:["Fogo"],spriteId:4773},{name:"Coldstone Kit",icon:"🦊",weakTo:["Fogo"],spriteId:4775},{name:"Coldstone Ninetails",icon:"🦊",weakTo:["Fogo","Luz"],spriteId:4777}] },
-    { id:"dwarf", name:"Dwarven Excavation", level:"25-45", record:'—', possibleLoot:[{id:"dwarf_trophy",name:"Dwarf Trophy",rarity:"lendária"},{id:"dwarven_coin",name:"Dwarven Coin",rarity:"lendária"},{id:"ancient_ingot",name:"Ancient Ingot",rarity:"rara"},{id:"complex_schematics",name:"Complex Schematics",rarity:"rara"},{id:"dwarven_beard",name:"Dwarven Beard",rarity:"rara"}], monsterTypes:[{name:"Dwarf Commoner",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/spirits_resolve_dwarf_commoner.png',weakTo:["Ar"],spriteId:2207},{name:"Dwarf Digger",icon:"⛏️",weakTo:["Ar"],spriteId:5846},{name:"Dwarf Earthpiercer",icon:"⛏️",weakTo:["Ar"],spriteId:5844},{name:"Dwarf Elementalist",icon:"⛏️",weakTo:["Água"],spriteId:2213},{name:"Dwarf Legionnaire",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/guillotine_dwarf_legionnaire.png',weakTo:["Ar"],spriteId:2212},{name:"Dwarf Mechanic",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/healing_channel_dwarf_mechanic.png',weakTo:["Água"],spriteId:2209},{name:"Dwarf Prospector",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/fissure_dwarf_prospector.png',weakTo:["Ar"],spriteId:2208},{name:"Dwarf Spearman",icon:"⛏️",weakTo:["Ar"],spriteId:2211},{name:"Dwarf Thunderer",icon:"⛏️",weakTo:["Terra"],spriteId:2214}] },
-    { id:"anglerfish_bat", name:"Sunken Grotto", level:"25-45", record:'—', possibleLoot:[{id:"deep_sea_bladder",name:"Deep Sea Bladder",rarity:"rara"},{id:"exotic_fin",name:"Exotic Fin",rarity:"rara"},{id:"bat_wing",name:"Bat Wing",rarity:"incomum"},{id:"fading_light_bulb",name:"Fading Light Bulb",rarity:"incomum"},{id:"fish_mucus",name:"Fish Mucus",rarity:"incomum"}], monsterTypes:[{name:"Anglerfish",icon:"🦇",weakTo:["Ar"],spriteId:8725},{name:"Bat",icon:"🦇",img:URL_BASE+'ravendawn/icons/status/whirlwind_bat.png',weakTo:["Luz"],spriteId:2261}] },
-    { id:"battlehog_chewacabra", name:"Wild Thicket", level:"25-45", record:'—', possibleLoot:[{id:"warhog_trophy",name:"Warhog Trophy",rarity:"lendária"},{id:"bone_ring",name:"Bone Ring",rarity:"rara"},{id:"chewacabra_blood",name:"Chewacabra Blood",rarity:"rara"},{id:"chewacabra_tusk",name:"Chewacabra Tusk",rarity:"rara"},{id:"goblinhide_scroll",name:"Goblinhide Scroll",rarity:"rara"}], monsterTypes:[{name:"Battlehog",icon:"🐗",weakTo:["Fogo"],spriteId:2194},{name:"Chewacabra",icon:"🐗",weakTo:["Luz"],spriteId:898}] },
-    { id:"coal_contraption_arachnowalker", name:"Scrapyard Ruins", level:"25-45", record:'—', possibleLoot:[{id:"goblin_trophy",name:"Goblin Trophy",rarity:"lendária"},{id:"sageheart_fragment",name:"Sageheart Fragment",rarity:"lendária"},{id:"sporewalker_trophy",name:"Sporewalker Trophy",rarity:"lendária"},{id:"perfect_sporecap",name:"Perfect Sporecap",rarity:"épica"},{id:"cracked_soul_orb",name:"Cracked Soul Orb",rarity:"rara"}], monsterTypes:[{name:"Coal Contraption",icon:"🕸️",weakTo:["Água"],spriteId:2991},{name:"Arachnowalker",icon:"🕸️",weakTo:["Terra"],spriteId:5276}] },
-    { id:"trunk", name:"Troll Hollow", level:"30-50", record:'—', possibleLoot:[{id:"eldermight_fragment",name:"Eldermight Fragment",rarity:"lendária"},{id:"trunk_trophy",name:"Trunk Trophy",rarity:"lendária"},{id:"enchanted_acorn",name:"Enchanted Acorn",rarity:"rara"},{id:"hardwood",name:"Hardwood",rarity:"rara"},{id:"hexing_eye",name:"Hexing Eye",rarity:"rara"}], monsterTypes:[{name:"Cyclops Trunk",icon:"🌳",weakTo:["Fogo"],spriteId:2152},{name:"Dimwick Trunk",icon:"🌳",weakTo:["Fogo"],spriteId:2151}] },
-    { id:"dreadknought", name:"Ghost Fleet Wreck", level:"30-50", record:'—', possibleLoot:[{id:"booty_stash",name:"Booty Stash",rarity:"rara"},{id:"brass_telescope",name:"Brass Telescope",rarity:"rara"},{id:"infamous_doubloon",name:"Infamous Doubloon",rarity:"rara"},{id:"platinum_compass",name:"Platinum Compass",rarity:"rara"},{id:"foreign_alcohol",name:"Foreign Alcohol",rarity:"incomum"}], monsterTypes:[{name:"Dreadknought Frigate",icon:"⚓",weakTo:["Luz"],spriteId:2902},{name:"Dreadknought Galleon",icon:"⚓",weakTo:["Luz"],spriteId:2902}] },
-    { id:"chainwraith", name:"Chainwraith Crypt", level:"35-55", record:'—', possibleLoot:[{id:"chainwraith_trophy",name:"Chainwraith Trophy",rarity:"lendária"},{id:"netherweave_fragment",name:"Netherweave Fragment",rarity:"lendária"},{id:"chainsunder_flail",name:"Chainsunder Flail",rarity:"rara"},{id:"ethereal_cloak",name:"Ethereal Cloak",rarity:"rara"},{id:"ghastly_lamp",name:"Ghastly Lamp",rarity:"rara"}], monsterTypes:[{name:"Chainwraith Creep",icon:"⛓️",weakTo:["Luz"],spriteId:3089},{name:"Chainwraith Haunt",icon:"⛓️",weakTo:["Luz"],spriteId:3090},{name:"Chainwraith Prowler",icon:"⛓️",weakTo:["Luz"],spriteId:3091},{name:"Chainwraith Reaper",icon:"⛓️",weakTo:["Luz"],spriteId:5414}] },
-    { id:"gazer", name:"Gazer's Hollow", level:"40-60", record:'—', possibleLoot:[{id:"dark_insight_fragment",name:"Dark Insight Fragment",rarity:"lendária"},{id:"gazer_trophy",name:"Gazer Trophy",rarity:"lendária"},{id:"underearth_gem",name:"Underearth Gem",rarity:"épica"},{id:"despair_inducing_gland",name:"Despair Inducing Gland",rarity:"rara"},{id:"eerie_bone_plate",name:"Eerie Bone Plate",rarity:"rara"}], monsterTypes:[{name:"Bone Gazer",icon:"👁️",img:URL_BASE+'ravendawn/icons/status/hex_bone_gazer.png',weakTo:["Trevas"],spriteId:2371},{name:"Deathchill Gazer",icon:"👁️",weakTo:["Fogo"],spriteId:2377},{name:"Doom Gazer",icon:"👁️",weakTo:["Trevas"],spriteId:2363},{name:"Drought Gazer",icon:"👁️",weakTo:["Água"],spriteId:2373}] },
-    { id:"blademaster_djinn_blizzard_beast", name:"Frozen Bazaar", level:"40-60", record:'—', possibleLoot:[{id:"frozen_meat",name:"Frozen Meat",rarity:"rara"},{id:"monstrous_mane",name:"Monstrous Mane",rarity:"rara"},{id:"oversized_flea",name:"Oversized Flea",rarity:"rara"},{id:"winterwool",name:"Winterwool",rarity:"rara"}], monsterTypes:[{name:"Blademaster Djinn",icon:"🧞",weakTo:["Trevas"],spriteId:2387},{name:"Blizzard Beast",icon:"🧞",weakTo:["Fogo"],spriteId:1153}] },
-    { id:"contagious_sporewalker_cragglehide", name:"Blighted Hollow", level:"40-60", record:'—', possibleLoot:[{id:"sageheart_fragment",name:"Sageheart Fragment",rarity:"lendária"},{id:"sporewalker_trophy",name:"Sporewalker Trophy",rarity:"lendária"},{id:"perfect_sporecap",name:"Perfect Sporecap",rarity:"épica"},{id:"amber_eye_gem",name:"Amber Eye Gem",rarity:"rara"},{id:"exotic_fungus",name:"Exotic Fungus",rarity:"rara"}], monsterTypes:[{name:"Contagious Sporewalker",icon:"🍄",weakTo:["Fogo"],spriteId:3973},{name:"Cragglehide",icon:"🍄",weakTo:["Água"],spriteId:6059}] },
-    { id:"astor", name:"Astor's Sanctum", level:"50-70", record:'—', possibleLoot:[{id:"demon_trophy",name:"Demon Trophy",rarity:"lendária"},{id:"voidmind_fragment",name:"Voidmind Fragment",rarity:"lendária"},{id:"demonic_essence",name:"Demonic Essence",rarity:"épica"},{id:"cutting_edge_scrap",name:"Cutting Edge Scrap",rarity:"rara"},{id:"demon_core",name:"Demon Core",rarity:"rara"}], monsterTypes:[{name:"Astor Lord",icon:"😈",weakTo:["Luz"],spriteId:5500},{name:"Astor Demon",icon:"😈",weakTo:["Luz"],spriteId:2100},{name:"Astor Herald",icon:"😈",weakTo:["Luz"],spriteId:5362}] },
-    { id:"crow_matriarch_crowman", name:"Crow's Roost", level:"50-70", record:'—', possibleLoot:[{id:"crowmaiden_trophy",name:"Crowmaiden Trophy",rarity:"lendária"},{id:"eldritch_coil_fragment",name:"Eldritch Coil Fragment",rarity:"lendária"},{id:"crow_mask",name:"Crow Mask",rarity:"épica"},{id:"essence_of_darkness",name:"Essence of Darkness",rarity:"épica"},{id:"human_effigy",name:"Human Effigy",rarity:"épica"}], monsterTypes:[{name:"Crow Matriarch",icon:"🐦‍⬛",weakTo:["Luz"],spriteId:5094},{name:"Crowman",icon:"🐦‍⬛",weakTo:["Luz"],spriteId:5089}] },
-    { id:"direhorn_drake_dusk_crawler", name:"Dusk Ridge", level:"50-70", record:'—', possibleLoot:[{id:"demon_trophy",name:"Demon Trophy",rarity:"lendária"},{id:"direhorn_drake_trophy",name:"Direhorn Drake Trophy",rarity:"lendária"},{id:"galeforce_fragment",name:"Galeforce Fragment",rarity:"lendária"},{id:"voidmind_fragment",name:"Voidmind Fragment",rarity:"lendária"},{id:"demonic_essence",name:"Demonic Essence",rarity:"épica"}], monsterTypes:[{name:"Direhorn Drake",icon:"🐉",weakTo:["Água"],spriteId:4728},{name:"Dusk Crawler",icon:"🐉",img:URL_BASE+'ravendawn/icons/status/dusk_crawler.png',weakTo:["Luz"],spriteId:5298}] },
-    { id:"duskling_dunewalker_jackal", name:"Dune Wastes", level:"50-70", record:'—', possibleLoot:[{id:"demon_trophy",name:"Demon Trophy",rarity:"lendária"},{id:"jackal_trophy",name:"Jackal Trophy",rarity:"lendária"},{id:"mindsurge_fragment",name:"Mindsurge Fragment",rarity:"lendária"},{id:"voidmind_fragment",name:"Voidmind Fragment",rarity:"lendária"},{id:"beastly_distillate",name:"Beastly Distillate",rarity:"épica"}], monsterTypes:[{name:"Duskling",icon:"🌑",weakTo:["Luz"],spriteId:5356},{name:"Dunewalker Jackal",icon:"🌑",weakTo:["Água"],spriteId:5337}] },
-    { id:"draconic", name:"Draconic Bastion", level:"60-80", record:'—', possibleLoot:[{id:"draconic_hide",name:"Draconic Hide",rarity:"rara"},{id:"draconic_wings",name:"Draconic Wings",rarity:"rara"},{id:"fiery_essence",name:"Fiery Essence",rarity:"rara"},{id:"golden_ruby_belt",name:"Golden Ruby Belt",rarity:"rara"},{id:"red_horns",name:"Red Horns",rarity:"rara"}], monsterTypes:[{name:"Draconic Crusader",icon:"🐲",weakTo:["Água"],spriteId:4756},{name:"Draconic Fighter",icon:"🐲",weakTo:["Água"],spriteId:4755},{name:"Draconic Pyromancer",icon:"🐲",weakTo:["Água"],spriteId:4757}] },
+    { id:"boar", name:"Boar Warrens", level:"20-40", record:'—', possibleLoot:[{id:"boar_steak",name:"Boar Steak",rarity:"rara"},{id:"boar_ears",name:"Boar Ears",rarity:"incomum"},{id:"boar_head",name:"Boar Head",rarity:"incomum"},{id:"boar_pelt",name:"Boar Pelt",rarity:"incomum"},{id:"boar_tusks",name:"Boar Tusks",rarity:"incomum"}], monsterTypes:[{name:"Boar",creatureType:"beasts",icon:"🐗",img:URL_BASE+'ravendawn/icons/status/bullrush_boar_runt.png',weakTo:["Fogo"],spriteId:2807},{name:"Boar Runt",creatureType:"beasts",icon:"🐗",img:URL_BASE+'ravendawn/icons/status/bullrush_boar_runt.png',weakTo:["Fogo"],spriteId:2808}] },
+    { id:"bear", name:"Bear Hollow", level:"25-45", record:'—', possibleLoot:[{id:"brown_bear_pelt",name:"Brown Bear Pelt",rarity:"rara"},{id:"flexible_stick",name:"Flexible Stick",rarity:"rara"},{id:"hide",name:"Hide",rarity:"rara"},{id:"apex_predator_claw",name:"Apex Predator Claw",rarity:"incomum"},{id:"bear_paw",name:"Bear Paw",rarity:"incomum"}], monsterTypes:[{name:"Brown Bear",creatureType:"beasts",icon:"🐻",weakTo:["Fogo"],spriteId:2090},{name:"Dire Bear",creatureType:"beasts",icon:"🐻",img:URL_BASE+'ravendawn/icons/status/berserk_dire_bear.png',weakTo:["Fogo","Trevas"],spriteId:2091}] },
+    { id:"wolf", name:"Wolf Den", level:"25-45", record:'—', possibleLoot:[{id:"arctic_fur_pelt",name:"Arctic Fur Pelt",rarity:"rara"},{id:"hide",name:"Hide",rarity:"rara"},{id:"apex_predator_claw",name:"Apex Predator Claw",rarity:"incomum"},{id:"predator_tooth",name:"Predator Tooth",rarity:"incomum"},{id:"spool_of_hair",name:"Spool of hair",rarity:"incomum"}], monsterTypes:[{name:"Arctic Wolf",creatureType:"beasts",icon:"🐺",weakTo:["Fogo"],spriteId:2140},{name:"Dire Wolf",creatureType:"beasts",icon:"🐺",weakTo:["Fogo","Trevas"],spriteId:2137}] },
+    { id:"blaze", name:"Blaze Spider Nest", level:"25-45", record:'—', possibleLoot:[{id:"arachnid_trophy",name:"Arachnid Trophy",rarity:"lendária"},{id:"swiftseer_band_fragment",name:"Swiftseer Band Fragment",rarity:"lendária"},{id:"red_spider_silk",name:"Red Spider Silk",rarity:"rara"},{id:"smoldering_embers",name:"Smoldering Embers",rarity:"rara"},{id:"spider_eggs",name:"Spider Eggs",rarity:"rara"}], monsterTypes:[{name:"Blaze Broodmother",creatureType:"arthropods",icon:"🕷️",weakTo:["Água"],spriteId:2131},{name:"Blaze Spider",creatureType:"arthropods",icon:"🕷️",weakTo:["Água"],spriteId:2125},{name:"Blaze Spiderling",creatureType:"arthropods",icon:"🕷️",weakTo:["Água"],spriteId:2119}] },
+    { id:"bog", name:"Bog Spider Marsh", level:"25-45", record:'—', possibleLoot:[{id:"arachnid_trophy",name:"Arachnid Trophy",rarity:"lendária"},{id:"crowmaiden_trophy",name:"Crowmaiden Trophy",rarity:"lendária"},{id:"eldritch_coil_fragment",name:"Eldritch Coil Fragment",rarity:"lendária"},{id:"swiftseer_band_fragment",name:"Swiftseer Band Fragment",rarity:"lendária"},{id:"human_effigy",name:"Human Effigy",rarity:"épica"}], monsterTypes:[{name:"Bog Broodmother",creatureType:"arthropods",icon:"🕷️",weakTo:["Fogo"],spriteId:2129},{name:"Bog Hag",creatureType:"humanoids",icon:"🕷️",weakTo:["Fogo","Luz"],spriteId:5158},{name:"Bog Spider",creatureType:"arthropods",icon:"🕷️",img:URL_BASE+'ravendawn/icons/status/antihealing_venom_bog_spider.png',weakTo:["Fogo"],spriteId:2123},{name:"Bog Spiderling",creatureType:"arthropods",icon:"🕷️",weakTo:["Fogo"],spriteId:2117}] },
+    { id:"brotherhood", name:"Brotherhood Hideout", level:"25-45", record:'—', possibleLoot:[{id:"rohna_brotherhood_trophy",name:"Rohna Brotherhood Trophy",rarity:"lendária"},{id:"brotherhood_lieutenant_ring",name:"Brotherhood Lieutenant Ring",rarity:"rara"},{id:"encrypted_notebook",name:"Encrypted Notebook",rarity:"rara"},{id:"aloe_bandages",name:"Aloe Bandages",rarity:"incomum"},{id:"arrow_quiver",name:"Arrow Quiver",rarity:"incomum"}], monsterTypes:[{name:"Brotherhood Marksman",creatureType:"humans",icon:"⚔️",weakTo:["Trevas"],spriteId:2278},{name:"Brotherhood Mender",creatureType:"humans",icon:"⚔️",weakTo:["Trevas"],spriteId:2351},{name:"Brotherhood Ranger",creatureType:"humans",icon:"⚔️",weakTo:["Trevas"],spriteId:2572},{name:"Brotherhood Sorcerer",creatureType:"humans",icon:"⚔️",weakTo:["Água"],spriteId:2714},{name:"Brotherhood Swordsman",creatureType:"humans",icon:"⚔️",weakTo:["Trevas"],spriteId:2817},{name:"Brotherhood Tracker",creatureType:"humans",icon:"⚔️",weakTo:["Trevas"],spriteId:2278}] },
+    { id:"captain", name:"Captains' Cove", level:"25-45", record:'—', possibleLoot:[{id:"hookmask_trophy",name:"Hookmask Trophy",rarity:"lendária"},{id:"pirate_trophy",name:"Pirate Trophy",rarity:"lendária"},{id:"the_corsairs_ambrosia",name:"The Corsair's Ambrosia",rarity:"lendária"},{id:"bizarre_mask",name:"Bizarre Mask",rarity:"épica"},{id:"strange_potion",name:"Strange Potion",rarity:"épica"}], monsterTypes:[{name:"Captain Adamastor",creatureType:"humans",icon:"🏴‍☠️",weakTo:["Ar"],spriteId:5827},{name:"Captain Boone",creatureType:"humans",icon:"🏴‍☠️",weakTo:["Ar"],spriteId:2607},{name:"Captain Krugg",creatureType:"humans",icon:"🏴‍☠️",weakTo:["Ar"],spriteId:2606}] },
+    { id:"cave", name:"Cave Spider Den", level:"25-45", record:'—', possibleLoot:[{id:"arachnid_trophy",name:"Arachnid Trophy",rarity:"lendária"},{id:"swiftseer_band_fragment",name:"Swiftseer Band Fragment",rarity:"lendária"},{id:"cave_spider_leg",name:"Cave Spider Leg",rarity:"rara"},{id:"spider_eggs",name:"Spider Eggs",rarity:"rara"},{id:"spider_fangs",name:"Spider Fangs",rarity:"rara"}], monsterTypes:[{name:"Cave Broodmother",creatureType:"arthropods",icon:"🕷️",weakTo:["Fogo"],spriteId:2130},{name:"Cave Spider",creatureType:"arthropods",icon:"🕷️",img:URL_BASE+'ravendawn/icons/status/shadowbind_cave_spider.png',weakTo:["Fogo"],spriteId:2124},{name:"Cave Spiderling",creatureType:"arthropods",icon:"🕷️",weakTo:["Fogo"],spriteId:2118}] },
+    { id:"coldstone", name:"Coldstone Burrow", level:"25-45", record:'—', possibleLoot:[{id:"fox_trophy",name:"Fox Trophy",rarity:"lendária"},{id:"igneous_ice_shard",name:"Igneous Ice Shard",rarity:"épica"},{id:"ripper_fang",name:"Ripper Fang",rarity:"épica"},{id:"elemental_crystal",name:"Elemental Crystal",rarity:"rara"},{id:"fox_fur",name:"Fox Fur",rarity:"rara"}], monsterTypes:[{name:"Coldstone Cub",creatureType:"beasts",icon:"🦊",weakTo:["Fogo"],spriteId:4773},{name:"Coldstone Kit",creatureType:"beasts",icon:"🦊",weakTo:["Fogo"],spriteId:4775},{name:"Coldstone Ninetails",creatureType:"beasts",icon:"🦊",weakTo:["Fogo","Luz"],spriteId:4777}] },
+    { id:"dwarf", name:"Dwarven Excavation", level:"25-45", record:'—', possibleLoot:[{id:"dwarf_trophy",name:"Dwarf Trophy",rarity:"lendária"},{id:"dwarven_coin",name:"Dwarven Coin",rarity:"lendária"},{id:"ancient_ingot",name:"Ancient Ingot",rarity:"rara"},{id:"complex_schematics",name:"Complex Schematics",rarity:"rara"},{id:"dwarven_beard",name:"Dwarven Beard",rarity:"rara"}], monsterTypes:[{name:"Dwarf Commoner",creatureType:"humanoids",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/spirits_resolve_dwarf_commoner.png',weakTo:["Ar"],spriteId:2207},{name:"Dwarf Digger",creatureType:"humanoids",icon:"⛏️",weakTo:["Ar"],spriteId:5846},{name:"Dwarf Earthpiercer",creatureType:"humanoids",icon:"⛏️",weakTo:["Ar"],spriteId:5844},{name:"Dwarf Elementalist",creatureType:"humanoids",icon:"⛏️",weakTo:["Água"],spriteId:2213},{name:"Dwarf Legionnaire",creatureType:"humanoids",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/guillotine_dwarf_legionnaire.png',weakTo:["Ar"],spriteId:2212},{name:"Dwarf Mechanic",creatureType:"humanoids",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/healing_channel_dwarf_mechanic.png',weakTo:["Água"],spriteId:2209},{name:"Dwarf Prospector",creatureType:"humanoids",icon:"⛏️",img:URL_BASE+'ravendawn/icons/status/fissure_dwarf_prospector.png',weakTo:["Ar"],spriteId:2208},{name:"Dwarf Spearman",creatureType:"humanoids",icon:"⛏️",weakTo:["Ar"],spriteId:2211},{name:"Dwarf Thunderer",creatureType:"humanoids",icon:"⛏️",weakTo:["Terra"],spriteId:2214}] },
+    { id:"anglerfish_bat", name:"Sunken Grotto", level:"25-45", record:'—', possibleLoot:[{id:"deep_sea_bladder",name:"Deep Sea Bladder",rarity:"rara"},{id:"exotic_fin",name:"Exotic Fin",rarity:"rara"},{id:"bat_wing",name:"Bat Wing",rarity:"incomum"},{id:"fading_light_bulb",name:"Fading Light Bulb",rarity:"incomum"},{id:"fish_mucus",name:"Fish Mucus",rarity:"incomum"}], monsterTypes:[{name:"Anglerfish",creatureType:"aquatics",icon:"🦇",weakTo:["Ar"],spriteId:8725},{name:"Bat",creatureType:"beasts",icon:"🦇",img:URL_BASE+'ravendawn/icons/status/whirlwind_bat.png',weakTo:["Luz"],spriteId:2261}] },
+    { id:"battlehog_chewacabra", name:"Wild Thicket", level:"25-45", record:'—', possibleLoot:[{id:"warhog_trophy",name:"Warhog Trophy",rarity:"lendária"},{id:"bone_ring",name:"Bone Ring",rarity:"rara"},{id:"chewacabra_blood",name:"Chewacabra Blood",rarity:"rara"},{id:"chewacabra_tusk",name:"Chewacabra Tusk",rarity:"rara"},{id:"goblinhide_scroll",name:"Goblinhide Scroll",rarity:"rara"}], monsterTypes:[{name:"Battlehog",creatureType:"beasts",icon:"🐗",weakTo:["Fogo"],spriteId:2194},{name:"Chewacabra",creatureType:"mutants",icon:"🐗",weakTo:["Luz"],spriteId:898}] },
+    { id:"coal_contraption_arachnowalker", name:"Scrapyard Ruins", level:"25-45", record:'—', possibleLoot:[{id:"goblin_trophy",name:"Goblin Trophy",rarity:"lendária"},{id:"sageheart_fragment",name:"Sageheart Fragment",rarity:"lendária"},{id:"sporewalker_trophy",name:"Sporewalker Trophy",rarity:"lendária"},{id:"perfect_sporecap",name:"Perfect Sporecap",rarity:"épica"},{id:"cracked_soul_orb",name:"Cracked Soul Orb",rarity:"rara"}], monsterTypes:[{name:"Coal Contraption",creatureType:"mutants",icon:"🕸️",weakTo:["Água"],spriteId:2991},{name:"Arachnowalker",creatureType:"mutants",icon:"🕸️",weakTo:["Terra"],spriteId:5276}] },
+    { id:"trunk", name:"Troll Hollow", level:"30-50", record:'—', possibleLoot:[{id:"eldermight_fragment",name:"Eldermight Fragment",rarity:"lendária"},{id:"trunk_trophy",name:"Trunk Trophy",rarity:"lendária"},{id:"enchanted_acorn",name:"Enchanted Acorn",rarity:"rara"},{id:"hardwood",name:"Hardwood",rarity:"rara"},{id:"hexing_eye",name:"Hexing Eye",rarity:"rara"}], monsterTypes:[{name:"Cyclops Trunk",creatureType:"giants",icon:"🌳",weakTo:["Fogo"],spriteId:2152},{name:"Dimwick Trunk",creatureType:"giants",icon:"🌳",weakTo:["Fogo"],spriteId:2151}] },
+    { id:"dreadknought", name:"Ghost Fleet Wreck", level:"30-50", record:'—', possibleLoot:[{id:"booty_stash",name:"Booty Stash",rarity:"rara"},{id:"brass_telescope",name:"Brass Telescope",rarity:"rara"},{id:"infamous_doubloon",name:"Infamous Doubloon",rarity:"rara"},{id:"platinum_compass",name:"Platinum Compass",rarity:"rara"},{id:"foreign_alcohol",name:"Foreign Alcohol",rarity:"incomum"}], monsterTypes:[{name:"Dreadknought Frigate",creatureType:"undeads",icon:"⚓",weakTo:["Luz"],spriteId:2902},{name:"Dreadknought Galleon",creatureType:"undeads",icon:"⚓",weakTo:["Luz"],spriteId:2902}] },
+    { id:"chainwraith", name:"Chainwraith Crypt", level:"35-55", record:'—', possibleLoot:[{id:"chainwraith_trophy",name:"Chainwraith Trophy",rarity:"lendária"},{id:"netherweave_fragment",name:"Netherweave Fragment",rarity:"lendária"},{id:"chainsunder_flail",name:"Chainsunder Flail",rarity:"rara"},{id:"ethereal_cloak",name:"Ethereal Cloak",rarity:"rara"},{id:"ghastly_lamp",name:"Ghastly Lamp",rarity:"rara"}], monsterTypes:[{name:"Chainwraith Creep",creatureType:"undeads",icon:"⛓️",weakTo:["Luz"],spriteId:3089},{name:"Chainwraith Haunt",creatureType:"undeads",icon:"⛓️",weakTo:["Luz"],spriteId:3090},{name:"Chainwraith Prowler",creatureType:"undeads",icon:"⛓️",weakTo:["Luz"],spriteId:3091},{name:"Chainwraith Reaper",creatureType:"undeads",icon:"⛓️",weakTo:["Luz"],spriteId:5414}] },
+    { id:"gazer", name:"Gazer's Hollow", level:"40-60", record:'—', possibleLoot:[{id:"dark_insight_fragment",name:"Dark Insight Fragment",rarity:"lendária"},{id:"gazer_trophy",name:"Gazer Trophy",rarity:"lendária"},{id:"underearth_gem",name:"Underearth Gem",rarity:"épica"},{id:"despair_inducing_gland",name:"Despair Inducing Gland",rarity:"rara"},{id:"eerie_bone_plate",name:"Eerie Bone Plate",rarity:"rara"}], monsterTypes:[{name:"Bone Gazer",creatureType:"outsiders",icon:"👁️",img:URL_BASE+'ravendawn/icons/status/hex_bone_gazer.png',weakTo:["Trevas"],spriteId:2371},{name:"Deathchill Gazer",creatureType:"outsiders",icon:"👁️",weakTo:["Fogo"],spriteId:2377},{name:"Doom Gazer",creatureType:"outsiders",icon:"👁️",weakTo:["Trevas"],spriteId:2363},{name:"Drought Gazer",creatureType:"outsiders",icon:"👁️",weakTo:["Água"],spriteId:2373}] },
+    { id:"blademaster_djinn_blizzard_beast", name:"Frozen Bazaar", level:"40-60", record:'—', possibleLoot:[{id:"frozen_meat",name:"Frozen Meat",rarity:"rara"},{id:"monstrous_mane",name:"Monstrous Mane",rarity:"rara"},{id:"oversized_flea",name:"Oversized Flea",rarity:"rara"},{id:"winterwool",name:"Winterwool",rarity:"rara"}], monsterTypes:[{name:"Blademaster Djinn",creatureType:"outsiders",icon:"🧞",weakTo:["Trevas"],spriteId:2387},{name:"Blizzard Beast",creatureType:"beasts",icon:"🧞",weakTo:["Fogo"],spriteId:1153}] },
+    { id:"contagious_sporewalker_cragglehide", name:"Blighted Hollow", level:"40-60", record:'—', possibleLoot:[{id:"sageheart_fragment",name:"Sageheart Fragment",rarity:"lendária"},{id:"sporewalker_trophy",name:"Sporewalker Trophy",rarity:"lendária"},{id:"perfect_sporecap",name:"Perfect Sporecap",rarity:"épica"},{id:"amber_eye_gem",name:"Amber Eye Gem",rarity:"rara"},{id:"exotic_fungus",name:"Exotic Fungus",rarity:"rara"}], monsterTypes:[{name:"Contagious Sporewalker",creatureType:"natural",icon:"🍄",weakTo:["Fogo"],spriteId:3973},{name:"Cragglehide",creatureType:"natural",icon:"🍄",weakTo:["Água"],spriteId:6059}] },
+    { id:"astor", name:"Astor's Sanctum", level:"50-70", record:'—', possibleLoot:[{id:"demon_trophy",name:"Demon Trophy",rarity:"lendária"},{id:"voidmind_fragment",name:"Voidmind Fragment",rarity:"lendária"},{id:"demonic_essence",name:"Demonic Essence",rarity:"épica"},{id:"cutting_edge_scrap",name:"Cutting Edge Scrap",rarity:"rara"},{id:"demon_core",name:"Demon Core",rarity:"rara"}], monsterTypes:[{name:"Astor Lord",creatureType:"outsiders",icon:"😈",weakTo:["Luz"],spriteId:5500},{name:"Astor Demon",creatureType:"outsiders",icon:"😈",weakTo:["Luz"],spriteId:2100},{name:"Astor Herald",creatureType:"outsiders",icon:"😈",weakTo:["Luz"],spriteId:5362}] },
+    { id:"crow_matriarch_crowman", name:"Crow's Roost", level:"50-70", record:'—', possibleLoot:[{id:"crowmaiden_trophy",name:"Crowmaiden Trophy",rarity:"lendária"},{id:"eldritch_coil_fragment",name:"Eldritch Coil Fragment",rarity:"lendária"},{id:"crow_mask",name:"Crow Mask",rarity:"épica"},{id:"essence_of_darkness",name:"Essence of Darkness",rarity:"épica"},{id:"human_effigy",name:"Human Effigy",rarity:"épica"}], monsterTypes:[{name:"Crow Matriarch",creatureType:"humanoids",icon:"🐦‍⬛",weakTo:["Luz"],spriteId:5094},{name:"Crowman",creatureType:"humanoids",icon:"🐦‍⬛",weakTo:["Luz"],spriteId:5089}] },
+    { id:"direhorn_drake_dusk_crawler", name:"Dusk Ridge", level:"50-70", record:'—', possibleLoot:[{id:"demon_trophy",name:"Demon Trophy",rarity:"lendária"},{id:"direhorn_drake_trophy",name:"Direhorn Drake Trophy",rarity:"lendária"},{id:"galeforce_fragment",name:"Galeforce Fragment",rarity:"lendária"},{id:"voidmind_fragment",name:"Voidmind Fragment",rarity:"lendária"},{id:"demonic_essence",name:"Demonic Essence",rarity:"épica"}], monsterTypes:[{name:"Direhorn Drake",creatureType:"draconics",icon:"🐉",weakTo:["Água"],spriteId:4728},{name:"Dusk Crawler",creatureType:"draconics",icon:"🐉",img:URL_BASE+'ravendawn/icons/status/dusk_crawler.png',weakTo:["Luz"],spriteId:5298}] },
+    { id:"duskling_dunewalker_jackal", name:"Dune Wastes", level:"50-70", record:'—', possibleLoot:[{id:"demon_trophy",name:"Demon Trophy",rarity:"lendária"},{id:"jackal_trophy",name:"Jackal Trophy",rarity:"lendária"},{id:"mindsurge_fragment",name:"Mindsurge Fragment",rarity:"lendária"},{id:"voidmind_fragment",name:"Voidmind Fragment",rarity:"lendária"},{id:"beastly_distillate",name:"Beastly Distillate",rarity:"épica"}], monsterTypes:[{name:"Duskling",creatureType:"undeads",icon:"🌑",weakTo:["Luz"],spriteId:5356},{name:"Dunewalker Jackal",creatureType:"beasts",icon:"🌑",weakTo:["Água"],spriteId:5337}] },
+    { id:"draconic", name:"Draconic Bastion", level:"60-80", record:'—', possibleLoot:[{id:"draconic_hide",name:"Draconic Hide",rarity:"rara"},{id:"draconic_wings",name:"Draconic Wings",rarity:"rara"},{id:"fiery_essence",name:"Fiery Essence",rarity:"rara"},{id:"golden_ruby_belt",name:"Golden Ruby Belt",rarity:"rara"},{id:"red_horns",name:"Red Horns",rarity:"rara"}], monsterTypes:[{name:"Draconic Crusader",creatureType:"draconics",icon:"🐲",weakTo:["Água"],spriteId:4756},{name:"Draconic Fighter",creatureType:"draconics",icon:"🐲",weakTo:["Água"],spriteId:4755},{name:"Draconic Pyromancer",creatureType:"draconics",icon:"🐲",weakTo:["Água"],spriteId:4757}] },
     // Duas zonas novas (nível 1-10 e 10-20) — espelha huntEngine.js no server.
-    { id:"meadow", name:"Meadow Outskirts", level:"1-10", record:'—', possibleLoot:[{id:"piglet_hide",name:"Piglet Hide",rarity:"incomum"},{id:"small_tusk",name:"Small Tusk",rarity:"incomum"},{id:"fox_kit_fur",name:"Fox Kit Fur",rarity:"incomum"},{id:"small_bat_wing",name:"Small Bat Wing",rarity:"comum"},{id:"raw_meat_scrap",name:"Raw Meat Scrap",rarity:"comum"}], monsterTypes:[{name:"Piglet",icon:"🐗",weakTo:["Fogo"],spriteId:2808},{name:"Fox Kit",icon:"🦊",weakTo:["Fogo"],spriteId:4775},{name:"Cave Bat",icon:"🦇",weakTo:["Luz"],spriteId:2261}] },
-    { id:"trail", name:"Woodland Trail", level:"10-20", record:'—', possibleLoot:[{id:"young_boar_tusk",name:"Young Boar Tusk",rarity:"incomum"},{id:"grey_wolf_fang",name:"Grey Wolf Fang",rarity:"incomum"},{id:"fox_cub_pelt",name:"Fox Cub Pelt",rarity:"incomum"},{id:"coarse_fur",name:"Coarse Fur",rarity:"comum"},{id:"bone_fragment",name:"Bone Fragment",rarity:"comum"}], monsterTypes:[{name:"Young Boar",icon:"🐗",weakTo:["Fogo"],spriteId:2807},{name:"Fox Cub",icon:"🦊",weakTo:["Fogo"],spriteId:4773},{name:"Grey Wolf",icon:"🐺",weakTo:["Fogo"],spriteId:2140}] },
+    { id:"meadow", name:"Meadow Outskirts", level:"1-10", record:'—', possibleLoot:[{id:"piglet_hide",name:"Piglet Hide",rarity:"incomum"},{id:"small_tusk",name:"Small Tusk",rarity:"incomum"},{id:"fox_kit_fur",name:"Fox Kit Fur",rarity:"incomum"},{id:"small_bat_wing",name:"Small Bat Wing",rarity:"comum"},{id:"raw_meat_scrap",name:"Raw Meat Scrap",rarity:"comum"}], monsterTypes:[{name:"Piglet",creatureType:"beasts",icon:"🐗",weakTo:["Fogo"],spriteId:2808},{name:"Fox Kit",creatureType:"beasts",icon:"🦊",weakTo:["Fogo"],spriteId:4775},{name:"Cave Bat",creatureType:"beasts",icon:"🦇",weakTo:["Luz"],spriteId:2261}] },
+    { id:"trail", name:"Woodland Trail", level:"10-20", record:'—', possibleLoot:[{id:"young_boar_tusk",name:"Young Boar Tusk",rarity:"incomum"},{id:"grey_wolf_fang",name:"Grey Wolf Fang",rarity:"incomum"},{id:"fox_cub_pelt",name:"Fox Cub Pelt",rarity:"incomum"},{id:"coarse_fur",name:"Coarse Fur",rarity:"comum"},{id:"bone_fragment",name:"Bone Fragment",rarity:"comum"}], monsterTypes:[{name:"Young Boar",creatureType:"beasts",icon:"🐗",weakTo:["Fogo"],spriteId:2807},{name:"Fox Cub",creatureType:"beasts",icon:"🦊",weakTo:["Fogo"],spriteId:4773},{name:"Grey Wolf",creatureType:"beasts",icon:"🐺",weakTo:["Fogo"],spriteId:2140}] },
   ];
   // ITEM_INFO: descrição + preço base de cada item de loot, coletados da
   // ravenquest.wiki.br (mesma fonte dos sprites de monstro). Chave = item.id
@@ -5716,8 +5782,29 @@
     { threshold:10000, cost:2000000, label:'+1% de Experiência' },
     { threshold:25000, cost:3500000, label:'+1% Exp, +1% Dano e +1% num atributo sorteado' },
   ];
+  // Espelho de CREATURE_TYPES (huntEngine.js) — ver comentário lá pra
+  // contexto completo da classificação por tipo (pedido inspirado em
+  // ravenquest.wiki.br/wiki/Criaturas).
+  const CREATURE_TYPES_CLIENT = [
+    { id:'amphibians', name:'Anfíbios', icon:'🐸' },
+    { id:'aquatics', name:'Aquáticos', icon:'🐟' },
+    { id:'arthropods', name:'Artrópodes', icon:'🕷️' },
+    { id:'beasts', name:'Feras', icon:'🐺' },
+    { id:'draconics', name:'Dracônicos', icon:'🐉' },
+    { id:'giants', name:'Gigantes', icon:'👹' },
+    { id:'goblinoids', name:'Goblinoides', icon:'👺' },
+    { id:'humanoids', name:'Humanoides', icon:'🧌' },
+    { id:'humans', name:'Humanos', icon:'🧍' },
+    { id:'mutants', name:'Mutantes', icon:'☣️' },
+    { id:'natural', name:'Natureza', icon:'🍄' },
+    { id:'outsiders', name:'Forasteiros', icon:'😈' },
+    { id:'reptiles', name:'Répteis', icon:'🦎' },
+    { id:'undeads', name:'Mortos-Vivos', icon:'☠️' },
+    { id:'bosses', name:'Chefes', icon:'👑' },
+  ];
   const wikiModal = document.getElementById('wiki-modal');
   let wikiTab = 'itens';
+  let wikiSelectedType = null;
   let wikiSelectedMonster = null;
 
   function getWikiItemCatalog(){
@@ -5765,10 +5852,32 @@
     });
     return Array.from(map.values()).sort((a,b)=> a.name.localeCompare(b.name));
   }
+  // Tela de entrada do Bestiário: 1 badge por tipo de criatura + contagem de
+  // espécies cadastradas naquele tipo. Clicar entra na lista filtrada (ver
+  // renderWikiMonsters, que agora respeita wikiSelectedType).
+  function renderWikiTypes(){
+    const grid = document.getElementById('wiki-types-grid');
+    const all = getWikiMonsterCatalog();
+    grid.innerHTML = CREATURE_TYPES_CLIENT.map(t=>{
+      const count = all.filter(m=> (m.creatureType||'outsiders') === t.id).length;
+      return `<div class="wiki-type-card${count===0?' empty':''}" data-type="${t.id}">
+        <div class="wiki-type-badge">${t.icon}</div>
+        <span class="wiki-type-name">${t.name}</span>
+        <span class="wiki-type-count">${count} espécie${count===1?'':'s'}</span>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('.wiki-type-card').forEach(card=>{
+      card.addEventListener('click', ()=>{ wikiSelectedType = card.dataset.type; renderWiki(); });
+    });
+  }
   function renderWikiMonsters(){
     const grid = document.getElementById('wiki-monster-grid');
+    const typeDef = CREATURE_TYPES_CLIENT.find(t=>t.id===wikiSelectedType);
+    document.getElementById('wiki-type-heading').textContent = typeDef ? `${typeDef.icon} ${typeDef.name}` : '';
     const q = (document.getElementById('wiki-monster-search').value||'').toLowerCase();
-    const monsters = getWikiMonsterCatalog().filter(m=> !q || m.name.toLowerCase().includes(q));
+    const monsters = getWikiMonsterCatalog()
+      .filter(m=> (m.creatureType||'outsiders') === wikiSelectedType)
+      .filter(m=> !q || m.name.toLowerCase().includes(q));
     grid.innerHTML = monsters.map(m=>{
       const kills = bestiaryKillCounts[m.name] || 0;
       const claimed = bestiaryTierClaims[m.name] ?? -1;
@@ -5852,21 +5961,25 @@
 
   function renderWiki(){
     const showItens = wikiTab === 'itens';
-    const showBestiaryList = wikiTab === 'bestiario' && !wikiSelectedMonster;
+    const showBestiaryTypes = wikiTab === 'bestiario' && !wikiSelectedType && !wikiSelectedMonster;
+    const showBestiaryList = wikiTab === 'bestiario' && wikiSelectedType && !wikiSelectedMonster;
     const showBestiaryDetail = wikiTab === 'bestiario' && wikiSelectedMonster;
     document.getElementById('wiki-itens-view').style.display = showItens ? 'flex' : 'none';
+    document.getElementById('wiki-types-view').style.display = showBestiaryTypes ? 'flex' : 'none';
     document.getElementById('wiki-bestiario-view').style.display = showBestiaryList ? 'flex' : 'none';
     document.getElementById('wiki-monster-detail').style.display = showBestiaryDetail ? 'flex' : 'none';
     if(showItens) renderWikiItems();
+    else if(showBestiaryTypes) renderWikiTypes();
     else if(showBestiaryList) renderWikiMonsters();
     else if(showBestiaryDetail) renderWikiMonsterDetail();
   }
   document.querySelectorAll('.wiki-tab').forEach(t=>{
     t.addEventListener('click', ()=>{
       document.querySelectorAll('.wiki-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-      wikiTab = t.dataset.wikitab; wikiSelectedMonster = null; renderWiki();
+      wikiTab = t.dataset.wikitab; wikiSelectedType = null; wikiSelectedMonster = null; renderWiki();
     });
   });
+  document.getElementById('wiki-type-back-btn').addEventListener('click', ()=>{ wikiSelectedType = null; renderWiki(); });
   document.getElementById('btn-open-wiki').addEventListener('click', ()=>{ wikiModal.classList.toggle('open'); renderWiki(); });
   // Voltar pra Seleção de Personagem -- só troca de tela, mantém a sessão
   // (LS_TOKEN/LS_USERNAME) logada; não precisa de confirmação, é reversível
@@ -6194,6 +6307,19 @@
       const def = catalog && id ? catalog.find(d=>d.id===id) : null;
       el.classList.toggle('filled', !!id);
       el.title = id ? (def ? def.name : id) : el.querySelector('.slot-tag').textContent;
+      // Ícone real em vez do emoji fixo de antes — Asas usa a própria sprite
+      // (assets/wings/<id>.png, mesmo arquivo que renderiza nas costas do
+      // personagem) e Aura usa o ícone quadrado dedicado (assets/items/icons/
+      // <id>.png, o mesmo já usado no card da Loja) — sem nada equipado,
+      // volta pro emoji original como placeholder. Outfit não passa por
+      // aqui: sempre tem valor (default 'padrao'), tratado no bloco da
+      // prévia em canvas logo abaixo, junto do retrato.
+      const iconSpan = el.querySelector('.slot-icon');
+      if(iconSpan && key==='wings'){
+        iconSpan.innerHTML = id ? `<img src="${URL_BASE}wings/${id}.png" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🪽';" />` : '🪽';
+      } else if(iconSpan && key==='aura'){
+        iconSpan.innerHTML = id ? `<img src="${URL_BASE}items/icons/${id}.png" style="width:28px;height:28px;object-fit:contain;" onerror="this.parentElement.textContent='✨';" />` : '✨';
+      }
     });
 
     // STATS (referência "Morgan Hearson") — Vida/Mana reais do personagem;
@@ -6226,6 +6352,17 @@
     const hairIdPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1;
     const hairStyleIdPortrait = SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1;
     drawCharacterLayers({ x: portraitCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', pctx, hairStyleIdPortrait, null, cosmeticColors);
+
+    // Prévia real do slot "Outfit" (linha de cosméticos acima do Elmo) — o
+    // MESMO desenhista/resolução do retrato acima, só que SEM Asas/Aura (pra
+    // esse slot mostrar só o que ele representa) e encolhido via CSS pro
+    // tamanho do slot (.cosmetic-outfit-canvas, 46x46 igual aos outros).
+    const outfitSlotCanvas = document.querySelector('.equip-slot[data-cosmetic="outfit"] .cosmetic-outfit-canvas');
+    if(outfitSlotCanvas){
+      const octx = outfitSlotCanvas.getContext('2d');
+      octx.clearRect(0, 0, outfitSlotCanvas.width, outfitSlotCanvas.height);
+      drawCharacterLayers({ x: outfitSlotCanvas.width/2, y: 130 }, 0, generoPortrait, hairIdPortrait, cosmetics.outfit, null, null, '#d3ab54', octx, hairStyleIdPortrait, null, cosmeticColors);
+    }
 
     const grid = document.getElementById('inv-items-grid');
     const cap = document.getElementById('inv-capacity-line');
@@ -6391,6 +6528,24 @@
     });
     el.addEventListener('mousemove', positionInvTooltip);
     el.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
+  });
+
+  // Clique nos 3 slots cosméticos (Outfit/Aura/Asas) do paperdoll — abre
+  // direto a aba Outfit do Modal de Personagem já na sub-aba certa, em vez
+  // de o jogador precisar achar "Ver Personagem" e trocar de aba na mão.
+  // Fixos no DOM — ligado uma vez só, igual ao bloco de cima.
+  const COSMETIC_TO_OUTFIT_SUBTAB = { outfit: 'outfits', wings: 'wings', aura: 'auras' };
+  document.querySelectorAll('.equip-slot[data-cosmetic]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const osub = COSMETIC_TO_OUTFIT_SUBTAB[el.dataset.cosmetic] || 'outfits';
+      characterModal.classList.add('open');
+      document.querySelectorAll('.char-tab').forEach(x=> x.classList.toggle('active', x.dataset.ctab === 'outfit'));
+      document.getElementById('char-panel-personagem').style.display = 'none';
+      document.getElementById('char-panel-outfit').style.display = 'block';
+      document.querySelectorAll('.outfit-subtab').forEach(x=> x.classList.toggle('active', x.dataset.osub === osub));
+      outfitSubTab = osub;
+      renderCharOutfit();
+    });
   });
 
   /* =========================================================
@@ -6651,8 +6806,18 @@
     hotbar.forEach((slot,i)=>{
       const el = document.createElement('div');
       let locked = false, icon = '';
-      if(slot.kind==='spell'){ const sp = getUnlockedSpells().find(s=>s.id===slot.id); icon = sp ? sp.icon : '흔'; }
-      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:36px;height:36px;object-fit:contain;" />` : '흔'; locked = pot ? !canUsePotion(pot) : false; }
+      // Tamanho do ícone AQUI dentro do slot (28px) é diferente do ícone
+      // usado no modal de escolha (renderActionBody, 20px pra caber numa
+      // linha de lista) e do da poção (16px, idem) -- o slot real
+      // (moldura ability_slot_*.png, 52px) tem um círculo interno menor
+      // que o quadrado inteiro, então nem 20px (pequeno demais, sobra
+      // moldura vazia ao redor) nem 36px (grande demais, vaza pra fora do
+      // círculo) acertavam -- 28px preenche o círculo sem estourar.
+      if(slot.kind==='spell'){
+        const sp = getUnlockedSpells().find(s=>s.id===slot.id);
+        icon = sp ? `<img src="${spellIconUrl(sp.name)}" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','${SPELL_KIND_ICON[sp.node.kind]}')" />` : '흔';
+      }
+      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:28px;height:28px;object-fit:contain;" />` : '흔'; locked = pot ? !canUsePotion(pot) : false; }
       el.className = 'slot' + (slot.kind?' filled':'') + (locked?' locked':'');
       const remainingMs = slot.kind && slot.cooldownUntil > Date.now() ? slot.cooldownUntil - Date.now() : 0;
       if(remainingMs > 0) cooldownPeakMs[i] = Math.max(cooldownPeakMs[i]||0, remainingMs);
@@ -7868,10 +8033,31 @@
     const primaryStats = (item.infusionStats && item.infusionStats.primary) || [];
     const secondaryStats = (item.infusionStats && item.infusionStats.secondary) || [];
     const gradeMult = 1 + grade*0.10;
+    // Prévia grande estilo Ravendawn: ícone real do item com a moldura
+    // octogonal de Grade (mesma máscara/cor por faixa usada na Mochila/boneco,
+    // ver infusionOverlayHtml) + 2 fileiras de "pips" (Tier 1-6 e Grade 1-9),
+    // no mesmo espírito visual dos pontinhos de marco do Bestiário.
+    const tierPipsHtml = Array.from({length:6},(_,i)=>`<span${i<tier?' class="done" style="background:var(--gold-bright);"':''}></span>`).join('');
+    const gradePipsHtml = Array.from({length:9},(_,i)=>{
+      const n = i+1;
+      if(n<=grade) return `<span class="done" style="background:${gradeBandColor(n)};"></span>`;
+      if(n===nextGrade && !atMax) return `<span class="next"></span>`;
+      return `<span></span>`;
+    }).join('');
+    const shardPct = Math.max(0, Math.min(100, Math.round(((materials.infusionShard||0)/Math.max(1,cost.shards))*100)));
     body.innerHTML = `
-      <div class="enchant-req-row"><span>Item</span><span style="color:${RARITY_COLORS[item.rarity]||'var(--ink)'}">${item.name} (${item.rarity})</span></div>
-      <div class="enchant-req-row"><span>Tier</span><span class="ok">${tier} <span style="color:var(--ink-dim);">(${slots.primary} primário${slots.primary===1?'':'s'} + ${slots.secondary} secundário${slots.secondary===1?'':'s'})</span></span></div>
-      <div class="enchant-req-row"><span>Grade</span><span class="${grade>0?'ok':''}">${atMax ? 'Grade 9 (MÁXIMA)' : `Grade ${grade} → Grade ${nextGrade}`}</span></div>
+      <div class="infusion-preview">
+        <div class="infusion-preview-icon">
+          <img class="item-icon" src="${itemIconUrl(item.id)}" onerror="this.style.display='none'" />
+          ${grade>0 ? `<span class="grade-frame" style="background:${gradeBandColor(grade)};"></span><span class="grade-badge-big">G${grade}</span>` : ''}
+        </div>
+        <div class="infusion-preview-info">
+          <div class="infusion-preview-name" style="color:${RARITY_COLORS[item.rarity]||'var(--ink)'}">${item.name} <span style="color:var(--ink-dim);font-size:9px;">(${item.rarity})</span></div>
+          <div class="infusion-pip-row">Tier <div class="infusion-pips">${tierPipsHtml}</div><span>${tier}/6</span></div>
+          <div class="infusion-pip-row">Grade <div class="infusion-pips">${gradePipsHtml}</div><span>${atMax?'MÁXIMA':`${grade}/9`}</span></div>
+        </div>
+      </div>
+      <div class="enchant-req-row"><span>Slots de atributo</span><span class="ok">${slots.primary} primário${slots.primary===1?'':'s'} + ${slots.secondary} secundário${slots.secondary===1?'':'s'}</span></div>
       ${(primaryStats.length||secondaryStats.length) ? `<div class="enchant-stats-box">Atributos da Infusão (Grade atual):
         ${primaryStats.map(p=>`${statIconHtml(p.stat)}${PRIMARY_STAT_LABEL[p.stat]||p.stat} +${Math.round(p.base*gradeMult*10)/10}`).join(' · ')}
         ${primaryStats.length && secondaryStats.length ? ' · ' : ''}
@@ -7880,6 +8066,7 @@
       ${!atMax ? `
       <div class="enchant-req-row"><span>Progressão</span><span>Garantida — Infusão nunca falha nem quebra o item</span></div>
       <div class="enchant-req-row" style="align-items:center;"><span><img src="${RAVENDAWN_UI_BASE}warforge_shard.png" style="width:13px;height:13px;vertical-align:-2px;object-fit:contain;margin-right:3px;" onerror="this.style.display='none'"/>Fragmento de Infusão (precisa de ${cost.shards})</span><span class="${hasShards?'ok':'missing'}">${materials.infusionShard||0}</span></div>
+      <div class="infusion-progress-bar"><div class="infusion-progress-fill" style="width:${shardPct}%;"></div></div>
       <div class="enchant-req-row" style="align-items:center;"><span>Prata</span><span class="${hasGold?'ok':'missing'}">${cost.gold.toLocaleString('pt-BR')}</span></div>
       <div style="font-size:9px;color:var(--ink-dim);margin:2px 0 8px;">Fragmento de Infusão dropa de qualquer criatura durante a caçada — não se compra na loja.</div>
       <button class="skill-save-btn" id="infusion-go-btn" style="width:100%;margin-top:4px;" ${hasShards&&hasGold?'':'disabled'}>🔮 Infundir (Grade ${grade} → ${nextGrade})</button>
@@ -7953,6 +8140,18 @@
     ]},
     g_gloves: { profession:'tecelagem', materialId:'fio_de_la', items:[
       { id:'g_gloves_cru', name:'Luvas de Couro Cru' }, { id:'g_gloves_batedor', name:'Luvas do Batedor' }, { id:'g_gloves_reforcadas', name:'Luvas Reforçadas' }, { id:'g_gloves_vigia', name:'Gauntlet do Vigia' }, { id:'g_gloves_ancestral', name:'Gauntlet Ancestral' },
+    ]},
+    // Elmo/Armadura/Bota (2026-09-14) -- saíram da loja, viraram craftáveis
+    // na Forja (mesmo material das armas de metal). Ver comentário grandão
+    // equivalente em CRAFT_BASE_WEAPONS no huntEngine.js do servidor.
+    a_helmet: { profession:'forja', materialId:'minerio_ferro', items:[
+      { id:'a_helmet_shadecloth_helmet', name:'Shadecloth Helmet' }, { id:'a_helmet_hide_helmet', name:'Hide Helmet' }, { id:'a_helmet_studded_helmet', name:'Studded Helmet' }, { id:'a_helmet_harbinger_helmet', name:'Harbinger Helmet' }, { id:'a_helmet_protectors_helmet', name:'Protector\'s Helmet' },
+    ]},
+    a_armor: { profession:'forja', materialId:'minerio_ferro', items:[
+      { id:'a_armor_shadecloth_armor', name:'Shadecloth Armor' }, { id:'a_armor_hide_armor', name:'Hide Armor' }, { id:'a_armor_studded_armor', name:'Studded Armor' }, { id:'a_armor_harbinger_armor', name:'Harbinger Armor' }, { id:'a_armor_protectors_armor', name:'Protector\'s Armor' },
+    ]},
+    a_boots: { profession:'forja', materialId:'minerio_ferro', items:[
+      { id:'a_boots_shadecloth_boots', name:'Shadecloth Boots' }, { id:'a_boots_hide_boots', name:'Hide Boots' }, { id:'a_boots_studded_boots', name:'Studded Boots' }, { id:'a_boots_harbinger_boots', name:'Harbinger Boots' }, { id:'a_boots_protectors_boots', name:'Protector\'s Boots' },
     ]},
   };
   const CRAFT_RARITY_LABEL_CAP_CLIENT = { comum:'Comum', incomum:'Incomum', rara:'Rara', 'épica':'Épica', 'lendária':'Lendária' };
