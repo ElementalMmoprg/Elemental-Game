@@ -869,7 +869,20 @@
         slot.addEventListener('click', ()=>{ selectedIdx = realIdx; renderSlots(); renderStatus(characters[selectedIdx]); });
         slotsWrap.appendChild(slot);
         const canvas = slot.querySelector('canvas');
-        const draw = ()=> drawCharacterPreview(canvas, c.gender, c.hairId, c.hairStyleId);
+        // BUG (reportado pelo usuário): a sprite real do traje de Arquétipo
+        // nunca aparecia aqui -- drawCharacterPreview só cai no boneco
+        // genérico (bolinha colorida + retângulo) quando outfitId não é
+        // passado (ver comentário grandão dentro da função), e essa chamada
+        // não passava nem outfitId nem colors. O personagem JÁ sai da
+        // criação com um traje de verdade equipado (createCharacter em
+        // db.js chama applyStartingArchetype, que seta
+        // progress.cosmetics.outfit = archetypeId) e as cores escolhidas na
+        // criação ficam em progress.cosmeticColors -- só faltava ler esses
+        // 2 campos do personagem e repassar pra função que já sabia desenhar
+        // o traje real (a mesma usada no preview de criação).
+        const outfitId = c.progress && c.progress.cosmetics ? c.progress.cosmetics.outfit : null;
+        const cosmeticColors = c.progress ? c.progress.cosmeticColors : null;
+        const draw = ()=> drawCharacterPreview(canvas, c.gender, c.hairId, c.hairStyleId, outfitId, cosmeticColors);
         draw(); scheduleRedraw(draw);
       });
       // preenche slots vazios até completar VISIBLE, igual à referência (3 caixas fixas)
