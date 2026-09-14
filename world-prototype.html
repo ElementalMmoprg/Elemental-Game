@@ -104,8 +104,14 @@
   #hunt-status-line b{ color:var(--gold-bright); }
   #premium-badge{ display:inline-block; font-family:var(--font-mono); font-size:8px; padding:0 4px; border-radius:3px; margin-left:5px; border:1px solid var(--premium); color:var(--premium); }
   #premium-badge.free{ border-color:var(--ink-dim); color:var(--ink-dim); }
-  .win-close-x{ margin-left:auto; color:var(--danger); cursor:pointer; font-family:var(--font-mono); font-size:11px; padding:2px 6px; }
-  .win-close-x:hover{ color:#ff9a80; }
+  /* Botão de fechar real da Ravendawn (base_window/close_button.png) no
+     lugar do "✕" de texto — mantém o mesmo elemento/click handler, só troca
+     o visual: texto escondido (text-indent), ícone via background-image. */
+  .win-close-x{ margin-left:auto; cursor:pointer; width:16px; height:16px; flex-shrink:0;
+    color:transparent; font-size:0; overflow:hidden;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/win_close_button.png);
+    background-size:contain; background-repeat:no-repeat; background-position:center; }
+  .win-close-x:hover{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/win_close_button_down.png); }
   /* Botão "+" compacto ao lado da barra de Stamina (recarga Premium) — só
      visível se sobrar recarga hoje; some quando não é premium ou já usou as 4. */
   #stam-recharge-btn{ display:none; width:18px; height:18px; border-radius:50%; border:1px solid var(--premium); background:rgba(240,211,138,.1); color:var(--premium); align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; line-height:1; cursor:pointer; flex-shrink:0; }
@@ -361,13 +367,19 @@
   #hotbar-wrap{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   #hotbar-row{ display:flex; align-items:flex-end; gap:10px; }
   #hotbar{ display:flex; gap:6px; padding:10px; }
-  #bag-shortcut{ width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4) url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/ability_slot_frame.png) center/100% 100% no-repeat; border:none; display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; }
+  /* Reskin real Ravendawn (ability_bar/slot_empty.png e slot_occupied.png) —
+     antes usava um frame genérico único (assets/hud/ability_slot_frame.png)
+     pra qualquer estado; agora troca de imagem conforme o slot está vazio ou
+     preenchido (classe .filled, ver renderHotbar()), igual ao jogo real. */
+  #bag-shortcut{ width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4) url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/ability_slot_occupied.png) center/100% 100% no-repeat; border:none; display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; }
   #bag-shortcut:hover{ box-shadow:0 0 12px rgba(240,211,138,.3); }
-  .slot{ position:relative; width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4) url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/ability_slot_frame.png) center/100% 100% no-repeat; border:none; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:context-menu; }
+  .slot{ position:relative; width:52px; height:52px; border-radius:6px; background:rgba(0,0,0,.4) url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/ability_slot_empty.png) center/100% 100% no-repeat; border:none; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:context-menu; }
+  .slot.filled{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/ability_slot_occupied.png); }
   .slot .num{ position:absolute; top:1px; left:3px; font-family:var(--font-mono); font-size:8px; color:var(--ink-dim); }
   .slot .cd-overlay{ position:absolute; inset:0; background:conic-gradient(rgba(0,0,0,.78) var(--pct,0%), transparent 0); border-radius:6px; }
   .slot .cd-text{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; font-weight:bold; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.95); pointer-events:none; }
-  .slot.locked{ opacity:.35; filter:grayscale(1); }
+  .slot.locked{ opacity:.6; filter:grayscale(1); }
+  .slot .lock-badge{ position:absolute; top:-3px; right:-3px; width:16px; height:16px; z-index:2; pointer-events:none; }
   .slot .cond-chip{ position:absolute; bottom:-1px; right:-1px; font-size:7.5px; background:#1a1510; border:1px solid var(--gold-deep); border-radius:3px; padding:0 2px; color:var(--ink-dim); }
   .slot .pct-input{ position:absolute; bottom:-16px; left:0; width:100%; font-family:var(--font-mono); font-size:8px; text-align:center; background:transparent; border:none; color:var(--ink-dim); }
   #hotbar-hint{ position:absolute; bottom:96px; left:50%; transform:translateX(-50%); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); background:rgba(0,0,0,.4); padding:3px 9px; border-radius:10px; white-space:nowrap; z-index:6; }
@@ -461,10 +473,11 @@
     grid-template-rows:repeat(3, 46px);
     gap:12px 10px;
     grid-template-areas:
-      ".       topC   topR"
+      "topL    topC   topR"
       "midL    midC   midR"
       "botL    botC   botR";
   }
+  .equip-grid3 [data-equip="gloves"]{ grid-area:topL; }
   .equip-grid3 [data-equip="helmet"]{ grid-area:topC; }
   .equip-grid3 [data-equip="amulet"]{ grid-area:topR; }
   .equip-grid3 [data-equip="weapon"]{ grid-area:midL; }
@@ -524,6 +537,10 @@
     mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/grade_frame.png);
     mask-size:100% 100%; mask-repeat:no-repeat; mask-position:center; }
   .item-slot .grade-badge{ position:absolute; top:1px; right:3px; font-family:var(--font-mono); font-size:8px; font-weight:bold; color:#fff; text-shadow:0 0 2px #000,0 0 3px #000; z-index:2; pointer-events:none; }
+  /* Moldura real de raridade (assets/rarity-frames/) — substitui o antigo
+     borderColor plano do .item-slot/.equip-slot; a própria arte já tem cor,
+     por isso é <img> normal (sem máscara), só esticada pro tamanho do slot. */
+  .item-slot .rarity-frame, .equip-slot .rarity-frame{ position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; z-index:1; }
   .equip-slot .grade-badge{ position:absolute; top:-2px; right:0; font-family:var(--font-mono); font-size:8px; font-weight:bold; color:#fff; text-shadow:0 0 2px #000,0 0 3px #000; z-index:2; pointer-events:none; }
   /* Ícones reais do dump da Ravendawn (silhueta escura em PNG) usados como MÁSCARA
      colorida via currentColor — mesma técnica do SVG stroke="currentColor" que já
@@ -648,6 +665,51 @@
   .spell-card-toggle-btn{ width:100%; font-family:var(--font-mono); font-size:10px; padding:5px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
   .spell-card-toggle-btn.on{ color:#8fd17a; border-color:#8fd17a; }
   .spell-card-toggle-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  /* ============ ÁRVORE COMO GRAFO DE NÓS (estilo clássico Ravendawn) ============
+     A pedido do usuário, mesmo sabendo que a Ravendawn ATUAL usa cards (ver nota
+     em claude/luvas-slot-e-descoberta-clientid-names-notas.md) -- recriamos o
+     visual do sistema "legacy" deles: nós circulares (legacy_spell_border.png,
+     tingido via mask) conectados por linhas diagonais (diagonal_link.png) entre
+     as linhas de Ativas, convergindo numa Legacy centralizada. Passivas ficam
+     FORA da corrente (não são destravadas por linha, só por "3 Ativas
+     destravadas"), então continuam numa fileira separada abaixo do grafo.
+     A lógica de bloqueio/custo/nível é 100% a mesma de antes (pointCostForLevel,
+     lockedReason em spellNodeMeta) -- só a APRESENTAÇÃO virou grafo; clicar num
+     nó abre o detalhe (descrição + botões +/-) no painel fixo embaixo, porque
+     um círculo de 56px não cabe texto nenhum. */
+  .skilltree-graph{ display:flex; flex-direction:column; align-items:center; padding:6px 0 10px; }
+  .skilltree-graph-row{ display:flex; justify-content:center; align-items:flex-start; gap:64px; }
+  .skilltree-connector-row{ display:flex; justify-content:center; align-items:center; height:26px; }
+  .skilltree-connector{ width:34px; height:30px; background-color:var(--gold-deep); opacity:.7;
+    -webkit-mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/spelltree_diagonal_link.png);
+    -webkit-mask-size:contain; -webkit-mask-repeat:no-repeat; -webkit-mask-position:center;
+    mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/spelltree_diagonal_link.png);
+    mask-size:contain; mask-repeat:no-repeat; mask-position:center; }
+  .skilltree-connector.flip{ transform:scaleX(-1); }
+  .skilltree-connector-pair{ display:flex; gap:56px; }
+  .skilltree-legacy-connectors{ display:flex; justify-content:center; gap:56px; height:26px; }
+  .spell-node{ width:74px; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; flex-shrink:0; background:none; border:none; padding:0; }
+  .spell-node-ring{ width:56px; height:56px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle, #241a10, #0d0906 78%); box-shadow:inset 0 0 0 1px rgba(191,161,95,.25); }
+  .spell-node-ring::after{ content:''; position:absolute; inset:-3px; pointer-events:none;
+    background-color:var(--gold-deep);
+    -webkit-mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/spelltree_legacy_border.png);
+    -webkit-mask-size:contain; -webkit-mask-repeat:no-repeat; -webkit-mask-position:center;
+    mask-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/spelltree_legacy_border.png);
+    mask-size:contain; mask-repeat:no-repeat; mask-position:center; }
+  .spell-node.invested .spell-node-ring::after{ background-color:var(--gold-bright); }
+  .spell-node.selected .spell-node-ring{ box-shadow:inset 0 0 0 1px rgba(191,161,95,.25), 0 0 10px 2px rgba(240,211,138,.55); }
+  .spell-node.locked .spell-node-ring{ filter:grayscale(1); }
+  .spell-node.locked .spell-node-icon{ opacity:.35; }
+  .spell-node-icon{ width:34px; height:34px; object-fit:contain; }
+  .spell-node.legacy .spell-node-ring{ width:64px; height:64px; }
+  .spell-node-lock-badge{ position:absolute; bottom:-2px; right:-2px; width:16px; height:16px; z-index:2; }
+  .spell-node-pips{ height:11px; object-fit:contain; }
+  .spell-node-name{ font-family:var(--font-mono); font-size:8px; color:var(--ink-dim); text-align:center; line-height:1.2; max-width:76px; }
+  .spell-node.invested .spell-node-name{ color:var(--gold-bright); }
+  .skilltree-passives-label{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.08em; margin:14px 0 6px; text-align:center; }
+  .skilltree-passives-row{ display:flex; justify-content:center; flex-wrap:wrap; gap:18px; }
+  .spell-detail{ margin-top:14px; }
+  .spell-detail .spell-card-head{ align-items:flex-start; }
   .skill-actions-row{ display:flex; gap:8px; margin-top:8px; flex-shrink:0; }
   .skill-save-btn, .skill-reset-btn{ flex:1; font-family:var(--font-mono); font-size:11px; padding:8px; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
   .skill-save-btn:not(:disabled){ color:#7fbf6a; border-color:#7fbf6a; }
@@ -1366,14 +1428,15 @@
           <div class="equip-slot" data-cosmetic="wings" title="Asas"><span class="slot-icon">🪽</span><span class="slot-tag">Asas</span></div>
         </div>
         <div class="equip-grid3">
-          <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon" data-icon-slot="helmet"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Elmo</span></div>
-          <div class="equip-slot" data-equip="amulet" title="Amuleto"><span class="slot-icon" data-icon-slot="amulet"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Amuleto</span></div>
-          <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon" data-icon-slot="weapon"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Arma</span></div>
-          <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon" data-icon-slot="armor"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Armadura</span></div>
-          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Offhand</span></div>
-          <div class="equip-slot" data-equip="ring" title="Anel"><span class="slot-icon" data-icon-slot="ring"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Anel</span></div>
-          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Botas</span></div>
-          <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Calças</span></div>
+          <div class="equip-slot" data-equip="gloves" title="Luvas"><span class="slot-icon" data-icon-slot="gloves"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Luvas</span></div>
+          <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon" data-icon-slot="helmet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Elmo</span></div>
+          <div class="equip-slot" data-equip="amulet" title="Amuleto"><span class="slot-icon" data-icon-slot="amulet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Amuleto</span></div>
+          <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon" data-icon-slot="weapon"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Arma</span></div>
+          <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon" data-icon-slot="armor"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Armadura</span></div>
+          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Offhand</span></div>
+          <div class="equip-slot" data-equip="ring" title="Anel"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Anel</span></div>
+          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Botas</span></div>
+          <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Calças</span></div>
         </div>
       </div>
       <div id="inv-items-col">
@@ -5515,6 +5578,23 @@
   // Corrigido botando o redesenho do Wiki na mesma leva throttled acima.
   function renderWikiIfOpen(){ if(wikiModal && wikiModal.classList.contains('open')) renderWiki(); }
   const RARITY_COLORS = { comum:'#a99872', incomum:'#6fae6f', rara:'#7fc6ff', 'épica':'#b98af0', 'lendária':'#f0d38a' };
+  // Molduras reais por raridade (assets/rarity-frames/, origem: projeto "Sentinel"
+  // do usuário, mapeamento por raridade confirmado com ele) — sobrepostas ao
+  // .item-slot/.equip-slot no lugar do antigo borderColor plano, mesma ideia
+  // visual da moldura de Grade da Infusão (ver infusionOverlayHtml), só que
+  // aqui a arte já vem com a cor própria (não precisa de máscara/tingimento).
+  const RARITY_FRAME_URL = {
+    comum: URL_BASE + 'rarity-frames/rarity_frame_comum.png',
+    incomum: URL_BASE + 'rarity-frames/rarity_frame_incomum.png',
+    rara: URL_BASE + 'rarity-frames/rarity_frame_rara.png',
+    'épica': URL_BASE + 'rarity-frames/rarity_frame_epica.png',
+    'lendária': URL_BASE + 'rarity-frames/rarity_frame_lendaria.png',
+  };
+  function rarityFrameHtml(rarity){
+    const url = RARITY_FRAME_URL[rarity];
+    if(!url) return '';
+    return `<img class="rarity-frame" src="${url}" onerror="this.style.display='none'" />`;
+  }
 
   /* =========================================================
      WIKI / CYCLOPEDIA — aba Itens (materiais/troféus de zona, com raridade
@@ -5777,6 +5857,7 @@
     ring:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="M9 9l3-6 3 6"/></svg>',
     amulet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l6 5 6-5"/><circle cx="12" cy="16" r="5"/></svg>',
     legs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8v6l1 13h-4l-1-10-1 10H7L8 8V2z"/></svg>',
+    gloves:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22v-9a4 4 0 0 1 4-4h1V4a2 2 0 1 1 4 0v5h1a2 2 0 0 1 2 2v6a5 5 0 0 1-5 5H8z"/><path d="M13 9V4"/></svg>',
   };
   const POTION_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M10 2v5l-4 8a4 4 0 0 0 4 6h4a4 4 0 0 0 4-6l-4-8V2"/><path d="M8 15h8"/></svg>';
   const MATERIAL_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 5-2 10-6 5-6-5L4 7l8-5z"/></svg>';
@@ -5891,6 +5972,7 @@
         <span class="trash-timer">${fmtTrashRemaining(it.expiresAt)}</span>
         ${it.qty>1?`<span class="qty">${it.qty}</span>`:''}
         ${infusionOverlayHtml(it)}
+        ${rarityFrameHtml(it.rarity)}
         ${location==='city' ? `<span class="slot-mini-btn" data-trash-sell="${i}" title="Vender">🪙</span>` : ''}`;
       slot.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:i }));
       slot.addEventListener('mouseenter', ()=>{
@@ -5921,7 +6003,7 @@
     slot.style.cursor = 'pointer';
     slot.title = actionLabel;
     const iconHtml = resolveItemIconHtml(it);
-    slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}`;
+    slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}${rarityFrameHtml(it.rarity)}`;
     slot.addEventListener('click', onClick);
     slot.addEventListener('mouseenter', ()=>{
       const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
@@ -5997,6 +6079,9 @@
       // item equipado nesse slot já tem alguma Grade investida.
       const overlayHolder = el.querySelector('.grade-overlay-holder');
       if(overlayHolder) overlayHolder.innerHTML = infusionOverlayHtml(item);
+      // Moldura real de raridade (ver RARITY_FRAME_URL) — mesmo slot fixo.
+      const rarityFrameHolder = el.querySelector('.rarity-frame-holder');
+      if(rarityFrameHolder) rarityFrameHolder.innerHTML = item ? rarityFrameHtml(item.rarity) : '';
     });
     document.querySelectorAll('.equip-slot[data-cosmetic]').forEach(el=>{
       // cosmetics[key] guarda só o ID do catálogo (não um item de bag como os
@@ -6063,7 +6148,7 @@
           : (invTab === 'mochila' && !it.slot)
             ? `<img class="item-icon" data-rarity-color="${rarityColor}" src="${itemIconUrl(it.id)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleLootIconError(this)" />`
             : `<span class="item-icon" style="color:${rarityColor};">${invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
-      slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}`;
+      slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}${rarityFrameHtml(it.rarity)}`;
       // só itens da Mochila com "slot" definido (arma/elmo/etc) são equipáveis —
       // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
       if(invTab==='mochila' && it.slot){
@@ -6465,14 +6550,14 @@
       let locked = false, icon = '';
       if(slot.kind==='spell'){ const sp = getUnlockedSpells().find(s=>s.id===slot.id); icon = sp ? sp.icon : '흔'; }
       else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:20px;height:20px;object-fit:contain;" />` : '흔'; locked = pot ? !canUsePotion(pot) : false; }
-      el.className = 'slot' + (locked?' locked':'');
+      el.className = 'slot' + (slot.kind?' filled':'') + (locked?' locked':'');
       const remainingMs = slot.kind && slot.cooldownUntil > Date.now() ? slot.cooldownUntil - Date.now() : 0;
       if(remainingMs > 0) cooldownPeakMs[i] = Math.max(cooldownPeakMs[i]||0, remainingMs);
       else cooldownPeakMs[i] = 0;
       const cdPct = remainingMs > 0 && cooldownPeakMs[i] ? Math.round(remainingMs/cooldownPeakMs[i]*100) : 0;
       const cdText = remainingMs > 0 ? Math.ceil(remainingMs/1000)+'s' : '';
       const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
-      el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>${cdText?`<div class="cd-text">${cdText}</div>`:''}`;
+      el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}${locked?`<img class="lock-badge" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/ability_slot_lock.png" onerror="this.style.display='none'" />`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>${cdText?`<div class="cd-text">${cdText}</div>`:''}`;
       el.addEventListener('contextmenu', e=>{ e.preventDefault(); openActionModal(i); });
       // Tooltip com a descrição do que está no slot (magia ou poção) ao passar o mouse.
       attachHotbarTooltip(el, ()=> hotbarTooltipHtmlFor(slot));
@@ -6920,7 +7005,7 @@
       if(!ok) return;
     }
     if(activeSkillArchetypeTab) pendingSkillLevels[activeSkillArchetypeTab] = null;
-    activeSkillArchetypeTab = id; renderSkillTabs(); renderSkillTree();
+    activeSkillArchetypeTab = id; selectedSpellId = null; renderSkillTabs(); renderSkillTree();
   }
   function renderSkillTabs(){
     const wrap = document.getElementById('skill-tabs');
@@ -6937,11 +7022,12 @@
     });
     if(!open.length) wrap.innerHTML = '<span style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Escolha um arquétipo acima pra ver a árvore.</span>';
   }
-  function spellCardHtml(archId, sp, draft){
+  // Estado compartilhado (bloqueio/nível/custo) de um nó -- usado tanto pelo
+  // círculo pequeno do grafo (spellNodeHtml) quanto pelo painel de detalhe
+  // (spellDetailHtml) logo abaixo, pra não duplicar a lógica de regras.
+  function computeSpellNodeState(archId, sp, draft){
     const level = draft[sp.id] || 0;
     const maxLevel = sp.kind==='passive' ? 1 : sp.kind==='legacy' ? 5 : 10;
-    const iconUrl = spellIconUrl(sp.name);
-    const kindBadge = `<span class="spell-card-kind-badge ${sp.kind}">${SPELL_KIND_ICON[sp.kind]} ${SPELL_KIND_LABEL[sp.kind]}</span>`;
     let lockedReason = null;
     if(sp.kind==='active' && sp.row>1){
       const prevRowUnlocked = (ARCHETYPE_SPELLBOOK[archId]||[]).some(o=> o.kind==='active' && o.row===sp.row-1 && (draft[o.id]||0)>0);
@@ -6961,22 +7047,62 @@
     const canAfford = nextCost!==null && nextCost<=avail;
     const canPlus = level<maxLevel && !lockedReason && canAfford;
     const canMinus = level>0;
-    const isPassiveToggle = sp.kind==='passive';
-    const btns = isPassiveToggle
-      ? `<button class="spell-card-toggle-btn ${level>0?'on':''}" data-spell="${sp.id}" ${(!canPlus && level<=0)?'disabled':''}>${level>0 ? '✓ Destravada' : `Destravar (${pointCostForLevelClient(sp,1)} pts)`}</button>`
+    return { level, maxLevel, lockedReason, nextCost, canPlus, canMinus, isPassiveToggle: sp.kind==='passive' };
+  }
+  // Barra de "pips" (segmentos) embaixo do nó -- asset real da Ravendawn
+  // (spelltree_points_active_0..4 / _legacy_0..3), escolhida proporcional ao
+  // nível atual / nível máximo daquele tipo de magia. Passiva não tem barra
+  // (é on/off, o próprio anel dourado já mostra "destravada").
+  function spellPipsUrl(sp, level, maxLevel){
+    if(sp.kind==='passive') return null;
+    const base = RAVENDAWN_UI_BASE;
+    if(sp.kind==='legacy'){
+      const idx = Math.max(0, Math.min(3, Math.round((level/maxLevel)*3)));
+      return `${base}spelltree_points_legacy_${idx}.png`;
+    }
+    const idx = Math.max(0, Math.min(4, Math.round((level/maxLevel)*4)));
+    return `${base}spelltree_points_active_${idx}.png`;
+  }
+  // Nó circular do grafo (o que fica visível na árvore em si -- clicar nele
+  // seleciona e abre o detalhe completo embaixo, porque um círculo de 56px
+  // não cabe descrição nem botão nenhum).
+  function spellNodeHtml(archId, sp, draft, selectedId){
+    const st = computeSpellNodeState(archId, sp, draft);
+    const iconUrl = spellIconUrl(sp.name);
+    const pipsUrl = spellPipsUrl(sp, st.level, st.maxLevel);
+    const isSelected = sp.id === selectedId;
+    return `<button type="button" class="spell-node ${sp.kind} ${st.lockedReason?'locked':''} ${st.level>0?'invested':''} ${isSelected?'selected':''}" data-spell="${sp.id}" title="${sp.name}">
+        <div class="spell-node-ring">
+          <img class="spell-node-icon" src="${iconUrl}" onerror="this.style.visibility='hidden'" />
+          ${st.lockedReason ? `<img class="spell-node-lock-badge" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/skill_lock.png" onerror="this.style.display='none'" />` : ''}
+        </div>
+        ${pipsUrl ? `<img class="spell-node-pips" src="${pipsUrl}" onerror="this.style.display='none'" />` : ''}
+        <div class="spell-node-name">${sp.name}</div>
+      </button>`;
+  }
+  // Painel de detalhe (nome completo, descrição real, motivo de bloqueio e
+  // controles de nível/destravar) do nó atualmente selecionado no grafo --
+  // conteúdo idêntico ao card antigo, só que agora mostra 1 de cada vez
+  // (antes ficavam todos abertos ao mesmo tempo na lista).
+  function spellDetailHtml(archId, sp, draft){
+    const st = computeSpellNodeState(archId, sp, draft);
+    const iconUrl = spellIconUrl(sp.name);
+    const kindBadge = `<span class="spell-card-kind-badge ${sp.kind}">${SPELL_KIND_ICON[sp.kind]} ${SPELL_KIND_LABEL[sp.kind]}</span>`;
+    const btns = st.isPassiveToggle
+      ? `<button class="spell-card-toggle-btn ${st.level>0?'on':''}" data-spell="${sp.id}" ${(!st.canPlus && st.level<=0)?'disabled':''}>${st.level>0 ? '✓ Destravada' : `Destravar (${pointCostForLevelClient(sp,1)} pts)`}</button>`
       : `<div class="spell-card-lvlctrl">
-           <button class="spell-card-minus" data-spell="${sp.id}" ${canMinus?'':'disabled'}>−</button>
-           <span class="spell-card-lvl">Nv. ${level}/${maxLevel}</span>
-           <button class="spell-card-plus" data-spell="${sp.id}" ${canPlus?'':'disabled'}>+</button>
-           ${nextCost!==null ? `<span class="spell-card-cost">próx: ${nextCost} pt${nextCost>1?'s':''}</span>` : ''}
+           <button class="spell-card-minus" data-spell="${sp.id}" ${st.canMinus?'':'disabled'}>−</button>
+           <span class="spell-card-lvl">Nv. ${st.level}/${st.maxLevel}</span>
+           <button class="spell-card-plus" data-spell="${sp.id}" ${st.canPlus?'':'disabled'}>+</button>
+           ${st.nextCost!==null ? `<span class="spell-card-cost">próx: ${st.nextCost} pt${st.nextCost>1?'s':''}</span>` : ''}
          </div>`;
-    return `<div class="spell-card ${lockedReason?'locked':''} ${level>0?'invested':''}" data-spell="${sp.id}">
+    return `<div class="spell-card spell-detail ${st.lockedReason?'locked':''} ${st.level>0?'invested':''}" data-spell="${sp.id}">
         <div class="spell-card-head">
           <img class="spell-card-icon" src="${iconUrl}" onerror="this.style.visibility='hidden'" />
           <div class="spell-card-title"><b>${sp.name}</b>${kindBadge}</div>
         </div>
         <div class="spell-card-desc">${sp.desc || ''}</div>
-        ${lockedReason ? `<div class="spell-card-lock-msg">🔒 ${lockedReason}</div>` : ''}
+        ${st.lockedReason ? `<div class="spell-card-lock-msg"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/skill_lock.png" style="width:11px;height:11px;vertical-align:-1px;object-fit:contain;margin-right:3px;" onerror="this.replaceWith('🔒 ')"/>${st.lockedReason}</div>` : ''}
         ${btns}
       </div>`;
   }
@@ -6986,6 +7112,10 @@
     getOpenArchetypesClient().forEach(id=>{ if(id!==archId) spentOthers += spentCostForArchetype(id, skillTree.levels && skillTree.levels[id]); });
     return total - spentOthers - spentCostForArchetype(archId, draft);
   }
+  // Nó selecionado no grafo (mostra o detalhe completo embaixo) -- por
+  // arquétipo só existe 1 seleção de cada vez; zerado ao trocar de aba
+  // (switchSkillTab) pra nunca herdar um id de outro arquétipo.
+  let selectedSpellId = null;
   function renderSkillTree(){
     if(!skilltreePanel.classList.contains('open')) return;
     const wrap = document.getElementById('skill-list-wrap');
@@ -6998,25 +7128,50 @@
     const legacy = spells.filter(sp=>sp.kind==='legacy');
     const passives = spells.filter(sp=>sp.kind==='passive');
     const maxRow = actives.reduce((m,sp)=>Math.max(m,sp.row),1);
+    // Sem seleção válida pro arquétipo atual (1ª renderização da aba, ou
+    // troca de aba) -- cai na 1ª Ativa da linha 1 (sempre destravada).
+    if(!selectedSpellId || !spells.some(sp=>sp.id===selectedSpellId)){
+      selectedSpellId = (actives[0] && actives[0].id) || (legacy[0] && legacy[0].id) || (passives[0] && passives[0].id) || null;
+    }
     let html = `<div class="skilltree-archname">${ARCHETYPE_LABEL[archId]} <span class="hint">${ARCHETYPE_THEME_PT[archId]}</span></div>`;
+    // Grafo: 1 fileira de nós por linha de Ativas, com um par de conectores
+    // diagonais (asset real diagonal_link.png, um espelhado) entre cada
+    // fileira -- representa visualmente "essa coluna continua descendo",
+    // já que o desbloqueio de verdade é por LINHA inteira (qualquer nó da
+    // linha anterior destrava a próxima), não por um par pai->filho exato.
+    html += `<div class="skilltree-graph">`;
     for(let row=1; row<=maxRow; row++){
-      html += `<div class="spell-row-label">Linha ${row}</div><div class="spell-row-cards">`;
-      actives.filter(sp=>sp.row===row).forEach(sp=>{ html += spellCardHtml(archId, sp, draft); });
+      if(row>1){
+        html += `<div class="skilltree-connector-row"><div class="skilltree-connector-pair"><div class="skilltree-connector"></div><div class="skilltree-connector flip"></div></div></div>`;
+      }
+      html += `<div class="skilltree-graph-row">`;
+      actives.filter(sp=>sp.row===row).forEach(sp=>{ html += spellNodeHtml(archId, sp, draft, selectedSpellId); });
       html += `</div>`;
     }
     if(legacy.length){
-      html += `<div class="spell-row-label">Legacy (Ultimate)</div><div class="spell-row-cards">`;
-      legacy.forEach(sp=>{ html += spellCardHtml(archId, sp, draft); });
+      html += `<div class="skilltree-legacy-connectors"><div class="skilltree-connector"></div><div class="skilltree-connector flip"></div></div>`;
+      html += `<div class="skilltree-graph-row">`;
+      legacy.forEach(sp=>{ html += spellNodeHtml(archId, sp, draft, selectedSpellId); });
       html += `</div>`;
     }
+    html += `</div>`;
+    // Passivas ficam FORA da corrente do grafo (não são destravadas por
+    // linha, só por "3 Ativas distintas destravadas") -- fileira separada,
+    // mesmo estilo de nó, sem conectores.
     if(passives.length){
-      html += `<div class="spell-row-label">Passivas</div><div class="spell-row-cards">`;
-      passives.forEach(sp=>{ html += spellCardHtml(archId, sp, draft); });
+      html += `<div class="skilltree-passives-label">Passivas</div><div class="skilltree-passives-row">`;
+      passives.forEach(sp=>{ html += spellNodeHtml(archId, sp, draft, selectedSpellId); });
       html += `</div>`;
     }
+    const selectedSp = spells.find(sp=>sp.id===selectedSpellId);
+    if(selectedSp) html += spellDetailHtml(archId, selectedSp, draft);
     wrap.innerHTML = html;
+    wrap.querySelectorAll('.spell-node').forEach(node=>{
+      node.addEventListener('click', ()=>{ selectedSpellId = node.dataset.spell; renderSkillTree(); });
+    });
     wrap.querySelectorAll('.spell-card-plus, .spell-card-minus, .spell-card-toggle-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
         const spellId = btn.dataset.spell;
         const sp = spells.find(s=>s.id===spellId);
         if(!sp) return;
@@ -7620,6 +7775,7 @@
     c_staff_common:{ name:'Cajado de Madeira', rarity:'comum' }, c_staff_uncommon:{ name:'Cajado Rúnico', rarity:'incomum' }, c_staff_rare:{ name:'Cajado Entalhado', rarity:'rara' }, c_staff_epic:{ name:'Cajado da Tempestade', rarity:'épica' }, c_staff_legendary:{ name:'Cajado Ancestral', rarity:'lendária' },
     r_ring_common:{ name:'Anel de Fio Trançado', rarity:'comum' }, r_ring_uncommon:{ name:'Anel de Prata Trançada', rarity:'incomum' }, r_ring_rare:{ name:'Anel Entrelaçado', rarity:'rara' }, r_ring_epic:{ name:'Anel do Arcano', rarity:'épica' }, r_ring_legendary:{ name:'Anel do Tecelão Ancião', rarity:'lendária' },
     m_amulet_common:{ name:'Amuleto de Lã', rarity:'comum' }, m_amulet_uncommon:{ name:'Amuleto Trançado', rarity:'incomum' }, m_amulet_rare:{ name:'Amuleto Encantado', rarity:'rara' }, m_amulet_epic:{ name:'Amuleto do Guardião Tecido', rarity:'épica' }, m_amulet_legendary:{ name:'Amuleto do Tecelão Ancião', rarity:'lendária' },
+    g_gloves_common:{ name:'Luvas de Couro Cru', rarity:'comum' }, g_gloves_uncommon:{ name:'Luvas do Batedor', rarity:'incomum' }, g_gloves_rare:{ name:'Luvas Reforçadas', rarity:'rara' }, g_gloves_epic:{ name:'Gauntlet do Vigia', rarity:'épica' }, g_gloves_legendary:{ name:'Gauntlet Ancestral', rarity:'lendária' },
   };
   // Modelo NOVO (pedido do usuário -- ver comentário grandão equivalente em
   // huntEngine.js acima de PROFESSION_RECIPES): 1 receita por TIPO de item,
@@ -7638,6 +7794,7 @@
       { id:'carpintaria_staff', name:'Cajado', resultBase:'c_staff', levelReq:1, goldCost:400, materials:[{id:'madeira_bruta',qty:10}] },
     ],
     tecelagem: [
+      { id:'tecelagem_gloves', name:'Luvas', resultBase:'g_gloves', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
       { id:'tecelagem_ring', name:'Anel', resultBase:'r_ring', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
       { id:'tecelagem_amulet', name:'Amuleto', resultBase:'m_amulet', levelReq:1, goldCost:400, materials:[{id:'fio_de_la',qty:10}] },
     ],
