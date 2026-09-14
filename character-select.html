@@ -392,6 +392,16 @@
         // dentro da célula) continua igual.
         const rows = 4, cell = Math.round(h/rows) || 64;
         const cols = Math.max(1, Math.round(w/cell));
+        // cellW em ponto flutuante, separado de `cell` (altura) -- achado
+        // depurando o bug reportado de sprite "vazando"/cortada nos ÚLTIMOS
+        // quadros do ciclo de andar de Holy/Wizardry (mais visível em Cima/
+        // Direita): a largura TOTAL do atlas nem sempre é múltiplo exato da
+        // altura da linha (ex.: Wizardry sobra ~31px em 799px) -- usando o
+        // MESMO `cell` arredondado pros dois eixos, essa folga ficava toda
+        // concentrada no fim de cada linha e o recorte por conteúdo dos
+        // últimos quadros vazava pro quadro vizinho. w/cols em ponto
+        // flutuante espalha a folga igualmente entre os 8 quadros.
+        const cellW = w/cols;
         const dirNames = ['down','up','right','left'];
         const c = document.createElement('canvas'); c.width=w; c.height=h;
         const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
@@ -405,8 +415,8 @@
         // de só a folga transparente, contribuindo pro "corta um pedaço"
         // relatado pelo usuário.
         function isBg(x,y){ const i=(y*w+x)*4; return data[i+3] < 10; }
-        function cropCell(cellX0, cellY0){
-          const xLim = Math.min(w, cellX0+cell), yLim = Math.min(h, cellY0+cell);
+        function cropCell(cellX0, cellY0, cellX1){
+          const xLim = Math.min(w, cellX1), yLim = Math.min(h, cellY0+cell);
           let minX=xLim, minY=yLim, maxX=cellX0-1, maxY=cellY0-1;
           for(let y=cellY0; y<yLim; y++){
             for(let x=cellX0; x<xLim; x++){
@@ -416,7 +426,7 @@
               }
             }
           }
-          if(maxX<minX || maxY<minY) return { sx:cellX0, sy:cellY0, sw:cell, sh:cell }; // célula vazia -- cai pro quadro cheio
+          if(maxX<minX || maxY<minY) return { sx:cellX0, sy:cellY0, sw:xLim-cellX0, sh:yLim-cellY0 }; // célula vazia -- cai pro quadro cheio
           const pad = 3;
           const sx = Math.max(cellX0, minX-pad), sy = Math.max(cellY0, minY-pad);
           return { sx, sy, sw: Math.min(xLim, maxX+1+pad)-sx, sh: Math.min(yLim, maxY+1+pad)-sy };
@@ -424,7 +434,10 @@
         const out = {};
         dirNames.forEach((name, rowIdx)=>{
           const frames = [];
-          for(let cIdx=0; cIdx<cols; cIdx++) frames.push(cropCell(cIdx*cell, rowIdx*cell));
+          for(let cIdx=0; cIdx<cols; cIdx++){
+            const x0 = Math.round(cIdx*cellW), x1 = Math.round((cIdx+1)*cellW);
+            frames.push(cropCell(x0, rowIdx*cell, x1));
+          }
           out[name] = frames;
         });
         return out;

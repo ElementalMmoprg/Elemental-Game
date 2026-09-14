@@ -996,6 +996,12 @@
       <div class="tb-icon" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
       <div class="tb-icon" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/analyzer.png" alt=""></div>
       <div class="tb-icon" id="btn-open-wiki" title="Wiki (itens e bestiário)">📖</div>
+      <!-- Pedido do usuário: acesso rápido pra voltar pra seleção de
+           personagem (trocar de herói sem deslogar) e sair do jogo de vez
+           (desloga, volta pro login) direto da tela principal -- antes só
+           dava pra fazer isso fechando a aba/voltando manualmente na URL. -->
+      <div class="tb-icon" id="btn-back-to-select" title="Voltar pra Seleção de Personagem">🔁</div>
+      <div class="tb-icon" id="btn-exit-game" title="Sair do Jogo">🚪</div>
     </div>
   </div>
 
@@ -2023,15 +2029,31 @@
         // fixa (não detecção de conteúdo entre linhas), só mudou de 3 pra 4
         // linhas -- o resto da função não precisa saber disso.
         const rows = 4; // baixo, cima, direita, esquerda
-        const cell = Math.round(h/rows) || 64;
+        const cell = Math.round(h/rows) || 64; // altura de cada linha -- exata
         const cols = Math.max(1, Math.round(w/cell));
+        // cellW em ponto flutuante, calculada separado de `cell` (altura) --
+        // achado depurando o bug reportado de sprite "vazando"/cortada
+        // especificamente nos ÚLTIMOS quadros do ciclo de andar de Holy e
+        // Wizardry (mais visível olhando pra Cima/Direita, onde a pose de
+        // verdade chega mais perto da borda direita da célula): a largura
+        // TOTAL do atlas nem sempre é um múltiplo exato da altura da linha
+        // (ex.: Holy 522px / 8 quadros "deveria" dar 64px cada, mas sobra
+        // ~10px; Wizardry sobra ~31px em 799px). Usando o mesmo `cell`
+        // (arredondado) pros dois eixos, essa folga toda ficava concentrada
+        // no fim de cada linha -- o recorte por conteúdo (cropCell) dos
+        // últimos quadros acabava pegando pixel vazado do quadro vizinho (ou
+        // cortando a pose de verdade). cellW = w/cols em ponto flutuante
+        // espalha essa folga IGUALMENTE entre os 8 quadros (~1-4px cada, em
+        // vez de ~10-31px acumulados só no último), o suficiente pra parar
+        // de vazar.
+        const cellW = w/cols;
         const dirNames = ['down','up','right','left'];
         const c = document.createElement('canvas'); c.width=w; c.height=h;
         const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
         const data = cctx.getImageData(0,0,w,h).data;
         function isBg(x,y){ const i=(y*w+x)*4, a=data[i+3]; if(a<10) return true; const r=data[i],g=data[i+1],b=data[i+2]; return (r>235&&g>235&&b>235); }
-        function cropCell(cellX0, cellY0){
-          const xLim = Math.min(w, cellX0+cell), yLim = Math.min(h, cellY0+cell);
+        function cropCell(cellX0, cellY0, cellX1){
+          const xLim = Math.min(w, cellX1), yLim = Math.min(h, cellY0+cell);
           let minX=xLim, minY=yLim, maxX=cellX0-1, maxY=cellY0-1;
           for(let y=cellY0; y<yLim; y++){
             for(let x=cellX0; x<xLim; x++){
@@ -2041,7 +2063,7 @@
               }
             }
           }
-          if(maxX<minX || maxY<minY) return { sx:cellX0, sy:cellY0, sw:cell, sh:cell }; // célula vazia -- cai pro quadro cheio
+          if(maxX<minX || maxY<minY) return { sx:cellX0, sy:cellY0, sw:xLim-cellX0, sh:yLim-cellY0 }; // célula vazia -- cai pro quadro cheio
           const pad = 3;
           const sx = Math.max(cellX0, minX-pad), sy = Math.max(cellY0, minY-pad);
           return { sx, sy, sw: Math.min(xLim, maxX+1+pad)-sx, sh: Math.min(yLim, maxY+1+pad)-sy };
@@ -2049,7 +2071,10 @@
         const out = {};
         dirNames.forEach((name, rowIdx)=>{
           const frames = [];
-          for(let cIdx=0; cIdx<cols; cIdx++) frames.push(cropCell(cIdx*cell, rowIdx*cell));
+          for(let cIdx=0; cIdx<cols; cIdx++){
+            const x0 = Math.round(cIdx*cellW), x1 = Math.round((cIdx+1)*cellW);
+            frames.push(cropCell(x0, rowIdx*cell, x1));
+          }
           out[name] = frames;
         });
         return out;
@@ -5611,6 +5636,24 @@
     });
   });
   document.getElementById('btn-open-wiki').addEventListener('click', ()=>{ wikiModal.classList.toggle('open'); renderWiki(); });
+  // Voltar pra Seleção de Personagem -- só troca de tela, mantém a sessão
+  // (LS_TOKEN/LS_USERNAME) logada; não precisa de confirmação, é reversível
+  // (character-select.html deixa entrar de novo em qualquer personagem).
+  document.getElementById('btn-back-to-select').addEventListener('click', ()=>{
+    window.location.href = 'character-select.html';
+  });
+  // Sair do Jogo -- desloga de verdade (mesmo comportamento do "Sair" da
+  // tela de seleção de personagem: limpa token/username/character do
+  // localStorage e manda pro login). Com confirmação (showConfirmModal, ver
+  // mais abaixo) porque desconecta de uma caçada/grupo em andamento sem
+  // aviso senão.
+  document.getElementById('btn-exit-game').addEventListener('click', async ()=>{
+    if(!(await showConfirmModal('Sair do jogo? Você será desconectado e voltará pra tela de login.'))) return;
+    localStorage.removeItem(LS_TOKEN);
+    localStorage.removeItem(LS_USERNAME);
+    localStorage.removeItem(LS_CHARACTER);
+    window.location.href = 'index.html';
+  });
   document.getElementById('wiki-item-search').addEventListener('input', renderWikiItems);
   document.getElementById('wiki-monster-search').addEventListener('input', renderWikiMonsters);
   document.getElementById('bestiary-reward-close').addEventListener('click', ()=> document.getElementById('bestiary-reward-modal').classList.remove('open'));
