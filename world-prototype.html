@@ -83,6 +83,25 @@
   #ws-status{ top:56px; right:16px; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); z-index:9; }
   #build-tag{ bottom:2px; right:4px; font-family:var(--font-mono); font-size:8px; color:rgba(169,152,114,.4); z-index:9; pointer-events:none; }
 
+  /* ============ MINIMAPA (canto superior-direito) ============
+     O jogo hoje não tem textura de terreno recortável pra virar mapa de
+     verdade (as caçadas são pontos de lure fixos, não um mundo explorável
+     tile a tile num sentido "de mapa"), então em vez de fingir um mapa que
+     não existe, isso é um RADAR real: usa as MESMAS coordenadas x/y que já
+     movem jogador/monstros no canvas principal, só que reduzidas de escala
+     e recortadas num círculo — jogador sempre no centro, monstros da parada
+     de lure atual aparecem como pontinhos na posição relativa deles de
+     verdade (perto/longe/direção certos). Moldura (border.png) e ícone de
+     jogador (cross.png) são os assets reais da pasta minimap/ da Ravendawn. */
+  #minimap-panel{ position:absolute; top:70px; right:16px; width:120px; display:flex; flex-direction:column; align-items:center; gap:4px; z-index:6; }
+  #minimap-zone-label{ font-family:var(--font-mono); font-size:8px; color:var(--gold-bright); text-transform:uppercase; letter-spacing:.03em; text-align:center; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.8); }
+  #minimap-circle{ position:relative; width:112px; height:112px; border-radius:50%; overflow:hidden; background:radial-gradient(circle, #241d12, #0b0805 82%); box-shadow:inset 0 0 14px rgba(0,0,0,.75); }
+  #minimap-dots{ position:absolute; inset:0; }
+  .minimap-dot{ position:absolute; width:5px; height:5px; margin:-2.5px 0 0 -2.5px; border-radius:50%; background:#c94040; box-shadow:0 0 3px rgba(0,0,0,.9); }
+  .minimap-dot.boss{ width:8px; height:8px; margin:-4px 0 0 -4px; background:#ff3b30; box-shadow:0 0 5px rgba(255,59,48,.7); }
+  #minimap-player-marker{ position:absolute; top:50%; left:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px; z-index:2; filter:drop-shadow(0 0 2px #000); pointer-events:none; }
+  #minimap-border{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:3; }
+
   /* Vitals (HP/Mana/Stamina) — colados na hotbar, à esquerda dela. Alongado
      e com barras mais altas (pedido explícito — estava pequeno d+). */
   #vitals-block{ position:static; width:230px; padding:9px 12px; flex-shrink:0; }
@@ -100,6 +119,15 @@
   .vitals-icon{ width:19px; height:19px; flex-shrink:0; filter:drop-shadow(0 1px 2px rgba(0,0,0,.65)); }
   .hp-track .bar-fill.hp{ background:linear-gradient(180deg,var(--hp-a),var(--hp-b) 55%,var(--hp-c)); background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/health_fill.png); background-size:100% 100%; }
   .mp-track .bar-fill.mp{ background:linear-gradient(180deg,var(--mp-a),var(--mp-b) 55%,var(--mp-c)); background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/mana_fill.png); background-size:100% 100%; }
+  /* Barra de XP — assets reais da Ravendawn (health_bars/icon_experience.png +
+     experience_fill.png) que já existiam na pasta mas nunca tinham sido
+     usados porque o jogo não tinha barra de XP visível na tela. Mais fina
+     que HP/Mana (a Ravendawn usa a mesma proporção) e sem número de HP-style,
+     só a % preenchida + rótulo "faltam X XP". */
+  .xp-track{ height:9px; }
+  .xp-track .bar-fill.xp{ background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/experience_fill.png); background-size:100% 100%; }
+  .xp-row .vitals-icon{ width:15px; height:15px; }
+  .xp-row .bar-label{ font-size:7.5px; }
   #hunt-status-line{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); line-height:1.6; }
   #hunt-status-line b{ color:var(--gold-bright); }
   #premium-badge{ display:inline-block; font-family:var(--font-mono); font-size:8px; padding:0 4px; border-radius:3px; margin-left:5px; border:1px solid var(--premium); color:var(--premium); }
@@ -1089,6 +1117,17 @@
   <div id="ws-status">● conectando...</div>
   <div id="build-tag">build 2026-09-02-r2</div>
 
+  <!-- MINIMAPA — radar real (posições verdadeiras de jogador/monstros), ver
+       CSS e renderMinimap() pra detalhes de por que não é um mapa de terreno. -->
+  <div id="minimap-panel">
+    <div id="minimap-zone-label">Cidade Principal</div>
+    <div id="minimap-circle">
+      <div id="minimap-dots"></div>
+      <img id="minimap-player-marker" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/minimap/cross.png" alt="" />
+      <img id="minimap-border" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/minimap/border.png" alt="" />
+    </div>
+  </div>
+
   <!-- PARTY — até 10 jogadores, convite, e o botão IR (só Líder) -->
   <div id="party-panel" class="glass ornate win">
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Grupo (máx. 10)<span class="rule"></span><span class="win-close-x" data-close-win="party-panel">✕</span></div>
@@ -1515,6 +1554,7 @@
     <div id="vitals-block" class="glass ornate">
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_health.png" alt=""><div class="bar-track hp-track"><div class="bar-fill hp" id="hp-bar" style="width:100%"></div><div class="bar-label" id="hp-label"></div></div></div>
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_mana.png" alt=""><div class="bar-track mp-track"><div class="bar-fill mp" id="mp-bar" style="width:100%"></div><div class="bar-label" id="mp-label"></div></div></div>
+      <div class="vitals-row xp-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_experience.png" alt=""><div class="bar-track xp-track"><div class="bar-fill xp" id="xp-bar" style="width:0%"></div><div class="bar-label" id="xp-label"></div></div></div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="bar-track" style="flex:1;margin-bottom:0;"><div class="bar-fill stam" id="stam-bar" style="width:100%"></div><div class="bar-label" id="stam-label"></div></div>
         <div id="stam-recharge-btn" class="hover-trigger" title="Recarregar Stamina (Free +4h / Premium +6h)">
@@ -1865,6 +1905,7 @@
   let sqmDistance = 1;
   let targetMode = 'closest';
   let followUsername = null; // username sendo seguido quando targetMode==='followPartyMember'
+  let currentTargetMonsterId = null; // espelho de state.currentTargetMonsterId do servidor (ver huntEngine.js) — usado pra desenhar a placa de alvo real da Ravendawn (ver drawTargetPlate)
   let stamina = { current:6*3600*1000, max:6*3600*1000, rechargesUsedToday:0, maxRechargesPerDay:4, rechargeCost:0 };
   let dispatch = { cooldownMs:60*60*1000, remainingMs:60*60*1000 };
   let autoSellOnBagFull = true;
@@ -3181,6 +3222,53 @@
   const CAST_POSE_MS = 260;
   const monsterHitFlash = new Map(); // monsterId -> timestamp do último acerto (pra desenhar um flash branco rápido)
   const MONSTER_HIT_FLASH_MS = 160;
+  // Cache simples de <img> pra desenhar PNGs no canvas (drawImage exige que a
+  // imagem já esteja carregada — sem cache, cada frame recriaria a <img> do
+  // zero e nunca chegaria a desenhar nada). Usado pela placa de alvo real da
+  // Ravendawn (ver drawTargetPlate) — outros lugares do arquivo que já
+  // desenham PNG em canvas (SpriteManager, CITY_ATLAS_IMG) têm seu próprio
+  // cache especializado; este aqui é só genérico pra imagens avulsas de UI.
+  const _uiImgCache = {};
+  function getCachedImg(url){
+    let e = _uiImgCache[url];
+    if(!e){ e = { img:new Image(), loaded:false }; e.img.onload = ()=>{ e.loaded = true; }; e.img.src = url; _uiImgCache[url] = e; }
+    return e;
+  }
+  const TARGETHUD_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/targethud/';
+  // Placa de alvo real da Ravendawn — só desenhada acima do monstro que é o
+  // ALVO ATUAL (state.currentTargetMonsterId, espelhado em currentTargetMonsterId
+  // no cliente), pra destacar visualmente quem está sendo atacado de verdade
+  // em vez de todo mundo no grupo de lure. Monstros comuns continuam com a
+  // barrinha simples (ver uso de item.hpPct logo abaixo) — trocar TODOS pela
+  // placa cheia poluiria a tela e custaria mais desenho por frame à toa.
+  function drawTargetPlate(cx, cy, name, hpPct, isBoss){
+    const bg = getCachedImg(TARGETHUD_BASE + 'background.png');
+    const barBorder = getCachedImg(TARGETHUD_BASE + 'bar_border.png');
+    const barFill = getCachedImg(TARGETHUD_BASE + 'bar_fill.png');
+    const barOverlay = getCachedImg(TARGETHUD_BASE + 'bar_overlay.png');
+    const circleBg = getCachedImg(TARGETHUD_BASE + 'circle_background.png');
+    const circleBorder = getCachedImg(TARGETHUD_BASE + (isBoss ? 'boss_frame.png' : 'circle_border_left.png'));
+    const circleGlow = getCachedImg(TARGETHUD_BASE + (isBoss ? 'boss_glow.png' : 'circle_glow.png'));
+    if(!bg.loaded || !barFill.loaded) return; // ainda carregando — sem placa nesse frame, sem quebrar nada
+    const scale = SPRITE_SCALE * 0.62; // plate original é pensado pra resolução maior; encolhe pra caber acima do monstro
+    const bgW = bg.img.width*scale, bgH = bg.img.height*scale;
+    const left = cx - bgW/2, top = cy - bgH/2;
+    ctx.drawImage(bg.img, left, top, bgW, bgH);
+    // barra de HP (bar_fill recortada pela % viva, igual ao padrão hpPct usado no resto do arquivo)
+    const barX = left + bgW*0.30, barY = top + bgH*0.30, barFullW = barFill.img.width*scale, barH = barFill.img.height*scale;
+    if(barFill.loaded) ctx.drawImage(barFill.img, 0,0, barFill.img.width*Math.max(0,Math.min(1,hpPct)), barFill.img.height, barX, barY, barFullW*Math.max(0,Math.min(1,hpPct)), barH);
+    if(barOverlay.loaded) ctx.drawImage(barOverlay.img, barX, barY, barOverlay.img.width*scale, barOverlay.img.height*scale);
+    if(barBorder.loaded) ctx.drawImage(barBorder.img, barX-2, barY, barBorder.img.width*scale, barH);
+    // ícone/retrato circular à esquerda
+    const circX = left - (circleBg.img.width*scale)*0.18, circY = cy - (circleBg.img.height*scale)/2;
+    if(circleGlow.loaded) ctx.drawImage(circleGlow.img, circX-(circleGlow.img.width*scale-circleBg.img.width*scale)/2, circY-(circleGlow.img.height*scale-circleBg.img.height*scale)/2, circleGlow.img.width*scale, circleGlow.img.height*scale);
+    if(circleBg.loaded) ctx.drawImage(circleBg.img, circX, circY, circleBg.img.width*scale, circleBg.img.height*scale);
+    if(circleBorder.loaded) ctx.drawImage(circleBorder.img, circX, circY, circleBorder.img.width*scale, circleBorder.img.height*scale);
+    // nome do monstro, centralizado acima da placa
+    ctx.font = `${isBoss?'bold ':''}10px "JetBrains Mono"`; ctx.textAlign = 'center';
+    ctx.fillStyle = isBoss ? '#ff9a80' : '#f0d38a';
+    ctx.fillText(name || '', cx, top - 4);
+  }
   function findMonsterById(id){
     for(const p of activeHunt.lurePoints){ const m = p.monsters.find(mm=>mm.id===id); if(m) return m; }
     return null;
@@ -3603,7 +3691,7 @@
               }
             }
             if(monsterMirror) ctx.restore();
-          }, headCart:{x:m.x,y:m.y}, headLift:24*SPRITE_SCALE, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster' });
+          }, headCart:{x:m.x,y:m.y}, headLift:24*SPRITE_SCALE, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster', monsterId:m.id, monsterName:m.name, monsterIsBoss:!!m.isBoss });
         });
       });
     }
@@ -3671,8 +3759,12 @@
       ctx.textAlign = 'center';
       if(item.nick) drawNickAndStar(s.x, headY-10*SPRITE_SCALE, item.nick, item.dimNick);
       if(item.kind==='monster' && item.hpPct!=null){
-        ctx.fillStyle='#000'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE, 4*SPRITE_SCALE);
-        ctx.fillStyle='#c94040'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE*item.hpPct, 4*SPRITE_SCALE);
+        if(currentTargetMonsterId && item.monsterId === currentTargetMonsterId){
+          drawTargetPlate(s.x, headY-30*SPRITE_SCALE, item.monsterName, item.hpPct, item.monsterIsBoss);
+        } else {
+          ctx.fillStyle='#000'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE, 4*SPRITE_SCALE);
+          ctx.fillStyle='#c94040'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE*item.hpPct, 4*SPRITE_SCALE);
+        }
       }
     });
 
@@ -3866,6 +3958,16 @@
     document.getElementById('mp-label').textContent = `${Math.round(player.mp)}/${player.mpMax}`;
     document.getElementById('stam-bar').style.width = Math.max(0,stamina.current/stamina.max*100)+'%';
     document.getElementById('stam-label').textContent = fmtDuration(stamina.current);
+    // Barra de XP — mesma curva usada no Analisador de Caçada pra ETA de
+    // level (100 XP x nível atual por level, ver levelFromXp em huntEngine.js).
+    {
+      const xpAtLevelStart = 50 * player.level * (player.level - 1);
+      const xpNeededThisLevel = 100 * player.level;
+      const xpIntoLevel = Math.max(0, player.xp - xpAtLevelStart);
+      const xpPct = player.level >= 100 ? 100 : Math.max(0, Math.min(100, xpIntoLevel/xpNeededThisLevel*100));
+      document.getElementById('xp-bar').style.width = xpPct + '%';
+      document.getElementById('xp-label').textContent = player.level >= 100 ? 'MÁX' : `${Math.round(xpIntoLevel)}/${xpNeededThisLevel}`;
+    }
     document.body.classList.toggle('in-city', location==='city');
     document.body.classList.toggle('in-dungeon', location==='dungeon');
     document.getElementById('hunt-action-row').classList.toggle('show', location==='dungeon');
@@ -4060,6 +4162,7 @@
     if(typeof msg.usedFreeTrainingReset === 'boolean') usedFreeTrainingReset = msg.usedFreeTrainingReset;
     combatPosture = msg.combatPosture; sqmDistance = msg.sqmDistance;
     targetMode = msg.targetMode; followUsername = msg.followUsername || null;
+    currentTargetMonsterId = msg.currentTargetMonsterId || null;
     autoSellOnBagFull = msg.autoSellOnBagFull;
     stamina = msg.stamina; dispatch = msg.dispatch;
     party = msg.party; activeTradeId = msg.activeTradeId;
@@ -6599,6 +6702,45 @@
     });
   }
   setInterval(renderHotbar, 500);
+
+  // Radar do minimapa — ver comentário no CSS (#minimap-panel) sobre por que
+  // é um radar de posições reais e não um mapa de terreno recortado. 200ms
+  // já acompanha bem o movimento dos monstros sem gastar CPU num setInterval
+  // curto demais (mesma ideia do renderHotbar acima, só mais frequente
+  // porque posição muda mais rápido que cooldown).
+  const MINIMAP_RADAR_RANGE_PX = 340; // além disso, pontinho fica preso na borda do círculo (ver clamp abaixo)
+  const minimapDotsEl = document.getElementById('minimap-dots');
+  const minimapZoneLabelEl = document.getElementById('minimap-zone-label');
+  function renderMinimap(){
+    if(!minimapDotsEl) return;
+    let zoneLabel = 'Cidade Principal';
+    if(location === 'dungeon'){
+      if(activeHunt.isTower){
+        zoneLabel = activeHunt.towerMode==='boss' ? `Escalada — andar ${activeHunt.climbFloor||1}` : (activeHunt.huntName||'Torre');
+      } else {
+        zoneLabel = activeHunt.huntName || 'Caçada';
+      }
+    }
+    minimapZoneLabelEl.textContent = zoneLabel;
+    let dotsHtml = '';
+    if(activeHunt.running && Array.isArray(activeHunt.lurePoints)){
+      const point = activeHunt.lurePoints[activeHunt.currentIndex];
+      if(point && Array.isArray(point.monsters)){
+        point.monsters.forEach(m=>{
+          if(m.hp <= 0) return;
+          const dx = m.x - player.x, dy = m.y - player.y;
+          const dist = Math.hypot(dx,dy) || 1;
+          const clampedDist = Math.min(dist, MINIMAP_RADAR_RANGE_PX);
+          const ux = (dx/dist) * clampedDist, uy = (dy/dist) * clampedDist;
+          const px = 50 + (ux/MINIMAP_RADAR_RANGE_PX)*48; // 48% de raio útil dentro do círculo de 112px (sobra margem pra moldura)
+          const py = 50 + (uy/MINIMAP_RADAR_RANGE_PX)*48;
+          dotsHtml += `<div class="minimap-dot${m.isBoss?' boss':''}" style="left:${px}%; top:${py}%;" title="${escapeHtml(m.name||'')}"></div>`;
+        });
+      }
+    }
+    minimapDotsEl.innerHTML = dotsHtml;
+  }
+  setInterval(renderMinimap, 200);
 
   function openActionModal(slotIndex){ configuringSlotIndex = slotIndex; document.getElementById('action-modal').classList.add('open'); renderActionBody(); }
   document.getElementById('action-close').addEventListener('click', ()=> document.getElementById('action-modal').classList.remove('open'));
