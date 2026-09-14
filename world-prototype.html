@@ -72,6 +72,12 @@
     border:none; border-radius:8px; padding:7px 18px;
   }
   #tb-gold-pill:hover, #btn-open-rank:hover, #btn-open-shop:hover{ filter:brightness(1.12); }
+  /* Ícone real de moeda (ui/windows/inventory/icon_silver.png, mesma arte do
+     silver.png já usado na Infusão -- ver ravendawn-ui/silver.png) no lugar
+     do emoji 🪙 só no pill principal de Ouro da barra superior (o mais visto
+     na tela) -- não mexe nos vários 🪙 de texto espalhados em log/popover/
+     etc., que continuam emoji mesmo (funcionam bem inline com texto). */
+  .tb-gold-icon{ width:15px; height:auto; vertical-align:-2px; object-fit:contain; margin-right:1px; }
   #tb-online{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); white-space:nowrap; }
   #tb-icons{ margin-left:auto; display:flex; gap:6px; }
   .tb-icon{ width:34px; height:34px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
@@ -518,10 +524,19 @@
   .equip-grid3 [data-equip="ring"]{ grid-area:botL; }
   .equip-grid3 [data-equip="boots"]{ grid-area:botC; }
   .equip-grid3 [data-equip="legs"]{ grid-area:botR; }
-  /* vazio até equipar algo — só o ícone (slot-icon) fica invisível, a caixa
-     do slot continua ali pra poder soltar (drop) um item da Mochila nela */
-  .equip-slot .slot-icon{ visibility:hidden; }
-  .equip-slot.filled .slot-icon{ visibility:visible; }
+  /* BUG (achado 2026-09-14, relatado pelo usuário via print do Inventário):
+     esta regra é de ANTES de existir ícone de slot vazio — na época, um slot
+     sem item não tinha nada pra mostrar, então escondia o <span class="slot-icon">
+     inteiro até equipar algo (.filled). Quando entrou a silhueta real da
+     Ravendawn pra slot vazio (equipSlotPlaceholderHtml) e os ícones reais de
+     Asa/Aura, o HTML passou a ser preenchido certinho (ver renderInventory),
+     mas essa regra de visibility continuava escondendo TUDO até o slot ficar
+     "filled" — resultado: silhueta/emoji nunca aparecia, slot vazio sempre
+     parecia uma caixa preta lisa. Troca por opacity (fica visível sempre,
+     só mais apagado/"fantasma" quando vazio — igual ao padrão real de RPG:
+     silhueta fraca vazia, ícone forte quando equipado) em vez de visibility. */
+  .equip-slot .slot-icon{ opacity:.32; filter:grayscale(.2); }
+  .equip-slot.filled .slot-icon{ opacity:1; filter:none; }
   .slot-icon svg, .item-slot .item-icon svg{ width:22px; height:22px; display:block; }
   .item-slot .item-icon svg{ width:26px; height:26px; }
   .equip-slot.drop-hover{ border-color:var(--gold-bright); background:rgba(240,211,138,.12); }
@@ -603,7 +618,8 @@
   #wiki-types-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; overflow-y:auto; align-content:start; padding:4px 0; }
   .wiki-type-card{ display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px 4px; border-radius:6px; cursor:pointer; text-align:center; }
   .wiki-type-card:hover .wiki-type-badge{ border-color:var(--gold-bright); box-shadow:0 0 8px rgba(240,211,138,.35); }
-  .wiki-type-badge{ width:48px; height:48px; border-radius:50%; background:#141210; border:2px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .wiki-type-badge{ width:48px; height:48px; border-radius:50%; background:#141210; border:2px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--gold-bright); }
+  .wiki-type-badge svg{ width:26px; height:26px; }
   .wiki-type-card.empty{ opacity:.45; }
   .wiki-type-name{ font-family:var(--font-display); font-size:10px; color:var(--gold-bright); text-transform:uppercase; letter-spacing:.03em; }
   .wiki-type-count{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
@@ -809,6 +825,39 @@
   .win-resize{ position:absolute; right:2px; bottom:2px; width:14px; height:14px; cursor:nwse-resize; border-right:2px solid var(--gold); border-bottom:2px solid var(--gold); opacity:.6; z-index:2; }
   .win-resize:hover{ opacity:1; }
 
+  /* ============ MOLDURA REAL DA RAVENDAWN NAS JANELAS (2026-09-14) ============
+     Pedido do usuário: trocar o visual "dourado ornamentado" que a gente
+     inventou por um visual REAL, usando os 4 arquivos que de fato existem em
+     base_window/ (a mesma pasta de onde já vinha o botão de fechar ✕ real):
+     edge_top.png (friso de 6px no topo) + top_panel.png (faixa de 47px do
+     cabeçalho, onde título+ícone+fechar já ficam) + edge_bottom.png (friso
+     de 6px embaixo) + background.png (gradiente do corpo, esticado 100%x100%
+     pro tamanho de cada painel). Conferi os 4 arquivos: são planos/sem
+     dourado — a Ravendawn real NÃO usa moldura ornamentada, isso era uma
+     escolha nossa. Escopado só nas janelas de verdade (.win, com
+     título+fechar) — popover/top-bar (.glass sem .win) continuam com o
+     "glass" original, não tem janela completa equivalente pra eles no dump.
+     padding-top compensa a altura do cabeçalho real (6+47=53px) somada ao
+     padding próprio do .panel-title (12px inline + margin 8px), pra o
+     conteúdo do painel começar logo depois da faixa cinza, não em cima dela. */
+  .glass.win{
+    background-color:#1c1a17;
+    background-image:
+      url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/base_window/edge_top.png),
+      url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/base_window/top_panel.png),
+      url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/base_window/edge_bottom.png),
+      url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/base_window/background.png);
+    background-position: top left, 0 6px, bottom left, top left;
+    background-size: 100% 6px, 100% 47px, 100% 6px, 100% 100%;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+    border:none; border-radius:3px;
+    box-shadow:0 16px 44px rgba(0,0,0,.6);
+    padding-top:19px;
+  }
+  .glass.win > .panel-title{ color:#eee6d3; text-shadow:0 1px 2px rgba(0,0,0,.7); }
+  .glass.win > .panel-title .rule{ background:linear-gradient(90deg, rgba(255,255,255,.28), transparent); }
+
   /* ============ PARTY — membros, convite, botão IR (só líder) ============ */
   #party-panel{ top:60px; right:480px; width:250px; display:none; z-index:6; }
   #party-rateio{ margin:6px 0 10px; }
@@ -910,12 +959,41 @@
   .shop-item-row .sdesc{ color:var(--ink-dim); font-size:9px; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .shop-item-row .scost{ color:var(--gold-bright); white-space:nowrap; }
 
-  /* ============ LOJA DE ELEMENTAL COIN (Moeda Real) ============ */
+  /* ============ LOJA DE ELEMENTAL COIN (Moeda Real) ============
+     Reskin com os assets reais de ui/windows/premium_store/ (2026-09-14,
+     pedido do usuário: "faça a loja com as ui, e adiciona o que já temos" —
+     NÃO importamos os ícones de bundle/montaria/etc que não existem no
+     nosso jogo, só o "chrome" reaproveitável: painel de fundo, caixa de
+     pacote e selo de bônus). Testado stretchado num preview isolado
+     (Playwright headless, mesma técnica das outras levas de moldura) antes
+     de aplicar aqui -- os ornamentos de canto (gemas roxas) aguentam bem
+     esticar pra linhas finas, só a parte do meio é um gradiente liso. */
   #coinshop-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:400px; max-width:94vw; display:none; z-index:17; }
   #coinshop-modal.open{ display:block; }
-  .coin-pkg-row{ display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; padding:8px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  #coinshop-items-list{
+    background-color:#141210;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/content_panel_background.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+    border-radius:6px; padding:12px;
+  }
+  .coin-pkg-row{
+    display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center;
+    min-height:44px; padding:0 12px; margin-bottom:8px; border:none;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/premium_ravenpack_item_box_off.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+    font-family:var(--font-mono); font-size:10.5px;
+  }
+  .coin-pkg-row:last-child{ margin-bottom:0; }
   .coin-pkg-row .cname{ color:var(--ink); }
   .coin-pkg-row .cprice{ color:var(--gold-bright); white-space:nowrap; }
+  .coin-pkg-row .cicon{ width:14px; height:auto; vertical-align:-2px; object-fit:contain; margin-right:2px; }
+  /* Selo "+N bônus" com o fundo real verde-neon de premium_store/
+     bonus_background_green.png (era só texto colorido antes). */
+  .coin-bonus-badge{
+    display:inline-block; padding:2px 8px; border-radius:10px; font-size:9.5px; color:#8fffc0;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/bonus_background_green.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+  }
   .coinshop-devnote{ color:#ff9a80; font-family:var(--font-mono); font-size:9.5px; margin-top:10px; line-height:1.5; }
 
   /* ============ RANK GERAL (Leaderboard) ============ */
@@ -970,22 +1048,167 @@
   .infusion-pips span{ width:7px; height:7px; border-radius:50%; background:#241f18; border:1px solid rgba(191,161,95,.35); display:block; }
   .infusion-pips span.done{ border-color:transparent; }
   .infusion-pips span.next{ background:rgba(240,211,138,.2); border-color:var(--gold-bright); box-shadow:0 0 4px rgba(240,211,138,.5); }
-  .infusion-progress-bar{ height:7px; border-radius:4px; background:rgba(0,0,0,.4); border:1px solid var(--gold-deep); overflow:hidden; margin:2px 0 10px; }
-  .infusion-progress-fill{ height:100%; background:linear-gradient(90deg,#8a6a2e,#e6c15c); }
+  /* Barra de progresso de Fragmentos trocada pelos assets reais da
+     Ravendawn (ui/windows/infusion/xp_background.png + xp_fill.png,
+     originalmente uma barrinha de XP genérica de 80x6 / 76x4px -- serve bem
+     pra qualquer progresso linear fino, então reaproveitamos aqui). */
+  .infusion-progress-bar{
+    position:relative; height:8px; border-radius:4px; overflow:hidden; margin:2px 0 10px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/infusion/xp_background.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+  }
+  .infusion-progress-fill{
+    position:absolute; left:1px; top:1px; bottom:1px; max-width:calc(100% - 2px); border-radius:3px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/infusion/xp_fill.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+  }
 
   /* ============ PROFISSÕES (Forja/Carpintaria/Tecelagem) ============ */
   #professions-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; display:none; z-index:17; }
   #professions-modal.open{ display:block; }
   #professions-body{ max-height:60vh; overflow-y:auto; }
   .profession-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
-  .profession-tab{ padding:4px 8px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
+  .profession-tab{ display:flex; align-items:center; gap:5px; padding:4px 8px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
   .profession-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
+  /* Ícone real de cada profissão (ui/windows/professions/icon_*.png --
+     bigorna/serrote/rolo de tecido) em vez de só texto. */
+  .profession-tab-icon{ width:15px; height:15px; object-fit:contain; }
   .profession-level-line{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:10px; }
-  .profession-recipe-box{ background:rgba(0,0,0,.3); border:1px solid rgba(191,161,95,.2); border-radius:4px; padding:8px; margin-bottom:8px; }
+  /* Fundo real da "ficha" de receita (ui/windows/professions/item_background.png)
+     em vez do rgba(0,0,0,.3) genérico -- quando dá pra criar agora (mesmo
+     booleano canCraft que já desabilita o botão "Criar"), troca pra
+     item_background_active.png (brilho verde), dando um sinal visual antes
+     de o jogador precisar reparar no botão. */
+  .profession-recipe-box{
+    background-color:#141210;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/professions/item_background.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+    border-radius:4px; padding:8px; margin-bottom:8px;
+  }
+  .profession-recipe-box.can-craft{
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/professions/item_background_active.png);
+  }
   .profession-recipe-box .prec-name{ font-family:var(--font-mono); font-size:11px; margin-bottom:4px; }
   .profession-recipe-box .prec-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; padding:2px 0; }
   .profession-recipe-box .prec-row .ok{ color:var(--ok); }
   .profession-recipe-box .prec-row .missing{ color:#ff9a80; }
+  /* Craft com tempo real (2026-09-14) -- barra de progresso montada com os
+     assets reais de ui/windows/crafting/ da Ravendawn (fundo da pílula +
+     preenchimento colorido repetido na horizontal + ponta arredondada no
+     fim do preenchimento). Fica no topo do painel, acima da lista de
+     receitas, enquanto craftingJob!=null. */
+  .craft-progress-box{ background:rgba(0,0,0,.35); border:1px solid rgba(191,161,95,.3); border-radius:4px; padding:10px; margin-bottom:10px; }
+  .craft-progress-title{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); margin-bottom:6px; text-align:center; }
+  .craft-progress-track{
+    position:relative; height:26px; border-radius:13px; overflow:hidden;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/crafting/progress_background.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+  }
+  .craft-progress-fill{
+    position:absolute; left:5px; top:5px; bottom:5px; height:16px; max-width:calc(100% - 10px);
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/crafting/blue_fill.png);
+    background-repeat:repeat-x; background-size:auto 100%;
+    border-radius:8px; transition:width .2s linear;
+  }
+  .craft-progress-fill .craft-progress-cap{
+    position:absolute; right:-3px; top:0; bottom:0; width:6px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/crafting/edge_blue.png);
+    background-repeat:no-repeat; background-size:100% 100%;
+  }
+  .craft-progress-sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-top:6px; text-align:center; }
+  .craft-busy-note{ font-family:var(--font-mono); font-size:10px; color:#e6c26a; margin-bottom:8px; text-align:center; }
+
+  /* ============ MERCADO (compra e venda entre jogadores) ============
+     Escopo "Mercado completo" escolhido pelo usuário -- livro de ordens de
+     verdade (ver huntEngine.js seção MERCADO), não uma vitrine de venda a
+     preço fixo. Assets reais confirmados na pasta
+     ui/windows/market/ da Ravendawn: offer_type_buy/sell.png (selo do tipo
+     de oferta), search_panel_background.png (painel da lista de itens),
+     category_background.png (cabeçalho de categoria), item_selection_
+     background.png (linha de item na lista), offer_selection_background_
+     on/off.png (linha de oferta no livro, "on" = selecionada/hover),
+     price_input_background.png (campo de preço), button_amount_plus/
+     minus.png (steppers de quantidade), dotted_border_background.png
+     (separador). Várias peças pedidas no folder (filter_panel_*,
+     offer_list_header_sort_*, scrollbar, etc.) NÃO existem de verdade
+     nessa pasta -- confirmado por sondagem HTTP direta -- então não foram
+     usadas; o layout foi montado só com o que existe de verdade. */
+  #market-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:620px; max-width:96vw; height:560px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
+  #market-modal.open{ display:flex; }
+  #market-body{ flex:1; display:flex; gap:10px; padding:0 14px 14px; min-height:0; }
+  #market-item-list{
+    width:170px; flex-shrink:0; overflow-y:auto; border-radius:6px; padding:6px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/search_panel_background.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+  }
+  .market-category-header{
+    font-family:var(--font-mono); font-size:9px; letter-spacing:.05em; text-transform:uppercase; color:var(--gold-bright);
+    padding:4px 6px; margin:4px 0 3px; border-radius:3px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/category_background.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+  }
+  .market-category-header:first-child{ margin-top:0; }
+  .market-item-row{
+    font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); cursor:pointer; padding:5px 7px; border-radius:4px; margin-bottom:2px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/item_selection_background.png);
+    background-size:100% 100%; background-repeat:no-repeat; display:flex; justify-content:space-between; gap:4px;
+  }
+  .market-item-row .miq{ opacity:.7; font-size:9px; }
+  .market-item-row:hover{ filter:brightness(1.25); }
+  .market-item-row.selected{ color:var(--gold-bright); filter:brightness(1.4); }
+  #market-right{ flex:1; display:flex; flex-direction:column; min-width:0; }
+  .market-right-header{ display:flex; align-items:center; justify-content:space-between; font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); margin-bottom:6px; }
+  .market-tabs{ display:flex; gap:4px; margin-bottom:6px; }
+  .market-tab{ padding:4px 10px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
+  .market-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
+  #market-offer-list{ flex:1; overflow-y:auto; min-height:0; margin-bottom:8px; }
+  .market-offer-row{
+    display:grid; grid-template-columns:20px 1fr auto auto auto; align-items:center; gap:6px;
+    font-family:var(--font-mono); font-size:9.5px; padding:5px 7px; border-radius:4px; margin-bottom:3px; cursor:pointer;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/offer_selection_background_off.png);
+    background-size:100% 100%; background-repeat:no-repeat; color:var(--ink-dim);
+  }
+  .market-offer-row:hover{
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/offer_selection_background_on.png);
+    color:var(--ink);
+  }
+  .market-offer-row.mine{ color:var(--gold-bright); }
+  .market-type-badge{ width:16px; height:16px; background-size:100% 100%; background-repeat:no-repeat; }
+  .market-type-badge.sell{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/offer_type_sell.png); }
+  .market-type-badge.buy{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/offer_type_buy.png); }
+  .market-offer-row .mo-total{ color:var(--gold-bright); }
+  .market-empty{ text-align:center; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); padding:16px 0; }
+  .market-my-offers-cancel{ font-family:var(--font-mono); font-size:9px; padding:2px 7px; border:1px solid var(--danger); border-radius:4px; background:rgba(0,0,0,.3); color:var(--danger); cursor:pointer; }
+  .market-divider{
+    height:8px; margin:2px 0 10px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/dotted_border_background.png);
+    background-repeat:repeat-x; background-size:auto 100%;
+  }
+  .market-form{ flex-shrink:0; }
+  .market-form-row{ display:flex; align-items:center; gap:8px; margin-bottom:7px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .market-type-toggle{ display:flex; gap:5px; }
+  .market-type-btn{ display:flex; align-items:center; gap:4px; padding:5px 10px; border:1px solid var(--gold-deep); border-radius:4px; cursor:pointer; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .market-type-btn.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
+  .market-amount-btn{
+    width:20px; height:20px; border:none; cursor:pointer; background-size:100% 100%; background-repeat:no-repeat; background-color:transparent;
+  }
+  .market-amount-btn.minus{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/button_amount_minus.png); }
+  .market-amount-btn.plus{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/button_amount_plus.png); }
+  .market-qty-input{
+    width:52px; text-align:center; font-family:var(--font-mono); font-size:10.5px; color:var(--ink); background:rgba(0,0,0,.35);
+    border:1px solid var(--gold-deep); border-radius:3px; padding:3px 2px;
+  }
+  .market-price-input{
+    width:80px; text-align:center; font-family:var(--font-mono); font-size:10.5px; color:var(--ink); border:none; padding:5px 2px;
+    background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/market/price_input_background.png);
+    background-size:100% 100%; background-repeat:no-repeat;
+  }
+  .market-total-line{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin-bottom:8px; }
+  .market-total-line b{ color:var(--gold-bright); }
+  #market-submit-btn{ width:100%; font-family:var(--font-mono); font-size:11px; padding:8px; border:1px solid var(--gold-bright); border-radius:5px; background:rgba(240,211,138,.15); color:var(--gold-bright); cursor:pointer; }
+  #market-submit-btn:hover{ background:rgba(240,211,138,.28); }
+  #market-submit-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .market-fee-note{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); opacity:.7; text-align:center; margin-top:4px; }
 
   /* ============ PETS + GACHA ============ */
   #pets-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; height:520px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
@@ -1112,7 +1335,7 @@
         <button class="treino-inline-btn" id="pf-open-character-btn" style="width:100%;margin-top:8px;">Ver Personagem</button>
       </div>
     </div>
-    <div class="tb-pill hover-trigger" id="tb-gold-pill">🪙 <span id="tb-gold">0</span>
+    <div class="tb-pill hover-trigger" id="tb-gold-pill"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/silver.png" class="tb-gold-icon" alt="" onerror="this.replaceWith(document.createTextNode('🪙'));" /> <span id="tb-gold">0</span>
       <div class="popover glass" id="bank-popover">
         <div class="panel-title" style="margin-bottom:8px;">Banco<span class="rule"></span></div>
         <div class="row"><span>Em mãos</span><b id="bank-hand-amount">0</b></div>
@@ -1310,6 +1533,27 @@
     <div style="padding:0 14px 14px;">
       <div class="profession-tabs" id="profession-tabs"></div>
       <div id="professions-body"></div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- MERCADO — livro de ofertas de compra/venda entre jogadores (só itens
+       empilháveis: materiais de profissão + poções; equipamento continua na
+       Troca direta). "Mercado completo (compra e venda)" escolhido pelo
+       usuário — ver huntEngine.js seção MERCADO pro desenho completo. -->
+  <div id="market-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 📦 Mercado<span class="rule"></span><span class="win-close-x" data-close-win="market-modal">✕</span></div>
+    <div id="market-body">
+      <div id="market-item-list"></div>
+      <div id="market-right">
+        <div class="market-right-header"><span id="market-selected-name">Selecione um item</span><span id="market-my-gold"></span></div>
+        <div class="market-tabs">
+          <div class="market-tab active" data-market-tab="book">Livro de Ofertas</div>
+          <div class="market-tab" data-market-tab="my">Minhas Ofertas</div>
+        </div>
+        <div id="market-offer-list"></div>
+        <div id="market-form-wrap"></div>
+      </div>
     </div>
     <div class="win-resize"></div>
   </div>
@@ -1646,6 +1890,7 @@
         <div class="service-plate-btn" id="btn-open-quicksell" title="Venda Rápida">Venda Rápida</div>
         <div class="service-plate-btn" id="btn-open-blessings" title="Bênçãos">Bênçãos</div>
         <div class="service-plate-btn" id="btn-open-professions" title="Profissões (Forja/Carpintaria/Tecelagem)">Profissões</div>
+        <div class="service-plate-btn" id="btn-open-market" title="Mercado (compra e venda entre jogadores)">Mercado</div>
       </div>
       <div id="hotbar" class="glass ornate"><div class="corner-br"></div></div>
     </div>
@@ -1999,6 +2244,14 @@
   let towers = { central:0, fogo:0, agua:0, terra:0, ar:0, luz:0, trevas:0 };
   let materials = { enchantCrystal:0, enchantProtector:0, antiBreakWard:0, infusionShard:0 }; // Cristal + Bênção do Ferreiro + Selo Inquebrável + Fragmento de Infusão
   let professions = { forja:{level:1,xp:0}, carpintaria:{level:1,xp:0}, tecelagem:{level:1,xp:0} }; // Forja/Carpintaria/Tecelagem
+  // Craft com tempo real (ver huntEngine.startCraft/completeCraftIfDone no
+  // servidor) -- craftingJob espelha state.craftingJob (null = nenhum craft
+  // em andamento); lastSeenCraftCompletedAt guarda o "at" do último
+  // craftJustCompleted já mostrado, pra não repetir o log/toast a cada
+  // snapshot novo que chegar com o mesmo resultado.
+  let craftingJob = null;
+  let lastSeenCraftCompletedAt = 0;
+  let craftBarInterval = null; // setInterval que re-renderiza a barra de progresso enquanto o modal de Profissões está aberto e tem um craft rolando
   let rankScore = 0; // Rank Geral — nível efetivo*10 + soma dos andares de Torre (ver huntEngine.computeRankScore)
   let rankTop = [], rankMyPosition = null; // preenchidos sob demanda por 'rank:get' (ver renderRank)
   let pets = { owned:[], active:null, pityCounter:0 };
@@ -2023,6 +2276,20 @@
   let hairColors = ['black','blue','brown','green','purple','red','white','yellow'];
   let guildId = null, guildSummary = null; // resumo leve (nome/tag/tier/bônus) — vem em todo snapshot
   let guildDetail = null; // payload completo — só chega via 'guild:get' / 'guild:update'
+
+  // MERCADO — catálogo (12 itens empilháveis: materiais + poções) e taxa de
+  // venda vêm uma vez no 'welcome', igual outfitCatalog. O livro de ofertas
+  // em si NUNCA fica em snapshot (não é por-jogador) -- é pedido sob demanda
+  // (market:list/myOffers) e atualizado ao vivo via market:bookChanged.
+  let marketCatalog = []; // [{id, name}]
+  let marketFeeRate = 0.05;
+  let marketSelectedItemId = null;
+  let marketViewTab = 'book'; // 'book' | 'my'
+  let marketBookCache = [];
+  let marketMyOffersCache = [];
+  let marketOfferTypeDraft = 'sell';
+  let marketQtyDraft = 1;
+  let marketPriceDraft = 1;
 
   const activeHunt = {
     running:false, huntId:null, huntName:null, difficulty:null, currentIndex:0, lurePoints:[],
@@ -4258,6 +4525,27 @@
     if(msg.towers) towers = msg.towers;
     if(msg.materials) materials = msg.materials;
     if(msg.professions) professions = msg.professions;
+    // Craft com tempo real: craftingJob vem null quando não tem nada em
+    // andamento (ver serializeHuntSnapshot no server.js). Só re-renderiza o
+    // modal de Profissões quando o estado MUDA (apareceu ou sumiu um job) --
+    // o próprio setInterval da barra (ver renderProfessions) cuida de
+    // atualizar a barra enquanto o job continua em andamento, então não
+    // precisa re-renderizar em TODO snapshot.
+    if('craftingJob' in msg){
+      const hadJob = !!craftingJob;
+      craftingJob = msg.craftingJob || null;
+      if(hadJob !== !!craftingJob) renderProfessionsIfOpen();
+    }
+    // craftJustCompleted é sempre "o resultado do último craft entregue" (não
+    // é limpo no servidor) -- compara o "at" com o último que já mostramos
+    // pra só logar/atualizar uma vez por craft de verdade.
+    if(msg.craftJustCompleted && msg.craftJustCompleted.at > lastSeenCraftCompletedAt){
+      lastSeenCraftCompletedAt = msg.craftJustCompleted.at;
+      const c = msg.craftJustCompleted;
+      logLoot(`🔨 Criou ${c.itemName} (${c.rarity})! +${c.xpGained} XP de ${PROFESSION_LABEL[c.profession]||c.profession}${c.leveledUp?` — subiu pro nível ${c.level}!`:''}`);
+      renderInventoryIfOpen();
+      renderProfessionsIfOpen();
+    }
     if(typeof msg.rankScore === 'number') rankScore = msg.rankScore;
     if(msg.pets) pets = msg.pets;
     if(msg.battlePass) battlePass = msg.battlePass;
@@ -4364,6 +4652,7 @@
           outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || []; wingCatalog = msg.wingCatalog || []; auraCatalog = msg.auraCatalog || [];
           colorPalette = msg.colorPalette || []; bossCatalog = msg.bossCatalog || [];
           hairColors = msg.hairColors && msg.hairColors.length ? msg.hairColors : hairColors;
+          marketCatalog = msg.marketCatalog || []; marketFeeRate = typeof msg.marketFeeRate === 'number' ? msg.marketFeeRate : marketFeeRate;
           renderShop();
           break;
         case 'chat':
@@ -4419,6 +4708,28 @@
         case 'trade:invite': showTradeInviteToast(msg); break;
         case 'trade:update': currentTrade = msg.trade; openTradeModal(); renderTrade(); break;
         case 'trade:cancelled': logLoot(`🤝 ${msg.by} cancelou a troca.`); closeTradeModal(); break;
+        case 'market:bookChanged':
+          // alguém mais casou/criou/cancelou uma oferta do item que eu tô olhando agora --
+          // repede o livro na hora pra minha tela ficar ao vivo mesmo sem eu ter feito nada.
+          if(msg.itemId === marketSelectedItemId && document.getElementById('market-modal').classList.contains('open')) {
+            sendWS({ type:'market:list', itemId: marketSelectedItemId });
+          }
+          break;
+        case 'market:filled':
+          // uma oferta MINHA que já estava no livro foi preenchida (total ou
+          // parcialmente) por outro jogador enquanto eu tava online.
+          if(msg.entry.kind === 'gold') logLoot(`📦🪙 Sua oferta no Mercado foi preenchida: +${Math.round(msg.entry.amount).toLocaleString('pt-BR')} Gold.`);
+          else logLoot(`📦 Sua oferta no Mercado foi preenchida: +${msg.entry.qty}x ${(marketCatalog.find(m=>m.id===msg.entry.itemId)||{}).name || msg.entry.itemId}.`);
+          if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
+          sendWS({ type:'market:myOffers' });
+          break;
+        case 'market:offlineResult': {
+          const parts = [];
+          if(msg.goldGained > 0) parts.push(`+${Math.round(msg.goldGained).toLocaleString('pt-BR')} Gold`);
+          msg.itemsGained.forEach(it => parts.push(`+${it.qty}x ${it.name}`));
+          if(parts.length) logLoot(`📦 Enquanto você estava fora, o Mercado entregou: ${parts.join(', ')}.`);
+          break;
+        }
         case 'error': logLoot(`⚠️ ${msg.error}`); break;
       }
     });
@@ -4655,14 +4966,47 @@
       renderEnchantIfOpen();
     }
     if(msg.forType === 'profession:craft'){
-      if(msg.ok){
-        logLoot(`🔨 Criou ${msg.itemName} (${msg.rarity})!${msg.leveledUp?` ${PROFESSION_LABEL[msg.profession]} subiu pro nível ${msg.level}!`:''}`);
-      } else {
-        const reasonMap = { profissao_invalida:'profissão inválida.', receita_invalida:'receita inválida.', apenas_na_cidade_principal:'criar itens só funciona na Cidade Principal.', nivel_insuficiente:'nível de profissão insuficiente pra essa receita.', ouro_insuficiente:'ouro insuficiente.', material_insuficiente:`falta material: ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||''}.` };
+      if(msg.ok && msg.started){
+        // Craft com tempo real: a resposta só confirma que COMEÇOU (ouro e
+        // material já foram descontados no servidor) -- monta o
+        // craftingJob local na hora, sem esperar o próximo snapshot, pra
+        // barra de progresso já nascer preenchendo em vez de "pular" depois.
+        craftingJob = { profession: msg.profession, recipeId: msg.recipeId, rarity: msg.rarity, itemName: msg.itemName, startedAt: Date.now(), durationMs: msg.durationMs };
+        logLoot(`🔨 Começou a criar ${msg.itemName}...`);
+      } else if(!msg.ok){
+        const reasonMap = { profissao_invalida:'profissão inválida.', receita_invalida:'receita inválida.', apenas_na_cidade_principal:'criar itens só funciona na Cidade Principal.', nivel_insuficiente:'nível de profissão insuficiente pra essa receita.', ouro_insuficiente:'ouro insuficiente.', material_insuficiente:`falta material: ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||''}.`, ja_criando:'já tem um item sendo criado -- espere terminar.' };
         logLoot(`⚠️ Não foi possível criar o item: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderInventoryIfOpen();
       renderProfessionsIfOpen();
+    }
+    if(msg.forType === 'market:list'){
+      if(msg.ok) marketBookCache = msg.offers || [];
+      renderMarketIfOpen();
+    }
+    if(msg.forType === 'market:myOffers'){
+      if(msg.ok) marketMyOffersCache = msg.offers || [];
+      renderMarketIfOpen();
+    }
+    if(msg.forType === 'market:createOffer'){
+      if(msg.ok){
+        if(msg.tradesCount > 0) logLoot(`📦 Oferta processada: ${msg.filledQty} unidade(s) casada(s) na hora${msg.remainingQty > 0 ? `, ${msg.remainingQty} ficaram no livro aguardando comprador/vendedor` : ''}.`);
+        else logLoot(`📦 Oferta registrada no Mercado (${msg.remainingQty} unidade(s), aguardando casamento).`);
+        marketQtyDraft = 1; marketPriceDraft = 1;
+      } else {
+        const reasonMap = { tipo_invalido:'tipo de oferta inválido.', item_invalido:'item inválido.', quantidade_invalida:'quantidade inválida.', preco_invalido:'preço inválido.', limite_de_ofertas_atingido:'limite de 10 ofertas abertas atingido.', item_insuficiente:'você não tem essa quantidade do item na Mochila.', ouro_insuficiente:'ouro insuficiente.', apenas_na_cidade_principal:'o Mercado só funciona na Cidade Principal.' };
+        logLoot(`⚠️ Não foi possível criar a oferta: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
+      sendWS({ type:'market:myOffers' });
+      renderInventoryIfOpen();
+    }
+    if(msg.forType === 'market:cancelOffer'){
+      if(msg.ok) logLoot('📦 Oferta cancelada — item/ouro devolvido.');
+      else logLoot(`⚠️ Não foi possível cancelar: ${msg.reason}`);
+      if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
+      sendWS({ type:'market:myOffers' });
+      renderInventoryIfOpen();
     }
     if(msg.forType === 'item:enchant'){
       if(msg.ok && msg.success) logLoot(`✨ Refinamento bem-sucedido! Item agora está +${msg.item.enchantLevel}.`);
@@ -5802,6 +6146,42 @@
     { id:'undeads', name:'Mortos-Vivos', icon:'☠️' },
     { id:'bosses', name:'Chefes', icon:'👑' },
   ];
+  // Ícones customizados dos badges do Bestiário-por-tipo (2026-09-14) --
+  // NÃO existe nenhum ícone "oficial" de tipo de criatura em nenhuma pasta
+  // do cliente da Ravendawn (confirmado em duas cópias do dump completo,
+  // ver claude/moldura-janelas-ravendawn-e-fix-slots-notas.md). Usuário
+  // escolheu via AskUserQuestion fazer um set próprio de pictogramas SVG no
+  // mesmo espírito visual (monocromático dourado, silhueta simples) em vez
+  // de manter os emojis genéricos. Cada entrada é o MIOLO de um <svg
+  // viewBox="0 0 24 24">, desenhado só com formas primitivas (circle/
+  // ellipse/rect/polygon + no máximo uma curva Q simples) pra minimizar
+  // risco de ficar tosco sem poder testar visualmente num navegador de
+  // verdade -- ver creatureTypeIconSvg() logo abaixo. "#141210" usado como
+  // "furo" (olho, narina, fresta de dente) é hardcoded pro fundo escuro do
+  // .wiki-type-badge -- se o fundo do badge mudar de cor um dia, essas
+  // partes precisam mudar junto.
+  const CREATURE_TYPE_ICON_SVG = {
+    amphibians: `<ellipse cx="12" cy="14.5" rx="7" ry="5.5"/><circle cx="7.5" cy="8" r="2.8"/><circle cx="16.5" cy="8" r="2.8"/><circle cx="7.5" cy="8" r="1.1" fill="#141210"/><circle cx="16.5" cy="8" r="1.1" fill="#141210"/><ellipse cx="5" cy="18.5" rx="2.2" ry="1.4"/><ellipse cx="19" cy="18.5" rx="2.2" ry="1.4"/>`,
+    aquatics: `<ellipse cx="10" cy="12" rx="7" ry="4.5"/><polygon points="17,12 22,7.5 22,16.5"/><polygon points="10,7.5 13,4 15,8"/><circle cx="6" cy="11" r="1.1" fill="#141210"/>`,
+    arthropods: `<circle cx="12" cy="14" r="4.5"/><circle cx="12" cy="8" r="3"/><g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"><path d="M8 11 L2 8"/><path d="M8 13 L2 13"/><path d="M8 15.5 L2 18"/><path d="M8.5 17.5 L3.5 22"/><path d="M16 11 L22 8"/><path d="M16 13 L22 13"/><path d="M16 15.5 L22 18"/><path d="M15.5 17.5 L20.5 22"/></g>`,
+    beasts: `<ellipse cx="12" cy="17" rx="5.5" ry="4.2"/><circle cx="5.2" cy="10" r="2.1"/><circle cx="9.8" cy="6.3" r="2.1"/><circle cx="14.8" cy="6.3" r="2.1"/><circle cx="19" cy="10" r="2.1"/>`,
+    draconics: `<path d="M20 20 C14 18 4 10 2 2 C6 6 8 8 8 4 C10 9 12 10 12 4 C14 10 16 10 16 5 C17 10 19 12 20 20 Z"/>`,
+    giants: `<rect x="6" y="9" width="13" height="9" rx="4"/><rect x="7" y="17" width="6" height="5" rx="2"/><rect x="8" y="5" width="3" height="6" rx="1.4"/><rect x="11.5" y="4" width="3" height="7" rx="1.4"/><rect x="15" y="5" width="3" height="6" rx="1.4"/>`,
+    goblinoids: `<circle cx="12" cy="13" r="6"/><polygon points="5,10 2,3 8,8"/><polygon points="19,10 22,3 16,8"/><polygon points="8,18 12,22 16,18"/><circle cx="9" cy="12" r="1.1" fill="#141210"/><circle cx="15" cy="12" r="1.1" fill="#141210"/>`,
+    humanoids: `<circle cx="12" cy="8" r="5"/><rect x="5" y="14" width="14" height="8" rx="3"/><polygon points="8,11 9,15 11,12"/><polygon points="16,11 15,15 13,12"/><circle cx="9.5" cy="7" r="1" fill="#141210"/><circle cx="14.5" cy="7" r="1" fill="#141210"/>`,
+    humans: `<circle cx="12" cy="7" r="4.3"/><rect x="5" y="13" width="14" height="9" rx="4"/>`,
+    mutants: `<circle cx="12" cy="5.5" r="3.6"/><circle cx="6.6" cy="15.2" r="3.6"/><circle cx="17.4" cy="15.2" r="3.6"/><circle cx="12" cy="12" r="2.3"/><circle cx="12" cy="5.5" r="1.6" fill="#141210"/><circle cx="6.6" cy="15.2" r="1.6" fill="#141210"/><circle cx="17.4" cy="15.2" r="1.6" fill="#141210"/>`,
+    natural: `<path d="M3 12 A9 8 0 0 1 21 12 Z"/><rect x="9.5" y="12" width="5" height="8" rx="2"/><circle cx="8" cy="8" r="1" fill="#141210"/><circle cx="14" cy="6.5" r="1.2" fill="#141210"/><circle cx="17" cy="9.5" r="0.9" fill="#141210"/>`,
+    outsiders: `<circle cx="12" cy="13" r="6"/><path d="M6 9 Q2 5 4 1 Q8 3 8 8 Z"/><path d="M18 9 Q22 5 20 1 Q16 3 16 8 Z"/><polygon points="8,18 12,23 16,18"/><polygon points="8,11 10.5,12.3 8,13.6" fill="#141210"/><polygon points="16,11 13.5,12.3 16,13.6" fill="#141210"/>`,
+    reptiles: `<ellipse cx="11" cy="14" rx="6.5" ry="3.2" transform="rotate(-8 11 14)"/><path d="M17 13 Q22 10 21 17 Q19 15 17 15 Z"/><circle cx="5.5" cy="12" r="2.6"/><circle cx="4.3" cy="11" r="0.7" fill="#141210"/><ellipse cx="8" cy="18" rx="1.6" ry="1" transform="rotate(20 8 18)"/><ellipse cx="14" cy="18" rx="1.6" ry="1" transform="rotate(-20 14 18)"/>`,
+    undeads: `<ellipse cx="12" cy="10" rx="7" ry="6.5"/><rect x="8" y="14" width="8" height="5" rx="1.5"/><circle cx="9" cy="9.5" r="2" fill="#141210"/><circle cx="15" cy="9.5" r="2" fill="#141210"/><polygon points="12,11.5 10.7,14 13.3,14" fill="#141210"/><rect x="9.5" y="17" width="1.6" height="2" fill="#141210"/><rect x="13" y="17" width="1.6" height="2" fill="#141210"/>`,
+    bosses: `<polygon points="4,20 4,10 8,14 12,6 16,14 20,10 20,20"/><circle cx="4" cy="9" r="1.6"/><circle cx="12" cy="5" r="1.8"/><circle cx="20" cy="9" r="1.6"/><rect x="4" y="19" width="16" height="2.5" rx="1"/>`,
+  };
+  function creatureTypeIconSvg(id){
+    const inner = CREATURE_TYPE_ICON_SVG[id];
+    if(!inner) return '';
+    return `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${inner}</svg>`;
+  }
   const wikiModal = document.getElementById('wiki-modal');
   let wikiTab = 'itens';
   let wikiSelectedType = null;
@@ -5861,7 +6241,7 @@
     grid.innerHTML = CREATURE_TYPES_CLIENT.map(t=>{
       const count = all.filter(m=> (m.creatureType||'outsiders') === t.id).length;
       return `<div class="wiki-type-card${count===0?' empty':''}" data-type="${t.id}">
-        <div class="wiki-type-badge">${t.icon}</div>
+        <div class="wiki-type-badge">${creatureTypeIconSvg(t.id) || t.icon}</div>
         <span class="wiki-type-name">${t.name}</span>
         <span class="wiki-type-count">${count} espécie${count===1?'':'s'}</span>
       </div>`;
@@ -7777,13 +8157,15 @@
   ];
   function renderCoinShop(){
     const list = document.getElementById('coinshop-items-list');
+    const premiumIcon = `<img class="cicon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_premium.png" onerror="this.replaceWith(document.createTextNode('✨'));" />`;
+    const coinIcon = `<img class="cicon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_diamond.png" onerror="this.replaceWith(document.createTextNode('💎'));" />`;
     const statusLine = isPremium
-      ? `<div class="coin-pkg-row" style="border-color:var(--ok);"><span class="cname" style="color:var(--ok);">✨ Premium ativo${premiumExpiresAt ? ` — até ${new Date(premiumExpiresAt).toLocaleDateString('pt-BR')}` : ''}</span></div>`
+      ? `<div class="coin-pkg-row"><span class="cname" style="color:var(--ok);">${premiumIcon} Premium ativo${premiumExpiresAt ? ` — até ${new Date(premiumExpiresAt).toLocaleDateString('pt-BR')}` : ''}</span></div>`
       : '';
     list.innerHTML = statusLine + `<div class="panel-title" style="margin-top:4px;">Premium</div>` + PREMIUM_PACKAGES.map(p=>`
-      <div class="coin-pkg-row"><span class="cname">✨ Premium ${p.days} dias</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-premium="${p.id}">Comprar</button></div>
+      <div class="coin-pkg-row"><span class="cname">${premiumIcon} Premium ${p.days} dias</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-premium="${p.id}">Comprar</button></div>
     `).join('') + `<div class="panel-title" style="margin-top:10px;">Elemental Coin</div>` + ELEMENTAL_COIN_PACKAGES.map(p=>`
-      <div class="coin-pkg-row"><span class="cname">💎 ${p.coins}${p.bonusCoins?` <span style="color:var(--ok);">+${p.bonusCoins} bônus</span>`:''}</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-coin="${p.id}">Comprar</button></div>
+      <div class="coin-pkg-row"><span class="cname">${coinIcon} ${p.coins}${p.bonusCoins?` <span class="coin-bonus-badge">+${p.bonusCoins} bônus</span>`:''}</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-coin="${p.id}">Comprar</button></div>
     `).join('');
     list.querySelectorAll('[data-buy-coin]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'shop:buyElementalCoins', packageId: btn.dataset.buyCoin }));
@@ -8067,7 +8449,7 @@
       <div class="enchant-req-row"><span>Progressão</span><span>Garantida — Infusão nunca falha nem quebra o item</span></div>
       <div class="enchant-req-row" style="align-items:center;"><span><img src="${RAVENDAWN_UI_BASE}warforge_shard.png" style="width:13px;height:13px;vertical-align:-2px;object-fit:contain;margin-right:3px;" onerror="this.style.display='none'"/>Fragmento de Infusão (precisa de ${cost.shards})</span><span class="${hasShards?'ok':'missing'}">${materials.infusionShard||0}</span></div>
       <div class="infusion-progress-bar"><div class="infusion-progress-fill" style="width:${shardPct}%;"></div></div>
-      <div class="enchant-req-row" style="align-items:center;"><span>Prata</span><span class="${hasGold?'ok':'missing'}">${cost.gold.toLocaleString('pt-BR')}</span></div>
+      <div class="enchant-req-row" style="align-items:center;"><span><img src="${RAVENDAWN_UI_BASE}silver.png" style="width:15px;height:auto;vertical-align:-3px;object-fit:contain;margin-right:3px;" onerror="this.style.display='none'"/>Prata</span><span class="${hasGold?'ok':'missing'}">${cost.gold.toLocaleString('pt-BR')}</span></div>
       <div style="font-size:9px;color:var(--ink-dim);margin:2px 0 8px;">Fragmento de Infusão dropa de qualquer criatura durante a caçada — não se compra na loja.</div>
       <button class="skill-save-btn" id="infusion-go-btn" style="width:100%;margin-top:4px;" ${hasShards&&hasGold?'':'disabled'}>🔮 Infundir (Grade ${grade} → ${nextGrade})</button>
       ` : ''}
@@ -8092,10 +8474,22 @@
      abaixo é só um espelho (nome/raridade/custo/material) de
      huntEngine.CRAFTABLE_ITEMS/PROFESSION_RECIPES pra exibição -- quem
      valida e crafta de verdade é sempre o servidor (case 'profession:craft'
-     em server.js -> huntEngine.craftItem).
+     em server.js -> huntEngine.startCraft/completeCraftIfDone -- craft com
+     tempo real, ver claude/crafting-tempo-real-notas.md).
      ========================================================= */
   const professionsModal = document.getElementById('professions-modal');
   const PROFESSION_LABEL = { forja:'Forja', carpintaria:'Carpintaria', tecelagem:'Tecelagem' };
+  // Ícones reais das profissões (ui/windows/professions/icon_*.png) -- só as
+  // 3 que existem no nosso jogo (Forja=ferreiro/bigorna, Carpintaria=serrote,
+  // Tecelagem=rolo de tecido); a pasta real tem mais 7 (mineração, culinária,
+  // agricultura, pesca, criação de animais, reprodução, corte de madeira) que
+  // não implementamos (são profissões de COLETA, sistema diferente do nosso
+  // craft -- ver claude/crafting-tempo-real-notas.md).
+  const PROFESSION_ICON_URL = {
+    forja: 'https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/professions/icon_blacksmithing.png',
+    carpintaria: 'https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/professions/icon_carpentry.png',
+    tecelagem: 'https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/professions/icon_weaving.png',
+  };
   const PROFESSION_MATERIAL_LABEL = { minerio_ferro:'Minério de Ferro', barra_aco:'Barra de Aço', madeira_bruta:'Madeira Bruta', madeira_nobre:'Madeira Nobre', fio_de_la:'Fio de Lã', seda_encantada:'Seda Encantada' };
   // CORREÇÃO 2026-09-14 (ver comentário grandão equivalente em huntEngine.js
   // acima de CRAFT_BASE_WEAPONS): modelo correto é 5 ITENS NOMEADOS por
@@ -8199,12 +8593,40 @@
   });
   document.getElementById('btn-open-professions').addEventListener('click', ()=>{ professionsModal.classList.toggle('open'); renderProfessions(); });
   function renderProfessionsIfOpen(){ if(professionsModal.classList.contains('open')) renderProfessions(); }
+  // Craft com tempo real: enquanto o modal está aberto E tem um craftingJob
+  // rolando, esse intervalo re-renderiza a cada 250ms só pra barra andar
+  // suave (não depende de esperar o próximo snapshot do servidor, que pode
+  // demorar mais que isso). Para sozinho quando o job acaba ou o modal fecha.
+  function stopCraftBarInterval(){ if(craftBarInterval){ clearInterval(craftBarInterval); craftBarInterval = null; } }
+  function ensureCraftBarInterval(){
+    if(craftBarInterval || !craftingJob || !professionsModal.classList.contains('open')) return;
+    craftBarInterval = setInterval(()=>{
+      if(!craftingJob || !professionsModal.classList.contains('open')){ stopCraftBarInterval(); return; }
+      renderProfessions();
+    }, 250);
+  }
   function renderProfessions(){
-    if(!professionsModal.classList.contains('open')) return;
-    professionTabsEl.innerHTML = Object.keys(PROFESSION_LABEL).map(p=>`<div class="profession-tab ${p===professionSelectedTab?'active':''}" data-profession-tab="${p}">${PROFESSION_LABEL[p]}</div>`).join('');
+    if(!professionsModal.classList.contains('open')){ stopCraftBarInterval(); return; }
+    professionTabsEl.innerHTML = Object.keys(PROFESSION_LABEL).map(p=>`<div class="profession-tab ${p===professionSelectedTab?'active':''}" data-profession-tab="${p}"><img class="profession-tab-icon" src="${PROFESSION_ICON_URL[p]}" onerror="this.style.display='none';" />${PROFESSION_LABEL[p]}</div>`).join('');
     const body = document.getElementById('professions-body');
     const prof = professions[professionSelectedTab] || { level:1, xp:0 };
     const recipes = PROFESSION_RECIPES_CLIENT[professionSelectedTab] || [];
+    // craftingJob é ÚNICO pro jogador (não por profissão -- ver comentário em
+    // huntEngine.startCraft), então enquanto ele existir NENHUMA receita, de
+    // nenhuma aba, pode ser iniciada -- só mostra a barra cheia quando o job
+    // é da profissão que está sendo exibida agora.
+    const jobIsThisTab = craftingJob && craftingJob.profession === professionSelectedTab;
+    const progressBox = craftingJob ? (()=>{
+      const elapsed = Date.now() - craftingJob.startedAt;
+      const pct = Math.max(0, Math.min(100, Math.round(elapsed / craftingJob.durationMs * 100)));
+      const remainingS = Math.max(0, Math.ceil((craftingJob.durationMs - elapsed)/1000));
+      return `
+        <div class="craft-progress-box">
+          <div class="craft-progress-title">🔨 Criando ${craftingJob.itemName}${jobIsThisTab?'':` (${PROFESSION_LABEL[craftingJob.profession]})`}...</div>
+          <div class="craft-progress-track"><div class="craft-progress-fill" style="width:${pct}%;"><span class="craft-progress-cap"></span></div></div>
+          <div class="craft-progress-sub">${remainingS}s restantes</div>
+        </div>`;
+    })() : '';
     const rows = recipes.map(r=>{
       const locked = prof.level < r.levelReq;
       const matLines = r.materials.map(m=>{
@@ -8213,7 +8635,7 @@
         return `<div class="prec-row"><span>${PROFESSION_MATERIAL_LABEL[m.id]||m.id}</span><span class="${ok?'ok':'missing'}">${have}/${m.qty}</span></div>`;
       }).join('');
       const hasGold = (player.gold + player.bankGold) >= r.goldCost;
-      const canCraft = !locked && hasGold && r.materials.every(m=>bagQty(m.id) >= m.qty);
+      const canCraft = !locked && !craftingJob && hasGold && r.materials.every(m=>bagQty(m.id) >= m.qty);
       // Raridade sai sorteada (não é mais fixa por receita) -- mostra as
       // chances de cada resultado possível pro nível ATUAL de profissão,
       // pra dar transparência de verdade (ver craftRarityOddsClient acima).
@@ -8222,7 +8644,7 @@
         return `<div class="prec-row"><span style="color:${RARITY_COLORS[o.tier]||'var(--ink)'}">${item ? item.name : o.tier}</span><span>${o.pct.toFixed(1)}%</span></div>`;
       }).join('');
       return `
-        <div class="profession-recipe-box">
+        <div class="profession-recipe-box${canCraft?' can-craft':''}">
           <div class="prec-name">${r.name}${locked?` — requer Nível ${r.levelReq} de ${PROFESSION_LABEL[professionSelectedTab]}`:''}</div>
           <div class="prec-row"><span>Custo</span><span class="${hasGold?'ok':'missing'}">${r.goldCost} Gold</span></div>
           ${matLines}
@@ -8234,12 +8656,152 @@
     body.innerHTML = `
       <div class="profession-level-line">Nível ${prof.level}/100 — ${prof.xp} XP acumulado</div>
       ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Criar itens só funciona na Cidade Principal</div>` : ''}
+      ${progressBox}
+      ${(craftingJob && !jobIsThisTab) ? `<div class="craft-busy-note">⏳ Só dá pra iniciar outro craft quando esse terminar.</div>` : ''}
       ${rows}
     `;
     body.querySelectorAll('[data-craft-recipe]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe }));
     });
+    ensureCraftBarInterval();
   }
+
+  /* =========================================================
+     MERCADO — livro de ofertas de compra/venda entre jogadores. O
+     casamento de ordens/escrow/taxa quem faz de verdade é sempre o
+     servidor (huntEngine.js seção MERCADO); aqui só exibe o que o
+     servidor manda e monta a oferta que o jogador quer criar. Só
+     itens EMPILHÁVEIS entram (marketCatalog, vindo do 'welcome') --
+     equipamento único continua na Troca direta (#trade-modal).
+     ========================================================= */
+  const marketModal = document.getElementById('market-modal');
+  const MARKET_MATERIAL_IDS = ['minerio_ferro','barra_aco','madeira_bruta','madeira_nobre','fio_de_la','seda_encantada'];
+  document.getElementById('btn-open-market').addEventListener('click', ()=>{
+    marketModal.classList.toggle('open');
+    if(marketModal.classList.contains('open')){
+      sendWS({ type:'market:myOffers' });
+      if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
+      renderMarket();
+    }
+  });
+  function renderMarketIfOpen(){ if(marketModal.classList.contains('open')) renderMarket(); }
+  function selectMarketItem(itemId){
+    marketSelectedItemId = itemId;
+    marketQtyDraft = 1; marketPriceDraft = 1;
+    sendWS({ type:'market:list', itemId });
+    renderMarket();
+  }
+  function marketPickRow(offer){
+    // clicar numa oferta que já tá no livro pré-preenche o formulário com a
+    // AÇÃO COMPLEMENTAR (clicar numa venda pré-monta uma compra que casa com
+    // ela na hora, e vice-versa) -- atalho de "comprar/vender a preço de mercado".
+    marketOfferTypeDraft = offer.type === 'sell' ? 'buy' : 'sell';
+    marketQtyDraft = offer.qty;
+    marketPriceDraft = offer.pricePerUnit;
+    renderMarket();
+  }
+  function renderMarket(){
+    if(!marketModal.classList.contains('open')) return;
+    // --- lista de itens (esquerda) ---
+    const materiais = marketCatalog.filter(it=>MARKET_MATERIAL_IDS.includes(it.id));
+    const pocoes = marketCatalog.filter(it=>!MARKET_MATERIAL_IDS.includes(it.id));
+    const rowHtml = it => `<div class="market-item-row ${it.id===marketSelectedItemId?'selected':''}" data-market-item="${it.id}"><span>${it.name}</span><span class="miq">${bagQty(it.id)}x</span></div>`;
+    document.getElementById('market-item-list').innerHTML =
+      `<div class="market-category-header">Materiais</div>${materiais.map(rowHtml).join('')}` +
+      `<div class="market-category-header">Poções</div>${pocoes.map(rowHtml).join('')}`;
+    document.getElementById('market-item-list').querySelectorAll('[data-market-item]').forEach(row=>{
+      row.addEventListener('click', ()=> selectMarketItem(row.dataset.marketItem));
+    });
+    // --- cabeçalho + abas (direita) ---
+    const selectedDef = marketCatalog.find(it=>it.id===marketSelectedItemId);
+    document.getElementById('market-selected-name').textContent = selectedDef ? selectedDef.name : 'Selecione um item à esquerda';
+    document.getElementById('market-my-gold').innerHTML = `<img src="${RAVENDAWN_UI_BASE}silver.png" style="width:13px;height:auto;vertical-align:-2px;object-fit:contain;margin-right:2px;" onerror="this.style.display='none'"/>${Math.round(player.gold).toLocaleString('pt-BR')}`;
+    document.querySelectorAll('.market-tab').forEach(tab=> tab.classList.toggle('active', tab.dataset.marketTab === marketViewTab));
+    // --- lista de ofertas ---
+    const listEl = document.getElementById('market-offer-list');
+    if(marketViewTab === 'my'){
+      if(!marketMyOffersCache.length){
+        listEl.innerHTML = `<div class="market-empty">Você não tem nenhuma oferta aberta no Mercado.</div>`;
+      } else {
+        listEl.innerHTML = marketMyOffersCache.map(o=>`
+          <div class="market-offer-row mine">
+            <span class="market-type-badge ${o.type}"></span>
+            <span>${o.itemName} — ${o.qty}x</span>
+            <span>${o.pricePerUnit.toLocaleString('pt-BR')}/un</span>
+            <span class="mo-total">${(o.qty*o.pricePerUnit).toLocaleString('pt-BR')}</span>
+            <button class="market-my-offers-cancel" data-cancel-offer="${o.id}">Cancelar</button>
+          </div>`).join('');
+        listEl.querySelectorAll('[data-cancel-offer]').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'market:cancelOffer', offerId: btn.dataset.cancelOffer })));
+      }
+    } else if(!marketSelectedItemId){
+      listEl.innerHTML = `<div class="market-empty">Escolha um item à esquerda pra ver o livro de ofertas.</div>`;
+    } else {
+      const sells = marketBookCache.filter(o=>o.type==='sell').sort((a,b)=>a.pricePerUnit-b.pricePerUnit);
+      const buys = marketBookCache.filter(o=>o.type==='buy').sort((a,b)=>b.pricePerUnit-a.pricePerUnit);
+      const rowOf = o => `
+        <div class="market-offer-row ${o.ownerName===PLAYER_NICK?'mine':''}" data-offer-id="${o.id}">
+          <span class="market-type-badge ${o.type}"></span>
+          <span>${escapeHtml(o.ownerName)}</span>
+          <span>${o.qty}x</span>
+          <span>${o.pricePerUnit.toLocaleString('pt-BR')}/un</span>
+          <span class="mo-total">${(o.qty*o.pricePerUnit).toLocaleString('pt-BR')}</span>
+        </div>`;
+      listEl.innerHTML =
+        `<div class="market-category-header">À venda (clique pra comprar)</div>` +
+        (sells.length ? sells.map(rowOf).join('') : `<div class="market-empty">Ninguém vendendo ainda.</div>`) +
+        `<div class="market-category-header">Comprando (clique pra vender)</div>` +
+        (buys.length ? buys.map(rowOf).join('') : `<div class="market-empty">Ninguém comprando ainda.</div>`);
+      listEl.querySelectorAll('[data-offer-id]').forEach(row=>{
+        row.addEventListener('click', ()=>{
+          const offer = marketBookCache.find(o=>o.id===row.dataset.offerId);
+          if(offer) marketPickRow(offer);
+        });
+      });
+    }
+    // --- formulário de criar oferta ---
+    const formWrap = document.getElementById('market-form-wrap');
+    if(marketViewTab !== 'book' || !marketSelectedItemId){ formWrap.innerHTML = ''; return; }
+    const have = bagQty(marketSelectedItemId);
+    const total = Math.max(0, Math.floor(marketQtyDraft)) * Math.max(0, Math.floor(marketPriceDraft));
+    const canSubmit = marketQtyDraft > 0 && marketPriceDraft > 0 && (marketOfferTypeDraft === 'buy' ? total <= player.gold + (player.bankGold||0) : have >= marketQtyDraft);
+    formWrap.innerHTML = `
+      <div class="market-divider"></div>
+      <div class="market-form">
+        <div class="market-form-row">
+          <div class="market-type-toggle">
+            <div class="market-type-btn ${marketOfferTypeDraft==='sell'?'active':''}" data-market-type="sell"><span class="market-type-badge sell"></span>Vender</div>
+            <div class="market-type-btn ${marketOfferTypeDraft==='buy'?'active':''}" data-market-type="buy"><span class="market-type-badge buy"></span>Comprar</div>
+          </div>
+          <span style="margin-left:auto;">Você tem: <b style="color:var(--gold-bright);">${have}x</b></span>
+        </div>
+        <div class="market-form-row">
+          <span>Quantidade</span>
+          <button class="market-amount-btn minus" id="market-qty-minus"></button>
+          <input class="market-qty-input" id="market-qty-input" type="number" min="1" max="9999" value="${marketQtyDraft}">
+          <button class="market-amount-btn plus" id="market-qty-plus"></button>
+          <span style="margin-left:12px;">Preço/un</span>
+          <input class="market-price-input" id="market-price-input" type="number" min="1" max="1000000" value="${marketPriceDraft}">
+        </div>
+        <div class="market-total-line">Total: <b>${total.toLocaleString('pt-BR')} Gold</b>${marketOfferTypeDraft==='sell' ? ` (taxa de ${Math.round(marketFeeRate*100)}% já é descontada na venda)` : ''}</div>
+        <button id="market-submit-btn" ${canSubmit?'':'disabled'}>${marketOfferTypeDraft==='sell'?'Criar Oferta de Venda':'Criar Oferta de Compra'}</button>
+        <div class="market-fee-note">Casamento automático: se já existir oferta compatível no livro, sua oferta casa na hora ao preço de quem já estava esperando.</div>
+      </div>
+    `;
+    formWrap.querySelectorAll('[data-market-type]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ marketOfferTypeDraft = btn.dataset.marketType; renderMarket(); });
+    });
+    document.getElementById('market-qty-minus').addEventListener('click', ()=>{ marketQtyDraft = Math.max(1, (marketQtyDraft||1)-1); renderMarket(); });
+    document.getElementById('market-qty-plus').addEventListener('click', ()=>{ marketQtyDraft = Math.min(9999, (marketQtyDraft||1)+1); renderMarket(); });
+    document.getElementById('market-qty-input').addEventListener('change', e=>{ marketQtyDraft = Math.max(1, Math.min(9999, parseInt(e.target.value)||1)); renderMarket(); });
+    document.getElementById('market-price-input').addEventListener('change', e=>{ marketPriceDraft = Math.max(1, Math.min(1000000, parseInt(e.target.value)||1)); renderMarket(); });
+    const submitBtn = document.getElementById('market-submit-btn');
+    if(submitBtn) submitBtn.addEventListener('click', ()=>{
+      sendWS({ type:'market:createOffer', offerType: marketOfferTypeDraft, itemId: marketSelectedItemId, qty: marketQtyDraft, pricePerUnit: marketPriceDraft });
+    });
+  }
+  document.querySelectorAll('.market-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{ marketViewTab = tab.dataset.marketTab; renderMarket(); });
+  });
 
   /* =========================================================
      PETS + GACHA — catálogo espelhado de huntEngine.PETS_CATALOG só
