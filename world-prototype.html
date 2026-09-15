@@ -78,6 +78,13 @@
      na tela) -- não mexe nos vários 🪙 de texto espalhados em log/popover/
      etc., que continuam emoji mesmo (funcionam bem inline com texto). */
   .tb-gold-icon{ width:15px; height:auto; vertical-align:-2px; object-fit:contain; margin-right:1px; }
+  /* Pedido do usuário: trocar o ícone da Elemental Coin (antes 💎, parecia
+     um "redemoinho" no tamanho pequeno do pill) por uma moeda de ouro.
+     Reaproveita o MESMO silver.png já usado no pill de Ouro (arte real,
+     comprovadamente transparente) só que com um filtro CSS pra virar
+     dourado em vez de prateado -- assim não depende de nenhum asset novo
+     não testado e ainda fica visualmente diferente do pill de Ouro. */
+  .tb-coin-icon{ filter:sepia(1) saturate(6) hue-rotate(-10deg) brightness(1.05); }
   #tb-online{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); white-space:nowrap; }
   #tb-icons{ margin-left:auto; display:flex; gap:6px; }
   .tb-icon{ width:34px; height:34px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
@@ -161,7 +168,16 @@
   .popover.show{ display:block; }
   .popover b{ color:var(--gold-bright); }
   .popover .row{ display:flex; justify-content:space-between; }
-  #profile-popover{ top:100%; left:0; margin-top:8px; }
+  #profile-popover{ top:100%; left:0; margin-top:8px; width:250px; }
+  /* Tooltip do personagem (hover na foto) remodelado igual ao huntera --
+     pedido do usuário: HP/Mana reais em barra + taxa de EXP total, além das
+     stats de Treino que já existiam. Reaproveita .char-bar-track/.char-bar-fill
+     (já usados no Modal de Personagem) só que numa linha mais compacta pra
+     caber nos 250px do popover (o .val/.lbl largos do modal estourariam aqui). */
+  .pf-pop-bar-row{ display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+  .pf-pop-bar-row .char-bar-track{ flex:1; height:9px; }
+  .pf-pop-bar-row .val{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); white-space:nowrap; }
+  .pf-pop-sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--gold-bright); margin-bottom:4px; }
   #bank-popover{ top:100%; left:0; margin-top:8px; width:210px; }
   #bank-popover .row{ display:flex; justify-content:space-between; padding:2px 0; }
   #dispatch-popover .opt-box{ display:flex; align-items:center; gap:6px; padding:5px 0; }
@@ -505,25 +521,34 @@
      desenhando na resolução do retrato (90x150, mesma matemática de âncora
      de drawCharacterLayers) e só é ENCOLHIDO visualmente aqui via CSS. */
   .cosmetic-outfit-canvas{ width:32px; height:44px; image-rendering:pixelated; pointer-events:none; }
+  /* Layout novo (pedido do usuário com print do Character(X) real do jogo-
+     fonte): coluna ESQUERDA = peças de armadura empilhadas na ordem certa
+     (Elmo > Armadura > Calças > Botas — antes Calças/Botas ficavam soltas
+     nos cantos, sem relação visual com o resto do set); coluna DIREITA =
+     Amuleto + os 2 slots de Acessório (ver ACCESSORY_SLOT_TYPES no
+     huntEngine.js — luva virou acessório igual anel, não é mais slot
+     próprio); Arma+Offhand na linha de baixo, ocupando as 2 colunas. */
   .equip-grid3{
     display:grid;
-    grid-template-columns:repeat(3, 46px);
-    grid-template-rows:repeat(3, 46px);
-    gap:12px 10px;
+    grid-template-columns:repeat(2, 46px);
+    grid-template-rows:repeat(5, 46px);
+    gap:10px;
     grid-template-areas:
-      "topL    topC   topR"
-      "midL    midC   midR"
-      "botL    botC   botR";
+      "helmet      amulet"
+      "armor       accessory1"
+      "legs        accessory2"
+      "boots       ."
+      "weapon      offhand";
   }
-  .equip-grid3 [data-equip="gloves"]{ grid-area:topL; }
-  .equip-grid3 [data-equip="helmet"]{ grid-area:topC; }
-  .equip-grid3 [data-equip="amulet"]{ grid-area:topR; }
-  .equip-grid3 [data-equip="weapon"]{ grid-area:midL; }
-  .equip-grid3 [data-equip="armor"]{ grid-area:midC; }
-  .equip-grid3 [data-equip="offhand"]{ grid-area:midR; }
-  .equip-grid3 [data-equip="ring"]{ grid-area:botL; }
-  .equip-grid3 [data-equip="boots"]{ grid-area:botC; }
-  .equip-grid3 [data-equip="legs"]{ grid-area:botR; }
+  .equip-grid3 [data-equip="helmet"]{ grid-area:helmet; }
+  .equip-grid3 [data-equip="amulet"]{ grid-area:amulet; }
+  .equip-grid3 [data-equip="armor"]{ grid-area:armor; }
+  .equip-grid3 [data-equip="accessory1"]{ grid-area:accessory1; }
+  .equip-grid3 [data-equip="legs"]{ grid-area:legs; }
+  .equip-grid3 [data-equip="accessory2"]{ grid-area:accessory2; }
+  .equip-grid3 [data-equip="boots"]{ grid-area:boots; }
+  .equip-grid3 [data-equip="weapon"]{ grid-area:weapon; }
+  .equip-grid3 [data-equip="offhand"]{ grid-area:offhand; }
   /* BUG (achado 2026-09-14, relatado pelo usuário via print do Inventário):
      esta regra é de ANTES de existir ícone de slot vazio — na época, um slot
      sem item não tinha nada pra mostrar, então escondia o <span class="slot-icon">
@@ -1324,7 +1349,12 @@
       <span class="tb-avatar">🧙</span>
       <span class="tb-namelv"><b id="tb-nick">—</b><span id="premium-badge" class="free">FREE</span><small id="tb-level">Nv. 1</small></span>
       <div class="popover glass" id="profile-popover">
-        <div class="row"><span>Nível</span><b id="pf-level">1</b></div>
+        <div class="pf-pop-bar-row"><div class="char-bar-track"><div class="char-bar-fill hp" id="pf-hp-fill" style="width:100%"></div></div><span class="val" id="pf-hp-text">0/0</span></div>
+        <div class="pf-pop-bar-row"><div class="char-bar-track"><div class="char-bar-fill mp" id="pf-mp-fill" style="width:100%"></div></div><span class="val" id="pf-mp-text">0/0</span></div>
+        <div class="pf-pop-sub" id="pf-pop-xpbonus">Taxa de EXP +0%</div>
+        <div class="row" style="margin-top:6px;"><span>Nível</span><b id="pf-level">1</b></div>
+        <div class="row"><span>Dano</span><b id="pf-dano">0</b></div>
+        <div class="row"><span>Armadura</span><b id="pf-armadura">0</b></div>
         <div class="row"><span>Magia</span><b id="pf-magia">0</b></div>
         <div class="row"><span>Defesa</span><b id="pf-defesa">0</b></div>
         <div class="row"><span>Esquiva</span><b id="pf-esquiva">0</b></div>
@@ -1355,7 +1385,7 @@
         <div id="bank-msg" class="italic-note"></div>
       </div>
     </div>
-    <div class="tb-pill" id="tb-coin-pill" title="Elemental Coin — comprada com Moeda Real, usada pra Reset da Árvore e Refinamento. Clique pra comprar mais.">💎 <span id="tb-elementalcoins">0</span></div>
+    <div class="tb-pill" id="tb-coin-pill" title="Elemental Coin — comprada com Moeda Real, usada pra Reset da Árvore e Refinamento. Clique pra comprar mais."><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/silver.png" class="tb-gold-icon tb-coin-icon" alt="" onerror="this.replaceWith(document.createTextNode('🪙'));" /> <span id="tb-elementalcoins">0</span></div>
     <div class="tb-pill tb-shop" id="btn-open-shop"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/shop.png" alt=""> Loja</div>
     <div class="tb-pill" id="btn-open-rank" title="Rank Geral"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/rank.png" alt=""> Rank</div>
     <div id="tb-online">— jogadores online</div>
@@ -1756,11 +1786,19 @@
         <div id="inv-char-name">—</div>
         <div id="inv-portrait-wrap"><canvas id="inv-portrait-canvas" width="90" height="150"></canvas></div>
         <!-- Os 3 cosméticos ficam numa linha horizontal centralizada, LOGO
-             ACIMA do Elmo (igual ao Huntera). Abaixo, o grid de combate:
-               (—)  | Elmo | Amuleto
-               Arma | Armadura | Offhand
-               Anel | Botas | (—)
-             Anel fica embaixo da Arma (nunca perto da cabeça). Cada slot
+             ACIMA do Elmo (igual ao Huntera). Abaixo, o grid de combate
+             (layout 2026-09-15, baseado no print do Character(X) real do
+             jogo-fonte que o usuário mandou):
+               Elmo     | Amuleto
+               Armadura | Acessório 1
+               Calças   | Acessório 2
+               Botas    | (—)
+               Arma     | Offhand
+             Coluna esquerda = set de armadura na ordem certa (Calças embaixo
+             da Armadura, Botas embaixo da Calças — pedido do usuário).
+             Coluna direita = Amuleto + os 2 slots de Acessório (Anel/Luva
+             disputam o mesmo pool de 2 slots — ver ACCESSORY_SLOT_TYPES no
+             huntEngine.js). Arma+Offhand na última linha. Cada slot
              começa vazio (ícone escondido via .slot-icon) — só aparece
              quando de fato tem item equipado; arraste um item da Mochila
              pra cá pra equipar, ou clique num slot ocupado pra desequipar.
@@ -1777,15 +1815,21 @@
           <div class="equip-slot" data-cosmetic="wings" title="Asas"><span class="slot-icon">🪽</span><span class="slot-tag">Asas</span></div>
         </div>
         <div class="equip-grid3">
-          <div class="equip-slot" data-equip="gloves" title="Luvas"><span class="slot-icon" data-icon-slot="gloves"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Luvas</span></div>
           <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon" data-icon-slot="helmet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Elmo</span></div>
           <div class="equip-slot" data-equip="amulet" title="Amuleto"><span class="slot-icon" data-icon-slot="amulet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Amuleto</span></div>
-          <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon" data-icon-slot="weapon"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Arma</span></div>
           <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon" data-icon-slot="armor"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Armadura</span></div>
-          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Offhand</span></div>
-          <div class="equip-slot" data-equip="ring" title="Anel"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Anel</span></div>
-          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Botas</span></div>
+          <!-- Acessório 1/2: pool genérico onde tanto Anel quanto Luva se
+               encaixam (RavenQuest real: luva é acessório, não peça de
+               armadura própria) -- data-icon-slot fica travado em "ring" só
+               pro DESENHO do slot vazio/placeholder de fallback, a chave
+               funcional de verdade é data-equip (accessory1/accessory2),
+               que o servidor decide sozinho qual dos 2 usar ao equipar. -->
+          <div class="equip-slot" data-equip="accessory1" title="Acessório"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Acessório</span></div>
           <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Calças</span></div>
+          <div class="equip-slot" data-equip="accessory2" title="Acessório"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Acessório</span></div>
+          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Botas</span></div>
+          <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon" data-icon-slot="weapon"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Arma</span></div>
+          <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Offhand</span></div>
         </div>
       </div>
       <div id="inv-items-col">
@@ -2227,7 +2271,7 @@
   let quickSellMarks = [];
   let blessingsCount = 0, blessingProtectionPct = 0, nextBlessingCost = null;
   let invSlotFrame = 1; // Visual escolhido pro slot da Bolsa/Mochila (1-6, ver huntEngine.setInvSlotFrame)
-  let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, ring:null, amulet:null, legs:null };
+  let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, accessory1:null, accessory2:null, amulet:null, legs:null };
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
   let party = null; // { id, leaderUsername, members:[...] }
   let rateio = null; // projecao ao vivo do Rateio de custo em grupo (ver getRateioSnapshot no servidor) -- null = desligado/sem grupo
@@ -4349,18 +4393,39 @@
      ========================================================= */
   const profileHover = document.getElementById('profile-hover');
   const profilePopover = document.getElementById('profile-popover');
-  profileHover.addEventListener('mouseenter', ()=>{
+  // Mesmo bug/fix do Robô de Venda (ver dispatchPopover acima): o popover
+  // fica 8px ACIMA/ABAIXO do gatilho (ver CSS #profile-popover), então
+  // existe uma faixa morta que fecha o popover ANTES do mouse alcançar o
+  // botão "Ver Personagem" -- agora com mais conteúdo (barras de HP/Mana) o
+  // popover ficou mais alto ainda, tornando isso mais fácil de acontecer.
+  // Fecha com atraso cancelável + também escuta hover no próprio popover.
+  let profileCloseTimer = null;
+  function openProfilePopover(){
+    clearTimeout(profileCloseTimer);
     document.getElementById('pf-level').textContent = player.level;
+    document.getElementById('pf-hp-fill').style.width = `${player.hpMax ? Math.max(0,Math.min(100,player.hp/player.hpMax*100)) : 0}%`;
+    document.getElementById('pf-hp-text').textContent = `${Math.round(player.hp)}/${player.hpMax}`;
+    document.getElementById('pf-mp-fill').style.width = `${player.mpMax ? Math.max(0,Math.min(100,player.mp/player.mpMax*100)) : 0}%`;
+    document.getElementById('pf-mp-text').textContent = `${Math.round(player.mp)}/${player.mpMax}`;
+    document.getElementById('pf-pop-xpbonus').textContent = `Taxa de EXP +${Math.round((xpBonus&&xpBonus.totalPct)||0)}%`;
+    const cs = combatStats || {};
+    document.getElementById('pf-dano').textContent = cs.dps!=null ? cs.dps : '—';
+    document.getElementById('pf-armadura').textContent = cs.armor!=null ? cs.armor : '—';
     document.getElementById('pf-magia').textContent = Math.round(training.magia);
     document.getElementById('pf-defesa').textContent = Math.round(training.defesa);
     document.getElementById('pf-esquiva').textContent = Math.round(training.esquiva);
     document.getElementById('pf-critico').textContent = Math.round(training.critico);
     document.getElementById('pf-melee').textContent = `${Math.round(training.sword)}/${Math.round(training.axe)}/${Math.round(training.club)}`;
     document.getElementById('pf-distance').textContent = Math.round(training.distance);
-    document.getElementById('pf-vip').textContent = isPremium ? 'Premium ativo' : 'Free';
+    const diasRestantes = (isPremium && premiumExpiresAt) ? Math.max(0, Math.ceil((premiumExpiresAt - Date.now())/86400000)) : null;
+    document.getElementById('pf-vip').textContent = isPremium ? `Premium ativo${diasRestantes!=null?` — ${diasRestantes} dia(s) restantes`:''}` : 'Free';
     profilePopover.classList.add('show');
-  });
-  profileHover.addEventListener('mouseleave', ()=> profilePopover.classList.remove('show'));
+  }
+  function scheduleCloseProfilePopover(){ clearTimeout(profileCloseTimer); profileCloseTimer = setTimeout(()=> profilePopover.classList.remove('show'), 220); }
+  profileHover.addEventListener('mouseenter', openProfilePopover);
+  profileHover.addEventListener('mouseleave', scheduleCloseProfilePopover);
+  profilePopover.addEventListener('mouseenter', openProfilePopover);
+  profilePopover.addEventListener('mouseleave', scheduleCloseProfilePopover);
 
   /* =========================================================
      BANCO — depositar/sacar entre ouro em mãos (player.gold) e o banco
@@ -4413,8 +4478,25 @@
   // popover "Vender sozinho quando..." abre por HOVER, igual antes.
   const dispatchPill = document.getElementById('dispatch-pill');
   const dispatchPopover = document.getElementById('dispatch-popover');
-  dispatchPill.addEventListener('mouseenter', ()=> dispatchPopover.classList.add('show'));
-  dispatchPill.addEventListener('mouseleave', ()=> dispatchPopover.classList.remove('show'));
+  // Bug reportado: "clico no checkbox do Robô de Venda e o modal some, o
+  // clique não funciona". Causa: o popover é posicionado 10px ACIMA do pill
+  // (ver CSS ".hunt-pill .popover"), então existe uma faixa morta entre os
+  // dois que não pertence a nenhum dos dois elementos. Ao mover o mouse do
+  // pill pro checkbox lá dentro, o cursor cruza essa faixa morta, dispara
+  // mouseleave no pill (o alvo embaixo do cursor não é mais o pill nem um
+  // descendente dele) e o listener antigo fechava o popover NA HORA -- ele
+  // sumia bem no meio do movimento, antes do clique no checkbox chegar a
+  // acontecer. Fix: fechar com um pequeno atraso (cancelável) e also ouvir
+  // hover no PRÓPRIO popover, formando uma ponte -- moving pill -> vão morto
+  // -> popover agora mantém o popover aberto o tempo todo, igual dropdown
+  // de hover comum feito certo.
+  let dispatchCloseTimer = null;
+  function openDispatchPopover(){ clearTimeout(dispatchCloseTimer); dispatchPopover.classList.add('show'); }
+  function scheduleCloseDispatchPopover(){ clearTimeout(dispatchCloseTimer); dispatchCloseTimer = setTimeout(()=> dispatchPopover.classList.remove('show'), 220); }
+  dispatchPill.addEventListener('mouseenter', openDispatchPopover);
+  dispatchPill.addEventListener('mouseleave', scheduleCloseDispatchPopover);
+  dispatchPopover.addEventListener('mouseenter', openDispatchPopover);
+  dispatchPopover.addEventListener('mouseleave', scheduleCloseDispatchPopover);
   document.getElementById('dispatch-bagfull-cb').addEventListener('change', e=>{
     autoSellOnBagFull = e.target.checked;
     sendWS({ type:'hunt:configure', autoSellOnBagFull });
@@ -4971,11 +5053,21 @@
         // material já foram descontados no servidor) -- monta o
         // craftingJob local na hora, sem esperar o próximo snapshot, pra
         // barra de progresso já nascer preenchendo em vez de "pular" depois.
-        craftingJob = { profession: msg.profession, recipeId: msg.recipeId, rarity: msg.rarity, itemName: msg.itemName, startedAt: Date.now(), durationMs: msg.durationMs };
-        logLoot(`🔨 Começou a criar ${msg.itemName}...`);
+        craftingJob = { profession: msg.profession, recipeId: msg.recipeId, displayName: msg.displayName, startedAt: Date.now(), durationMs: msg.durationMs };
+        logLoot(`🔨 Começou a criar ${msg.displayName}...`);
       } else if(!msg.ok){
         const reasonMap = { profissao_invalida:'profissão inválida.', receita_invalida:'receita inválida.', apenas_na_cidade_principal:'criar itens só funciona na Cidade Principal.', nivel_insuficiente:'nível de profissão insuficiente pra essa receita.', ouro_insuficiente:'ouro insuficiente.', material_insuficiente:`falta material: ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||''}.`, ja_criando:'já tem um item sendo criado -- espere terminar.' };
         logLoot(`⚠️ Não foi possível criar o item: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderInventoryIfOpen();
+      renderProfessionsIfOpen();
+    }
+    if(msg.forType === 'profession:refine'){
+      if(msg.ok){
+        logLoot(`⚗️ Refinou e ganhou ${msg.gainedName || msg.gained}${msg.wentToTrash?' (mochila cheia — foi pra Lixeira)':''}.`);
+      } else {
+        const reasonMap = { profissao_invalida:'profissão inválida.', apenas_na_cidade_principal:'refinar só funciona na Cidade Principal.', material_insuficiente:`material insuficiente (${msg.have||0}/${msg.need||PROFESSION_REFINE_RATIO_CLIENT}).` };
+        logLoot(`⚠️ Não foi possível refinar: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderInventoryIfOpen();
       renderProfessionsIfOpen();
@@ -6666,7 +6758,13 @@
       const iconSpan = el.querySelector('.slot-icon');
       iconSpan.style.color = item ? (RARITY_COLORS[item.rarity]||'#a99872') : '';
       if(item && item.icon){
-        iconSpan.innerHTML = `<img src="${equipIconUrl(item.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="this.parentElement.innerHTML=(ITEM_TYPE_ICON_SVG[this.parentElement.dataset.iconSlot]||'');" />`;
+        // dataset.itemType = tipo REAL do item equipado (ex.: 'gloves' pode
+        // estar guardado tanto em accessory1 quanto accessory2) -- usado só
+        // se a imagem quebrar, pra cair no SVG de fallback certo em vez de
+        // sempre usar dataset.iconSlot (que nos 2 slots de Acessório fica
+        // travado em 'ring', só pro desenho do slot VAZIO).
+        iconSpan.dataset.itemType = item.slot || '';
+        iconSpan.innerHTML = `<img src="${equipIconUrl(item.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="this.parentElement.innerHTML=(ITEM_TYPE_ICON_SVG[this.parentElement.dataset.itemType||this.parentElement.dataset.iconSlot]||'');" />`;
       } else {
         iconSpan.innerHTML = equipSlotPlaceholderHtml(iconSpan.dataset.iconSlot);
       }
@@ -7197,7 +7295,29 @@
         const sp = getUnlockedSpells().find(s=>s.id===slot.id);
         icon = sp ? `<img src="${spellIconUrl(sp.name)}" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','${SPELL_KIND_ICON[sp.node.kind]}')" />` : '흔';
       }
-      else if(slot.kind==='item'){ const pot = POTIONS.find(p=>p.id===slot.id); icon = pot ? `<img src="${pot.icon}" style="width:28px;height:28px;object-fit:contain;" />` : '흔'; locked = pot ? !canUsePotion(pot) : false; }
+      else if(slot.kind==='item'){
+        const pot = POTIONS.find(p=>p.id===slot.id);
+        if(pot){
+          icon = `<img src="${pot.icon}" style="width:28px;height:28px;object-fit:contain;" />`;
+          locked = !canUsePotion(pot);
+        } else {
+          // Poção não encontrada no catálogo (id salvo no localStorage do
+          // navegador ficou órfão -- ex.: um id antigo de uma versão anterior
+          // do POTIONS) -- pedido do usuário: "quero esses slots livres...
+          // preciso que fique igual aos outros". Antes disso caía no fallback
+          // '흔' (caractere coreano), que sem glifo na fonte do jogo o
+          // navegador desenha como uma caixa/losango cinza genérica -- OS
+          // slots pareciam ter uma "poção cinza" travada sem jeito de tirar
+          // (o botão "Remover deste slot" nem aparecia, porque ele só existe
+          // quando slot.kind é verdade -- e aqui slot.kind JÁ era 'item', só
+          // o ícone que quebrava). Fix definitivo: se a poção salva não
+          // existe mais no catálogo, trata como slot vazio de verdade (limpa
+          // e persiste), em vez de mostrar um ícone quebrado pra sempre.
+          hotbar[i] = { kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 };
+          slot = hotbar[i];
+          saveLocalHotbarItems();
+        }
+      }
       el.className = 'slot' + (slot.kind?' filled':'') + (locked?' locked':'');
       const remainingMs = slot.kind && slot.cooldownUntil > Date.now() ? slot.cooldownUntil - Date.now() : 0;
       if(remainingMs > 0) cooldownPeakMs[i] = Math.max(cooldownPeakMs[i]||0, remainingMs);
@@ -8209,10 +8329,15 @@
      nada aqui é confiável pra validação, só espelha o mesmo cálculo).
      ========================================================= */
   const enchantModal = document.getElementById('enchant-modal');
-  const ENCHANT_SLOTS = ['weapon','offhand','helmet','armor','boots','legs','ring','amulet'];
-  const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', legs:'Calças', ring:'Anel', amulet:'Colar' };
+  // 'ring' virou o pool de 2 slots genéricos accessory1/accessory2 (luva
+  // também cai lá — ver ACCESSORY_SLOT_TYPES no huntEngine.js). O item
+  // guardado em accessory1/2 continua com item.slot='ring' ou 'gloves'
+  // (é isso que computeBaseItemStatsClient usa pra pegar o status certo),
+  // aqui é só a CHAVE do painel de Encantamento/Infusão que muda.
+  const ENCHANT_SLOTS = ['weapon','offhand','helmet','armor','boots','legs','accessory1','accessory2','amulet'];
+  const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', legs:'Calças', accessory1:'Acessório 1', accessory2:'Acessório 2', amulet:'Colar' };
   const RARITY_STAT_MULT = { comum:1, incomum:1.4, rara:2, 'épica':3, 'lendária':4.5 };
-  const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, legs:{def:5}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3} };
+  const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, legs:{def:5}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3}, gloves:{atk:3,critPct:2} };
   const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %' };
   const ENCHANT_MAX_LEVEL = 10;
   const ENCHANT_SUCCESS_CHANCE = { 1:1.0, 2:.95, 3:.9, 4:.8, 5:.7, 6:.6, 7:.5, 8:.4, 9:.3, 10:.2 };
@@ -8252,13 +8377,30 @@
     Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*10)/10);
     return out;
   }
+  // Espelha getInfusionBaseMult/getInfusionScaledStats do huntEngine.js --
+  // pedido do usuário: "a descrição do item após ganhar o bônus da infusão
+  // não muda". O rótulo "· Grade X" já aparecia no tooltip, mas os NÚMEROS
+  // de status ao lado vinham só de getItemTotalStatsClient, que nunca
+  // considerava Infusão (só Encantamento) -- o item parecia não ter ganho
+  // nada de verdade, mesmo com a Grade certa mostrada.
+  const INFUSION_BASE_STAT_PCT_PER_GRADE_CLIENT = 0.05;
+  const INFUSION_VALUE_PCT_PER_GRADE_CLIENT = 0.10;
+  function getInfusionBaseMultClient(item){ return 1 + ((item && item.infusionGrade) || 0) * INFUSION_BASE_STAT_PCT_PER_GRADE_CLIENT; }
+  function getInfusionScaledSecondaryClient(item){
+    const grade = (item && item.infusionGrade) || 0;
+    if(!item || !item.infusionStats || grade <= 0) return [];
+    const mult = 1 + grade * INFUSION_VALUE_PCT_PER_GRADE_CLIENT;
+    return (item.infusionStats.secondary||[]).map(s=>({ key:s.key, label:s.label, value: Math.round(s.value*mult*10)/10 }));
+  }
   function getItemTotalStatsClient(item){
     if(!item || !item.slot) return {};
     const base = computeBaseItemStatsClient(item.slot, item.rarity);
-    const mult = 1 + (item.enchantLevel||0)*0.08;
+    const enchantMult = 1 + (item.enchantLevel||0)*0.08;
+    const infusionMult = getInfusionBaseMultClient(item);
     const out = {};
-    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*10)/10);
+    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*enchantMult*infusionMult*10)/10);
     (item.bonusStats||[]).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
+    getInfusionScaledSecondaryClient(item).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
     return out;
   }
   function formatStats(stats){
@@ -8479,6 +8621,16 @@
      ========================================================= */
   const professionsModal = document.getElementById('professions-modal');
   const PROFESSION_LABEL = { forja:'Forja', carpintaria:'Carpintaria', tecelagem:'Tecelagem' };
+  // Refino manual (10 básico -> 1 refinado) -- espelha PROFESSION_MATERIALS
+  // do huntEngine.js. Pedido do usuário: os materiais refinados (Barra de
+  // Aço/Madeira Nobre/Seda Encantada) dropavam mas não tinham em que serem
+  // usados -- ver huntEngine.refineProfessionMaterial.
+  const PROFESSION_MATERIALS_CLIENT = {
+    forja: { basic:'minerio_ferro', refined:'barra_aco' },
+    carpintaria: { basic:'madeira_bruta', refined:'madeira_nobre' },
+    tecelagem: { basic:'fio_de_la', refined:'seda_encantada' },
+  };
+  const PROFESSION_REFINE_RATIO_CLIENT = 10;
   // Ícones reais das profissões (ui/windows/professions/icon_*.png) -- só as
   // 3 que existem no nosso jogo (Forja=ferreiro/bigorna, Carpintaria=serrote,
   // Tecelagem=rolo de tecido); a pasta real tem mais 7 (mineração, culinária,
@@ -8622,7 +8774,7 @@
       const remainingS = Math.max(0, Math.ceil((craftingJob.durationMs - elapsed)/1000));
       return `
         <div class="craft-progress-box">
-          <div class="craft-progress-title">🔨 Criando ${craftingJob.itemName}${jobIsThisTab?'':` (${PROFESSION_LABEL[craftingJob.profession]})`}...</div>
+          <div class="craft-progress-title">🔨 Criando ${craftingJob.displayName}${jobIsThisTab?'':` (${PROFESSION_LABEL[craftingJob.profession]})`}...</div>
           <div class="craft-progress-track"><div class="craft-progress-fill" style="width:${pct}%;"><span class="craft-progress-cap"></span></div></div>
           <div class="craft-progress-sub">${remainingS}s restantes</div>
         </div>`;
@@ -8653,16 +8805,30 @@
           <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" ${canCraft?'':'disabled'}>Criar</button>
         </div>`;
     }).join('');
+    const refineMats = PROFESSION_MATERIALS_CLIENT[professionSelectedTab];
+    const refineBox = refineMats ? (()=>{
+      const haveBasic = bagQty(refineMats.basic);
+      const canRefine = !craftingJob && inCityForShop() && haveBasic >= PROFESSION_REFINE_RATIO_CLIENT;
+      return `
+        <div class="profession-recipe-box${canRefine?' can-craft':''}">
+          <div class="prec-name">Refino: ${PROFESSION_MATERIAL_LABEL[refineMats.basic]||refineMats.basic} → ${PROFESSION_MATERIAL_LABEL[refineMats.refined]||refineMats.refined}</div>
+          <div class="prec-row"><span>${PROFESSION_MATERIAL_LABEL[refineMats.basic]||refineMats.basic} (consome ${PROFESSION_REFINE_RATIO_CLIENT})</span><span class="${haveBasic>=PROFESSION_REFINE_RATIO_CLIENT?'ok':'missing'}">${haveBasic}/${PROFESSION_REFINE_RATIO_CLIENT}</span></div>
+          <button class="party-btn" style="width:100%;margin-top:6px;" id="btn-profession-refine" ${canRefine?'':'disabled'}>Refinar</button>
+        </div>`;
+    })() : '';
     body.innerHTML = `
       <div class="profession-level-line">Nível ${prof.level}/100 — ${prof.xp} XP acumulado</div>
       ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Criar itens só funciona na Cidade Principal</div>` : ''}
       ${progressBox}
       ${(craftingJob && !jobIsThisTab) ? `<div class="craft-busy-note">⏳ Só dá pra iniciar outro craft quando esse terminar.</div>` : ''}
+      ${refineBox}
       ${rows}
     `;
     body.querySelectorAll('[data-craft-recipe]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe }));
     });
+    const refineBtn = document.getElementById('btn-profession-refine');
+    if(refineBtn) refineBtn.addEventListener('click', ()=> sendWS({ type:'profession:refine', profession: professionSelectedTab }));
     ensureCraftBarInterval();
   }
 
