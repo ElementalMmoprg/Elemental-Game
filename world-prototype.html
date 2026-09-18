@@ -72,19 +72,20 @@
     border:none; border-radius:8px; padding:7px 18px;
   }
   #tb-gold-pill:hover, #btn-open-rank:hover, #btn-open-shop:hover{ filter:brightness(1.12); }
-  /* Ícone real de moeda (ui/windows/inventory/icon_silver.png, mesma arte do
-     silver.png já usado na Infusão -- ver ravendawn-ui/silver.png) no lugar
-     do emoji 🪙 só no pill principal de Ouro da barra superior (o mais visto
-     na tela) -- não mexe nos vários 🪙 de texto espalhados em log/popover/
-     etc., que continuam emoji mesmo (funcionam bem inline com texto). */
+  /* Ícone real de moeda no pill principal de Ouro da barra superior (o mais
+     visto na tela) -- não mexe nos vários 🪙 de texto espalhados em log/
+     popover/etc., que continuam emoji mesmo (funcionam bem inline com texto).
+     ATENÇÃO: ui/windows/inventory/icon_silver.png (nosso silver.png) É
+     REALMENTE PRATEADO na arte original da Ravendawn (lá a moeda principal
+     se chama "Silver", não "Gold") -- usar ele direto pro nosso "Ouro" foi
+     um bug relatado pelo usuário ("moeda de prata"). Fix: gold.png é o
+     MESMO silver.png recolorido (matiz deslocado pro dourado, preservando
+     sombra/brilho do relevo original) só pra representar Ouro de verdade. */
   .tb-gold-icon{ width:15px; height:auto; vertical-align:-2px; object-fit:contain; margin-right:1px; }
-  /* Pedido do usuário: trocar o ícone da Elemental Coin (antes 💎, parecia
-     um "redemoinho" no tamanho pequeno do pill) por uma moeda de ouro.
-     Reaproveita o MESMO silver.png já usado no pill de Ouro (arte real,
-     comprovadamente transparente) só que com um filtro CSS pra virar
-     dourado em vez de prateado -- assim não depende de nenhum asset novo
-     não testado e ainda fica visualmente diferente do pill de Ouro. */
-  .tb-coin-icon{ filter:sepia(1) saturate(6) hue-rotate(-10deg) brightness(1.05); }
+  /* Elemental Coin usa o silver.png ORIGINAL (prateado) com um filtro azul/
+     violeta -- precisa ficar visualmente diferente do pill de Ouro (que
+     agora usa gold.png de verdade), estilo "moeda-gema" premium. */
+  .tb-coin-icon{ filter:hue-rotate(190deg) saturate(3.2) brightness(1.08); }
   #tb-online{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); white-space:nowrap; }
   #tb-icons{ margin-left:auto; display:flex; gap:6px; }
   .tb-icon{ width:34px; height:34px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
@@ -503,8 +504,14 @@
      ampliado em pixel-art) + boneco de equipamento */
   #inv-equip-col{ width:230px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px; overflow-y:auto; }
   #inv-char-name{ font-family:var(--font-display); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-bright); }
-  #inv-portrait-wrap{ display:flex; justify-content:center; margin-bottom:6px; }
-  #inv-portrait-canvas{ width:120px; height:200px; image-rendering:pixelated; }
+  /* Layout 2026-09-18 (pedido do usuário com print EXATA do Character(X) do
+     jogo-fonte): o retrato fica ENTRE as 2 colunas de equipamento (flanking),
+     não empilhado acima delas como antes -- ver .equip-flank-row abaixo.
+     Retrato encolhido de 120x200 pra 84x140 (mesma proporção 0.6) só nesse
+     contexto, pra caber ao lado das 2 colunas de 46px dentro dos 230px do
+     #inv-equip-col (46+8+84+8+46=192, cabe nos 198px úteis). */
+  #inv-portrait-wrap{ display:flex; justify-content:center; flex-shrink:0; }
+  #inv-portrait-canvas{ width:84px; height:140px; image-rendering:pixelated; }
   .equip-slot{ width:46px; height:46px; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:17px; position:relative; cursor:pointer; }
   .equip-slot:hover{ border-color:var(--gold-bright); }
   .equip-slot .slot-tag{ position:absolute; bottom:-13px; left:0; right:0; text-align:center; font-family:var(--font-mono); font-size:7px; color:var(--ink-dim); }
@@ -521,34 +528,30 @@
      desenhando na resolução do retrato (90x150, mesma matemática de âncora
      de drawCharacterLayers) e só é ENCOLHIDO visualmente aqui via CSS. */
   .cosmetic-outfit-canvas{ width:32px; height:44px; image-rendering:pixelated; pointer-events:none; }
-  /* Layout novo (pedido do usuário com print do Character(X) real do jogo-
-     fonte): coluna ESQUERDA = peças de armadura empilhadas na ordem certa
-     (Elmo > Armadura > Calças > Botas — antes Calças/Botas ficavam soltas
-     nos cantos, sem relação visual com o resto do set); coluna DIREITA =
-     Amuleto + os 2 slots de Acessório (ver ACCESSORY_SLOT_TYPES no
-     huntEngine.js — luva virou acessório igual anel, não é mais slot
-     próprio); Arma+Offhand na linha de baixo, ocupando as 2 colunas. */
-  .equip-grid3{
-    display:grid;
-    grid-template-columns:repeat(2, 46px);
-    grid-template-rows:repeat(5, 46px);
-    gap:10px;
-    grid-template-areas:
-      "helmet      amulet"
-      "armor       accessory1"
-      "legs        accessory2"
-      "boots       ."
-      "weapon      offhand";
-  }
-  .equip-grid3 [data-equip="helmet"]{ grid-area:helmet; }
-  .equip-grid3 [data-equip="amulet"]{ grid-area:amulet; }
-  .equip-grid3 [data-equip="armor"]{ grid-area:armor; }
-  .equip-grid3 [data-equip="accessory1"]{ grid-area:accessory1; }
-  .equip-grid3 [data-equip="legs"]{ grid-area:legs; }
-  .equip-grid3 [data-equip="accessory2"]{ grid-area:accessory2; }
-  .equip-grid3 [data-equip="boots"]{ grid-area:boots; }
-  .equip-grid3 [data-equip="weapon"]{ grid-area:weapon; }
-  .equip-grid3 [data-equip="offhand"]{ grid-area:offhand; }
+  /* Layout 2026-09-18 (refeito pra bater EXATAMENTE com o print do
+     Character(X) do jogo-fonte que o usuário mandou): o retrato fica NO
+     MEIO, flanqueado pelas 2 colunas de equipamento (antes o boneco ficava
+     empilhado ACIMA de um grid único de 2 colunas -- mesmo agrupamento de
+     itens por coluna, mas sem o retrato "dentro" da composição, que era a
+     diferença real reportada pelo usuário). Coluna ESQUERDA = peças de
+     armadura empilhadas na ordem certa (Elmo > Armadura > Calças > Botas);
+     coluna DIREITA = Amuleto + os 2 slots de Acessório (ver
+     ACCESSORY_SLOT_TYPES no huntEngine.js) + 1 espaço vazio invisível pra
+     fechar a coluna com a mesma altura da esquerda (4 linhas dos 2 lados).
+     Arma+Offhand ficam centralizados numa linha à parte, ABAIXO de tudo —
+     igual à posição deles no print de referência. */
+  .equip-flank-row{ display:flex; align-items:center; justify-content:center; gap:8px; }
+  .equip-col-side{ display:flex; flex-direction:column; gap:10px; }
+  .equip-row-bottom{ display:flex; justify-content:center; gap:10px; margin-top:4px; }
+  /* Linha flutuante ACIMA do retrato (pedido do usuário, 2026-09-18: os 2
+     ícones que ficam no topo da print de referência): à esquerda o próprio
+     slot de Amuleto/Colar (saiu da coluna direita pra cá — no jogo-fonte ele
+     não fica empilhado com os Acessórios, fica sozinho no topo) e à direita
+     um ATALHO (não é slot de equipamento) que abre a mesma janela de
+     Profissões/Forja do botão de serviço da Cidade (#btn-open-professions),
+     só que acessível direto daqui do Inventário também. */
+  .equip-top-row{ display:flex; justify-content:center; gap:10px; margin-bottom:8px; }
+  .equip-slot-shortcut{ font-size:20px; }
   /* BUG (achado 2026-09-14, relatado pelo usuário via print do Inventário):
      esta regra é de ANTES de existir ícone de slot vazio — na época, um slot
      sem item não tinha nada pra mostrar, então escondia o <span class="slot-icon">
@@ -1382,7 +1385,7 @@
         <button class="treino-inline-btn" id="pf-open-character-btn" style="width:100%;margin-top:8px;">Ver Personagem</button>
       </div>
     </div>
-    <div class="tb-pill hover-trigger" id="tb-gold-pill"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/silver.png" class="tb-gold-icon" alt="" onerror="this.replaceWith(document.createTextNode('🪙'));" /> <span id="tb-gold">0</span>
+    <div class="tb-pill hover-trigger" id="tb-gold-pill"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/gold.png" class="tb-gold-icon" alt="" onerror="this.replaceWith(document.createTextNode('🪙'));" /> <span id="tb-gold">0</span>
       <div class="popover glass" id="bank-popover">
         <div class="panel-title" style="margin-bottom:8px;">Banco<span class="rule"></span></div>
         <div class="row"><span>Em mãos</span><b id="bank-hand-amount">0</b></div>
@@ -1801,50 +1804,52 @@
       </div>
       <div id="inv-equip-col">
         <div id="inv-char-name">—</div>
-        <div id="inv-portrait-wrap"><canvas id="inv-portrait-canvas" width="90" height="150"></canvas></div>
         <!-- Os 3 cosméticos ficam numa linha horizontal centralizada, LOGO
-             ACIMA do Elmo (igual ao Huntera). Abaixo, o grid de combate
-             (layout 2026-09-15, baseado no print do Character(X) real do
-             jogo-fonte que o usuário mandou):
-               Elmo     | Amuleto
-               Armadura | Acessório 1
-               Calças   | Acessório 2
-               Botas    | (—)
-               Arma     | Offhand
-             Coluna esquerda = set de armadura na ordem certa (Calças embaixo
-             da Armadura, Botas embaixo da Calças — pedido do usuário).
-             Coluna direita = Amuleto + os 2 slots de Acessório (Anel/Luva
-             disputam o mesmo pool de 2 slots — ver ACCESSORY_SLOT_TYPES no
-             huntEngine.js). Arma+Offhand na última linha. Cada slot
-             começa vazio (ícone escondido via .slot-icon) — só aparece
-             quando de fato tem item equipado; arraste um item da Mochila
-             pra cá pra equipar, ou clique num slot ocupado pra desequipar.
-             Clicar em qualquer um dos 3 abre direto a aba Outfit certa do
-             Modal de Personagem (ver setup no final de renderInventory).
-             Outfit sempre tem valor (default 'padrao'), então usa uma
-             PRÉVIA REAL renderizada (mesmo desenhista do retrato, sem Asas/
-             Aura pra não confundir com os outros 2 slots) em vez de emoji;
-             Aura/Asas herdam o ícone real (sprite própria/ícone da Loja)
-             quando equipados, ou o emoji de antes quando vazios. -->
+             ACIMA do retrato (igual ao Huntera). Cada slot começa vazio
+             (ícone escondido via .slot-icon) — só aparece quando de fato tem
+             item equipado; arraste um item da Mochila pra cá pra equipar, ou
+             clique num slot ocupado pra desequipar. Clicar em qualquer um
+             dos 3 abre direto a aba Outfit certa do Modal de Personagem (ver
+             setup no final de renderInventory). Outfit sempre tem valor
+             (default 'padrao'), então usa uma PRÉVIA REAL renderizada (mesmo
+             desenhista do retrato, sem Asas/Aura pra não confundir com os
+             outros 2 slots) em vez de emoji; Aura/Asas herdam o ícone real
+             (sprite própria/ícone da Loja) quando equipados, ou o emoji de
+             antes quando vazios. -->
         <div class="cosmetics-row">
           <div class="equip-slot" data-cosmetic="outfit" title="Outfit"><canvas class="cosmetic-outfit-canvas" width="90" height="150"></canvas><span class="slot-tag">Outfit</span></div>
           <div class="equip-slot" data-cosmetic="aura" title="Aura"><span class="slot-icon">✨</span><span class="slot-tag">Aura</span></div>
           <div class="equip-slot" data-cosmetic="wings" title="Asas"><span class="slot-icon">🪽</span><span class="slot-tag">Asas</span></div>
         </div>
-        <div class="equip-grid3">
-          <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon" data-icon-slot="helmet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Elmo</span></div>
-          <div class="equip-slot" data-equip="amulet" title="Amuleto"><span class="slot-icon" data-icon-slot="amulet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Amuleto</span></div>
-          <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon" data-icon-slot="armor"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Armadura</span></div>
+        <!-- Layout 2026-09-18, EXATO ao print do Character(X) do jogo-fonte
+             que o usuário mandou: linha flutuante no topo com Amuleto/Colar
+             + atalho da Forja; retrato NO MEIO, flanqueado por 2 colunas de
+             equipamento (esquerda = set de armadura empilhado; direita = os
+             2 Acessórios), com Arma+Offhand centralizados abaixo de tudo. -->
+        <div class="equip-top-row">
+          <div class="equip-slot" data-equip="amulet" title="Amuleto/Colar"><span class="slot-icon" data-icon-slot="amulet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Colar</span></div>
+          <div class="equip-slot equip-slot-shortcut" id="inv-forge-shortcut" title="Abrir Profissões (Forja/Carpintaria/Tecelagem)">🔨<span class="slot-tag">Forja</span></div>
+        </div>
+        <div class="equip-flank-row">
+          <div class="equip-col-side">
+            <div class="equip-slot" data-equip="helmet" title="Elmo"><span class="slot-icon" data-icon-slot="helmet"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Elmo</span></div>
+            <div class="equip-slot" data-equip="armor" title="Armadura"><span class="slot-icon" data-icon-slot="armor"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Armadura</span></div>
+            <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Calças</span></div>
+            <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Botas</span></div>
+          </div>
+          <div id="inv-portrait-wrap"><canvas id="inv-portrait-canvas" width="90" height="150"></canvas></div>
           <!-- Acessório 1/2: pool genérico onde tanto Anel quanto Luva se
                encaixam (RavenQuest real: luva é acessório, não peça de
                armadura própria) -- data-icon-slot fica travado em "ring" só
                pro DESENHO do slot vazio/placeholder de fallback, a chave
                funcional de verdade é data-equip (accessory1/accessory2),
                que o servidor decide sozinho qual dos 2 usar ao equipar. -->
-          <div class="equip-slot" data-equip="accessory1" title="Acessório"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Acessório</span></div>
-          <div class="equip-slot" data-equip="legs" title="Calças"><span class="slot-icon" data-icon-slot="legs"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Calças</span></div>
-          <div class="equip-slot" data-equip="accessory2" title="Acessório"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Acessório</span></div>
-          <div class="equip-slot" data-equip="boots" title="Botas"><span class="slot-icon" data-icon-slot="boots"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Botas</span></div>
+          <div class="equip-col-side">
+            <div class="equip-slot" data-equip="accessory1" title="Acessório"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Acessório</span></div>
+            <div class="equip-slot" data-equip="accessory2" title="Acessório"><span class="slot-icon" data-icon-slot="ring"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Acessório</span></div>
+          </div>
+        </div>
+        <div class="equip-row-bottom">
           <div class="equip-slot" data-equip="weapon" title="Arma"><span class="slot-icon" data-icon-slot="weapon"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Arma</span></div>
           <div class="equip-slot" data-equip="offhand" title="Escudo/Offhand"><span class="slot-icon" data-icon-slot="offhand"></span><span class="rarity-frame-holder"></span><span class="grade-overlay-holder"></span><span class="slot-tag">Offhand</span></div>
         </div>
@@ -5131,7 +5136,7 @@
     if(msg.forType === 'item:infuse'){
       if(msg.ok) logLoot(`🔮 Infusão bem-sucedida! Grade ${msg.grade} (Tier ${msg.tier}).`);
       else {
-        const reasonMap = { slot_invalido:'slot inválido.', slot_vazio:'não há item equipado nesse slot.', item_nao_infundivel:'esse item não pode ser infundido.', grade_maxima:'esse item já está na Grade máxima (9).', sem_fragmento:`você precisa de ${(msg.cost&&msg.cost.shards)||1} Fragmento(s) de Infusão.`, ouro_insuficiente:`você precisa de ${(msg.cost&&msg.cost.gold)||0} de Prata.` };
+        const reasonMap = { slot_invalido:'slot inválido.', slot_vazio:'não há item equipado nesse slot.', item_nao_infundivel:'esse item não pode ser infundido.', grade_maxima:'esse item já está na Grade máxima (9).', sem_fragmento:`você precisa de ${(msg.cost&&msg.cost.shards)||1} Fragmento(s) de Infusão.`, ouro_insuficiente:`você precisa de ${(msg.cost&&msg.cost.gold)||0} de Ouro.` };
         logLoot(`⚠️ Não foi possível infundir: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderInventoryIfOpen();
@@ -6565,6 +6570,14 @@
     gloves:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22v-9a4 4 0 0 1 4-4h1V4a2 2 0 1 1 4 0v5h1a2 2 0 0 1 2 2v6a5 5 0 0 1-5 5H8z"/><path d="M13 9V4"/></svg>',
   };
   const POTION_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M10 2v5l-4 8a4 4 0 0 0 4 6h4a4 4 0 0 0 4-6l-4-8V2"/><path d="M8 15h8"/></svg>';
+  // Fallback pra ícone de poção que falhar ao carregar (usado na Hotbar) --
+  // mesma ideia do fallback de magia (SPELL_KIND_ICON): em vez de deixar o
+  // navegador desenhar o ícone quebrado padrão (aparece pequeno/deslocado,
+  // não preenche o slot -- bug relatado pelo usuário), troca por este SVG
+  // colorido (vermelho=vida, azul=mana) do mesmo tamanho do slot.
+  window.hotbarPotionIconFallback = function(img, kind){
+    img.outerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;color:${kind==='mana'?'#5aa9e6':'#d9534f'};">${POTION_ICON_SVG}</span>`;
+  };
   const MATERIAL_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 5-2 10-6 5-6-5L4 7l8-5z"/></svg>';
   // Fallback do ícone real (foto vinda da wiki) pra loot comum sem sprite
   // dedicado — chamado pelo onerror do <img> quando o arquivo não existe
@@ -7226,11 +7239,16 @@
   // entrar de novo (bug reportado). Como são 100% locais mesmo, persistem em
   // localStorage por personagem (SELECTED_CHARACTER.id), não no Mongo.
   const LS_HOTBAR_ITEMS = 'elemental_hotbar_items_' + (SELECTED_CHARACTER ? SELECTED_CHARACTER.id : 'default');
+  // Pedido do usuário: nada de poção "sugerida" pré-colocada -- ele quer
+  // TODOS os slots vazios de início (igual ao 6º, que nunca teve sugestão),
+  // pra ser sempre o jogador quem escolhe o que vai em cada slot. Antes,
+  // hotbar[3]/[4]/[5] vinham com Lesser/Strong Health/Strong Mana "de
+  // fábrica" -- essas "poções fantasma" apareciam de novo pra qualquer
+  // personagem que nunca tivesse mexido na hotbar (loadLocalHotbarItems só
+  // sobrescreve o que já foi salvo no localStorage; sem save, os defaults
+  // abaixo é que apareciam).
   const hotbar = Array.from({length:HOTBAR_SIZE}, ()=>({ kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 }));
-  hotbar[3] = { kind:'item',  id:'lesser_health',condition:{type:'hpBelow',threshold:50}, cooldownUntil:0 };
-  hotbar[4] = { kind:'item',  id:'strong_health',condition:{type:'hpBelow',threshold:30}, cooldownUntil:0 };
-  hotbar[5] = { kind:'item',  id:'strong_mana',  condition:{type:'manaBelow',threshold:30}, cooldownUntil:0 };
-  // Sobrescreve os defaults acima com o que o jogador de fato configurou da
+  // Sobrescreve os slots acima com o que o jogador de fato configurou da
   // última vez (se existir) — só toca em slots 'item', spell continua vindo
   // do servidor via applyHuntSnapshot.
   function loadLocalHotbarItems(){
@@ -7315,7 +7333,7 @@
       else if(slot.kind==='item'){
         const pot = POTIONS.find(p=>p.id===slot.id);
         if(pot){
-          icon = `<img src="${pot.icon}" style="width:28px;height:28px;object-fit:contain;" />`;
+          icon = `<img src="${pot.icon}" style="width:28px;height:28px;object-fit:contain;" onerror="hotbarPotionIconFallback(this,'${pot.kind}')" />`;
           locked = !canUsePotion(pot);
         } else {
           // Poção não encontrada no catálogo (id salvo no localStorage do
@@ -8589,7 +8607,9 @@
     body.innerHTML = `
       <div class="infusion-preview">
         <div class="infusion-preview-icon">
-          <img class="item-icon" src="${itemIconUrl(item.id)}" onerror="this.style.display='none'" />
+          ${item.icon
+            ? `<img class="item-icon" data-rarity-color="${RARITY_COLORS[item.rarity]||'#a99872'}" data-fallback-slot="${item.slot||''}" src="${equipIconUrl(item.icon)}" onerror="handleEquipIconError(this)" />`
+            : `<span class="item-icon" style="color:${RARITY_COLORS[item.rarity]||'#a99872'};display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${ITEM_TYPE_ICON_SVG[item.slot] || MATERIAL_ICON_SVG}</span>`}
           ${grade>0 ? `<span class="grade-frame" style="background:${gradeBandColor(grade)};"></span><span class="grade-badge-big">G${grade}</span>` : ''}
         </div>
         <div class="infusion-preview-info">
@@ -8608,7 +8628,7 @@
       <div class="enchant-req-row"><span>Progressão</span><span>Garantida — Infusão nunca falha nem quebra o item</span></div>
       <div class="enchant-req-row" style="align-items:center;"><span><img src="${RAVENDAWN_UI_BASE}warforge_shard.png" style="width:13px;height:13px;vertical-align:-2px;object-fit:contain;margin-right:3px;" onerror="this.style.display='none'"/>Fragmento de Infusão (precisa de ${cost.shards})</span><span class="${hasShards?'ok':'missing'}">${materials.infusionShard||0}</span></div>
       <div class="infusion-progress-bar"><div class="infusion-progress-fill" style="width:${shardPct}%;"></div></div>
-      <div class="enchant-req-row" style="align-items:center;"><span><img src="${RAVENDAWN_UI_BASE}silver.png" style="width:15px;height:auto;vertical-align:-3px;object-fit:contain;margin-right:3px;" onerror="this.style.display='none'"/>Prata</span><span class="${hasGold?'ok':'missing'}">${cost.gold.toLocaleString('pt-BR')}</span></div>
+      <div class="enchant-req-row" style="align-items:center;"><span><img src="${RAVENDAWN_UI_BASE}gold.png" style="width:15px;height:auto;vertical-align:-3px;object-fit:contain;margin-right:3px;" onerror="this.style.display='none'"/>Ouro</span><span class="${hasGold?'ok':'missing'}">${cost.gold.toLocaleString('pt-BR')}</span></div>
       <div style="font-size:9px;color:var(--ink-dim);margin:2px 0 8px;">Fragmento de Infusão dropa de qualquer criatura durante a caçada — não se compra na loja.</div>
       <button class="skill-save-btn" id="infusion-go-btn" style="width:100%;margin-top:4px;" ${hasShards&&hasGold?'':'disabled'}>🔮 Infundir (Grade ${grade} → ${nextGrade})</button>
       ` : ''}
@@ -8617,7 +8637,7 @@
     if(!atMax){
       const goBtn = document.getElementById('infusion-go-btn');
       if(goBtn) goBtn.addEventListener('click', ()=>{
-        if(!confirm(`Infundir de Grade ${grade} pra Grade ${nextGrade} por ${cost.shards} Fragmento(s) + ${cost.gold.toLocaleString('pt-BR')} de Prata? Progressão garantida, sem risco.`)) return;
+        if(!confirm(`Infundir de Grade ${grade} pra Grade ${nextGrade} por ${cost.shards} Fragmento(s) + ${cost.gold.toLocaleString('pt-BR')} de Ouro? Progressão garantida, sem risco.`)) return;
         sendWS({ type:'item:infuse', slot: infusionSelectedSlot });
       });
     }
@@ -8826,6 +8846,11 @@
     renderProfessions();
   });
   document.getElementById('btn-open-professions').addEventListener('click', ()=>{ professionsModal.classList.toggle('open'); renderProfessions(); });
+  // Atalho da marreta no topo do boneco de equipamento (pedido do usuário,
+  // 2026-09-18, print de referência) -- mesma ação do botão "Profissões" do
+  // serviço da Cidade, só que acessível direto de dentro do Inventário.
+  const invForgeShortcut = document.getElementById('inv-forge-shortcut');
+  if(invForgeShortcut) invForgeShortcut.addEventListener('click', ()=>{ professionsModal.classList.add('open'); renderProfessions(); });
   function renderProfessionsIfOpen(){ if(professionsModal.classList.contains('open')) renderProfessions(); }
   // Craft com tempo real: enquanto o modal está aberto E tem um craftingJob
   // rolando, esse intervalo re-renderiza a cada 250ms só pra barra andar
@@ -8982,7 +9007,7 @@
     // --- cabeçalho + abas (direita) ---
     const selectedDef = marketCatalog.find(it=>it.id===marketSelectedItemId);
     document.getElementById('market-selected-name').textContent = selectedDef ? selectedDef.name : 'Selecione um item à esquerda';
-    document.getElementById('market-my-gold').innerHTML = `<img src="${RAVENDAWN_UI_BASE}silver.png" style="width:13px;height:auto;vertical-align:-2px;object-fit:contain;margin-right:2px;" onerror="this.style.display='none'"/>${Math.round(player.gold).toLocaleString('pt-BR')}`;
+    document.getElementById('market-my-gold').innerHTML = `<img src="${RAVENDAWN_UI_BASE}gold.png" style="width:13px;height:auto;vertical-align:-2px;object-fit:contain;margin-right:2px;" onerror="this.style.display='none'"/>${Math.round(player.gold).toLocaleString('pt-BR')}`;
     document.querySelectorAll('.market-tab').forEach(tab=> tab.classList.toggle('active', tab.dataset.marketTab === marketViewTab));
     // --- lista de ofertas ---
     const listEl = document.getElementById('market-offer-list');
