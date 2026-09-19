@@ -7374,12 +7374,20 @@
       // círculo) acertavam -- 28px preenche o círculo sem estourar.
       if(slot.kind==='spell'){
         const sp = getUnlockedSpells().find(s=>s.id===slot.id);
-        icon = sp ? `<img src="${spellIconUrl(sp.name)}" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','${SPELL_KIND_ICON[sp.node.kind]}')" />` : '흔';
+        // display:block (não inline, o padrão de <img>) tira o espaço de
+        // "descendente" da linha de texto que o navegador reserva embaixo de
+        // toda imagem inline -- sem isso o ícone ficava uns pixels acima e à
+        // esquerda do centro real do slot redondo, mesmo com o pai em flex
+        // centralizado (o flex centraliza a CAIXA do <span>, não o <img>
+        // dentro dela -- e a caixa do <span> sobrava um pouco embaixo por
+        // causa do baseline). Pedido do usuário: "ícones não estão bem
+        // posicionados dentro do slot redondo".
+        icon = sp ? `<img src="${spellIconUrl(sp.name)}" style="width:28px;height:28px;object-fit:contain;display:block;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','${SPELL_KIND_ICON[sp.node.kind]}')" />` : '흔';
       }
       else if(slot.kind==='item'){
         const pot = POTIONS.find(p=>p.id===slot.id);
         if(pot){
-          icon = `<img src="${pot.icon}" style="width:28px;height:28px;object-fit:contain;" onerror="hotbarPotionIconFallback(this,'${pot.kind}')" />`;
+          icon = `<img src="${pot.icon}" style="width:28px;height:28px;object-fit:contain;display:block;" onerror="hotbarPotionIconFallback(this,'${pot.kind}')" />`;
           locked = !canUsePotion(pot);
         } else {
           // Poção não encontrada no catálogo (id salvo no localStorage do
