@@ -2160,18 +2160,51 @@
   // Ícone real de arma/armadura extraído do client Ravendawn (ver Elemental_assets/assets/items/equip/)
   // — `icon` vem do catálogo/servidor; itens antigos sem esse campo caem no SVG genérico via onerror.
   function equipIconUrl(icon){ return URL_BASE + 'items/equip/' + icon; }
-  // Fraquezas elementais por bicho: o jogo só guarda "fraco contra: [elemento]"
-  // (1-2 elementos), não uma tabela de % por tipo de dano como o jogo de
-  // referência. ESTIMATIVA: elemento(s) do weakTo levam +30% de dano
-  // recebido, os demais tipos ficam neutros (100%). Não são valores reais de
-  // balanceamento — trocar aqui se um dia tivermos a tabela real (ex: XML de
-  // monstro do servidor).
+  // Fraquezas/resistências elementais por bicho — sistema REAL (não mais
+  // estimativa), espelho de computeMonsterElementResist/elementResistPctFor
+  // do huntEngine.js (pedido do usuário, tarefa #49: como os 77 monstros são
+  // criaturas/nomes nossos, não existe ficha de "resistência real" pra
+  // copiar de nenhuma wiki — em vez disso o monstro é RESISTENTE ao seu
+  // próprio elemento (oposto da fraqueza, mesmo critério já usado pra decidir
+  // a Gema Elemental que ele dropa) e FRACO nos elementos do weakTo; os
+  // demais ficam neutros. Isto agora É a matemática real de dano de magia
+  // (ver huntEngine.js castSpell) contra o `element` da magia — só afeta
+  // magia, não ataque corpo-a-corpo (que não tem elemento).
+  const ELEMENT_IDS = ['fogo','agua','terra','ar','luz','trevas'];
+  const ELEMENT_LABEL = { fogo:'Fogo', agua:'Água', terra:'Terra', ar:'Ar', luz:'Luz', trevas:'Trevas' };
+  const ELEMENT_OPPOSITE = { fogo:'agua', agua:'fogo', terra:'ar', ar:'terra', luz:'trevas', trevas:'luz' };
+  const ELEMENT_RESIST_MAGNITUDE = 20;
+  function monsterElementFromWeakTo(weakTo){
+    if(!Array.isArray(weakTo) || !weakTo.length) return null;
+    const weakId = ELEMENT_IDS.find(id=> ELEMENT_LABEL[id]===weakTo[0]);
+    return weakId ? ELEMENT_OPPOSITE[weakId] : null;
+  }
+  function computeMonsterElementResist(weakTo){
+    const weakIds = (Array.isArray(weakTo)?weakTo:[]).map(label=> ELEMENT_IDS.find(id=>ELEMENT_LABEL[id]===label)).filter(Boolean);
+    const ownElement = monsterElementFromWeakTo(weakTo);
+    const out = {};
+    ELEMENT_IDS.forEach(id=>{
+      if(weakIds.includes(id)) out[id] = -ELEMENT_RESIST_MAGNITUDE;
+      else if(id===ownElement) out[id] = ELEMENT_RESIST_MAGNITUDE;
+      else out[id] = 0;
+    });
+    return out;
+  }
+  // DAMAGE_TYPES/ELEMENT_TO_DAMAGE_TYPE: só pro grid do modal "Detalhes da
+  // Caçada" (estilo Tibia, 8 tipos) reaproveitar visualmente os 6 elementos
+  // reais acima — Físico e Life Drain não existem no nosso sistema elemental,
+  // então ficam sempre neutros (100%) nesse grid.
   const DAMAGE_TYPES = ['Físico','Fogo','Terra','Energia','Gelo','Sagrado','Morte','Life Drain'];
-  const ELEMENT_TO_DAMAGE_TYPE = { 'Fogo':'Fogo', 'Terra':'Terra', 'Ar':'Energia', 'Água':'Gelo', 'Luz':'Sagrado', 'Trevas':'Morte' };
+  const ELEMENT_TO_DAMAGE_TYPE = { 'Fogo':'fogo', 'Terra':'terra', 'Ar':'ar', 'Água':'agua', 'Luz':'luz', 'Trevas':'trevas' };
+  const DAMAGE_TYPE_TO_ELEMENT = { 'Fogo':'Fogo', 'Terra':'Terra', 'Energia':'Ar', 'Gelo':'Água', 'Sagrado':'Luz', 'Morte':'Trevas' };
   function estimateResistances(mt){
+    const resist = computeMonsterElementResist(mt.weakTo);
     const pct = {};
-    DAMAGE_TYPES.forEach(t=> pct[t] = 100);
-    (mt.weakTo||[]).forEach(w=>{ const dt = ELEMENT_TO_DAMAGE_TYPE[w]; if(dt) pct[dt] = 130; });
+    DAMAGE_TYPES.forEach(t=>{
+      const elementLabel = DAMAGE_TYPE_TO_ELEMENT[t];
+      const elementId = elementLabel ? ELEMENT_TO_DAMAGE_TYPE[elementLabel] : null;
+      pct[t] = elementId ? (100 - resist[elementId]) : 100; // resist +20 (resistente) -> 80%; -20 (fraco) -> 120%
+    });
     return pct;
   }
   function resistBarColor(pct){
@@ -6442,6 +6475,19 @@
           <span>Resist. Mágica: <b style="color:var(--gold-bright);">${cs.magicResistPct}%</b></span>
         </div>`;
       })()}
+      ${(()=>{
+        const resist = computeMonsterElementResist(m.weakTo);
+        const icon = { fogo:'🔥', agua:'💧', terra:'🌍', ar:'💨', luz:'✨', trevas:'🌑' };
+        const cells = ELEMENT_IDS.map(id=>{
+          const pct = resist[id];
+          const color = pct>0 ? 'var(--ok)' : (pct<0 ? '#e0685a' : 'var(--ink-dim)');
+          const sign = pct>0 ? '+' : '';
+          return `<span style="display:flex;align-items:center;gap:3px;">${icon[id]} ${ELEMENT_LABEL[id]}: <b style="color:${color};">${sign}${pct}%</b></span>`;
+        }).join('');
+        return `<div class="panel-title" style="margin-top:4px;">Resistência Elemental<span class="rule"></span></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px;margin-bottom:4px;">${cells}</div>
+        <div style="color:var(--ink-dim);font-size:8.5px;margin-bottom:4px;">Afeta dano de magia de verdade (não corpo-a-corpo). Positivo = resistente (recebe menos), negativo = fraqueza (recebe mais).</div>`;
+      })()}
       <div class="panel-title" style="margin-top:4px;">Marcos de Abate<span class="rule"></span></div>
       ${tiersHtml}
       <div class="panel-title" style="margin-top:10px;">Tabela de Loot da Zona<span class="rule"></span></div>
@@ -9359,7 +9405,7 @@
         const width = Math.max(4, Math.min(100, pct*0.7));
         return `<div class="resist-row"><span class="resist-label">${t}</span><div class="resist-track"><div class="resist-fill" style="width:${width}%;background:${resistBarColor(pct)}"></div></div><span class="resist-pct ${cls}">${pct}%</span></div>`;
       }).join('');
-      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">*estimado a partir da fraqueza elemental — não é a tabela real de dano do jogo.</div></div>`;
+      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros. Os demais afetam o dano de magia de verdade.</div></div>`;
       const toggle = card.querySelector('.hd-monster-toggle');
       const weakBox = card.querySelector('.hd-monster-weak');
       toggle.addEventListener('click', (e)=>{
