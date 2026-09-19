@@ -3673,33 +3673,31 @@
   // em vez de todo mundo no grupo de lure. Monstros comuns continuam com a
   // barrinha simples (ver uso de item.hpPct logo abaixo) — trocar TODOS pela
   // placa cheia poluiria a tela e custaria mais desenho por frame à toa.
+  // Placa do alvo atual — REDESENHADA em 19/09/2026 (pedido do usuário, com
+  // print de referência do jogo-fonte): a versão antiga usava os assets
+  // grandes do targethud/ (background.png + moldura circular de retrato +
+  // boss_frame) escalados a ~75% do SPRITE_SCALE, o que ficava "muito grande
+  // e estranho" flutuando sobre o monstro — a referência mostra só o NOME
+  // em cima e uma barra fina embaixo, sem moldura/retrato nenhum. Trocado
+  // pra desenho vetorial simples (mesmo estilo compacto que já era usado pro
+  // monstro NÃO-alvo, ver o `else` logo depois da chamada desta função),
+  // só um pouco maior e com borda dourada/vermelha pra ainda dar pra
+  // perceber visualmente qual é o alvo selecionado.
   function drawTargetPlate(cx, cy, name, hpPct, isBoss){
-    const bg = getCachedImg(TARGETHUD_BASE + 'background.png');
-    const barBorder = getCachedImg(TARGETHUD_BASE + 'bar_border.png');
-    const barFill = getCachedImg(TARGETHUD_BASE + 'bar_fill.png');
-    const barOverlay = getCachedImg(TARGETHUD_BASE + 'bar_overlay.png');
-    const circleBg = getCachedImg(TARGETHUD_BASE + 'circle_background.png');
-    const circleBorder = getCachedImg(TARGETHUD_BASE + (isBoss ? 'boss_frame.png' : 'circle_border_left.png'));
-    const circleGlow = getCachedImg(TARGETHUD_BASE + (isBoss ? 'boss_glow.png' : 'circle_glow.png'));
-    if(!bg.loaded || !barFill.loaded) return; // ainda carregando — sem placa nesse frame, sem quebrar nada
-    const scale = SPRITE_SCALE * 0.62; // plate original é pensado pra resolução maior; encolhe pra caber acima do monstro
-    const bgW = bg.img.width*scale, bgH = bg.img.height*scale;
-    const left = cx - bgW/2, top = cy - bgH/2;
-    ctx.drawImage(bg.img, left, top, bgW, bgH);
-    // barra de HP (bar_fill recortada pela % viva, igual ao padrão hpPct usado no resto do arquivo)
-    const barX = left + bgW*0.30, barY = top + bgH*0.30, barFullW = barFill.img.width*scale, barH = barFill.img.height*scale;
-    if(barFill.loaded) ctx.drawImage(barFill.img, 0,0, barFill.img.width*Math.max(0,Math.min(1,hpPct)), barFill.img.height, barX, barY, barFullW*Math.max(0,Math.min(1,hpPct)), barH);
-    if(barOverlay.loaded) ctx.drawImage(barOverlay.img, barX, barY, barOverlay.img.width*scale, barOverlay.img.height*scale);
-    if(barBorder.loaded) ctx.drawImage(barBorder.img, barX-2, barY, barBorder.img.width*scale, barH);
-    // ícone/retrato circular à esquerda
-    const circX = left - (circleBg.img.width*scale)*0.18, circY = cy - (circleBg.img.height*scale)/2;
-    if(circleGlow.loaded) ctx.drawImage(circleGlow.img, circX-(circleGlow.img.width*scale-circleBg.img.width*scale)/2, circY-(circleGlow.img.height*scale-circleBg.img.height*scale)/2, circleGlow.img.width*scale, circleGlow.img.height*scale);
-    if(circleBg.loaded) ctx.drawImage(circleBg.img, circX, circY, circleBg.img.width*scale, circleBg.img.height*scale);
-    if(circleBorder.loaded) ctx.drawImage(circleBorder.img, circX, circY, circleBorder.img.width*scale, circleBorder.img.height*scale);
-    // nome do monstro, centralizado acima da placa
+    const barW = 30*SPRITE_SCALE, barH = 5*SPRITE_SCALE;
+    const barX = cx - barW/2, barY = cy - barH/2;
+    const pct = Math.max(0, Math.min(1, hpPct));
+    ctx.fillStyle = '#000';
+    ctx.fillRect(barX-1, barY-1, barW+2, barH+2);
+    ctx.strokeStyle = isBoss ? '#ff9a80' : '#f0d38a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX-0.5, barY-0.5, barW+1, barH+1);
+    ctx.fillStyle = isBoss ? '#ff5030' : '#c94040';
+    ctx.fillRect(barX, barY, barW*pct, barH);
+    // nome do monstro, centralizado acima da barra
     ctx.font = `${isBoss?'bold ':''}10px "JetBrains Mono"`; ctx.textAlign = 'center';
     ctx.fillStyle = isBoss ? '#ff9a80' : '#f0d38a';
-    ctx.fillText(name || '', cx, top - 4);
+    ctx.fillText(name || '', cx, barY - 6);
   }
   function findMonsterById(id){
     for(const p of activeHunt.lurePoints){ const m = p.monsters.find(mm=>mm.id===id); if(m) return m; }
