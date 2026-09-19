@@ -4191,14 +4191,23 @@
             // SQM de sempre, agora que o tile (TILE_SCREEN_PX) ficou maior.
             let drew = false;
             if(hasWalkAtlas){
-              // Direção/quadro do ciclo de andar a partir do deslocamento
-              // REAL de tela do próprio monstro entre frames -- mesma
-              // técnica já usada pros jogadores remotos (ver
+              // Quadro do ciclo de andar (pernas se mexendo ou pose parada)
+              // ainda vem do deslocamento REAL de tela do monstro entre
+              // frames -- mesma técnica já usada pros jogadores remotos (ver
               // updateWalkAnim('rp:'+uname,...) acima); chave própria por
               // monstro ('mon:'+m.id) não interfere com jogador nem com
               // outros monstros.
+              // A DIREÇÃO (pra onde ele olha) já vem pronta do servidor em
+              // m.facingDir (ver advanceMonsters em huntEngine.js): usa o
+              // vetor até o alvo de verdade, não a vaga da argola -- por
+              // isso o monstro vira pro personagem e MANTÉM a virada mesmo
+              // parado no corpo a corpo (updateWalkAnim.dir sozinho travava
+              // na última direção de MOVIMENTO, que podia não apontar pro
+              // alvo -- era o bug "monstro não vira pro alvo"). Fallback pro
+              // anim.dir só cobre o instante antes do 1º snapshot chegar.
               const anim = updateWalkAnim('mon:'+m.id, s.x, s.y);
-              drew = !!SpriteManager.drawBodyDirFrame(ctx, walkEntry, anim.dir, anim.frameIdx, s.x, s.y+bob, 68*SPRITE_SCALE, 68*SPRITE_SCALE, false);
+              const dir = m.facingDir || anim.dir;
+              drew = !!SpriteManager.drawBodyDirFrame(ctx, walkEntry, dir, anim.frameIdx, s.x, s.y+bob, 68*SPRITE_SCALE, 68*SPRITE_SCALE, false);
             }
             if(!drew) drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34*SPRITE_SCALE, s.y-68*SPRITE_SCALE+bob, 68*SPRITE_SCALE,68*SPRITE_SCALE);
             if(!drew){
