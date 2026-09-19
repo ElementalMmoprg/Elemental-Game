@@ -3994,18 +3994,38 @@
   const walkAnimStates = new Map();
   const WALK_ANIM_FRAME_MS = 130; // troca de quadro do ciclo enquanto anda
   const WALK_ANIM_MOVE_EPS = 0.6; // px de tela/frame abaixo disso = "parado" (não tremer com jitter de rede)
+  // Janela de graça pra considerar "ainda andando" mesmo em frames desenhados
+  // SEM deslocamento real detectado -- corrigido 19/09/2026 depois do usuário
+  // reportar que o personagem na Dungeon (e todo monstro) "desliza"/"parece
+  // estar numa esteira" (posição muda mas as pernas não se mexem), enquanto
+  // na Cidade anda normal. Causa: na Cidade o jogador local recalcula x/y a
+  // CADA FRAME desenhado (WASD/clique, previsão local, ~60fps) — dx/dy nunca
+  // fica zerado enquanto anda. Já na Dungeon "quem manda" na posição é o
+  // servidor (ver server.js: "players em Dungeon se movem via motor de
+  // caçada, nunca mandam 'move'"), chegando em RAJADAS de rede (tick de
+  // caçada a 30Hz ou broadcast de posição a 5Hz) — bem mais devagar que os
+  // 60fps de desenho. Sem esta janela, a MAIORIA dos frames desenhados caem
+  // "entre" 2 rajadas, onde dx=dy=0 porque a posição ainda não mudou desde o
+  // último desenho — e o código antigo resetava o ciclo de andar (frameIdx=0)
+  // toda vez que isso acontecia, quase sempre. O resultado: a entidade PULA
+  // de posição em posição (a cada rajada) sempre no quadro parado, nunca
+  // chegando a mostrar o ciclo de passos de verdade. Isso vale igualmente
+  // pra jogador na Dungeon, jogadores remotos de grupo, E monstros (todos
+  // três só recebem posição por rede, nunca previsão local).
+  const WALK_ANIM_MOVE_GRACE_MS = 260; // > que o tick de caçada (33ms) e folgado sobre o broadcast de posição (200ms)
   function updateWalkAnim(id, sx, sy){
     const tsNow = Date.now();
     let st = walkAnimStates.get(id);
     if(!st){
-      st = { sx, sy, dir:'down', frameIdx:0, clock:0, lastTs:tsNow };
+      st = { sx, sy, dir:'down', frameIdx:0, clock:0, lastTs:tsNow, lastMoveAt:0 };
       walkAnimStates.set(id, st);
       return st;
     }
     const dx = sx - st.sx, dy = sy - st.sy;
     const dt = Math.max(0, tsNow - st.lastTs);
-    const moving = Math.hypot(dx,dy) > WALK_ANIM_MOVE_EPS;
-    if(moving){
+    const realMove = Math.hypot(dx,dy) > WALK_ANIM_MOVE_EPS;
+    if(realMove){
+      st.lastMoveAt = tsNow;
       // Estilo Tibia: o atlas só tem 4 direções reais (baixo/cima/direita/
       // esquerda), então mesmo numa grade reta (sem cisalhamento nenhum) uma
       // diagonal de teclado (W+D, S+A etc.) não tem sprite próprio — pra
@@ -4018,10 +4038,17 @@
       // podia produzir, e casa com o corpo só ter esses 3 recortes úteis.
       const HORIZ_EPS = 0.25; // px de tela — abaixo disso, sem componente horizontal real
       st.dir = (Math.abs(dx) < HORIZ_EPS) ? (dy>0 ? 'down' : 'up') : (dx>0 ? 'right' : 'left');
+    }
+    // "moving" pra fins de ANIMAÇÃO (não de direção, que só muda acima, em
+    // realMove): deslocamento real agora OU dentro da janela de graça desde
+    // o último deslocamento real (ver comentário grandão acima).
+    const moving = realMove || (tsNow - st.lastMoveAt) < WALK_ANIM_MOVE_GRACE_MS;
+    if(moving){
       st.clock += dt;
       if(st.clock >= WALK_ANIM_FRAME_MS){ st.frameIdx++; st.clock = 0; }
     } else {
-      // parado: volta pro primeiro quadro (pose de pé) da última direção
+      // parado de verdade (sem deslocamento por mais tempo que a janela de
+      // graça): volta pro primeiro quadro (pose de pé) da última direção
       // encarada — não reseta a direção, senão o personagem "vira de
       // frente" toda vez que para de andar.
       st.frameIdx = 0; st.clock = 0;
