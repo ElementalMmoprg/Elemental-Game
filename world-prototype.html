@@ -8656,10 +8656,12 @@
   // e Usar Selo Inquebrável não funcionam". Agora o valor vive aqui e o
   // template só reflete essas variáveis, sobrevivendo a qualquer re-render.
   let enchantUseProtector = false, enchantUseWard = false;
-  function computeBaseItemStatsClient(slot, rarity){
+  function computeBaseItemStatsClient(slot, rarity, powerTier){
     const base = SLOT_BASE_STATS[slot]; if(!base) return {};
-    const mult = RARITY_STAT_MULT[rarity] || 1; const out = {};
-    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*10)/10);
+    const mult = RARITY_STAT_MULT[rarity] || 1;
+    const tierMult = POWER_TIER_MULT_CLIENT[(powerTier||1)-1] || 1;
+    const out = {};
+    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*tierMult*10)/10);
     return out;
   }
   // Espelha getInfusionBaseMult/getInfusionScaledStats do huntEngine.js --
@@ -8679,7 +8681,7 @@
   }
   function getItemTotalStatsClient(item){
     if(!item || !item.slot) return {};
-    const base = computeBaseItemStatsClient(item.slot, item.rarity);
+    const base = computeBaseItemStatsClient(item.slot, item.rarity, item.powerTier);
     const enchantMult = 1 + (item.enchantLevel||0)*0.08;
     const infusionMult = getInfusionBaseMultClient(item);
     const out = {};
@@ -8945,34 +8947,37 @@
   // que o card de receita precisa pra mostrar foto+descrição+atributos,
   // pedido do usuário). Precisa bater 100% com huntEngine.js -- qualquer
   // item novo lá tem que ser copiado aqui também.
+  // RENOMEAÇÕES 2026-09-19 -- espelho EXATO do CRAFT_BASE_WEAPONS do
+  // huntEngine.js no servidor (ver comentário grandão lá): nomes/ordem reais
+  // pesquisados na wiki oficial do RavenDawn, `id` de cada item nunca muda.
   const CRAFT_BASE_WEAPONS_CLIENT = {
     d_dagger: { profession:'forja', slot:'weapon', weaponType:'dagger', materialId:'minerio_ferro', items:[
-      { id:'d_dagger_enferrujada', name:'Adaga Enferrujada', icon:'d_dagger_enferrujada.png', description:'Lâmina curta, forjada às pressas.' },
-      { id:'d_dagger_batedor', name:'Adaga do Batedor', icon:'d_dagger_batedor.png', description:'Leve o bastante pra não atrasar nenhum golpe.' },
-      { id:'d_dagger_assassino', name:'Adaga do Assassino', icon:'d_dagger_assassino.png', description:'Equilibrada para golpes rápidos e precisos.' },
-      { id:'d_dagger_vibora', name:'Adaga da Víbora', icon:'d_dagger_vibora.png', description:'Cada golpe busca a artéria certa.' },
-      { id:'d_dagger_sombras', name:'Adaga das Sombras', icon:'d_dagger_sombras.png', description:'Corta sem fazer ruído algum.' },
+      { id:'d_dagger_enferrujada', name:'Serrated Dagger', icon:'d_dagger_enferrujada.png', description:'Lâmina serrilhada, forjada às pressas.' },
+      { id:'d_dagger_batedor', name:'Noble Dagger', icon:'d_dagger_batedor.png', description:'Empunhada por nobres que preferem discrição a força bruta.' },
+      { id:'d_dagger_assassino', name:'Ice Dagger', icon:'d_dagger_assassino.png', description:'Forjada com um núcleo gélido que nunca perde o fio.' },
+      { id:'d_dagger_vibora', name:'Heartstopper Dagger', icon:'d_dagger_vibora.png', description:'Cada golpe busca o coração — e raramente erra.' },
+      { id:'d_dagger_sombras', name:'Assassin\'s Dagger', icon:'d_dagger_sombras.png', description:'Corta sem fazer ruído algum.' },
     ]},
     l_legs: { profession:'forja', slot:'legs', materialId:'minerio_ferro', items:[
-      { id:'l_legs_couro', name:'Calças de Couro Batido', icon:'l_legs_couro.png', description:'Proteção básica pras pernas.' },
-      { id:'l_legs_viajante', name:'Calças de Viajante', icon:'l_legs_viajante.png', description:'Reforçadas nas juntas, pra longas caçadas.' },
-      { id:'l_legs_reforcadas', name:'Calças Reforçadas', icon:'l_legs_reforcadas.png', description:'Placas de metal costuradas no couro.' },
-      { id:'l_legs_vigia', name:'Calças do Vigia', icon:'l_legs_vigia.png', description:'Usadas por quem passa mais tempo em guarda do que em descanso.' },
-      { id:'l_legs_protetor', name:'Calças do Protetor', icon:'l_legs_protetor.png', description:'Tão resistentes quanto o resto da armadura.' },
+      { id:'l_legs_couro', name:'Pliant Legs', icon:'l_legs_couro.png', description:'Proteção básica, dobra fácil com cada passo.' },
+      { id:'l_legs_viajante', name:'Crescent Legs', icon:'l_legs_viajante.png', description:'Reforçadas nas juntas, pra longas caçadas.' },
+      { id:'l_legs_reforcadas', name:'Harbinger Legs', icon:'l_legs_reforcadas.png', description:'Placas de metal costuradas, prontas pra linha de frente.' },
+      { id:'l_legs_vigia', name:'Enforcer Legs', icon:'l_legs_vigia.png', description:'Usadas por quem passa mais tempo impondo ordem do que em descanso.' },
+      { id:'l_legs_protetor', name:'Protector\'s Legs', icon:'l_legs_protetor.png', description:'Tão resistentes quanto o resto da armadura.' },
     ]},
     s_shield: { profession:'forja', slot:'offhand', materialId:'minerio_ferro', items:[
-      { id:'s_shield_madeira', name:'Escudo de Madeira', icon:'s_shield_madeira.png', description:'Simples, mas aguenta o primeiro golpe.' },
-      { id:'s_shield_cravos', name:'Escudo com Cravos', icon:'s_shield_cravos.png', description:'Machuca até quem só encosta nele.' },
-      { id:'s_shield_reforcado', name:'Escudo Reforçado', icon:'s_shield_reforcado.png', description:'Bordas de metal reforçam a madeira.' },
-      { id:'s_shield_muralha', name:'Escudo da Muralha', icon:'s_shield_muralha.png', description:'Parece pequeno demais pra bloquear tanto.' },
-      { id:'s_shield_guardiao', name:'Escudo do Guardião', icon:'s_shield_guardiao.png', description:'Já parou golpes que matariam qualquer um.' },
+      { id:'s_shield_madeira', name:'Wooden Buckler', icon:'s_shield_madeira.png', description:'Simples, mas aguenta o primeiro golpe.' },
+      { id:'s_shield_cravos', name:'Sturdy Buckler', icon:'s_shield_cravos.png', description:'Reforçado nas bordas, aguenta mais do que aparenta.' },
+      { id:'s_shield_reforcado', name:'Marauder\'s Shield', icon:'s_shield_reforcado.png', description:'Tomado de saqueadores — e usado contra eles mesmos.' },
+      { id:'s_shield_muralha', name:'Rune Shield', icon:'s_shield_muralha.png', description:'Runas gravadas na madeira absorvem parte do impacto.' },
+      { id:'s_shield_guardiao', name:'Ravenguard\'s Shield', icon:'s_shield_guardiao.png', description:'Já parou golpes que matariam qualquer um.' },
     ]},
     w_sword: { profession:'forja', slot:'weapon', weaponType:'sword', materialId:'minerio_ferro', items:[
       { id:'w_sword_rough_sword', name:'Rough Sword', icon:'w_sword_rough_sword.png', description:'Uma espada simples e maltratada, mas ainda corta bem.' },
       { id:'w_sword_wardens_sword', name:'Warden\'s Sword', icon:'w_sword_wardens_sword.png', description:'Empunhada pelos guardas veteranos das muralhas.' },
       { id:'w_sword_lawbreakers_sword', name:'Lawbreaker\'s Sword', icon:'w_sword_lawbreakers_sword.png', description:'Lâmina irregular, forjada às pressas por fora-da-lei.' },
-      { id:'w_sword_crusaders_longsword', name:'Crusader\'s Longsword', icon:'w_sword_crusaders_longsword.png', description:'Espada longa de um cruzado caído em batalha.' },
       { id:'w_sword_guardians_longsword', name:'Guardian\'s Longsword', icon:'w_sword_guardians_longsword.png', description:'Arma lendária de um guardião que nunca recuou.' },
+      { id:'w_sword_crusaders_longsword', name:'Crusader\'s Longsword', icon:'w_sword_crusaders_longsword.png', description:'Espada longa de um cruzado caído em batalha.' },
     ]},
     w_axe: { profession:'forja', slot:'weapon', weaponType:'axe', materialId:'minerio_ferro', items:[
       { id:'w_axe_wicked_axe', name:'Wicked Axe', icon:'w_axe_wicked_axe.png', description:'Machado tosco, mas cruel no fio.' },
@@ -8989,11 +8994,11 @@
       { id:'w_club_enforcers_mace', name:'Enforcer\'s Mace', icon:'w_club_enforcers_mace.png', description:'Símbolo de autoridade... e de dor.' },
     ]},
     c_staff: { profession:'carpintaria', slot:'weapon', weaponType:'staff', materialId:'madeira_bruta', items:[
-      { id:'c_staff_madeira', name:'Cajado de Madeira', icon:'c_staff_madeira.png', description:'Canaliza um pouco de energia mágica.' },
-      { id:'c_staff_runico', name:'Cajado Rúnico', icon:'c_staff_runico.png', description:'Símbolos gravados no cabo estabilizam o feitiço.' },
-      { id:'c_staff_entalhado', name:'Cajado Entalhado', icon:'c_staff_entalhado.png', description:'Runas entalhadas amplificam o feitiço.' },
-      { id:'c_staff_tempestade', name:'Cajado da Tempestade', icon:'c_staff_tempestade.png', description:'Crepita antes mesmo de ser erguido.' },
-      { id:'c_staff_ancestral', name:'Cajado Ancestral', icon:'c_staff_ancestral.png', description:'Guarda o poder de magos há muito esquecidos.' },
+      { id:'c_staff_madeira', name:'Mystic Staff', icon:'c_staff_madeira.png', description:'Canaliza um pouco de energia mágica.' },
+      { id:'c_staff_runico', name:'Warlock Staff', icon:'c_staff_runico.png', description:'Pactos antigos deixaram sua marca no cabo.' },
+      { id:'c_staff_entalhado', name:'Cultist Staff', icon:'c_staff_entalhado.png', description:'Runas entalhadas por mãos que serviam a algo maior.' },
+      { id:'c_staff_tempestade', name:'Celestial Staff', icon:'c_staff_tempestade.png', description:'Crepita com energia que não parece deste mundo.' },
+      { id:'c_staff_ancestral', name:'Lightshard Staff', icon:'c_staff_ancestral.png', description:'Guarda o poder de magos há muito esquecidos.' },
     ]},
     w_distance: { profession:'carpintaria', slot:'weapon', weaponType:'distance', materialId:'madeira_bruta', items:[
       { id:'w_distance_oakwood_bow', name:'Oakwood Bow', icon:'w_distance_oakwood_bow.png', description:'Arco simples entalhado em carvalho.' },
@@ -9027,43 +9032,58 @@
     // na Forja (mesmo material das armas de metal). Ver comentário grandão
     // equivalente em CRAFT_BASE_WEAPONS no huntEngine.js do servidor.
     a_helmet: { profession:'forja', slot:'helmet', materialId:'minerio_ferro', items:[
-      { id:'a_helmet_shadecloth_helmet', name:'Shadecloth Helmet', icon:'a_helmet_shadecloth_helmet.png', description:'Capuz leve tecido com fios sombrios.' },
-      { id:'a_helmet_hide_helmet', name:'Hide Helmet', icon:'a_helmet_hide_helmet.png', description:'Couro cru endurecido, proteção básica de caçador.' },
-      { id:'a_helmet_studded_helmet', name:'Studded Helmet', icon:'a_helmet_studded_helmet.png', description:'Reforçado com cravos de metal.' },
-      { id:'a_helmet_harbinger_helmet', name:'Harbinger Helmet', icon:'a_helmet_harbinger_helmet.png', description:'Usado por arautos que anunciam a batalha.' },
+      { id:'a_helmet_shadecloth_helmet', name:'Pliant Helmet', icon:'a_helmet_shadecloth_helmet.png', description:'Capuz maleável, mal se nota que está lá.' },
+      { id:'a_helmet_hide_helmet', name:'Crescent Helmet', icon:'a_helmet_hide_helmet.png', description:'Formato em meia-lua protege sem pesar.' },
+      { id:'a_helmet_studded_helmet', name:'Harbinger Helmet', icon:'a_helmet_studded_helmet.png', description:'Usado por arautos que anunciam a batalha.' },
+      { id:'a_helmet_harbinger_helmet', name:'Enforcer Helmet', icon:'a_helmet_harbinger_helmet.png', description:'Marca de quem impõe a lei pela força.' },
       { id:'a_helmet_protectors_helmet', name:'Protector\'s Helmet', icon:'a_helmet_protectors_helmet.png', description:'Forjado para durar tanto quanto seu dono.' },
     ]},
     a_armor: { profession:'forja', slot:'armor', materialId:'minerio_ferro', items:[
-      { id:'a_armor_shadecloth_armor', name:'Shadecloth Armor', icon:'a_armor_shadecloth_armor.png', description:'Tecido leve que não atrapalha o movimento.' },
-      { id:'a_armor_hide_armor', name:'Hide Armor', icon:'a_armor_hide_armor.png', description:'Couro robusto, a escolha de batedores e caçadores.' },
-      { id:'a_armor_studded_armor', name:'Studded Armor', icon:'a_armor_studded_armor.png', description:'Placas de metal costuradas sobre couro reforçado.' },
-      { id:'a_armor_harbinger_armor', name:'Harbinger Armor', icon:'a_armor_harbinger_armor.png', description:'Traje de quem chega primeiro à linha de frente.' },
+      { id:'a_armor_shadecloth_armor', name:'Pliant Armor', icon:'a_armor_shadecloth_armor.png', description:'Tecido leve que não atrapalha o movimento.' },
+      { id:'a_armor_hide_armor', name:'Crescent Armor', icon:'a_armor_hide_armor.png', description:'Placas curvas encaixam perfeitamente no tronco.' },
+      { id:'a_armor_studded_armor', name:'Harbinger Armor', icon:'a_armor_studded_armor.png', description:'Traje de quem chega primeiro à linha de frente.' },
+      { id:'a_armor_harbinger_armor', name:'Enforcer Armor', icon:'a_armor_harbinger_armor.png', description:'Peso extra que lembra a quem olha quem manda ali.' },
       { id:'a_armor_protectors_armor', name:'Protector\'s Armor', icon:'a_armor_protectors_armor.png', description:'Armadura pesada de quem protege os outros com o próprio corpo.' },
     ]},
     a_boots: { profession:'forja', slot:'boots', materialId:'minerio_ferro', items:[
-      { id:'a_boots_shadecloth_boots', name:'Shadecloth Boots', icon:'a_boots_shadecloth_boots.png', description:'Leves e silenciosas, ideais pra se mover sem ser notado.' },
-      { id:'a_boots_hide_boots', name:'Hide Boots', icon:'a_boots_hide_boots.png', description:'Couro resistente para longas caminhadas de caça.' },
-      { id:'a_boots_studded_boots', name:'Studded Boots', icon:'a_boots_studded_boots.png', description:'Solado reforçado com cravos de metal.' },
-      { id:'a_boots_harbinger_boots', name:'Harbinger Boots', icon:'a_boots_harbinger_boots.png', description:'Passos firmes de quem nunca hesita.' },
+      { id:'a_boots_shadecloth_boots', name:'Pliant Boots', icon:'a_boots_shadecloth_boots.png', description:'Leves e silenciosas, ideais pra se mover sem ser notado.' },
+      { id:'a_boots_hide_boots', name:'Crescent Boots', icon:'a_boots_hide_boots.png', description:'Sola curva absorve o impacto de cada passo.' },
+      { id:'a_boots_studded_boots', name:'Harbinger Boots', icon:'a_boots_studded_boots.png', description:'Passos firmes de quem nunca hesita.' },
+      { id:'a_boots_harbinger_boots', name:'Enforcer Boots', icon:'a_boots_harbinger_boots.png', description:'Pisam fundo — e ninguém discute.' },
       { id:'a_boots_protectors_boots', name:'Protector\'s Boots', icon:'a_boots_protectors_boots.png', description:'Pesadas o bastante pra segurar terreno, leves o bastante pra correr.' },
     ]},
   };
   const CRAFT_RARITY_LABEL_CAP_CLIENT = { comum:'Comum', incomum:'Incomum', rara:'Rara', 'épica':'Épica', 'lendária':'Lendária' };
+  // Espelho de POWER_TIER_MULT/POWER_TIER_LEVEL_REQ do huntEngine.js -- ver
+  // comentário grandão lá (o servidor continua autoritativo pro dano real;
+  // isso aqui é só pra pré-visualização de atributos/custo/nível na Forja).
+  const POWER_TIER_LEVEL_REQ_CLIENT = [1, 10, 25, 40, 55];
+  const POWER_TIER_MULT_CLIENT = [1, 1.3, 1.7, 2.2, 2.8];
+  const POWER_TIER_GOLD_BASE_CLIENT = 400;
+  const POWER_TIER_MATERIAL_QTY_BASE_CLIENT = 10;
   function buildCraftableClientTables(){
     const itemsOut = {};
     const recipesOut = { forja:[], carpintaria:[], tecelagem:[] };
     const suffixToRarity = { common:'comum', uncommon:'incomum', rare:'rara', epic:'épica', legendary:'lendária' };
     Object.values(CRAFT_BASE_WEAPONS_CLIENT).forEach(cat=>{
-      cat.items.forEach(baseItem=>{
+      cat.items.forEach((baseItem, idx)=>{
+        const powerTier = idx + 1;
+        const tierMult = POWER_TIER_MULT_CLIENT[idx] || 1;
         Object.keys(suffixToRarity).forEach(suffix=>{
           const rarity = suffixToRarity[suffix];
           itemsOut[`${baseItem.id}_${suffix}`] = {
             name: `${baseItem.name} (${CRAFT_RARITY_LABEL_CAP_CLIENT[rarity]})`, rarity,
             slot: cat.slot, weaponType: cat.weaponType || null,
-            icon: baseItem.icon, description: baseItem.description,
+            icon: baseItem.icon, description: baseItem.description, powerTier,
           };
         });
-        recipesOut[cat.profession].push({ id:`craft_${baseItem.id}`, name: baseItem.name, resultBase: baseItem.id, levelReq:1, goldCost:400, materials:[{ id: cat.materialId, qty:10 }], icon: baseItem.icon, description: baseItem.description, slot: cat.slot });
+        recipesOut[cat.profession].push({
+          id:`craft_${baseItem.id}`, name: baseItem.name, resultBase: baseItem.id,
+          levelReq: POWER_TIER_LEVEL_REQ_CLIENT[idx] || 1,
+          goldCost: Math.round(POWER_TIER_GOLD_BASE_CLIENT * tierMult),
+          materials:[{ id: cat.materialId, qty: Math.round(POWER_TIER_MATERIAL_QTY_BASE_CLIENT * tierMult) }],
+          icon: baseItem.icon, description: baseItem.description, slot: cat.slot, powerTier,
+        });
       });
     });
     return { itemsOut, recipesOut };
@@ -9154,7 +9174,7 @@
       // (o item nasce nível 0 dos dois).
       const oddsLines = craftRarityOddsClient(prof.level).map(o=>{
         const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`];
-        const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier) : {};
+        const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier) : {};
         const statPreview = Object.keys(stats).length ? `<div class="prec-stat-preview">${formatStats(stats)}</div>` : '';
         return `<div class="prec-row"><span style="color:${RARITY_COLORS[o.tier]||'var(--ink)'}">${item ? item.name : o.tier}</span><span>${o.pct.toFixed(1)}%</span></div>${statPreview}`;
       }).join('');
