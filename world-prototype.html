@@ -2271,10 +2271,17 @@
   // Base fixa do seletor de Alvo. As opções "Seguir <nick>" de cada membro
   // da Party são adicionadas dinamicamente por renderTargetModeOptions() —
   // nunca mais um texto genérico de "Assistir Líder".
+  // 'boss'/'lowestHpPct'/'highestHpPct' adicionados em 19/09/2026 (print de
+  // referência do jogo-fonte, seletor de Alvo com 6 opções fixas + "Seguir
+  // um membro da party" dinâmico) -- ver setTargetMode/pickTarget no
+  // huntEngine.js pra lógica real de cada modo.
   const TARGET_MODE_BASE = [
     { id:'closest', label:'Mais Próximo' },
+    { id:'boss', label:'Boss' },
     { id:'lowestHp', label:'Menor HP' },
     { id:'highestHp', label:'Maior HP' },
+    { id:'lowestHpPct', label:'Menor % de Vida' },
+    { id:'highestHpPct', label:'Maior % de Vida' },
   ];
 
   /* =========================================================
@@ -3736,6 +3743,14 @@
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
         castPoseUntil = now() + CAST_POSE_MS;
         if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'heal', player.x, player.y, fx.element);
+      } else if(fx.t === 'healedOther'){
+        // Cura em ALIADO (Alvo da cura configurado, ver resolveHealTarget no
+        // huntEngine.js) -- o "+X" de verdade aparece na TELA DO ALIADO (via
+        // 'heal' normal, empurrado na fila DELE); aqui é só um aviso simples
+        // pro CASTER saber que funcionou, sem número flutuante duplicado em
+        // cima de si mesmo (que ficaria enganoso, já que quem recebeu foi
+        // outra pessoa).
+        logLoot(`💚 Você curou <b>${escapeHtml(fx.targetNick||'um aliado')}</b> em +${fx.amount}.`);
       } else if(fx.t === 'shield'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), 'Escudo!', '#8fd0ff');
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
@@ -4690,8 +4705,11 @@
     if(Array.isArray(msg.hotbar)){
       msg.hotbar.forEach((slot,i)=>{
         if(!hotbar[i]) return;
-        if(slot.kind==='spell') hotbar[i] = { kind:'spell', id:slot.id, condition:{type:'always',threshold:0}, cooldownUntil:0 };
-        else if(hotbar[i].kind==='spell') hotbar[i] = { kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 };
+        // conditions/ignoredMonsters/healTarget agora são AUTORITATIVOS do
+        // servidor (ver configureHotbarSlot no huntEngine.js) -- espelha
+        // direto em vez de resetar pra vazio a cada snapshot como antes.
+        if(slot.kind==='spell') hotbar[i] = { kind:'spell', id:slot.id, condition:{type:'always',threshold:0}, conditions: Array.isArray(slot.conditions)?slot.conditions:[], ignoredMonsters: Array.isArray(slot.ignoredMonsters)?slot.ignoredMonsters:[], healTarget: slot.healTarget||null, cooldownUntil:0 };
+        else if(hotbar[i].kind==='spell') hotbar[i] = { kind:null, id:null, condition:{type:'always',threshold:0}, conditions:[], ignoredMonsters:[], healTarget:null, cooldownUntil:0 };
       });
     }
     // Tempo de recarga real de cada magia (spellId -> timestamp de quando
@@ -7274,6 +7292,41 @@
     { id:'hpBelow', label:'HP do jogador menor que X%' },
     { id:'manaBelow', label:'Mana do jogador menor que X%' },
   ];
+  // 19/09/2026 — Condições reais pra magia (slot 'spell'), pedido do usuário
+  // com print de referência do jogo-fonte. CONDITION_TYPES acima continua
+  // valendo só pra poção (slot 'item' -- ver POTIONS/potionAutoUse, esse
+  // sim já era avaliado de verdade no servidor). O construtor de magia usa
+  // as 3 listas abaixo -- ver configureHotbarSlot/evalHotbarCondition no
+  // huntEngine.js pra saber exatamente o que é validado/avaliado de
+  // verdade no servidor (o cliente só monta a UI, quem manda é o servidor).
+  // Ficaram de FORA (não têm mecânica real no jogo ainda, ver notas do
+  // projeto): subject "Área"/"Aliado" genérico e os tipos "Alvos"
+  // (contagem de inimigos)/"Preso"/"Paralisado"/"Magic Shield" -- não existe
+  // sistema de status/CC nem contagem de área neste motor.
+  const HOTBAR_COND_SUBJECTS = [
+    { id:'you', label:'Você' },
+    { id:'target', label:'Alvo' },
+  ];
+  const HOTBAR_COND_TYPES = [
+    { id:'hp', label:'HP' },
+    { id:'mana', label:'Mana' }, // escondido quando subject==='target' (monstro não tem mana)
+  ];
+  const HOTBAR_COND_OPERATORS = [
+    { id:'lt',  label:'menor que' },
+    { id:'lte', label:'menor ou igual a' },
+    { id:'eq',  label:'igual a' },
+    { id:'gte', label:'maior ou igual a' },
+    { id:'gt',  label:'maior que' },
+  ];
+  const HOTBAR_MAX_CONDITIONS_CLIENT = 5;
+  // Detecta magia de cura (mesma heurística de classifySpellEffect no
+  // huntEngine.js, só que aplicada aqui em cima de sp.desc pra decidir SE
+  // mostra a seção "Alvo da cura" -- é só uma dica de UI; quem decide de
+  // verdade o efeito da magia (e portanto se cura alguém) é sempre o
+  // servidor, recalculando a partir da mesma descrição no cast.
+  function isHealSpellDesc(desc){
+    return /\bcura\b|restaura[a-z]* (a )?(sua )?vida|restaura[a-z]* hp|recupera[a-z]* vida|regenera[a-z]* vida/i.test(String(desc||''));
+  }
   const HOTBAR_SIZE = 8;
   // Slots 'spell' são espelho do state.hotbar do servidor (ver applyHuntSnapshot)
   // — começam vazios até o jogador arrastar uma magia da Árvore de Habilidades
@@ -7291,7 +7344,10 @@
   // personagem que nunca tivesse mexido na hotbar (loadLocalHotbarItems só
   // sobrescreve o que já foi salvo no localStorage; sem save, os defaults
   // abaixo é que apareciam).
-  const hotbar = Array.from({length:HOTBAR_SIZE}, ()=>({ kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 }));
+  // condition (singular) = só poção; conditions/ignoredMonsters/healTarget
+  // (plural/novos) = só magia, espelham state.hotbar[i] do servidor de
+  // verdade agora (antes eram só decoração no cliente, ver applyHuntSnapshot).
+  const hotbar = Array.from({length:HOTBAR_SIZE}, ()=>({ kind:null, id:null, condition:{type:'always',threshold:0}, conditions:[], ignoredMonsters:[], healTarget:null, cooldownUntil:0 }));
   // Sobrescreve os slots acima com o que o jogador de fato configurou da
   // última vez (se existir) — só toca em slots 'item', spell continua vindo
   // do servidor via applyHuntSnapshot.
@@ -7310,9 +7366,9 @@
         // ignorava, então o slot "sozinho" reaparecia com poção depois de um
         // F5/relogin -- era exatamente o bug relatado.
         if(entry === null){
-          hotbar[idx] = { kind:null, id:null, condition:{type:'always',threshold:0}, cooldownUntil:0 };
+          hotbar[idx] = { kind:null, id:null, condition:{type:'always',threshold:0}, conditions:[], ignoredMonsters:[], healTarget:null, cooldownUntil:0 };
         } else if(entry){
-          hotbar[idx] = { kind:'item', id:entry.id, condition:entry.condition || {type:'always',threshold:0}, cooldownUntil:0 };
+          hotbar[idx] = { kind:'item', id:entry.id, condition:entry.condition || {type:'always',threshold:0}, conditions:[], ignoredMonsters:[], healTarget:null, cooldownUntil:0 };
         }
       });
     }catch(e){}
@@ -7411,8 +7467,21 @@
       else cooldownPeakMs[i] = 0;
       const cdPct = remainingMs > 0 && cooldownPeakMs[i] ? Math.round(remainingMs/cooldownPeakMs[i]*100) : 0;
       const cdText = remainingMs > 0 ? Math.ceil(remainingMs/1000)+'s' : '';
-      const condLabel = slot.kind ? CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] : '';
-      el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind?`<span class="cond-chip">${condLabel}${slot.condition.threshold?' '+slot.condition.threshold+'%':''}</span>`:''}${locked?`<img class="lock-badge" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/ability_slot_lock.png" onerror="this.style.display='none'" />`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>${cdText?`<div class="cd-text">${cdText}</div>`:''}`;
+      // Chip da hotbar: poção continua mostrando a condição simples de
+      // sempre (hpBelow/manaBelow); magia agora resume Condições/Monstros
+      // ignorados/Alvo de cura configurados (ver renderActionBody) em vez
+      // de um texto de condição que nunca existiu pra magia de verdade.
+      let condLabel = '';
+      if(slot.kind==='item'){
+        condLabel = CONDITION_TYPES.find(c=>c.id===slot.condition.type).label.split(' ')[0] + (slot.condition.threshold?' '+slot.condition.threshold+'%':'');
+      } else if(slot.kind==='spell'){
+        const parts = [];
+        if(slot.conditions && slot.conditions.length) parts.push(slot.conditions.length+' cond.');
+        if(slot.ignoredMonsters && slot.ignoredMonsters.length) parts.push('🚫'+slot.ignoredMonsters.length);
+        if(slot.healTarget) parts.push('❤️alvo');
+        condLabel = parts.join(' ');
+      }
+      el.innerHTML = `<span class="num">${i+1}</span><span>${icon}</span>${slot.kind && condLabel?`<span class="cond-chip">${condLabel}</span>`:''}${locked?`<img class="lock-badge" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/ability_slot_lock.png" onerror="this.style.display='none'" />`:''}<div class="cd-overlay" style="--pct:${cdPct}%"></div>${cdText?`<div class="cd-text">${cdText}</div>`:''}`;
       el.addEventListener('contextmenu', e=>{ e.preventDefault(); openActionModal(i); });
       // Tooltip com a descrição do que está no slot (magia ou poção) ao passar o mouse.
       attachHotbarTooltip(el, ()=> hotbarTooltipHtmlFor(slot));
@@ -7500,6 +7569,15 @@
     t.addEventListener('click', ()=>{ document.querySelectorAll('.action-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); renderActionBody(); });
   });
 
+  // Nomes de monstro da caçada ATUAL (pra popular o seletor de "Monstros
+  // ignorados") -- vem do bestiário fixo da zona (HUNTS, espelha
+  // huntEngine.js), não dos monstros vivos agora, então funciona mesmo
+  // antes do 1º spawn. Vazio fora de caçada (activeHunt.huntId nulo).
+  function currentZoneMonsterNames(){
+    const def = HUNTS.find(h=>h.id===activeHunt.huntId);
+    if(!def || !Array.isArray(def.monsterTypes)) return [];
+    return Array.from(new Set(def.monsterTypes.map(t=>t.name)));
+  }
   function renderActionBody(){
     const body = document.getElementById('action-body');
     const activeTab = document.querySelector('.action-tab.active').dataset.actiontab;
@@ -7525,12 +7603,74 @@
     if(slot.kind){
       html += `<div class="opt-row" data-clear-slot="1" style="color:#ff9a80;margin-top:6px;">✖ Remover deste slot</div>`;
     }
-    html += `<div style="margin-top:10px;">
-      <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Condição de disparo (ativação por % de HP/MP)</label>
-      <select class="cond-select" id="cond-type-select">${CONDITION_TYPES.map(c=>`<option value="${c.id}" ${slot.condition.type===c.id?'selected':''}>${c.label}</option>`).join('')}</select>
-      <input type="range" class="cond-threshold" id="cond-threshold-input" min="1" max="100" value="${slot.condition.threshold||50}">
-      <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);text-align:right;" id="cond-threshold-val">${slot.condition.threshold||50}%</div>
-    </div>`;
+    if(slot.kind==='item'){
+      // Poção continua com a condição simples de sempre (hpBelow/manaBelow do
+      // JOGADOR) -- isso já era avaliado de verdade no servidor (autoUsePotions),
+      // sem mudança nesta frente.
+      html += `<div style="margin-top:10px;">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Condição de disparo (ativação por % de HP/MP)</label>
+        <select class="cond-select" id="cond-type-select">${CONDITION_TYPES.map(c=>`<option value="${c.id}" ${slot.condition.type===c.id?'selected':''}>${c.label}</option>`).join('')}</select>
+        <input type="range" class="cond-threshold" id="cond-threshold-input" min="1" max="100" value="${slot.condition.threshold||50}">
+        <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);text-align:right;" id="cond-threshold-val">${slot.condition.threshold||50}%</div>
+      </div>`;
+    } else if(slot.kind==='spell'){
+      // Construtor real de Condições + Monstros ignorados + Alvo da cura
+      // (pedido do usuário, print de referência do jogo-fonte) -- tudo aqui
+      // é validado/avaliado DE VERDADE no servidor (ver configureHotbarSlot/
+      // evalHotbarCondition/resolveHealTarget no huntEngine.js), substitui o
+      // campo único slot.condition de magia (que nunca fazia nada de real).
+      if(!Array.isArray(slot.conditions)) slot.conditions = [];
+      if(!Array.isArray(slot.ignoredMonsters)) slot.ignoredMonsters = [];
+      const spellNode = getUnlockedSpells().find(s=>s.id===slot.id);
+      const isHeal = !!(spellNode && isHealSpellDesc(spellNode.node && spellNode.node.desc));
+      html += `<div style="margin-top:12px;">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;gap:6px;">
+          <span>Condições (todas precisam bater pra disparar)</span>
+          <span class="opt-row" data-add-cond="1" style="display:inline-block;padding:2px 8px;margin:0;white-space:nowrap;">+ Adicionar condição</span>
+        </div>`;
+      if(!slot.conditions.length){
+        html += `<div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);opacity:.7;padding:4px 0;">Nada — dispara sempre que possível.</div>`;
+      }
+      slot.conditions.forEach((c,idx)=>{
+        html += `<div class="hotbar-cond-row" style="display:flex;gap:4px;align-items:center;margin:4px 0;">
+          <select data-cond-idx="${idx}" data-cond-field="subject" style="flex:1;min-width:0;">${HOTBAR_COND_SUBJECTS.map(s=>`<option value="${s.id}" ${c.subject===s.id?'selected':''}>${s.label}</option>`).join('')}</select>
+          <select data-cond-idx="${idx}" data-cond-field="type" style="flex:1;min-width:0;">${HOTBAR_COND_TYPES.filter(t=> c.subject!=='target' || t.id==='hp').map(t=>`<option value="${t.id}" ${c.type===t.id?'selected':''}>${t.label}</option>`).join('')}</select>
+          <select data-cond-idx="${idx}" data-cond-field="operator" style="flex:1.6;min-width:0;">${HOTBAR_COND_OPERATORS.map(o=>`<option value="${o.id}" ${c.operator===o.id?'selected':''}>${o.label}</option>`).join('')}</select>
+          <input type="number" min="1" max="100" data-cond-idx="${idx}" data-cond-field="value" value="${c.value}" style="width:42px;">%
+          <span data-cond-remove="${idx}" style="cursor:pointer;color:#ff9a80;">✖</span>
+        </div>`;
+      });
+      html += `</div>`;
+      const availableToIgnore = currentZoneMonsterNames().filter(n=>!slot.ignoredMonsters.includes(n));
+      html += `<div style="margin-top:12px;">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Monstros ignorados (este slot nunca dispara contra eles)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0;">
+          ${slot.ignoredMonsters.length ? slot.ignoredMonsters.map(n=>`<span class="cond-chip" style="cursor:pointer;" data-remove-ignored="${escapeHtml(n)}" title="Clique pra remover">${escapeHtml(n)} ✖</span>`).join('') : `<span style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);opacity:.7;">Nenhum — este slot ataca tudo.</span>`}
+        </div>
+        <div style="display:flex;gap:4px;">
+          <select id="ignore-monster-select" style="flex:1;min-width:0;">
+            <option value="">${availableToIgnore.length?'Escolher monstro...':'(entre numa caçada pra listar)'}</option>
+            ${availableToIgnore.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('')}
+          </select>
+          <span class="opt-row" data-add-ignored-btn="1" style="display:inline-block;padding:2px 8px;margin:0;white-space:nowrap;">+ Ignorar</span>
+        </div>
+      </div>`;
+      if(isHeal){
+        const members = (party ? party.members : []).filter(u=>u!==AUTH_USERNAME);
+        const ht = slot.healTarget;
+        html += `<div style="margin-top:12px;">
+          <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Alvo da cura</label>
+          <select id="heal-target-select" style="width:100%;">
+            <option value="self" ${!ht?'selected':''}>Você mesmo (padrão)</option>
+            <option value="lowestHpAlly" ${ht&&ht.mode==='lowestHpAlly'?'selected':''}>Aliado da party com menos vida</option>
+            ${members.map(u=>`<option value="party:${u}" ${ht&&ht.mode==='partyMember'&&ht.username===u?'selected':''}>Membro da party: ${escapeHtml((party.nicks&&party.nicks[u])||u)}</option>`).join('')}
+            <option value="named" ${ht&&ht.mode==='namedPlayer'?'selected':''}>Jogador pelo nome...</option>
+          </select>
+          <input type="text" id="heal-target-name-input" placeholder="Username do jogador" maxlength="24" value="${ht&&ht.mode==='namedPlayer'?escapeHtml(ht.name):''}" style="width:100%;margin-top:4px;box-sizing:border-box;${ht&&ht.mode==='namedPlayer'?'':'display:none;'}">
+          ${!members.length?`<div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);opacity:.7;margin-top:4px;">Sem membros de party além de você agora — só "Você mesmo"/"Jogador pelo nome" funcionam.</div>`:''}
+        </div>`;
+      }
+    }
     body.innerHTML = html;
     // Descrição de tudo que pode ir no slot, ao passar o mouse (magias E poções).
     body.querySelectorAll('[data-tooltip-spell]').forEach(el=>{
@@ -7561,23 +7701,81 @@
       // no servidor também, senão ele continuaria bebendo a poção sozinho
       // mesmo com o slot visualmente vazio.
       if(wasPotionKind) sendWS({ type:'hunt:configure', potionAutoUse: { [wasPotionKind]: { enabled:false } } });
-      slot.kind = null; slot.id = null;
+      slot.kind = null; slot.id = null; slot.conditions = []; slot.ignoredMonsters = []; slot.healTarget = null;
       renderActionBody(); renderHotbar();
       if(wasItem) saveLocalHotbarItems();
     });
-    document.getElementById('cond-type-select').addEventListener('change', e=>{
-      slot.condition.type=e.target.value; renderHotbar();
-      if(slot.kind==='item') saveLocalHotbarItems();
-    });
-    document.getElementById('cond-threshold-input').addEventListener('input', e=>{
-      slot.condition.threshold = +e.target.value;
-      document.getElementById('cond-threshold-val').textContent = e.target.value+'%';
-      if(slot.kind==='item'){
+    if(slot.kind==='item'){
+      const condTypeSel = document.getElementById('cond-type-select');
+      const condThreshInput = document.getElementById('cond-threshold-input');
+      if(condTypeSel) condTypeSel.addEventListener('change', e=>{
+        slot.condition.type=e.target.value; renderHotbar();
+        saveLocalHotbarItems();
+      });
+      if(condThreshInput) condThreshInput.addEventListener('input', e=>{
+        slot.condition.threshold = +e.target.value;
+        document.getElementById('cond-threshold-val').textContent = e.target.value+'%';
         const pot = POTIONS.find(p=>p.id===slot.id);
         sendWS({ type:'hunt:configure', potionAutoUse: { [pot.kind]: { thresholdPercent: +e.target.value, potionId: pot.id } } });
         saveLocalHotbarItems();
+      });
+    }
+    if(slot.kind==='spell'){
+      // Manda condições/monstros ignorados/alvo de cura pro servidor de uma
+      // vez só (o servidor é quem valida/persiste de verdade — ver
+      // configureHotbarSlot); re-renderiza a partir do estado local
+      // otimista, igual ao resto da hotbar.
+      function pushHotbarConfigure(){
+        sendWS({ type:'hotbar:configure', index:configuringSlotIndex, config:{ conditions:slot.conditions, ignoredMonsters:slot.ignoredMonsters, healTarget:slot.healTarget } });
       }
-    });
+      const addCondBtn = body.querySelector('[data-add-cond]');
+      if(addCondBtn) addCondBtn.addEventListener('click', ()=>{
+        if(slot.conditions.length >= HOTBAR_MAX_CONDITIONS_CLIENT) return;
+        slot.conditions.push({ subject:'you', type:'hp', operator:'lte', value:50 });
+        pushHotbarConfigure(); renderActionBody(); renderHotbar();
+      });
+      body.querySelectorAll('[data-cond-remove]').forEach(el=> el.addEventListener('click', ()=>{
+        slot.conditions.splice(+el.dataset.condRemove, 1);
+        pushHotbarConfigure(); renderActionBody(); renderHotbar();
+      }));
+      body.querySelectorAll('[data-cond-field]').forEach(el=> el.addEventListener('change', e=>{
+        const c = slot.conditions[+el.dataset.condIdx]; if(!c) return;
+        const field = el.dataset.condField;
+        if(field==='value') c.value = Math.max(1, Math.min(100, Math.round(+e.target.value)||50));
+        else c[field] = e.target.value;
+        if(field==='subject' && c.subject==='target') c.type = 'hp'; // monstro não tem mana
+        pushHotbarConfigure(); renderActionBody(); renderHotbar();
+      }));
+      const addIgnoredBtn = body.querySelector('[data-add-ignored-btn]');
+      if(addIgnoredBtn) addIgnoredBtn.addEventListener('click', ()=>{
+        const sel = document.getElementById('ignore-monster-select');
+        const name = sel && sel.value;
+        if(!name) return;
+        if(!slot.ignoredMonsters.includes(name)) slot.ignoredMonsters.push(name);
+        pushHotbarConfigure(); renderActionBody(); renderHotbar();
+      });
+      body.querySelectorAll('[data-remove-ignored]').forEach(el=> el.addEventListener('click', ()=>{
+        const name = el.dataset.removeIgnored;
+        slot.ignoredMonsters = slot.ignoredMonsters.filter(n=>n!==name);
+        pushHotbarConfigure(); renderActionBody(); renderHotbar();
+      }));
+      const healSel = document.getElementById('heal-target-select');
+      if(healSel) healSel.addEventListener('change', e=>{
+        const v = e.target.value;
+        if(v==='self') slot.healTarget = null;
+        else if(v==='lowestHpAlly') slot.healTarget = { mode:'lowestHpAlly' };
+        else if(v.indexOf('party:')===0) slot.healTarget = { mode:'partyMember', username: v.slice(6) };
+        else if(v==='named') slot.healTarget = { mode:'namedPlayer', name: (document.getElementById('heal-target-name-input')||{}).value || '' };
+        pushHotbarConfigure(); renderActionBody(); renderHotbar();
+      });
+      const healNameInput = document.getElementById('heal-target-name-input');
+      if(healNameInput) healNameInput.addEventListener('change', e=>{
+        if(slot.healTarget && slot.healTarget.mode==='namedPlayer'){
+          slot.healTarget.name = e.target.value.trim().slice(0,24);
+          pushHotbarConfigure();
+        }
+      });
+    }
   }
   renderHotbar();
 
