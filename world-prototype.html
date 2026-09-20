@@ -3892,7 +3892,15 @@
   }
 
   const floatingTexts = [];
-  function spawnFloatingText(getAnchor, text, color){ floatingTexts.push({ getAnchor, text, color, bornAt: now() }); }
+  // yOffset (opcional) empilha um texto ACIMA do texto "principal" do mesmo
+  // evento (ex.: "Crítico!"/nome da magia sobre o número de dano/cura) —
+  // sem isso os dois nasceriam exatamente no mesmo pixel, subindo juntos,
+  // ilegíveis um em cima do outro. bold/big (opcionais) destacam a etiqueta
+  // de Crítico/nome de magia do número comum.
+  function spawnFloatingText(getAnchor, text, color, opts){
+    opts = opts || {};
+    floatingTexts.push({ getAnchor, text, color, bornAt: now(), yOffset: opts.yOffset||0, big: !!opts.big });
+  }
   const FLOAT_LIFETIME_MS = 900;
   let lastGold = 0, lastXp = 0, lastHp = player.hp;
 
@@ -3972,7 +3980,15 @@
         const isMagic = fx.t === 'spellHit';
         const color = fx.crit ? '#ffd23f' : (isMagic ? '#8fd0ff' : '#f2f2f2');
         spawnFloatingText(anchor, `${fx.crit?'💥 ':''}-${fx.dmg}`, color);
+        // "Crítico!" flutuante em cima do número de dano (pedido do usuário,
+        // igual jogos do estilo Huntera) — yOffset empilha acima do número
+        // pra não nascer no mesmo pixel.
+        if(fx.crit) spawnFloatingText(anchor, 'Crítico!', '#ffd23f', { yOffset: 16, big: true });
         if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
+        // Nome da magia flutuando sobre o PRÓPRIO jogador (o conjurador), tipo
+        // "está fazendo o encantamento" — só pra magia de ataque de verdade
+        // (fx.spellName vem de castSpell/stats.name em huntEngine.js).
+        if(isMagic && fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         // pulso saindo do jogador em direção ao golpe — dá o feedback visual
         // de "usei uma habilidade/ataquei" que estava faltando por completo.
         spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
@@ -3990,9 +4006,10 @@
         spawnFloatingText(()=>({x:player.x,y:player.y}), `${fx.special?'⚡ ':''}-${fx.dmg}`, fx.special ? '#ff8a3d' : '#ff5a5a');
         if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
       } else if(fx.t === 'dodge'){
-        spawnFloatingText(()=>({x:player.x,y:player.y}), 'Esquiva!', '#8fd0ff');
+        spawnFloatingText(()=>({x:player.x,y:player.y}), 'Esquiva!', '#8fd0ff', { big: true });
       } else if(fx.t === 'heal'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
+        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
         castPoseUntil = now() + CAST_POSE_MS;
         if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'heal', player.x, player.y, fx.element);
@@ -4003,9 +4020,10 @@
         // pro CASTER saber que funcionou, sem número flutuante duplicado em
         // cima de si mesmo (que ficaria enganoso, já que quem recebeu foi
         // outra pessoa).
-        logLoot(`💚 Você curou <b>${escapeHtml(fx.targetNick||'um aliado')}</b> em +${fx.amount}.`);
+        logLoot(`💚 Você curou <b>${escapeHtml(fx.targetNick||'um aliado')}</b> em +${fx.amount}${fx.spellName?` (${escapeHtml(fx.spellName)})`:''}.`);
       } else if(fx.t === 'shield'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), 'Escudo!', '#8fd0ff');
+        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
         castPoseUntil = now() + CAST_POSE_MS;
         if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
@@ -4016,6 +4034,7 @@
         // aconteceu" mesmo sem sprite dedicado ainda pra cada uma.
         const buffLabel = { atkPct: 'Ataque', defPct: 'Defesa', magicDmgPct: 'Magia', healingPowerPct: 'Cura' }[fx.statKey] || 'Buff';
         spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.pct}% ${buffLabel}`, '#ffd27a');
+        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,210,122,.75)', 32, 420);
         castPoseUntil = now() + CAST_POSE_MS;
         if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
@@ -4559,8 +4578,11 @@
       if(age > FLOAT_LIFETIME_MS){ floatingTexts.splice(i,1); continue; }
       const anchor = ft.getAnchor(); const s = toScreen(anchor.x, anchor.y);
       const rise = (age/FLOAT_LIFETIME_MS) * 26; const alpha = 1 - age/FLOAT_LIFETIME_MS;
-      ctx.globalAlpha = Math.max(0,alpha); ctx.font = '11px "JetBrains Mono"'; ctx.textAlign='center';
-      ctx.fillStyle = ft.color; ctx.fillText(ft.text, s.x, s.y - 26 - rise); ctx.globalAlpha = 1;
+      ctx.globalAlpha = Math.max(0,alpha);
+      ctx.font = ft.big ? 'bold 13px "JetBrains Mono"' : '11px "JetBrains Mono"';
+      ctx.textAlign='center';
+      ctx.fillStyle = ft.color;
+      ctx.fillText(ft.text, s.x, s.y - 26 - rise - (ft.yOffset||0)); ctx.globalAlpha = 1;
     }
 
     // pulso de ataque/magia (anel que expande e some — ver spawnFxRing em processCombatFx)
