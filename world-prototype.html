@@ -181,6 +181,19 @@
   .pf-pop-sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--gold-bright); margin-bottom:4px; }
   #bank-popover{ top:100%; left:0; margin-top:8px; width:210px; }
   #bank-popover .row{ display:flex; justify-content:space-between; padding:2px 0; }
+  /* Popover do botão de Configurações (item 11) -- ancorado à DIREITA (não
+     à esquerda como os outros) porque o ícone fica na ponta direita da
+     barra (#tb-icons{margin-left:auto}); abrir pra esquerda evitaria que
+     o popover saísse da tela. */
+  #settings-popover{ top:100%; right:0; left:auto; margin-top:8px; width:230px; }
+  .settings-menu-btn{
+    display:block; width:100%; margin-bottom:6px; padding:9px 10px; border-radius:6px;
+    border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink);
+    font-family:var(--font-mono); font-size:11px; text-align:left; cursor:pointer;
+  }
+  .settings-menu-btn:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .settings-menu-btn.danger{ color:#ff9a80; }
+  .settings-menu-btn.danger:hover{ border-color:var(--danger); color:#ff9a80; }
   #dispatch-popover .opt-box{ display:flex; align-items:center; gap:6px; padding:5px 0; }
   #dispatch-popover .countdown{ margin-top:8px; padding:8px; background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); border-radius:5px; text-align:center; }
   #dispatch-popover .countdown .big{ font-family:var(--font-display); font-size:15px; color:var(--gold-bright); }
@@ -243,7 +256,7 @@
   #hunts-body{ flex:1; display:flex; overflow:hidden; }
   #hunts-left{ width:220px; border-right:1px solid rgba(191,161,95,.2); padding:12px; overflow-y:auto; flex-shrink:0; }
   #hunts-search{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:7px 9px; font-family:var(--font-body); font-size:12px; outline:none; margin-bottom:10px; }
-  .hunt-list-item{ padding:9px 10px; border-radius:5px; cursor:pointer; font-family:var(--font-body); font-size:12.5px; color:var(--ink-dim); margin-bottom:4px; border:1px solid transparent; display:flex; align-items:center; gap:9px; } .hunt-list-item-icon{ width:34px; height:34px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; background:rgba(0,0,0,.25); border:1px solid var(--gold-deep); border-radius:4px; } .hunt-list-item-body{ flex:1; min-width:0; }
+  .hunt-list-item{ padding:8px 10px; border-radius:5px; cursor:pointer; font-family:var(--font-body); font-size:12.5px; color:var(--ink-dim); margin-bottom:4px; border:1px solid transparent; display:flex; align-items:center; gap:9px; } .hunt-list-item-icon{ width:52px; height:52px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; background:rgba(0,0,0,.25); border:1px solid var(--gold-deep); border-radius:5px; } .hunt-list-item-body{ flex:1; min-width:0; }
   .hunt-list-item.selected{ color:var(--gold-bright); border-color:var(--gold-deep); background:rgba(191,161,95,.08); }
   .hunt-list-item .lvl{ display:block; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-top:2px; }
 
@@ -574,22 +587,12 @@
   #inv-items-col{ flex:1; display:flex; flex-direction:column; overflow:hidden; }
   #inv-items-grid{ flex:1; padding:14px; display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; overflow-y:auto; align-content:start; }
   .item-slot{ aspect-ratio:1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:18px; position:relative; background-size:100% 100%; background-repeat:no-repeat; }
-  /* Visual escolhido pro slot (6 modelos cosméticos, ver #inv-frame-popover)
-     — a classe inv-frame-N fica no #inventory-modal inteiro, então TODOS os
-     .item-slot (Bolsa/Mochila/Lixeira teria se usasse a mesma classe, mas
-     Lixeira usa .trash-row e não é afetada) trocam de moldura juntos. */
-  #inventory-modal.inv-frame-1 .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_fire.png); border-color:transparent; }
-  #inventory-modal.inv-frame-2 .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_ice.png); border-color:transparent; }
-  #inventory-modal.inv-frame-3 .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_lightning.png); border-color:transparent; }
-  #inventory-modal.inv-frame-4 .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_nature.png); border-color:transparent; }
-  #inventory-modal.inv-frame-5 .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_arcane.png); border-color:transparent; }
-  #inventory-modal.inv-frame-6 .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_skull.png); border-color:transparent; }
-  .inv-tool-btn{ margin-left:auto; padding:10px 14px; cursor:pointer; font-size:14px; }
-  #inv-frame-popover{ top:100%; right:0; left:auto; width:190px; }
-  #inv-frame-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  .inv-frame-thumb{ aspect-ratio:1; border-radius:6px; border:1px solid var(--gold-deep); background-size:100% 100%; background-repeat:no-repeat; background-color:rgba(0,0,0,.35); cursor:pointer; }
-  .inv-frame-thumb:hover{ border-color:var(--gold-bright); }
-  .inv-frame-thumb.selected{ border-color:var(--gold-bright); box-shadow:0 0 8px rgba(240,211,138,.4); }
+  /* Visual do slot PADRONIZADO (item 1 da lista de tarefas, 20/09/2026):
+     antes o jogador escolhia entre 6 modelos cosméticos (picker removido,
+     ver histórico em hud-assets-notas.md) — agora é sempre o Modelo 1
+     (fire), fixo pra todo mundo, sem seletor. Escopo: só a Bolsa/Mochila
+     (#inventory-modal .item-slot) — Lixeira usa .trash-row, não afetada. */
+  #inventory-modal .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_fire.png); border-color:transparent; }
   /* Lixeira de Itens — linhas de largura cheia (não o grid quadrado de ícone
      usado por Bolsa/Mochila), pra caber nome + contagem regressiva + botões. */
   .trash-row{ grid-column:1/-1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; gap:10px; padding:7px 10px; }
@@ -668,6 +671,28 @@
   .wiki-tier-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); margin-bottom:6px; }
   .wiki-tier-row.claimed{ border-color:var(--gold-bright); }
   .wiki-tier-row.locked{ opacity:.5; }
+  /* Item 10 da lista de tarefas (20/09/2026): fases do Bestiário (modal da
+     criatura) como caixas coloridas -- verde=concluída (bônus ativo),
+     vermelho=bateu o abate mas falta pagar, azul=fase ATUAL (ainda
+     caçando), cinza=fase futura/bloqueada -- ver print de referência do
+     usuário. Substitui a lista simples .wiki-tier-row só nesta seção
+     (que continua existindo/em uso noutro lugar). */
+  .bestiary-progress-track{ height:10px; border-radius:5px; background:#0a0705; border:1px solid var(--gold-deep); overflow:hidden; margin:6px 0 3px; }
+  .bestiary-progress-fill{ height:100%; background:linear-gradient(180deg,var(--gold),var(--gold-deep)); }
+  .bestiary-phase-row{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 4px; }
+  .bestiary-phase-box{ flex:1; min-width:112px; padding:8px 10px; border-radius:8px; text-align:center; font-family:var(--font-mono); border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); }
+  .bestiary-phase-box .bpb-label{ font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; }
+  .bestiary-phase-box .bpb-threshold{ font-size:12px; font-weight:bold; margin:2px 0; color:var(--ink); }
+  .bestiary-phase-box .bpb-status{ font-size:9px; color:var(--ink-dim); }
+  .bestiary-phase-box.locked{ opacity:.55; }
+  .bestiary-phase-box.current{ border-color:#5c9eff; }
+  .bestiary-phase-box.current .bpb-threshold{ color:#7ab2ff; }
+  .bestiary-phase-box.ready{ border-color:#e0685a; background:rgba(224,104,90,.14); }
+  .bestiary-phase-box.ready .bpb-threshold{ color:#ff8a75; }
+  .bestiary-phase-box.ready .bpb-status button, .bestiary-phase-box.ready button{ margin-top:4px; width:100%; }
+  .bestiary-phase-box.done{ border-color:#7fd88f; background:rgba(127,216,143,.12); }
+  .bestiary-phase-box.done .bpb-threshold{ color:#7fd88f; }
+  .bestiary-phase-box.done .bpb-status{ color:#7fd88f; }
   #bestiary-reward-modal{ display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:320px; max-width:90vw; padding:18px; z-index:60; text-align:center; }
   #bestiary-reward-modal.open{ display:block; }
 
@@ -956,6 +981,52 @@
   #confirm-modal .cm-ok:hover{ box-shadow:0 0 10px rgba(240,211,138,.25); }
   #confirm-modal .cm-cancel{ border:1px solid var(--ink-dim); background:rgba(255,255,255,.04); color:var(--ink-dim); }
   #confirm-modal .cm-cancel:hover{ color:var(--ink); border-color:var(--ink); }
+
+  /* ============ MODAL DE DETALHE DO NÓ DA ÁRVORE DE HABILIDADES (item 4 da
+     lista de tarefas, 20/09/2026) — abre centralizado por cima de tudo assim
+     que o jogador clica num nó, em vez do card aparecer lá embaixo na lista
+     exigindo rolagem. position:fixed explícito (não depende de herdar nada
+     de fora) pra garantir que cubra a tela inteira mesmo. ============ */
+  #skill-node-modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:220; display:none; align-items:center; justify-content:center; }
+  #skill-node-modal-backdrop.show{ display:flex; }
+  #skill-node-modal{ width:380px; max-width:90vw; max-height:80vh; overflow-y:auto; }
+  .skill-node-modal-points-row{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:6px; }
+  .skill-node-modal-points-row b{ color:var(--gold-bright); }
+
+  /* ============ ACOMPANHAR BESTIÁRIO (item 11 da lista de tarefas,
+     20/09/2026): painel compacto na tela de entrada do Bestiário + modal de
+     busca pra adicionar criatura (fora do #wiki-modal pelo mesmo motivo do
+     skill-node-modal acima). ============ */
+  #bestiary-tracked-panel{ border:1px solid var(--gold-deep); border-radius:8px; background:rgba(0,0,0,.25); padding:10px 12px; margin-bottom:10px; }
+  #bestiary-tracked-panel .btp-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  #bestiary-tracked-panel .btp-title{ font-family:var(--font-display); font-size:11px; color:var(--gold-bright); letter-spacing:.05em; text-transform:uppercase; }
+  #bestiary-tracked-panel .btp-count{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .btp-row{ display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid rgba(201,162,84,.15); }
+  .btp-row:first-of-type{ border-top:none; }
+  .btp-row img, .btp-row .btp-emoji{ width:28px; height:28px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; }
+  .btp-row .btp-emoji{ font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .btp-info{ flex:1; min-width:0; }
+  .btp-name{ font-family:var(--font-mono); font-size:10px; color:var(--ink); }
+  .btp-row .bestiary-progress-track{ height:6px; margin:3px 0 0; }
+  .btp-remove{ cursor:pointer; color:var(--ink-dim); font-size:12px; padding:2px 5px; flex-shrink:0; }
+  .btp-remove:hover{ color:#e0685a; }
+  .btp-empty{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); font-style:italic; padding:4px 0; }
+  #btp-add-btn{ width:100%; margin-top:8px; }
+
+  #bestiary-track-search-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:225; display:none; align-items:center; justify-content:center; }
+  #bestiary-track-search-backdrop.show{ display:flex; }
+  #bestiary-track-search-modal{ width:360px; max-width:90vw; max-height:78vh; display:flex; flex-direction:column; }
+  #bestiary-track-search-list{ flex:1; overflow-y:auto; padding:6px 14px; }
+  .bts-row{ display:flex; align-items:center; gap:8px; padding:6px 4px; border-radius:6px; cursor:pointer; }
+  .bts-row:hover{ background:rgba(201,162,84,.1); }
+  .bts-row img, .bts-row .bts-emoji{ width:26px; height:26px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; }
+  .bts-row .bts-emoji{ font-size:18px; display:flex; align-items:center; justify-content:center; }
+  .bts-row-info{ flex:1; min-width:0; font-family:var(--font-mono); font-size:10px; color:var(--ink); }
+  .bts-row-kills{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
+  .bts-row.checked{ background:rgba(127,216,143,.12); }
+  .bts-row-check{ font-size:13px; color:var(--ink-dim); flex-shrink:0; width:16px; text-align:center; }
+  .bts-row.checked .bts-row-check{ color:#7fd88f; }
+  .bts-row.disabled{ opacity:.4; cursor:not-allowed; }
 
   /* ============ REBIRTH / ALTAR ============ */
   #altar-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:340px; display:none; z-index:15; }
@@ -1286,6 +1357,19 @@
   #pets-modal.open{ display:flex; }
   #quicksell-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:94vw; display:none; z-index:17; }
   #quicksell-modal.open{ display:block; }
+  /* Item 6 da lista de tarefas (20/09/2026): lista com muitos itens ficava
+     impossível de gerenciar -- max-height+scroll evita o modal virar uma
+     janela gigante, e o grupo separado marcado/não-marcado (ver
+     .quicksell-group-label em renderQuickSell) resolve o problema real
+     relatado ("não dá pra marcar os itens que vão ser vendidos e os que
+     não vão"): agora os dois grupos ficam visualmente separados. */
+  #quicksell-list{ max-height:46vh; overflow-y:auto; }
+  .quicksell-group-label{ font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-dim); margin:8px 0 4px; }
+  .quicksell-group-label:first-child{ margin-top:0; }
+  .quicksell-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.25); margin-bottom:5px; }
+  .quicksell-row.marked{ background:rgba(126,224,138,.12); border-color:#7ee08a; }
+  .quicksell-row .item-icon{ width:22px; height:22px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .quicksell-row .item-icon svg{ width:100%; height:100%; }
   #blessings-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:94vw; display:none; z-index:17; }
   #blessings-modal.open{ display:block; }
   .bless-row{ grid-column:1/-1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; gap:10px; padding:7px 10px; margin-bottom:6px; }
@@ -1387,6 +1471,34 @@
     </div>
   </div>
 
+  <!-- MODAL DE DETALHE DO NÓ DA ÁRVORE DE HABILIDADES (item 4 da lista de
+       tarefas, 20/09/2026): clicar num nó agora abre isso na hora, em vez de
+       precisar rolar a lista até o card aparecer lá embaixo. Fica fora do
+       #skilltree-panel de propósito (aquele painel tem transform+overflow
+       hidden, o que quebraria um position:fixed filho dele). -->
+  <div id="skill-node-modal-backdrop">
+    <div id="skill-node-modal" class="glass ornate">
+      <div class="panel-title" style="padding:12px 14px 0;">Habilidade<span class="rule"></span><span class="win-close-x" id="skill-node-modal-close">✕</span></div>
+      <div id="skill-node-modal-body" style="padding:0 14px 14px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE BUSCA "ACOMPANHAR BESTIÁRIO" (item 11 da lista de tarefas,
+       20/09/2026): fica fora do #wiki-modal de propósito, pelo mesmo motivo
+       do skill-node-modal acima (janela alvo tem transform+overflow hidden). -->
+  <div id="bestiary-track-search-backdrop">
+    <div id="bestiary-track-search-modal" class="glass ornate">
+      <div class="panel-title" style="padding:12px 14px 0;">Adicionar criatura ao Acompanhar<span class="rule"></span><span class="win-close-x" id="bestiary-track-search-close">✕</span></div>
+      <div style="padding:8px 14px 0;">
+        <input type="text" id="bestiary-track-search-input" placeholder="Buscar monstro..." style="width:100%;">
+      </div>
+      <div id="bestiary-track-search-list"></div>
+      <div style="padding:10px 14px 14px;">
+        <button class="treino-inline-btn" id="bestiary-track-search-done" style="width:100%;">Pronto</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BARRA SUPERIOR ÚNICA (estilo Huntera) — retrato/nome/level, ouro, Loja,
        jogadores online e a fileira de ícones de menu, tudo numa faixa só no
        topo da tela, visível em qualquer área do jogo. -->
@@ -1453,12 +1565,22 @@
       <div class="tb-icon" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
       <div class="tb-icon" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/analyzer.png" alt=""></div>
       <div class="tb-icon" id="btn-open-wiki" title="Wiki (itens e bestiário)">📖</div>
-      <!-- Pedido do usuário: acesso rápido pra voltar pra seleção de
-           personagem (trocar de herói sem deslogar) e sair do jogo de vez
-           (desloga, volta pro login) direto da tela principal -- antes só
-           dava pra fazer isso fechando a aba/voltando manualmente na URL. -->
-      <div class="tb-icon" id="btn-back-to-select" title="Voltar pra Seleção de Personagem">🔁</div>
-      <div class="tb-icon" id="btn-exit-game" title="Sair do Jogo">🚪</div>
+      <!-- Item 11 da lista de tarefas (2026-09-20): antes eram 2 ícones soltos
+           ("Voltar pra Seleção de Personagem" e "Sair do Jogo") direto na
+           barra -- juntados num único botão de Configurações (engrenagem),
+           que também é o lugar natural pras futuras configs do servidor
+           (som, notificações etc. -- ainda não definidas, ver nota dentro
+           do popover). Segue o mesmo padrão de popover-por-hover já usado
+           no Robô de Venda/Sair da Caçada (ver dispatchPill/exitHuntPill). -->
+      <div class="tb-icon hover-trigger" id="btn-open-settings" title="Configurações">
+        ⚙️
+        <div class="popover glass" id="settings-popover">
+          <div class="panel-title" style="margin-bottom:8px;">Configurações<span class="rule"></span></div>
+          <button type="button" class="settings-menu-btn" id="settings-back-to-select-btn">🔁 Voltar pra Seleção de Personagem</button>
+          <button type="button" class="settings-menu-btn danger" id="settings-exit-game-btn">🚪 Sair do Jogo</button>
+          <div class="italic-note" style="margin-top:10px;">Configurações do servidor (som, notificações etc.) chegam em breve aqui.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1555,7 +1677,6 @@
         <div class="skill-tabs" id="skill-tabs"></div>
         <div class="skill-points-row"><span>Pontos de Habilidade</span><span><b id="skill-points-available">0</b> / <span id="skill-points-total">0</span> disponíveis</span></div>
         <div id="skill-list-wrap"></div>
-        <div id="skill-node-detail"></div>
         <div class="skill-actions-row">
           <button class="skill-save-btn" id="skill-save-btn" disabled>💾 Salvar Árvore</button>
           <button class="skill-reset-btn" id="skill-reset-btn">♻️ Resetar (150 💎)</button>
@@ -1692,6 +1813,10 @@
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🪙 Venda Rápida<span class="rule"></span><span class="win-close-x" data-close-win="quicksell-modal">✕</span></div>
     <div style="padding:0 14px 14px;">
       <div class="italic-note" style="margin-bottom:8px;">Marque os itens da Mochila que quer vender — a marca fica salva até você vender ou desmarcar.</div>
+      <div id="quicksell-bulk-row" style="display:flex;gap:8px;margin-bottom:10px;">
+        <button type="button" class="treino-inline-btn" id="quicksell-mark-all-btn" style="flex:1;padding:7px 10px;font-size:10.5px;">☑ Marcar Todos</button>
+        <button type="button" class="treino-inline-btn" id="quicksell-unmark-all-btn" style="flex:1;padding:7px 10px;font-size:10.5px;">☐ Desmarcar Todos</button>
+      </div>
       <div id="quicksell-list"></div>
       <div id="quicksell-footer" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;border-top:1px dashed rgba(191,161,95,.2);padding-top:10px;">
         <span id="quicksell-summary" class="hint">Nada marcado.</span>
@@ -1756,6 +1881,7 @@
            abaixo). Classificação por tipo é nossa (ver CREATURE_TYPES_CLIENT),
            os monstros do jogo não existem na wiki de referência. -->
       <div id="wiki-types-view" class="wiki-view" style="display:none;">
+        <div id="bestiary-tracked-panel"></div>
         <div id="wiki-types-grid"></div>
       </div>
       <div id="wiki-bestiario-view" class="wiki-view" style="display:none;">
@@ -1808,19 +1934,6 @@
       <div class="inv-tab" data-invtab="mochila">Mochila</div>
       <div class="inv-tab" data-invtab="lixeira">Lixeira de Itens</div>
       <div class="inv-tab" data-invtab="armazem">Armazém</div>
-      <div class="inv-tool-btn hover-trigger" id="inv-frame-btn" title="Escolher visual dos slots">🎨
-        <div class="popover glass" id="inv-frame-popover">
-          <div class="panel-title" style="margin-bottom:8px;">Visual dos Slots<span class="rule"></span></div>
-          <div id="inv-frame-grid">
-            <div class="inv-frame-thumb" data-frame-model="1" style="background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_fire.png)"></div>
-            <div class="inv-frame-thumb" data-frame-model="2" style="background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_ice.png)"></div>
-            <div class="inv-frame-thumb" data-frame-model="3" style="background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_lightning.png)"></div>
-            <div class="inv-frame-thumb" data-frame-model="4" style="background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_nature.png)"></div>
-            <div class="inv-frame-thumb" data-frame-model="5" style="background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_arcane.png)"></div>
-            <div class="inv-frame-thumb" data-frame-model="6" style="background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_skull.png)"></div>
-          </div>
-        </div>
-      </div>
       <div id="inv-close">✕ Fechar</div>
     </div>
     <div id="inv-body">
@@ -2367,6 +2480,14 @@
   let premiumExpiresAt = null;
   const training = { magia:0, defesa:0, esquiva:0, critico:0, sword:0, axe:0, club:0, distance:0, dagger:0, staff:0 };
   let trainingBank = 0;
+  // Timestamp de quando trainingBank foi atualizado pela última vez com um
+  // valor real do servidor (ver applyHuntSnapshot) -- usado só pra
+  // extrapolar visualmente o avanço da barra de treino ENTRE um snapshot e
+  // outro (ver getLiveTrainingBank), pra barra parecer de verdade em tempo
+  // real (estilo Tibia) em vez de só "pular" a cada 250ms como o resto dos
+  // painéis. É sempre corrigido pro valor real assim que o próximo snapshot
+  // chega -- puro efeito visual, nunca decide nada de servidor.
+  let trainingBankSnapshotAt = Date.now();
   let usedFreeTrainingReset = false;
   const TRAINING_RESET_COST_CLIENT = 100; // espelha TRAINING_RESET_COST_ELEMENTAL_COIN no servidor
   let combatPosture = 'balanca';
@@ -2383,7 +2504,6 @@
   let depot = [], depotCapacity = 200;
   let quickSellMarks = [];
   let blessingsCount = 0, blessingProtectionPct = 0, nextBlessingCost = null;
-  let invSlotFrame = 1; // Visual escolhido pro slot da Bolsa/Mochila (1-6, ver huntEngine.setInvSlotFrame)
   let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, accessory1:null, accessory2:null, amulet:null, legs:null };
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
   let party = null; // { id, leaderUsername, members:[...] }
@@ -2409,6 +2529,7 @@
   let craftingJob = null;
   let lastSeenCraftCompletedAt = 0;
   let craftBarInterval = null; // setInterval que re-renderiza a barra de progresso enquanto o modal de Profissões está aberto e tem um craft rolando
+  let treinoBarInterval = null; // mesmo esquema, pra barra de progresso de treino (item 10 da lista de tarefas) enquanto a aba Treino está aberta
   let rankScore = 0; // Rank Geral — nível efetivo*10 + soma dos andares de Torre (ver huntEngine.computeRankScore)
   let rankTop = [], rankMyPosition = null; // preenchidos sob demanda por 'rank:get' (ver renderRank)
   let pets = { owned:[], active:null, pityCounter:0 };
@@ -2423,6 +2544,7 @@
   let offlineTrainingArmed = null;  // { repeat } — espelho do servidor
   let bestiaryKilled = [];
   let bestiaryKillCounts = {}, bestiaryTierClaims = {}, bestiaryRandomBonus = {}; // Wiki/Bestiário: contagem por espécie + marcos reivindicados (sincronizados via snapshot)
+  let bestiaryTracked = []; // Item 11 da lista de tarefas (20/09/2026): nomes das espécies "fixadas" no painel de Acompanhar Bestiário (sincronizado via snapshot)
   let xpBonus = { bestiaryCount:0, bestiaryTotal:0, bestiaryPct:0, guildPct:0, premiumPct:0, levelPct:0, scrollPct:0, totalPct:0 };
   let ownedOutfits = ['padrao'], ownedMounts = [], ownedWings = [], ownedAuras = [];
   let cosmeticColors = { head:0, body:0, legs:0, feet:0 };
@@ -4764,7 +4886,8 @@
     depot = msg.depot || depot; depotCapacity = msg.depotCapacity || depotCapacity;
     quickSellMarks = msg.quickSellMarks || quickSellMarks;
     blessingsCount = msg.blessingsCount || 0; blessingProtectionPct = msg.blessingProtectionPct || 0; nextBlessingCost = (msg.nextBlessingCost != null) ? msg.nextBlessingCost : null;
-    if(Number.isInteger(msg.invSlotFrame) && msg.invSlotFrame !== invSlotFrame){ invSlotFrame = msg.invSlotFrame; applyInvFrameClass(); }
+    // invSlotFrame não é mais usado no cliente (ver item 1 da lista de
+    // tarefas, 20/09/2026 -- visual do slot padronizado, sem seletor).
     pouch = msg.pouch; pouchCapacity = msg.pouchCapacity;
     equipment = msg.equipment; cosmetics = msg.cosmetics;
     Object.assign(prestige, msg.prestige);
@@ -4773,7 +4896,7 @@
     fragments = msg.fragments || 0;
     starEvolutionCost = msg.starEvolutionCost || null;
     friends = msg.friends || [];
-    Object.assign(training, msg.training); trainingBank = msg.trainingBank;
+    Object.assign(training, msg.training); trainingBank = msg.trainingBank; trainingBankSnapshotAt = Date.now();
     if(typeof msg.usedFreeTrainingReset === 'boolean') usedFreeTrainingReset = msg.usedFreeTrainingReset;
     combatPosture = msg.combatPosture; sqmDistance = msg.sqmDistance;
     targetMode = msg.targetMode; followUsername = msg.followUsername || null;
@@ -4788,6 +4911,7 @@
     bestiaryKillCounts = msg.bestiaryKillCounts || {};
     bestiaryTierClaims = msg.bestiaryTierClaims || {};
     bestiaryRandomBonus = msg.bestiaryRandomBonus || {};
+    bestiaryTracked = msg.bestiaryTracked || [];
     xpBonus = msg.xpBonus || xpBonus;
     ownedOutfits = msg.ownedOutfits || ownedOutfits; ownedMounts = msg.ownedMounts || ownedMounts; ownedWings = msg.ownedWings || ownedWings; ownedAuras = msg.ownedAuras || ownedAuras;
     cosmeticColors = msg.cosmeticColors || cosmeticColors;
@@ -5103,6 +5227,13 @@
         logLoot(`⚠️ ${reasonLabel}`);
       }
     }
+    if(msg.forType === 'bestiary:track' || msg.forType === 'bestiary:untrack'){
+      if(msg.ok) renderWikiIfOpen();
+      else {
+        const reasonLabel = { monstro_invalido:'Monstro inválido.', limite_atingido:`Limite de ${BESTIARY_TRACKED_MAX_CLIENT} criaturas acompanhadas atingido.` }[msg.reason] || msg.reason;
+        logLoot(`⚠️ ${reasonLabel}`);
+      }
+    }
     if(msg.forType === 'trade:request'){
       if(msg.ok) logLoot('🤝 Pedido de troca enviado.'); else logLoot(`⚠️ Troca falhou: ${msg.reason}`);
     }
@@ -5259,7 +5390,11 @@
         craftingJob = { profession: msg.profession, recipeId: msg.recipeId, displayName: msg.displayName, startedAt: Date.now(), durationMs: msg.durationMs };
         logLoot(`🔨 Começou a criar ${msg.displayName}...`);
       } else if(!msg.ok){
-        const reasonMap = { profissao_invalida:'profissão inválida.', receita_invalida:'receita inválida.', apenas_na_cidade_principal:'criar itens só funciona na Cidade Principal.', nivel_insuficiente:'nível de profissão insuficiente pra essa receita.', ouro_insuficiente:'ouro insuficiente.', material_insuficiente:`falta material: ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||''}.`, ja_criando:'já tem um item sendo criado -- espere terminar.' };
+        // falta_equipamento_anterior (item 7 da lista de tarefas, 20/09/2026):
+        // Tier 2+ da Forja agora exige ter o item da tier anterior da mesma
+        // linha na Mochila (consumido ao criar o novo) -- ver prevTierItemBase
+        // em startCraft/huntEngine.js.
+        const reasonMap = { profissao_invalida:'profissão inválida.', receita_invalida:'receita inválida.', apenas_na_cidade_principal:'criar itens só funciona na Cidade Principal.', nivel_insuficiente:'nível de profissão insuficiente pra essa receita.', ouro_insuficiente:'ouro insuficiente.', material_insuficiente:`falta material: ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||''}.`, falta_equipamento_anterior:`precisa ter "${msg.missingName||msg.missing}" (a tier anterior) na Mochila -- ele será consumido ao criar o novo item.`, ja_criando:'já tem um item sendo criado -- espere terminar.' };
         logLoot(`⚠️ Não foi possível criar o item: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderInventoryIfOpen();
@@ -5469,6 +5604,52 @@
     });
   });
 
+  // Espelho das constantes reais de ritmo/dificuldade de treino do servidor
+  // (ver huntEngine.js: TRAINING_RATE_ONLINE_PER_SEC/TRAINING_RATE_HUNT_PER_SEC/
+  // TRAINING_DIFFICULTY_GROWTH/TRAINING_DIFFICULTY_STEP) -- usadas só pra
+  // ESTIMAR visualmente o preenchimento da barra entre um snapshot e outro
+  // (getLiveTrainingBank), nunca pra decidir nada de servidor de verdade.
+  const TRAINING_RATE_ONLINE_PER_SEC_CLIENT = 1/2400;
+  const TRAINING_RATE_HUNT_PER_SEC_CLIENT = 1/3600;
+  const TRAINING_DIFFICULTY_GROWTH_CLIENT = 1.10;
+  const TRAINING_DIFFICULTY_STEP_CLIENT = 5;
+  function getTrainingTotalInvestedClient(){
+    return Object.values(training).reduce((sum,v)=> sum + (Number(v)||0), 0);
+  }
+  function getTrainingRateMultiplierClient(){
+    const tier = Math.floor((trainingBank + getTrainingTotalInvestedClient()) / TRAINING_DIFFICULTY_STEP_CLIENT);
+    return Math.pow(TRAINING_DIFFICULTY_GROWTH_CLIENT, tier);
+  }
+  // Barra de progresso de treino em tempo real, estilo Tibia (item 10 da
+  // lista de tarefas): antes só mostrava o total de pontos inteiros no
+  // banco, sem nenhuma noção visual de quanto faltava pro PRÓXIMO ponto.
+  // trainingBank já é um número fracionário que sobe every tick no
+  // servidor (ver accrueDummyTraining/accrueHuntTraining); aqui a gente
+  // extrapola esse valor no intervalo ENTRE dois snapshots usando o mesmo
+  // ritmo/dificuldade do servidor, só pra barra render suave em vez de
+  // "pular" a cada ~250ms -- o valor real sempre corrige sozinho assim que
+  // o próximo snapshot chega (ver trainingBankSnapshotAt).
+  function getLiveTrainingBank(){
+    let rate = 0;
+    if(trainingActive && trainingActive.mode === 'online') rate = TRAINING_RATE_ONLINE_PER_SEC_CLIENT;
+    else if(activeHunt && activeHunt.running) rate = TRAINING_RATE_HUNT_PER_SEC_CLIENT;
+    if(rate <= 0) return trainingBank;
+    const elapsedSec = Math.max(0, (Date.now() - trainingBankSnapshotAt) / 1000);
+    return trainingBank + (rate / getTrainingRateMultiplierClient()) * elapsedSec;
+  }
+  function stopTreinoBarInterval(){ if(treinoBarInterval){ clearInterval(treinoBarInterval); treinoBarInterval = null; } }
+  function isTreinoTabVisible(){
+    const tabBtn = document.querySelector('.hunts-tab[data-tab="treino"]');
+    return huntsModal.classList.contains('open') && tabBtn && tabBtn.classList.contains('active');
+  }
+  function ensureTreinoBarInterval(){
+    if(treinoBarInterval || !isTreinoTabVisible()) return;
+    treinoBarInterval = setInterval(()=>{
+      if(!isTreinoTabVisible()){ stopTreinoBarInterval(); return; }
+      renderTreinoTab();
+    }, 250);
+  }
+
   function renderTreinoTab(){
     const kitEl = document.getElementById('treino-kit-status');
     if(hasTrainingKit){
@@ -5509,22 +5690,60 @@
       else startAutoWalkToPos(nearestTrainingDummy(), go);
     });
 
-    document.getElementById('treino-bank-status').innerHTML =
-      `Banco de treino: <b>${Math.floor(trainingBank)}</b> ponto(s) esperando pra distribuir.<br><button class="treino-inline-btn" id="treino-open-attrs-btn" style="margin-top:8px;">Abrir Atributos Livres</button>`;
+    const liveBank = getLiveTrainingBank();
+    const wholePoints = Math.floor(liveBank);
+    const fracPct = Math.max(0, Math.min(100, (liveBank % 1) * 100));
+    let rate = 0, modeLabel = '';
+    if(isOnline){ rate = TRAINING_RATE_ONLINE_PER_SEC_CLIENT; modeLabel = 'treinando no boneco'; }
+    else if(activeHunt && activeHunt.running){ rate = TRAINING_RATE_HUNT_PER_SEC_CLIENT; modeLabel = 'caçando'; }
+    let progressSub;
+    if(rate > 0){
+      const etaMs = Math.max(0, ((1 - (liveBank % 1)) / (rate / getTrainingRateMultiplierClient())) * 1000);
+      progressSub = `${fracPct.toFixed(0)}% até o próximo ponto (${modeLabel}) · faltam ~${fmtDuration(etaMs)}`;
+    } else if(isOfflineArmed){
+      progressSub = 'Treino offline armado — só passa a render ao desconectar.';
+    } else {
+      progressSub = 'Nenhum treino ativo agora.';
+    }
+    document.getElementById('treino-bank-status').innerHTML = `
+      <div class="craft-progress-title">⚡ Progresso do treino</div>
+      <div class="char-bar-track" style="height:14px;"><div class="char-bar-fill xp" style="width:${fracPct}%"></div></div>
+      <div class="craft-progress-sub">${progressSub}</div>
+      <div style="margin-top:8px;">Banco de treino: <b>${wholePoints}</b> ponto(s) esperando pra distribuir.</div>
+      <button class="treino-inline-btn" id="treino-open-attrs-btn" style="margin-top:8px;">Abrir Atributos Livres</button>
+    `;
     document.getElementById('treino-open-attrs-btn').addEventListener('click', ()=>{
       document.getElementById('attrs-panel').classList.add('open'); renderAttrs();
     });
+    ensureTreinoBarInterval();
   }
 
+  // Extrai o número inicial de "20-40" / "60-80" pra poder ordenar a lista
+  // de caçadas por nível crescente (pedido do usuário) sem depender da ordem
+  // em que HUNTS foi declarado no código.
+  function huntLevelSortKey(h){
+    const m = String(h.level||'').match(/\d+/);
+    return m ? parseInt(m[0], 10) : 0;
+  }
   function renderHuntsList(filter=''){
     const listEl = document.getElementById('hunts-list');
     listEl.innerHTML = '';
-    HUNTS.filter(h=> h.name.toLowerCase().includes(filter.toLowerCase())).forEach(h=>{
+    HUNTS.filter(h=> h.name.toLowerCase().includes(filter.toLowerCase()))
+      .sort((a,b)=> huntLevelSortKey(a) - huntLevelSortKey(b))
+      .forEach(h=>{
       const el = document.createElement('div');
       el.className = 'hunt-list-item' + (h.id===selectedHunt.id?' selected':'');
       const firstMt = (h.monsterTypes||[])[0];
       const iconUrl = firstMt && firstMt.spriteId ? URL_BASE+'monsters/'+firstMt.spriteId+'.png' : null;
-      const iconHtml = iconUrl ? `<img class="hunt-list-item-icon" src="${iconUrl}" alt="" onerror="this.style.display='none'">` : `<div class="hunt-list-item-icon" style="display:flex;align-items:center;justify-content:center;font-size:18px;">${firstMt?firstMt.icon:''}</div>`;
+      // Antes, quando o sprite dava 404 (onerror), o <img> só sumia e não
+      // sobrava nada no slot — por isso vários itens da lista apareciam sem
+      // ícone. Agora sempre existe um fallback de emoji por baixo, escondido
+      // por padrão, que só aparece se a imagem falhar (mesmo padrão usado no
+      // bestiário, ver linha ~6562).
+      const emojiFallback = `<div class="hunt-list-item-icon" style="${iconUrl?'display:none;':'display:flex;'}align-items:center;justify-content:center;font-size:26px;">${firstMt?firstMt.icon:''}</div>`;
+      const iconHtml = iconUrl
+        ? `<img class="hunt-list-item-icon" src="${iconUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">${emojiFallback}`
+        : emojiFallback;
       el.innerHTML = `${iconHtml}<div class="hunt-list-item-body">${h.name}<span class="lvl">Nv. ${h.level}</span></div>`;
       el.addEventListener('click', ()=> selectHunt(h));
       listEl.appendChild(el);
@@ -6347,6 +6566,18 @@
      ========================================================= */
   const inventoryModal = document.getElementById('inventory-modal');
   let invTab = 'bolsa';
+  // Item 5 da lista de tarefas (20/09/2026): arrastar um equipamento pro
+  // boneco parecia simplesmente "não funcionar" -- causa real era que
+  // renderInventoryIfOpen() reconstrói #inv-items-grid do zero até 4x/seg
+  // (ver PANEL_RENDER_THROTTLE_MS) sempre que um snapshot chega do servidor;
+  // um clique sobrevive a isso (~100-150ms), mas um arrastar de verdade
+  // (pegar o item, mover o mouse até o slot, soltar) costuma levar bem mais
+  // que os ~250ms de vida garantida do DOM, então o navegador cancelava o
+  // drag no meio do caminho quando um re-render chegava. Fix: enquanto
+  // ITEM_DRAG_IN_PROGRESS estiver true, renderInventory() não mexe no DOM
+  // (só retoma no dragend, que sempre dispara mesmo se o drop falhar).
+  let itemDragInProgress = false;
+  document.addEventListener('dragend', ()=>{ itemDragInProgress = false; renderInventoryIfOpen(); });
   document.getElementById('bag-shortcut').addEventListener('click', ()=>{ inventoryModal.classList.add('open'); renderInventory(); });
   document.getElementById('inv-close').addEventListener('click', ()=> inventoryModal.classList.remove('open'));
   document.querySelectorAll('.inv-tab').forEach(t=>{
@@ -6355,29 +6586,12 @@
       invTab = t.dataset.invtab; renderInventory();
     });
   });
-  const invFrameBtn = document.getElementById('inv-frame-btn');
-  const invFramePopover = document.getElementById('inv-frame-popover');
-  invFrameBtn.addEventListener('mouseenter', ()=> invFramePopover.classList.add('show'));
-  invFrameBtn.addEventListener('mouseleave', ()=> invFramePopover.classList.remove('show'));
-  function applyInvFrameClass(){
-    for(let n=1;n<=6;n++) inventoryModal.classList.remove('inv-frame-'+n);
-    inventoryModal.classList.add('inv-frame-'+invSlotFrame);
-    document.querySelectorAll('.inv-frame-thumb').forEach(t=>{
-      t.classList.toggle('selected', Number(t.dataset.frameModel) === invSlotFrame);
-    });
-  }
-  applyInvFrameClass();
-  document.querySelectorAll('.inv-frame-thumb').forEach(t=>{
-    t.addEventListener('click', ()=>{
-      // Aplica na hora (não espera o próximo snapshot do servidor pra
-      // "confirmar" visualmente) -- clicar numa moldura devia trocar o visual
-      // do slot IMEDIATAMENTE; o servidor ainda valida/persiste por trás.
-      const model = Number(t.dataset.frameModel);
-      invSlotFrame = model;
-      applyInvFrameClass();
-      sendWS({ type:'inventory:setSlotFrame', model });
-    });
-  });
+  // Item 1 da lista de tarefas (20/09/2026): removido o seletor de 6
+  // modelos de moldura de slot (🎨 inv-frame-btn) -- visual agora é
+  // padronizado (Modelo 1, ver CSS #inventory-modal .item-slot), sem
+  // escolha do jogador. invSlotFrame/inventory:setSlotFrame ficaram sem
+  // uso no cliente (servidor ainda aceita a mensagem por compatibilidade,
+  // mas nada mais a envia).
   function renderInventoryIfOpen(){ if(inventoryModal.classList.contains('open')) renderInventory(); }
   // Bestiário/Wiki sofria o MESMO bug estrutural documentado acima (render
   // não-throttled a 30Hz destruindo o DOM do card de monstro entre o
@@ -6531,6 +6745,7 @@
   // espécies cadastradas naquele tipo. Clicar entra na lista filtrada (ver
   // renderWikiMonsters, que agora respeita wikiSelectedType).
   function renderWikiTypes(){
+    renderBestiaryTrackedPanel();
     const grid = document.getElementById('wiki-types-grid');
     const all = getWikiMonsterCatalog();
     grid.innerHTML = CREATURE_TYPES_CLIENT.map(t=>{
@@ -6545,6 +6760,119 @@
       card.addEventListener('click', ()=>{ wikiSelectedType = card.dataset.type; renderWiki(); });
     });
   }
+
+  /* =========================================================
+     ACOMPANHAR BESTIÁRIO — item 11 da lista de tarefas (20/09/2026): painel
+     compacto na tela de entrada do Bestiário (prints 3 e 4 de referência do
+     usuário) mostrando até BESTIARY_TRACKED_MAX (10) espécies "fixadas" com
+     barra de progresso até a próxima fase, sem precisar entrar na ficha
+     completa de cada uma. "+ Adicionar criatura" abre um modal de busca
+     (mesmo padrão de janela fora-do-container do skill-node-modal, ver CSS)
+     com lista filtrável + contagem de abates + confirmação via "Pronto".
+     ========================================================= */
+  const BESTIARY_TRACKED_MAX_CLIENT = 10;
+  let bestiaryTrackSearchDraft = []; // seleção em andamento dentro do modal de busca, só vira `bestiaryTracked` de verdade quando aperta "Pronto"
+
+  function bestiaryProgressFor(m){
+    const kills = bestiaryKillCounts[m.name] || 0;
+    const claimed = bestiaryTierClaims[m.name] ?? -1;
+    const nextTier = BESTIARY_TIERS_CLIENT[claimed+1];
+    const pct = nextTier ? Math.max(0, Math.min(100, Math.round(kills/nextTier.threshold*100))) : 100;
+    return { kills, claimed, nextTier, pct };
+  }
+
+  function renderBestiaryTrackedPanel(){
+    const wrap = document.getElementById('bestiary-tracked-panel');
+    if(!wrap) return;
+    const catalog = getWikiMonsterCatalog();
+    const tracked = bestiaryTracked.map(name=> catalog.find(m=>m.name===name)).filter(Boolean);
+    const rows = tracked.map(m=>{
+      const { kills, nextTier, pct } = bestiaryProgressFor(m);
+      const imgHtml = m.img
+        ? `<img src="${m.img}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><span class="btp-emoji" style="display:none;">${m.icon||'❓'}</span>`
+        : `<span class="btp-emoji">${m.icon||'❓'}</span>`;
+      const subtitle = nextTier
+        ? `${kills.toLocaleString('pt-BR')} / ${nextTier.threshold.toLocaleString('pt-BR')} abates`
+        : 'Todas as fases concluídas';
+      return `<div class="btp-row" data-monster="${m.name}">
+        ${imgHtml}
+        <div class="btp-info">
+          <div class="btp-name">${m.name}</div>
+          <div class="bestiary-progress-track"><div class="bestiary-progress-fill" style="width:${pct}%;"></div></div>
+          <div style="font-family:var(--font-mono);font-size:8.5px;color:var(--ink-dim);">${subtitle}</div>
+        </div>
+        <span class="btp-remove" data-untrack="${m.name}" title="Deixar de acompanhar">✕</span>
+      </div>`;
+    }).join('') || `<div class="btp-empty">Nenhuma criatura sendo acompanhada ainda.</div>`;
+    wrap.innerHTML = `
+      <div class="btp-head">
+        <span class="btp-title">Acompanhar Bestiário</span>
+        <span class="btp-count">${tracked.length}/${BESTIARY_TRACKED_MAX_CLIENT}</span>
+      </div>
+      ${rows}
+      <button class="treino-inline-btn" id="btp-add-btn"${tracked.length>=BESTIARY_TRACKED_MAX_CLIENT?' disabled':''}>+ Adicionar criatura</button>
+    `;
+    wrap.querySelectorAll('[data-untrack]').forEach(el=>{
+      el.addEventListener('click', (e)=>{ e.stopPropagation(); sendWS({ type:'bestiary:untrack', monsterName: el.dataset.untrack }); });
+    });
+    wrap.querySelectorAll('.btp-row').forEach(row=>{
+      row.addEventListener('click', ()=>{ wikiSelectedMonster = row.dataset.monster; renderWiki(); });
+    });
+    const addBtn = document.getElementById('btp-add-btn');
+    if(addBtn) addBtn.addEventListener('click', openBestiaryTrackSearch);
+  }
+
+  function renderBestiaryTrackSearchList(){
+    const list = document.getElementById('bestiary-track-search-list');
+    const q = (document.getElementById('bestiary-track-search-input').value||'').toLowerCase();
+    const monsters = getWikiMonsterCatalog().filter(m=> !q || m.name.toLowerCase().includes(q));
+    list.innerHTML = monsters.map(m=>{
+      const checked = bestiaryTrackSearchDraft.includes(m.name);
+      const alreadyMax = !checked && bestiaryTrackSearchDraft.length >= BESTIARY_TRACKED_MAX_CLIENT;
+      const kills = bestiaryKillCounts[m.name] || 0;
+      const imgHtml = m.img
+        ? `<img src="${m.img}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><span class="bts-emoji" style="display:none;">${m.icon||'❓'}</span>`
+        : `<span class="bts-emoji">${m.icon||'❓'}</span>`;
+      return `<div class="bts-row${checked?' checked':''}${alreadyMax?' disabled':''}" data-monster="${m.name}">
+        <span class="bts-row-check">${checked?'✓':''}</span>
+        ${imgHtml}
+        <div class="bts-row-info">${m.name}</div>
+        <span class="bts-row-kills">${kills.toLocaleString('pt-BR')} abates</span>
+      </div>`;
+    }).join('') || '<div class="italic-note">Nenhum monstro encontrado.</div>';
+    list.querySelectorAll('.bts-row').forEach(row=>{
+      row.addEventListener('click', ()=>{
+        const name = row.dataset.monster;
+        const idx = bestiaryTrackSearchDraft.indexOf(name);
+        if(idx !== -1) bestiaryTrackSearchDraft.splice(idx, 1);
+        else if(bestiaryTrackSearchDraft.length < BESTIARY_TRACKED_MAX_CLIENT) bestiaryTrackSearchDraft.push(name);
+        renderBestiaryTrackSearchList();
+      });
+    });
+  }
+
+  function openBestiaryTrackSearch(){
+    bestiaryTrackSearchDraft = bestiaryTracked.slice();
+    document.getElementById('bestiary-track-search-input').value = '';
+    renderBestiaryTrackSearchList();
+    document.getElementById('bestiary-track-search-backdrop').classList.add('show');
+  }
+  function closeBestiaryTrackSearch(){
+    document.getElementById('bestiary-track-search-backdrop').classList.remove('show');
+  }
+  document.getElementById('bestiary-track-search-input').addEventListener('input', renderBestiaryTrackSearchList);
+  document.getElementById('bestiary-track-search-close').addEventListener('click', closeBestiaryTrackSearch);
+  document.getElementById('bestiary-track-search-backdrop').addEventListener('click', (e)=>{ if(e.target.id==='bestiary-track-search-backdrop') closeBestiaryTrackSearch(); });
+  document.getElementById('bestiary-track-search-done').addEventListener('click', ()=>{
+    // Manda só o delta (adiciona quem entrou, remove quem saiu) -- mais simples
+    // que criar uma mensagem nova "bestiary:setTracked" e reaproveita os dois
+    // handlers atômicos que já existem no servidor (idempotentes cada um).
+    const toAdd = bestiaryTrackSearchDraft.filter(n=> !bestiaryTracked.includes(n));
+    const toRemove = bestiaryTracked.filter(n=> !bestiaryTrackSearchDraft.includes(n));
+    toAdd.forEach(n=> sendWS({ type:'bestiary:track', monsterName:n }));
+    toRemove.forEach(n=> sendWS({ type:'bestiary:untrack', monsterName:n }));
+    closeBestiaryTrackSearch();
+  });
   function renderWikiMonsters(){
     const grid = document.getElementById('wiki-monster-grid');
     const typeDef = CREATURE_TYPES_CLIENT.find(t=>t.id===wikiSelectedType);
@@ -6584,18 +6912,39 @@
     const loot = (hunt && hunt.possibleLoot) || [];
     const lootByRarity = {};
     loot.forEach(it=>{ (lootByRarity[it.rarity] = lootByRarity[it.rarity]||[]).push(it); });
+    // Item 10 da lista de tarefas (20/09/2026): fases como caixas coloridas
+    // em vez da lista simples de antes -- mesmo estado (isDone/isNext/
+    // canClaim) que já existia, só o visual mudou: verde=concluída (bônus
+    // ativo), vermelho=bateu o abate mas falta pagar pra liberar o bônus,
+    // azul=fase ATUAL (ainda caçando, mostra quanto falta), cinza=futura.
+    const nextTierIdx = claimed + 1;
+    const nextTier = BESTIARY_TIERS_CLIENT[nextTierIdx];
+    const progressPct = nextTier ? Math.max(0, Math.min(100, Math.round(kills / nextTier.threshold * 100))) : 100;
+    const progressLine = nextTier
+      ? `<div class="bestiary-progress-track"><div class="bestiary-progress-fill" style="width:${progressPct}%;"></div></div>
+         <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);">${progressPct}% da próxima fase — faltam ${Math.max(0,nextTier.threshold-kills).toLocaleString('pt-BR')} abates</div>`
+      : `<div style="font-family:var(--font-mono);font-size:9px;color:var(--gold-bright);">✓ Todas as fases desta criatura foram concluídas!</div>`;
     const tiersHtml = BESTIARY_TIERS_CLIENT.map((t,i)=>{
       const isDone = i <= claimed;
       const isNext = i === claimed+1;
       const canClaim = isNext && kills >= t.threshold;
-      let statusHtml;
-      if(isDone) statusHtml = '<span style="color:var(--gold-bright);">✓ Desbloqueado</span>';
-      else if(!isNext) statusHtml = '<span style="color:var(--ink-dim);">Bloqueado</span>';
-      else if(canClaim) statusHtml = `<button class="treino-inline-btn" data-claim-tier="${i}">${t.cost>0 ? 'Pagar '+t.cost.toLocaleString('pt-BR')+' Gold' : 'Resgatar (grátis)'}</button>`;
-      else statusHtml = `<span style="color:var(--ink-dim);">faltam ${(t.threshold-kills).toLocaleString('pt-BR')} abates</span>`;
-      return `<div class="wiki-tier-row ${isDone?'claimed':(!isNext?'locked':'')}">
-        <b style="white-space:nowrap;">${t.threshold.toLocaleString('pt-BR')} abates</b>
-        <span style="flex:1;font-family:var(--font-mono);font-size:10px;">${t.label}</span>
+      let cls, statusHtml;
+      if(isDone){
+        cls = 'done';
+        statusHtml = `<div class="bpb-status">✓ Concluída</div><div class="bpb-status">${t.label}</div>`;
+      } else if(canClaim){
+        cls = 'ready';
+        statusHtml = `<button class="treino-inline-btn" data-claim-tier="${i}">${t.cost>0 ? 'Pagar '+t.cost.toLocaleString('pt-BR')+' Gold' : 'Resgatar (grátis)'}</button>`;
+      } else if(isNext){
+        cls = 'current';
+        statusHtml = `<div class="bpb-status">Atual — faltam ${(t.threshold-kills).toLocaleString('pt-BR')}</div>`;
+      } else {
+        cls = 'locked';
+        statusHtml = `<div class="bpb-status">Bloqueada</div>`;
+      }
+      return `<div class="bestiary-phase-box ${cls}">
+        <div class="bpb-label">Fase ${i+1}</div>
+        <div class="bpb-threshold">${t.threshold.toLocaleString('pt-BR')} abates</div>
         ${statusHtml}
       </div>`;
     }).join('');
@@ -6603,12 +6952,16 @@
       const color = RARITY_COLORS[r] || '#a99872';
       return `<div style="margin-bottom:6px;"><b style="color:${color};text-transform:capitalize;font-size:10px;">${r}</b><div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);">${lootByRarity[r].map(it=>it.name).join(', ')}</div></div>`;
     }).join('');
+    const isTracked = bestiaryTracked.includes(m.name);
     wrap.innerHTML = `
       <div class="wiki-back-btn" id="wiki-back-btn">‹ Voltar</div>
-      <div style="display:flex;gap:12px;align-items:center;margin:8px 0;">
-        ${m.img ? `<img src="${m.img}" style="width:56px;height:56px;object-fit:contain;">` : `<span style="font-size:40px;">${m.icon||'❓'}</span>`}
-        <div>
-          <div style="font-family:var(--font-display);font-size:14px;color:var(--gold-bright);">${m.name}</div>
+      <div style="display:flex;gap:14px;align-items:center;margin:8px 0;">
+        ${m.img ? `<img src="${m.img}" style="width:104px;height:104px;object-fit:contain;image-rendering:pixelated;flex-shrink:0;" onerror="this.replaceWith(Object.assign(document.createElement('span'),{style:'font-size:72px;',textContent:'${m.icon||'❓'}'}))">` : `<span style="font-size:72px;flex-shrink:0;">${m.icon||'❓'}</span>`}
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-family:var(--font-display);font-size:14px;color:var(--gold-bright);">${m.name}</div>
+            <button class="treino-inline-btn" id="wiki-track-toggle-btn" style="font-size:9px;padding:3px 8px;${isTracked?'opacity:.7;':''}">${isTracked?'✓ Acompanhando':'+ Acompanhar'}</button>
+          </div>
           <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);">${m.zone} · Nv. ${m.level}${m.weakTo&&m.weakTo.length?' · Fraco a: '+m.weakTo.join(', '):''}</div>
           <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink);margin-top:2px;">Abates: <b style="color:var(--gold-bright);">${kills.toLocaleString('pt-BR')}</b></div>
         </div>
@@ -6624,24 +6977,56 @@
         </div>`;
       })()}
       ${(()=>{
-        const resist = computeMonsterElementResist(m.weakTo);
-        const icon = { fogo:'🔥', agua:'💧', terra:'🌍', ar:'💨', luz:'✨', trevas:'🌑' };
-        const cells = ELEMENT_IDS.map(id=>{
-          const pct = resist[id];
-          const color = pct>0 ? 'var(--ok)' : (pct<0 ? '#e0685a' : 'var(--ink-dim)');
-          const sign = pct>0 ? '+' : '';
-          return `<span style="display:flex;align-items:center;gap:3px;">${icon[id]} ${ELEMENT_LABEL[id]}: <b style="color:${color};">${sign}${pct}%</b></span>`;
+        // Item 9 da lista de tarefas (20/09/2026): "colocar a % em todos os
+        // elementos" -- antes esta seção só mostrava os 6 elementos de MUNDO
+        // (fogo/água/terra/ar/luz/trevas) em texto simples. Trocado pelo
+        // MESMO grid de barras com os 8 Tipos de Dano (Físico/Fogo/Terra/
+        // Energia/Gelo/Sagrado/Morte/Life Drain) que "Detalhes da Caçada" já
+        // usa (estimateResistances/resistBarColor/DAMAGE_TYPES) -- mesma
+        // fonte de dado real (computeMonsterElementResist por trás), só
+        // reaproveitando o visual de barra em vez de reimplementar do zero.
+        const resist = estimateResistances(m);
+        const resistHtml = DAMAGE_TYPES.map(t=>{
+          const pct = resist[t];
+          const cls = pct>=120?'weak':(pct<=80?'resist':'neutral');
+          const width = Math.max(4, Math.min(100, pct*0.7));
+          return `<div class="resist-row"><span class="resist-label">${t}</span><div class="resist-track"><div class="resist-fill" style="width:${width}%;background:${resistBarColor(pct)}"></div></div><span class="resist-pct ${cls}">${pct}%</span></div>`;
         }).join('');
-        return `<div class="panel-title" style="margin-top:4px;">Resistência Elemental<span class="rule"></span></div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px;margin-bottom:4px;">${cells}</div>
-        <div style="color:var(--ink-dim);font-size:8.5px;margin-bottom:4px;">Afeta dano de magia de verdade (não corpo-a-corpo). Positivo = resistente (recebe menos), negativo = fraqueza (recebe mais).</div>`;
+        return `<div class="panel-title" style="margin-top:4px;">Resistências / Tipos de Dano<span class="rule"></span></div>
+        <div class="resist-grid" style="margin-top:2px;">${resistHtml}</div>
+        <div style="color:var(--ink-dim);font-size:8.5px;margin:4px 0;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros (100%). Os demais afetam o dano de magia de verdade (não corpo-a-corpo) -- abaixo de 100% = resistente, acima = fraqueza.</div>`;
       })()}
       <div class="panel-title" style="margin-top:4px;">Marcos de Abate<span class="rule"></span></div>
-      ${tiersHtml}
+      ${progressLine}
+      <div class="bestiary-phase-row">${tiersHtml}</div>
       <div class="panel-title" style="margin-top:10px;">Tabela de Loot da Zona<span class="rule"></span></div>
       ${lootHtml || '<div class="italic-note">Sem loot cadastrado.</div>'}
+      ${(()=>{
+        // Item 10 da lista de tarefas (20/09/2026): rodapé "Bônus do
+        // Bestiário" igual o print de referência -- bônus GLOBAL (soma de
+        // TODAS as espécies, não só esta), vindo de computeXpBonusBreakdown/
+        // computeBestiaryTierBonusPct no servidor (ver bestiaryTierPct/
+        // bestiaryTierDmgPct/bestiaryClaimsCount/bestiaryClaimsTotal, campos
+        // novos no snapshot xpBonus).
+        const b = xpBonus || {};
+        const expPct = b.bestiaryTierPct || 0;
+        const dmgPct = b.bestiaryTierDmgPct || 0;
+        const doneCount = b.bestiaryClaimsCount || 0;
+        const totalCount = b.bestiaryClaimsTotal || 0;
+        const parts = [];
+        if(expPct) parts.push(`+${expPct}% de experiência`);
+        if(dmgPct) parts.push(`+${dmgPct}% de dano`);
+        return `<div class="panel-title" style="margin-top:10px;">Bônus do Bestiário<span class="rule"></span></div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink);">
+          ${parts.length ? parts.join(', ') : 'Nenhum marco pago ainda em nenhuma espécie'}
+          <span style="color:var(--ink-dim);"> (${doneCount}/${totalCount} concluídas, somando todas as espécies)</span>
+        </div>`;
+      })()}
     `;
     document.getElementById('wiki-back-btn').addEventListener('click', ()=>{ wikiSelectedMonster = null; renderWiki(); });
+    document.getElementById('wiki-track-toggle-btn').addEventListener('click', ()=>{
+      sendWS({ type: isTracked ? 'bestiary:untrack' : 'bestiary:track', monsterName: m.name });
+    });
     wrap.querySelectorAll('[data-claim-tier]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'bestiary:claimTier', monsterName:m.name, tier:Number(btn.dataset.claimTier) }));
     });
@@ -6669,10 +7054,24 @@
   });
   document.getElementById('wiki-type-back-btn').addEventListener('click', ()=>{ wikiSelectedType = null; renderWiki(); });
   document.getElementById('btn-open-wiki').addEventListener('click', ()=>{ wikiModal.classList.toggle('open'); renderWiki(); });
+  // Botão de Configurações (item 11 da lista de tarefas) -- popover por
+  // hover, mesmo esquema anti-"vão morto" do Robô de Venda (ver
+  // dispatchPill/openDispatchPopover): sem o atraso cancelável no
+  // mouseleave, mover o mouse do ícone até os botões dentro do popover
+  // fecharia ele no meio do caminho.
+  const settingsTrigger = document.getElementById('btn-open-settings');
+  const settingsPopover = document.getElementById('settings-popover');
+  let settingsCloseTimer = null;
+  function openSettingsPopover(){ clearTimeout(settingsCloseTimer); settingsPopover.classList.add('show'); }
+  function scheduleCloseSettingsPopover(){ clearTimeout(settingsCloseTimer); settingsCloseTimer = setTimeout(()=> settingsPopover.classList.remove('show'), 220); }
+  settingsTrigger.addEventListener('mouseenter', openSettingsPopover);
+  settingsTrigger.addEventListener('mouseleave', scheduleCloseSettingsPopover);
+  settingsPopover.addEventListener('mouseenter', openSettingsPopover);
+  settingsPopover.addEventListener('mouseleave', scheduleCloseSettingsPopover);
   // Voltar pra Seleção de Personagem -- só troca de tela, mantém a sessão
   // (LS_TOKEN/LS_USERNAME) logada; não precisa de confirmação, é reversível
   // (character-select.html deixa entrar de novo em qualquer personagem).
-  document.getElementById('btn-back-to-select').addEventListener('click', ()=>{
+  document.getElementById('settings-back-to-select-btn').addEventListener('click', ()=>{
     window.location.href = 'character-select.html';
   });
   // Sair do Jogo -- desloga de verdade (mesmo comportamento do "Sair" da
@@ -6684,7 +7083,8 @@
   // animação normalmente (só com um "(offline)" no nick). O aviso de
   // confirmação existe só pra deixar isso claro (evita o susto de achar que
   // "sair" interrompe tudo), não porque a ação seja arriscada de verdade.
-  document.getElementById('btn-exit-game').addEventListener('click', async ()=>{
+  document.getElementById('settings-exit-game-btn').addEventListener('click', async ()=>{
+    settingsPopover.classList.remove('show');
     if(!(await showConfirmModal('Sair do jogo? Você será desconectado neste navegador, mas seu personagem continua caçando sozinho normalmente (e assim aparece pro seu Grupo) até você voltar.'))) return;
     localStorage.removeItem(LS_TOKEN);
     localStorage.removeItem(LS_USERNAME);
@@ -6773,6 +7173,28 @@
     img.outerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;color:${kind==='mana'?'#5aa9e6':'#d9534f'};">${POTION_ICON_SVG}</span>`;
   };
   const MATERIAL_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 5-2 10-6 5-6-5L4 7l8-5z"/></svg>';
+  // Item 2 da lista de tarefas (20/09/2026): os 6 materiais brutos/refinados
+  // de crafting (Forja/Carpintaria/Tecelagem, ver MATERIAL_INFO/CRAFT_BASE_*
+  // em huntEngine.js) nunca tiveram PNG real em items/loot/ -- eles não vêm
+  // do loot scrape da wiki (task #48), são um sistema separado introduzido
+  // depois. Todo <img src="itemIconUrl(id)"> pra esses IDs sempre dava 404 e
+  // caía no MATERIAL_ICON_SVG genérico (mesmo desenho pra todos, sem
+  // distinção nenhuma) -- por isso "os ícones não aparecem". Em vez de
+  // continuar tentando um PNG que não existe, cada um ganha um SVG PRÓPRIO
+  // (mesmo estilo stroke-based do resto do jogo), resolvido ANTES da
+  // tentativa de PNG (ver resolveItemIconHtml/renderInventory).
+  const RAW_MATERIAL_ICON_SVG = {
+    minerio_ferro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l3-8 6-2 7 4-2 8-6 3-8-5z"/><path d="M9 6l2 6 6-2"/></svg>',
+    barra_aco: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6" rx="1.5"/><path d="M3 12h18M7 9v6M17 9v6"/></svg>',
+    madeira_bruta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="3"/><circle cx="4.5" cy="12" r="1.6"/><circle cx="19.5" cy="12" r="1.6"/></svg>',
+    madeira_nobre: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="3"/><circle cx="4.5" cy="12" r="1.6"/><circle cx="19.5" cy="12" r="1.6"/><path d="M12 2l1.2 2.4L16 5l-2.4 1.2L12 9l-.8-2.8L8 5l2.8-.6L12 2z"/></svg>',
+    fio_de_la: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M6 8c3 2 3 6 0 8M12 4c3 3 3 13 0 16M18 8c-3 2-3 6 0 8"/></svg>',
+    seda_encantada: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c4-3 8-3 9 0s5 3 9 0M3 14c4-3 8-3 9 0s5 3 9 0"/><path d="M12 2l.6 1.6L14 4l-1.4.4L12 6l-.6-1.6L10 4l1.4-.4L12 2z"/></svg>',
+  };
+  function rawMaterialIconHtml(itemId, rarityColor){
+    const svg = RAW_MATERIAL_ICON_SVG[itemId];
+    return svg ? `<span class="item-icon" style="color:${rarityColor};">${svg}</span>` : null;
+  }
   // Fallback do ícone real (foto vinda da wiki) pra loot comum sem sprite
   // dedicado — chamado pelo onerror do <img> quando o arquivo não existe
   // (ex.: 2 itens sem imagem utilizável na wiki). Troca a <img> quebrada
@@ -6847,6 +7269,8 @@
     const gemIconUrl = GEM_ICON_URL[it.id];
     const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
     if(gemIconUrl) return `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`;
+    const rawMatHtml = rawMaterialIconHtml(it.id, rarityColor);
+    if(rawMatHtml) return rawMatHtml;
     if(it.icon) return `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`;
     if(!it.slot) return `<img class="item-icon" data-rarity-color="${rarityColor}" src="${itemIconUrl(it.id)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleLootIconError(this)" />`;
     return `<span class="item-icon" style="color:${rarityColor};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>`;
@@ -6905,7 +7329,12 @@
   // a Mochila (com botão "Guardar" por item) em cima e o Armazém (com botão
   // "Retirar" por item) embaixo — reaproveita o mesmo .trash-row visual da
   // Lixeira em vez de duplicar CSS novo.
-  function buildDepotSlot(it, onClick, actionLabel){
+  // dragInfo: null (não arrastável, ex.: material sem slot) ou
+  // { dataKey, value } -- dataKey é 'text/plain' pro item já estar na
+  // Mochila (equip:item lê bagIndex daí, mesmo formato do grid da aba
+  // Mochila) ou 'text/depot-index' pro item ainda estar no Armazém
+  // (equip:fromDepot, ver drop nos .equip-slot mais abaixo).
+  function buildDepotSlot(it, onClick, actionLabel, dragInfo){
     // Slot compartilhado entre a metade "Mochila" e "Armazém" do Armazém --
     // mesma classe .item-slot (visual igual Bolsa/Mochila), só troca a ação
     // do clique (guardar vs. recuperar).
@@ -6917,10 +7346,25 @@
     const iconHtml = resolveItemIconHtml(it);
     slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}${rarityFrameHtml(it.rarity)}`;
     slot.addEventListener('click', onClick);
+    // Item 5 da lista de tarefas (20/09/2026): equipamento (it.slot) agora
+    // pode ser arrastado direto pro boneco a partir daqui -- antes o
+    // Armazém não tinha NENHUM draggable, então só dava pra equipar
+    // clicando "Recuperar" e trocando pra aba Mochila.
+    if(dragInfo && it.slot){
+      slot.draggable = true;
+      slot.addEventListener('dragstart', e=>{ e.dataTransfer.setData(dragInfo.dataKey, String(dragInfo.value)); e.dataTransfer.effectAllowed = 'move'; itemDragInProgress = true; });
+    }
+    // Tooltip com descrição real + status (getItemTotalStatsClient) pra
+    // equipamento -- antes só mostrava nome/raridade/grade, sem descrição
+    // nenhuma (item 5 da lista de tarefas, 20/09/2026), igual ao que a
+    // Mochila já mostrava (ver renderInventory).
     slot.addEventListener('mouseenter', ()=>{
+      const stats = it.slot ? getItemTotalStatsClient(it) : {};
       const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+      const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
       const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
-      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${infusionLine}${it.qty>1?` · x${it.qty}`:''}`;
+      const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
+      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}`;
       invItemTooltip.style.display = 'block';
     });
     slot.addEventListener('mousemove', positionInvTooltip);
@@ -6951,7 +7395,7 @@
       empty.textContent = 'Mochila vazia.';
       grid.appendChild(empty);
     }
-    bag.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:store', bagIndex:i }), 'Guardar no Armazém')));
+    bag.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:store', bagIndex:i }), 'Guardar no Armazém', { dataKey:'text/plain', value:i })));
     const depotHeader = document.createElement('div');
     depotHeader.className = 'panel-title'; depotHeader.style.cssText = 'grid-column:1/-1;font-size:11px;margin:10px 0 4px;';
     depotHeader.textContent = `Armazém (${depot.length}/${depotCapacity}) — clique pra recuperar`;
@@ -6962,9 +7406,14 @@
       empty.textContent = 'Armazém vazio.';
       grid.appendChild(empty);
     }
-    depot.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:retrieve', depotIndex:i }), 'Recuperar pra Mochila (precisa de espaço livre)')));
+    depot.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:retrieve', depotIndex:i }), 'Recuperar pra Mochila (precisa de espaço livre)', { dataKey:'text/depot-index', value:i })));
   }
   function renderInventory(){
+    // Item 5 da lista de tarefas (20/09/2026): não reconstrói NADA enquanto
+    // um item estiver sendo arrastado -- ver comentário em
+    // itemDragInProgress. O snapshot só fica ~250ms atrasado na UI, o que é
+    // imperceptível, mas evita cancelar o drag no meio do gesto.
+    if(itemDragInProgress) return;
     // grid.innerHTML='' mais abaixo reconstrói os slots a cada render (inclusive
     // quando chamado de novo por um snapshot chegando com o mouse ainda em cima
     // de um item) — mesma causa da tooltip presa que já corrigimos na árvore de
@@ -7083,19 +7532,22 @@
       // equipar) agora usa a foto real do item (mesma pasta usada em
       // "Detalhes da Caçada"); se o arquivo não existir, handleLootIconError
       // troca pelo SVG genérico de material.
+      const rawMatHtml = rawMaterialIconHtml(it.id, rarityColor);
       const iconHtml = gemIconUrl
         ? `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`
-        : (it.icon)
-          ? `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`
-          : (invTab === 'mochila' && !it.slot)
-            ? `<img class="item-icon" data-rarity-color="${rarityColor}" src="${itemIconUrl(it.id)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleLootIconError(this)" />`
-            : `<span class="item-icon" style="color:${rarityColor};">${invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
+        : rawMatHtml
+          ? rawMatHtml
+          : (it.icon)
+            ? `<img class="item-icon" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" src="${equipIconUrl(it.icon)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleEquipIconError(this)" />`
+            : (invTab === 'mochila' && !it.slot)
+              ? `<img class="item-icon" data-rarity-color="${rarityColor}" src="${itemIconUrl(it.id)}" style="width:26px;height:26px;object-fit:contain;" onerror="handleLootIconError(this)" />`
+              : `<span class="item-icon" style="color:${rarityColor};">${invTab==='bolsa' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
       slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}${rarityFrameHtml(it.rarity)}`;
       // só itens da Mochila com "slot" definido (arma/elmo/etc) são equipáveis —
       // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
       if(invTab==='mochila' && it.slot){
         slot.draggable = true;
-        slot.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(i)); e.dataTransfer.effectAllowed = 'move'; });
+        slot.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(i)); e.dataTransfer.effectAllowed = 'move'; itemDragInProgress = true; });
         // Clique equipa direto (sem precisar arrastar) -- simétrico ao clique
         // que já desequipava no slot do paperdoll (equip:remove); antes só
         // dava pra equipar arrastando, então "clicar no item da bolsa" não
@@ -7134,24 +7586,49 @@
      servidor em quickSellMarks) e vende todos de uma vez, ouro na mão.
      ========================================================= */
   const quickSellModal = document.getElementById('quicksell-modal');
+  // Item 6 da lista de tarefas (20/09/2026): antes era uma lista só de
+  // texto+checkbox, sem ícone, sem separação visual entre marcado/não
+  // marcado e sem ação em lote -- com a Mochila cheia (30 itens) virava
+  // impossível de saber rápido o que ia ser vendido. Agora: ícone real por
+  // linha (resolveItemIconHtml, mesmo resolver do Armazém/Lixeira), 2
+  // grupos separados com rótulo ("Serão vendidos" / "Não serão vendidos"),
+  // e os botões Marcar/Desmarcar Todos (ver shop:setQuickSellMarks no
+  // servidor) pra não precisar clicar item por item.
+  function renderQuickSellRow(it){
+    const marked = quickSellMarks.includes(it.id);
+    const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+    const row = document.createElement('div');
+    row.className = 'quicksell-row' + (marked?' marked':'');
+    row.innerHTML = `<input type="checkbox" class="quicksell-mark-cb" data-id="${it.id}" ${marked?'checked':''}>
+      ${resolveItemIconHtml(it)}
+      <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
+        <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}${it.qty>1?` x${it.qty}`:''}</div>
+      </div>`;
+    return row;
+  }
   function renderQuickSell(){
     const list = document.getElementById('quicksell-list');
     list.innerHTML = '';
     if(!bag.length){
       list.innerHTML = '<div class="hint">Mochila vazia — não há nada pra marcar.</div>';
+    } else {
+      const toSell = bag.filter(it=>quickSellMarks.includes(it.id));
+      const toKeep = bag.filter(it=>!quickSellMarks.includes(it.id));
+      if(toSell.length){
+        const label = document.createElement('div');
+        label.className = 'quicksell-group-label';
+        label.textContent = `🪙 Serão vendidos (${toSell.length})`;
+        list.appendChild(label);
+        toSell.forEach(it=> list.appendChild(renderQuickSellRow(it)));
+      }
+      if(toKeep.length){
+        const label = document.createElement('div');
+        label.className = 'quicksell-group-label';
+        label.textContent = `🎒 Não serão vendidos (${toKeep.length})`;
+        list.appendChild(label);
+        toKeep.forEach(it=> list.appendChild(renderQuickSellRow(it)));
+      }
     }
-    bag.forEach((it,i)=>{
-      const marked = quickSellMarks.includes(it.id);
-      const row = document.createElement('div');
-      row.className = 'trash-row';
-      if(marked) row.style.borderColor = '#7ee08a';
-      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
-      row.innerHTML = `<input type="checkbox" class="quicksell-mark-cb" data-id="${it.id}" ${marked?'checked':''}>
-        <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
-          <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}${it.qty>1?` x${it.qty}`:''}</div>
-        </div>`;
-      list.appendChild(row);
-    });
     list.querySelectorAll('.quicksell-mark-cb').forEach(cb=>{
       cb.addEventListener('change', ()=> sendWS({ type:'shop:toggleQuickSell', itemId: cb.dataset.id }));
     });
@@ -7167,6 +7644,12 @@
   function renderQuickSellIfOpen(){ if(quickSellModal.classList.contains('open')) renderQuickSell(); }
   document.getElementById('btn-open-quicksell').addEventListener('click', ()=>{ quickSellModal.classList.toggle('open'); renderQuickSell(); });
   document.getElementById('quicksell-confirm-btn').addEventListener('click', ()=> sendWS({ type:'shop:quickSell' }));
+  document.getElementById('quicksell-mark-all-btn').addEventListener('click', ()=>{
+    sendWS({ type:'shop:setQuickSellMarks', itemIds: Array.from(new Set(bag.map(it=>it.id))) });
+  });
+  document.getElementById('quicksell-unmark-all-btn').addEventListener('click', ()=>{
+    sendWS({ type:'shop:setQuickSellMarks', itemIds: [] });
+  });
 
   /* =========================================================
      BÊNÇÃOS — até 5, permanentes, reduzem a perda por morte.
@@ -7210,6 +7693,11 @@
     el.addEventListener('dragleave', ()=> el.classList.remove('drop-hover'));
     el.addEventListener('drop', e=>{
       e.preventDefault(); el.classList.remove('drop-hover');
+      // Item 5 da lista de tarefas (20/09/2026): agora também aceita soltar
+      // um equipamento vindo direto da aba Armazém (text/depot-index) --
+      // antes só existia o formato da Mochila (text/plain = bagIndex).
+      const depotIndex = e.dataTransfer.getData('text/depot-index');
+      if(depotIndex !== ''){ sendWS({ type:'equip:fromDepot', depotIndex: Number(depotIndex) }); return; }
       const bagIndex = e.dataTransfer.getData('text/plain');
       if(bagIndex !== '') sendWS({ type:'equip:item', bagIndex: Number(bagIndex) });
     });
@@ -8247,7 +8735,7 @@
       if(!ok) return;
     }
     if(activeSkillArchetypeTab) pendingSkillLevels[activeSkillArchetypeTab] = null;
-    activeSkillArchetypeTab = id; selectedSpellId = null; renderSkillTabs(); renderSkillTree();
+    activeSkillArchetypeTab = id; selectedSpellId = null; closeSkillNodeModal(); renderSkillTabs(); renderSkillTree();
   }
   function renderSkillTabs(){
     const wrap = document.getElementById('skill-tabs');
@@ -8322,14 +8810,16 @@
         <div class="spell-node-name">${sp.name}</div>
       </button>`;
   }
-  // Painel de detalhe (nome completo, descrição real, motivo de bloqueio e
-  // controles de nível/destravar) do nó atualmente selecionado no grafo --
-  // conteúdo idêntico ao card antigo, só que agora mostra 1 de cada vez
-  // (antes ficavam todos abertos ao mesmo tempo na lista).
+  // Conteúdo do modal de detalhe do nó (nome completo, descrição real, rank
+  // atual/pontos livres da árvore, motivo de bloqueio e controles de
+  // nível/destravar) -- item 4 da lista de tarefas, 20/09/2026: antes esse
+  // card aparecia inline no fim da lista (exigia rolar a tela pra achar),
+  // agora é montado dentro do #skill-node-modal-body que abre na hora.
   function spellDetailHtml(archId, sp, draft){
     const st = computeSpellNodeState(archId, sp, draft);
     const iconUrl = spellIconUrl(sp.name);
     const kindBadge = `<span class="spell-card-kind-badge ${sp.kind}">${SPELL_KIND_ICON[sp.kind]} ${SPELL_KIND_LABEL[sp.kind]}</span>`;
+    const avail = Math.max(0, availablePointsForDraft(archId, draft));
     const btns = st.isPassiveToggle
       ? `<button class="spell-card-toggle-btn ${st.level>0?'on':''}" data-spell="${sp.id}" ${(!st.canPlus && st.level<=0)?'disabled':''}>${st.level>0 ? '✓ Destravada' : `Destravar (${pointCostForLevelClient(sp,1)} pts)`}</button>`
       : `<div class="spell-card-lvlctrl">
@@ -8343,6 +8833,7 @@
           <img class="spell-card-icon" src="${iconUrl}" onerror="this.style.visibility='hidden'" />
           <div class="spell-card-title"><b>${sp.name}</b>${kindBadge}</div>
         </div>
+        <div class="skill-node-modal-points-row">Pontos livres nesta árvore: <b>${avail}</b></div>
         <div class="spell-card-desc">${sp.desc || ''}</div>
         ${st.lockedReason ? `<div class="spell-card-lock-msg"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/skill_lock.png" style="width:11px;height:11px;vertical-align:-1px;object-fit:contain;margin-right:3px;" onerror="this.replaceWith('🔒 ')"/>${st.lockedReason}</div>` : ''}
         ${btns}
@@ -8354,6 +8845,50 @@
     getOpenArchetypesClient().forEach(id=>{ if(id!==archId) spentOthers += spentCostForArchetype(id, skillTree.levels && skillTree.levels[id]); });
     return total - spentOthers - spentCostForArchetype(archId, draft);
   }
+  // ---- Modal de detalhe do nó (item 4) ----
+  // Abre imediatamente ao clicar num nó do grafo, em vez do card antigo que
+  // era anexado no fim da lista. selectedSpellId continua existindo só pra
+  // controlar o anel de destaque do nó por trás do modal.
+  const skillNodeModalBackdrop = document.getElementById('skill-node-modal-backdrop');
+  const skillNodeModalBody = document.getElementById('skill-node-modal-body');
+  const skillNodeModalCloseBtn = document.getElementById('skill-node-modal-close');
+  let activeSkillNodeModalSpellId = null;
+  function renderSkillNodeModalBody(){
+    const archId = activeSkillArchetypeTab;
+    if(!archId || !activeSkillNodeModalSpellId) return;
+    const draft = currentDraft(archId);
+    const sp = (ARCHETYPE_SPELLBOOK[archId]||[]).find(s=>s.id===activeSkillNodeModalSpellId);
+    if(!sp){ closeSkillNodeModal(); return; }
+    skillNodeModalBody.innerHTML = spellDetailHtml(archId, sp, draft);
+    skillNodeModalBody.querySelectorAll('.spell-card-plus, .spell-card-minus, .spell-card-toggle-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const spellId = btn.dataset.spell;
+        const spObj = (ARCHETYPE_SPELLBOOK[archId]||[]).find(s=>s.id===spellId);
+        if(!spObj) return;
+        const cur = draft[spellId] || 0;
+        if(btn.classList.contains('spell-card-toggle-btn')) draft[spellId] = cur>0 ? 0 : 1;
+        else if(btn.classList.contains('spell-card-plus')) draft[spellId] = cur + 1;
+        else draft[spellId] = Math.max(0, cur - 1);
+        renderSkillNodeModalBody();
+        renderSkillTree();
+      });
+    });
+  }
+  function openSkillNodeModal(archId, spellId){
+    activeSkillNodeModalSpellId = spellId;
+    selectedSpellId = spellId;
+    renderSkillNodeModalBody();
+    skillNodeModalBackdrop.classList.add('show');
+  }
+  function closeSkillNodeModal(){
+    skillNodeModalBackdrop.classList.remove('show');
+    activeSkillNodeModalSpellId = null;
+  }
+  skillNodeModalCloseBtn.addEventListener('click', closeSkillNodeModal);
+  skillNodeModalBackdrop.addEventListener('click', (e)=>{ if(e.target === skillNodeModalBackdrop) closeSkillNodeModal(); });
+  const skilltreeCloseX = document.querySelector('[data-close-win="skilltree-panel"]');
+  if(skilltreeCloseX) skilltreeCloseX.addEventListener('click', closeSkillNodeModal);
   // Nó selecionado no grafo (mostra o detalhe completo embaixo) -- por
   // arquétipo só existe 1 seleção de cada vez; zerado ao trocar de aba
   // (switchSkillTab) pra nunca herdar um id de outro arquétipo.
@@ -8405,25 +8940,22 @@
       passives.forEach(sp=>{ html += spellNodeHtml(archId, sp, draft, selectedSpellId); });
       html += `</div>`;
     }
-    const selectedSp = spells.find(sp=>sp.id===selectedSpellId);
-    if(selectedSp) html += spellDetailHtml(archId, selectedSp, draft);
+    // O detalhe (descrição + botão de upar) não fica mais anexado aqui em
+    // baixo -- clicar num nó abre o #skill-node-modal na hora (item 4 da
+    // lista de tarefas, 20/09/2026). selectedSpellId só controla o anel de
+    // destaque do nó no grafo.
     wrap.innerHTML = html;
     wrap.querySelectorAll('.spell-node').forEach(node=>{
-      node.addEventListener('click', ()=>{ selectedSpellId = node.dataset.spell; renderSkillTree(); });
-    });
-    wrap.querySelectorAll('.spell-card-plus, .spell-card-minus, .spell-card-toggle-btn').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const spellId = btn.dataset.spell;
-        const sp = spells.find(s=>s.id===spellId);
-        if(!sp) return;
-        const cur = draft[spellId] || 0;
-        if(btn.classList.contains('spell-card-toggle-btn')) draft[spellId] = cur>0 ? 0 : 1;
-        else if(btn.classList.contains('spell-card-plus')) draft[spellId] = cur + 1;
-        else draft[spellId] = Math.max(0, cur - 1);
+      node.addEventListener('click', ()=>{
+        selectedSpellId = node.dataset.spell;
         renderSkillTree();
+        openSkillNodeModal(archId, node.dataset.spell);
       });
     });
+    // Se o modal já estiver aberto pra essa árvore (ex: renderSkillTree()
+    // rechamado depois de um clique no +/- dentro do próprio modal), atualiza
+    // o conteúdo dele também -- pra refletir nível/pontos livres/lock na hora.
+    if(activeSkillNodeModalSpellId && spells.some(sp=>sp.id===activeSkillNodeModalSpellId)) renderSkillNodeModalBody();
     const avail = availablePointsFor(archId);
     document.getElementById('skill-points-available').textContent = String(Math.max(0,avail));
     document.getElementById('skill-points-total').textContent = String((skillPoints&&skillPoints.total)||0);
@@ -9249,8 +9781,11 @@
   // Espelho de POWER_TIER_MULT/POWER_TIER_LEVEL_REQ do huntEngine.js -- ver
   // comentário grandão lá (o servidor continua autoritativo pro dano real;
   // isso aqui é só pra pré-visualização de atributos/custo/nível na Forja).
+  // 2026-09-20 (item 8 da lista de tarefas): curva trocada pra proporção
+  // REAL de Attack Power confirmada na wiki (Axe/Bow, tiers 1-5: 1/1.5/2/3/4)
+  // -- ver huntEngine.js e claude/comparativo-itens-ravenquest-notas.md § 27.
   const POWER_TIER_LEVEL_REQ_CLIENT = [1, 10, 25, 40, 55];
-  const POWER_TIER_MULT_CLIENT = [1, 1.3, 1.7, 2.2, 2.8];
+  const POWER_TIER_MULT_CLIENT = [1, 1.5, 2, 3, 4];
   const POWER_TIER_GOLD_BASE_CLIENT = 400;
   const POWER_TIER_MATERIAL_QTY_BASE_CLIENT = 10;
   function buildCraftableClientTables(){
@@ -9275,6 +9810,11 @@
           goldCost: Math.round(POWER_TIER_GOLD_BASE_CLIENT * tierMult),
           materials:[{ id: cat.materialId, qty: Math.round(POWER_TIER_MATERIAL_QTY_BASE_CLIENT * tierMult) }],
           icon: baseItem.icon, description: baseItem.description, slot: cat.slot, powerTier,
+          // Espelha prevTierItemBase/Name do servidor (item 7 da lista de
+          // tarefas, 20/09/2026) -- só pra MOSTRAR o requisito na UI antes de
+          // clicar; a checagem/consumo de verdade acontece em startCraft.
+          prevTierItemBase: idx > 0 ? cat.items[idx - 1].id : null,
+          prevTierItemName: idx > 0 ? cat.items[idx - 1].name : null,
           // category: chave de filtro da UI (item 7 da lista de tarefas) --
           // weaponType distingue as 6 armas (senão todas cairiam juntas em
           // "weapon"), slot cobre o resto (helmet/armor/boots/legs/offhand/
@@ -9413,8 +9953,17 @@
         const ok = have >= m.qty;
         return `<div class="prec-row"><span>${PROFESSION_MATERIAL_LABEL[m.id]||m.id}</span><span class="${ok?'ok':'missing'}">${have}/${m.qty}</span></div>`;
       }).join('');
+      // Item 7 da lista de tarefas (20/09/2026): mostra o requisito da tier
+      // anterior JUNTO dos outros materiais, antes do jogador tentar criar e
+      // levar o erro -- conta qualquer raridade do item base (mesma regra do
+      // startCraft no servidor). "Consumido ao criar" deixa claro que não é
+      // só um pré-requisito de posse, o item some da Mochila.
+      const hasPrevTierItem = !r.prevTierItemBase || bag.some(it=>it.id && it.id.startsWith(r.prevTierItemBase+'_'));
+      const prevTierLine = r.prevTierItemBase
+        ? `<div class="prec-row"><span>${r.prevTierItemName} (consumido)</span><span class="${hasPrevTierItem?'ok':'missing'}">${hasPrevTierItem?'✓':'✗'}</span></div>`
+        : '';
       const hasGold = (player.gold + player.bankGold) >= r.goldCost;
-      const canCraft = !locked && !craftingJob && hasGold && r.materials.every(m=>bagQty(m.id) >= m.qty);
+      const canCraft = !locked && !craftingJob && hasGold && hasPrevTierItem && r.materials.every(m=>bagQty(m.id) >= m.qty);
       // Raridade sai sorteada (não é mais fixa por receita) -- mostra as
       // chances de cada resultado possível pro nível ATUAL de profissão, cada
       // uma já com uma prévia dos atributos reais daquele tier (pedido do
@@ -9446,6 +9995,7 @@
           </div>
           <div class="prec-row"><span>Custo</span><span class="${hasGold?'ok':'missing'}">${r.goldCost} Gold</span></div>
           ${matLines}
+          ${prevTierLine}
           <div class="prec-row" style="opacity:.75;font-size:11px;margin-top:2px;">Raridade sorteada ao criar:</div>
           ${oddsLines}
           <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" ${canCraft?'':'disabled'}>Criar</button>
