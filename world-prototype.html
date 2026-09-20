@@ -1300,6 +1300,37 @@
   .craft-progress-sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-top:6px; text-align:center; }
   .craft-busy-note{ font-family:var(--font-mono); font-size:10px; color:#e6c26a; margin-bottom:8px; text-align:center; }
 
+  /* ============ FORJA — barra flutuante sempre visível (pedido do usuário
+     20/09/2026: "se eu pego pra fazer um item lá de baixo da fila eu preciso
+     subir até a barra de espera" -- essa barra some do rodapé do modal e
+     mostra fora dele, na tela, então acompanha o craft mesmo com o modal de
+     Profissões fechado ou rolado longe da barra interna) ============ */
+  #craft-float-banner{
+    position:absolute; bottom:120px; left:50%; transform:translateX(-50%);
+    z-index:40; display:none; text-align:center; font-family:var(--font-mono);
+    background:rgba(10,7,5,.92); border:1px solid var(--gold-deep); border-radius:8px;
+    padding:10px 16px; box-shadow:0 6px 24px rgba(0,0,0,.5); min-width:220px; cursor:pointer;
+  }
+  #craft-float-banner.show{ display:block; }
+  #craft-float-banner .cfb-title{ font-size:11px; color:var(--gold-bright); margin-bottom:6px; }
+  #craft-float-banner .cfb-track{ height:8px; border-radius:4px; overflow:hidden; background:#0a0705; border:1px solid var(--gold-deep); }
+  #craft-float-banner .cfb-fill{ height:100%; background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); transition:width .2s linear; }
+  #craft-float-banner .cfb-sub{ font-size:9.5px; color:var(--ink-dim); margin-top:4px; }
+
+  /* ============ FORJA — "surpresa" do item criado (pedido do usuário: "só
+     fico sabendo qual equipamento foi feito quando abro a bolsa") ============ */
+  #craft-reveal-overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; z-index:31; background:radial-gradient(ellipse at center, rgba(240,211,138,.18), transparent 60%); }
+  #craft-reveal-overlay.show{ animation:craftRevealFlash 2.6s ease-out; }
+  @keyframes craftRevealFlash{ 0%{opacity:0;} 10%{opacity:1;} 82%{opacity:1;} 100%{opacity:0;} }
+  #craft-reveal-card{ display:flex; flex-direction:column; align-items:center; gap:8px; transform:scale(0.6); }
+  #craft-reveal-overlay.show #craft-reveal-card{ animation:craftRevealPop 2.6s ease-out; }
+  @keyframes craftRevealPop{ 0%{transform:scale(0.4) translateY(20px);} 20%{transform:scale(1.1) translateY(0);} 32%{transform:scale(1) translateY(0);} 85%{transform:scale(1) translateY(0);} 100%{transform:scale(0.9) translateY(-10px);} }
+  #craft-reveal-card .crc-label{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); }
+  #craft-reveal-card .crc-icon-ring{ width:84px; height:84px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); box-shadow:0 0 0 2px var(--rc, var(--gold-bright)), 0 0 30px var(--rc, rgba(240,211,138,.6)); }
+  #craft-reveal-card .crc-icon-ring img{ width:56px; height:56px; object-fit:contain; }
+  #craft-reveal-card .crc-name{ font-family:var(--font-display); font-size:20px; font-weight:700; text-shadow:0 0 20px rgba(0,0,0,.8); }
+  #craft-reveal-card .crc-sub{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); }
+
   /* ============ MERCADO (compra e venda entre jogadores) ============
      Escopo "Mercado completo" escolhido pelo usuário -- livro de ordens de
      verdade (ver huntEngine.js seção MERCADO), não uma vitrine de venda a
@@ -1499,6 +1530,22 @@
     <div class="line1"></div>
     <div class="line2"></div>
   </div>
+
+  <!-- Forja: barra flutuante sempre visível enquanto craftingJob existe (ver
+       tickCraftUI) -- clicável, abre o modal de Profissões na hora certa. -->
+  <div id="craft-float-banner" title="Ver Profissões">
+    <div class="cfb-title" id="cfb-title">🔨 Criando...</div>
+    <div class="cfb-track"><div class="cfb-fill" id="cfb-fill" style="width:0%;"></div></div>
+    <div class="cfb-sub" id="cfb-sub">—</div>
+  </div>
+
+  <!-- Forja: "surpresa" do item recém-criado (ver showCraftRevealOverlay) -->
+  <div id="craft-reveal-overlay"><div id="craft-reveal-card">
+    <div class="crc-label">Item criado!</div>
+    <div class="crc-icon-ring" id="crc-icon-ring"></div>
+    <div class="crc-name" id="crc-name"></div>
+    <div class="crc-sub" id="crc-sub"></div>
+  </div></div>
 
   <!-- Caído na Torre (state.towerDowned) — janela de Revive, ver
        updateTowerDownedBanner. Fica por CIMA de tudo (z-index alto) já que
@@ -2585,7 +2632,7 @@
   // snapshot novo que chegar com o mesmo resultado.
   let craftingJob = null;
   let lastSeenCraftCompletedAt = 0;
-  let craftBarInterval = null; // setInterval que re-renderiza a barra de progresso enquanto o modal de Profissões está aberto e tem um craft rolando
+  let craftFloatBannerVisible = false; // evita reescrever o DOM da barra flutuante de craft (ver tickCraftUI) toda hora sem necessidade
   let treinoBarInterval = null; // mesmo esquema, pra barra de progresso de treino (item 10 da lista de tarefas) enquanto a aba Treino está aberta
   let rankScore = 0; // Rank Geral — nível efetivo*10 + soma dos andares de Torre (ver huntEngine.computeRankScore)
   let rankTop = [], rankMyPosition = null; // preenchidos sob demanda por 'rank:get' (ver renderRank)
@@ -5066,6 +5113,7 @@
       lastSeenCraftCompletedAt = msg.craftJustCompleted.at;
       const c = msg.craftJustCompleted;
       logLoot(`🔨 Criou ${c.itemName} (${c.rarity})! +${c.xpGained} XP de ${PROFESSION_LABEL[c.profession]||c.profession}${c.leveledUp?` — subiu pro nível ${c.level}!`:''}`);
+      showCraftRevealOverlay(c); // "surpresa" na tela -- pedido do usuário: antes só dava pra saber o que saiu abrindo a Mochila
       renderInventoryIfOpen();
       renderProfessionsIfOpen();
     }
@@ -5701,6 +5749,34 @@
     const overlay = document.getElementById('rankup-overlay');
     overlay.classList.add('show');
     setTimeout(()=> overlay.classList.remove('show'), 1800);
+  }
+
+  // "Surpresa" do item recém-criado na Forja/Carpintaria/Tecelagem -- pedido
+  // do usuário: "se eu pego pra fazer um item lá de baixo da fila eu preciso
+  // subir até a barra de espera para aguardar ela e só fico sabendo qual
+  // equipamento foi feito quando abro a bolsa". Chamado direto de
+  // craftJustCompleted (ver applyHuntSnapshot), então aparece na tela na
+  // hora que o item sai do forno, em qualquer aba/modal em que o jogador
+  // esteja -- não depende do modal de Profissões estar aberto.
+  function showCraftRevealOverlay(c){
+    const overlay = document.getElementById('craft-reveal-overlay');
+    const ring = document.getElementById('crc-icon-ring');
+    const nameEl = document.getElementById('crc-name');
+    const subEl = document.getElementById('crc-sub');
+    const color = RARITY_COLORS[c.rarity] || '#a99872';
+    ring.style.setProperty('--rc', color);
+    ring.innerHTML = c.icon
+      ? `<img src="${equipIconUrl(c.icon)}" onerror="this.style.display='none';" />`
+      : `<span class="item-icon" style="color:${color};font-size:32px;">${ITEM_TYPE_ICON_SVG[c.slot] || MATERIAL_ICON_SVG}</span>`;
+    nameEl.textContent = c.itemName;
+    nameEl.style.color = color;
+    subEl.textContent = `+${c.xpGained} XP de ${PROFESSION_LABEL[c.profession]||c.profession}${c.leveledUp?` — subiu pro nível ${c.level}!`:''}`;
+    // reinicia a animação CSS mesmo se 2 crafts terminarem em sequência
+    // rápida (sem isso a 2ª "surpresa" não reanimava, já que a classe
+    // 'show' já estava presente e um novo add() não reaplica keyframes)
+    overlay.classList.remove('show'); void overlay.offsetWidth;
+    overlay.classList.add('show');
+    setTimeout(()=> overlay.classList.remove('show'), 2600);
   }
 
   /* =========================================================
@@ -10295,21 +10371,76 @@
   // serviço da Cidade, só que acessível direto de dentro do Inventário.
   const invForgeShortcut = document.getElementById('inv-forge-shortcut');
   if(invForgeShortcut) invForgeShortcut.addEventListener('click', ()=>{ professionsModal.classList.add('open'); renderProfessions(); });
-  function renderProfessionsIfOpen(){ if(professionsModal.classList.contains('open')) renderProfessions(); }
-  // Craft com tempo real: enquanto o modal está aberto E tem um craftingJob
-  // rolando, esse intervalo re-renderiza a cada 250ms só pra barra andar
-  // suave (não depende de esperar o próximo snapshot do servidor, que pode
-  // demorar mais que isso). Para sozinho quando o job acaba ou o modal fecha.
-  function stopCraftBarInterval(){ if(craftBarInterval){ clearInterval(craftBarInterval); craftBarInterval = null; } }
-  function ensureCraftBarInterval(){
-    if(craftBarInterval || !craftingJob || !professionsModal.classList.contains('open')) return;
-    craftBarInterval = setInterval(()=>{
-      if(!craftingJob || !professionsModal.classList.contains('open')){ stopCraftBarInterval(); return; }
-      renderProfessions();
-    }, 250);
+  // Causa raiz DE VERDADE do bug "aperta pra abrir o Catalisador e ele
+  // fecha": não era só o intervalo de 250ms da barra de progresso (ver
+  // tickCraftUI abaixo) -- o refresh geral de painéis (PANEL_RENDER_THROTTLE_MS,
+  // também 250ms, ver applyHuntSnapshot) já chamava renderProfessionsIfOpen()
+  // TODA VEZ que o modal de Profissões estava aberto, com ou sem craft
+  // rolando (qualquer snapshot novo do servidor -- o que é sempre, ~30Hz).
+  // Reconstruir o innerHTML do painel destrói o <select> nativo bem no
+  // instante em que o navegador tenta abrir o dropdown dele, fechando na
+  // hora -- mesma classe de bug já resolvida antes pro <select> de Alvo (ver
+  // renderTargetModeOptions, "não fica recriando o <select> a cada snapshot
+  // de 30Hz e atrapalhar quem está com ele aberto"). Corrigido aqui do jeito
+  // mais simples e seguro: pula SÓ o ciclo de refresh em que o jogador está
+  // com um <select> do próprio painel focado (ou seja, com o dropdown
+  // provavelmente aberto) -- o refresh normal volta assim que o foco sai
+  // dele (escolheu algo ou clicou fora).
+  function renderProfessionsIfOpen(){
+    if(!professionsModal.classList.contains('open')) return;
+    const active = document.activeElement;
+    const body = document.getElementById('professions-body');
+    if(active && active.tagName === 'SELECT' && body && body.contains(active)) return;
+    renderProfessions();
   }
+  // Barra de progresso do craft com tempo real -- ANTES disso, um
+  // setInterval de 250ms chamava renderProfessions() (o render CHEIO do
+  // modal, refazendo TODO o innerHTML) só pra barra andar suave. Bug
+  // reportado pelo usuário: "essa parte do catalizador não está dando pra
+  // abrir, quando aperta para abrir ela fecha" -- causa raiz era exatamente
+  // esse re-render de 250ms recriando o <select> do Catalisador de Raridade
+  // (ver mais abaixo) DEBAIXO do dedo do jogador assim que ele clicava pra
+  // abrir a lista nativa do navegador: o elemento antigo some, o navegador
+  // fecha o dropdown que estava tentando abrir nele (mesmo bug/mesma causa
+  // já resolvido antes pro <select> de Alvo -- ver renderTargetModeOptions
+  // acima, "não fica recriando o <select> a cada snapshot de 30Hz e
+  // atrapalhar quem está com ele aberto").
+  //
+  // Corrigido: tickCraftUI() (chamado sempre, não só com o modal aberto --
+  // ver setInterval mais abaixo) atualiza só os NÓS que precisam mudar a
+  // cada tick (largura da barra + segundos restantes), tanto na barra
+  // flutuante (#craft-float-banner, sempre visível -- ver CSS) quanto na
+  // barra de dentro do modal quando ele está aberto (por id, ver
+  // #profession-craft-fill/#profession-craft-sub no progressBox abaixo) --
+  // NUNCA mexe no resto do DOM, então o <select> aberto nunca é recriado.
+  function tickCraftUI(){
+    const banner = document.getElementById('craft-float-banner');
+    if(!craftingJob){
+      if(craftFloatBannerVisible){ banner.classList.remove('show'); craftFloatBannerVisible = false; }
+      return;
+    }
+    const elapsed = Date.now() - craftingJob.startedAt;
+    const pct = Math.max(0, Math.min(100, Math.round(elapsed / craftingJob.durationMs * 100)));
+    const remainingS = Math.max(0, Math.ceil((craftingJob.durationMs - elapsed)/1000));
+    if(!craftFloatBannerVisible){
+      banner.classList.add('show'); craftFloatBannerVisible = true;
+      document.getElementById('cfb-title').textContent = `🔨 Criando ${craftingJob.displayName}...`;
+    }
+    document.getElementById('cfb-fill').style.width = pct + '%';
+    document.getElementById('cfb-sub').textContent = `${remainingS}s restantes`;
+    if(professionsModal.classList.contains('open')){
+      const fill = document.getElementById('profession-craft-fill');
+      const sub = document.getElementById('profession-craft-sub');
+      if(fill) fill.style.width = pct + '%';
+      if(sub) sub.textContent = `${remainingS}s restantes`;
+    }
+  }
+  setInterval(tickCraftUI, 250);
+  document.getElementById('craft-float-banner').addEventListener('click', ()=>{
+    professionsModal.classList.add('open'); renderProfessions();
+  });
   function renderProfessions(){
-    if(!professionsModal.classList.contains('open')){ stopCraftBarInterval(); return; }
+    if(!professionsModal.classList.contains('open')) return;
     professionTabsEl.innerHTML = Object.keys(PROFESSION_LABEL).map(p=>`<div class="profession-tab ${p===professionSelectedTab?'active':''}" data-profession-tab="${p}"><img class="profession-tab-icon" src="${PROFESSION_ICON_URL[p]}" onerror="this.style.display='none';" />${PROFESSION_LABEL[p]}</div>`).join('');
     const body = document.getElementById('professions-body');
     const prof = professions[professionSelectedTab] || { level:1, xp:0 };
@@ -10352,8 +10483,8 @@
       return `
         <div class="craft-progress-box">
           <div class="craft-progress-title">🔨 Criando ${craftingJob.displayName}${jobIsThisTab?'':` (${PROFESSION_LABEL[craftingJob.profession]})`}...</div>
-          <div class="craft-progress-track"><div class="craft-progress-fill" style="width:${pct}%;"><span class="craft-progress-cap"></span></div></div>
-          <div class="craft-progress-sub">${remainingS}s restantes</div>
+          <div class="craft-progress-track"><div class="craft-progress-fill" id="profession-craft-fill" style="width:${pct}%;"><span class="craft-progress-cap"></span></div></div>
+          <div class="craft-progress-sub" id="profession-craft-sub">${remainingS}s restantes</div>
         </div>`;
     })() : '';
     // Catalisador (task #128) -- revalida a cada render: se o item escolhido
@@ -10366,9 +10497,9 @@
       <div class="profession-recipe-box" style="margin-bottom:8px;">
         <div class="prec-name">✨ Catalisador de Raridade (opcional)</div>
         <div class="prec-desc">Sacrifica 1 loot Épico/Lendário da Mochila junto do próximo craft pra aumentar a chance do resultado sair melhor.</div>
-        <select id="profession-catalyst-select" style="width:100%;margin-top:4px;">
-          <option value="">Nenhum</option>
-          ${catalystEligibleList.map(it=>`<option value="${it.id}" ${it.id===professionCatalystItemId?'selected':''} style="color:${RARITY_COLORS[it.rarity]||''}">${it.name} (${it.qty||1}x, ${it.rarity})</option>`).join('')}
+        <select id="profession-catalyst-select" class="cond-select" style="width:100%;margin-top:4px;">
+          <option value="" style="background:#1a140c;color:var(--ink);">Nenhum</option>
+          ${catalystEligibleList.map(it=>`<option value="${it.id}" ${it.id===professionCatalystItemId?'selected':''} style="background:#1a140c;color:${RARITY_COLORS[it.rarity]||''}">${it.name} (${it.qty||1}x, ${it.rarity})</option>`).join('')}
         </select>
       </div>` : '';
     const rows = visibleRecipes.length ? visibleRecipes.map(r=>{
@@ -10456,7 +10587,6 @@
     });
     const refineBtn = document.getElementById('btn-profession-refine');
     if(refineBtn) refineBtn.addEventListener('click', ()=> sendWS({ type:'profession:refine', profession: professionSelectedTab }));
-    ensureCraftBarInterval();
   }
 
   /* =========================================================
