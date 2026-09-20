@@ -719,18 +719,50 @@
   /* ============ JANELA ANALISADORA / ATRIBUTOS / PARTY / ALTAR (genérico .win) ============ */
   /* Analisador — compacto, canto inferior direito, colado logo acima do
      rodapé unificado (hotbar + barra tática de Postura/Alvo/SQM). */
-  #analyzer-panel{ top:60px; right:14px; width:210px; padding:0; display:none; z-index:6; overflow:hidden; }
+  #analyzer-panel{ top:60px; right:14px; width:380px; padding:0; display:none; z-index:6; overflow:hidden; }
   #analyzer-panel.open{ display:block; }
   .analyzer-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); }
   .analyzer-tab{ flex:1; text-align:center; padding:8px; font-family:var(--font-display); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
   .analyzer-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); }
   .analyzer-reset-btn{ padding:8px 10px; cursor:pointer; color:var(--ink-dim); font-size:13px; align-self:center; }
   .analyzer-reset-btn:hover{ color:var(--gold-bright); }
-  .analyzer-body{ padding:12px 14px; font-family:var(--font-mono); font-size:11px; }
+  .analyzer-body{ padding:12px 14px; font-family:var(--font-mono); font-size:11px; max-height:70vh; overflow-y:auto; }
   .analyzer-row{ display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed rgba(191,161,95,.15); }
   .analyzer-row b{ color:var(--gold-bright); }
+  /* Reforma "Geral" (20/09/2026) -- pedido do usuário copiando o layout de
+     Hunt Analyzer de um idle de Pokémon (sem os elementos de Pokémon): grade
+     de caixas de estatística em vez de lista simples de linhas, caixa de
+     Saldo destacada, pílulas de taxa/hora, checkbox pra considerar preço de
+     Mercado e lista de drops da sessão com ícone real do item. */
+  .analyzer-stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+  .analyzer-stat-box{ background:rgba(0,0,0,.28); border:1px solid rgba(191,161,95,.25); border-radius:6px; padding:8px 10px; }
+  .analyzer-stat-box .lbl{ display:block; font-family:var(--font-display); font-size:9.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:3px; }
+  .analyzer-stat-box .val{ display:block; font-size:14px; color:var(--gold-bright); font-weight:bold; }
+  .analyzer-saldo-box{ grid-column:1 / -1; background:rgba(0,0,0,.28); border:1px solid rgba(191,161,95,.35); border-radius:6px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; }
+  .analyzer-saldo-box .lbl{ font-family:var(--font-display); font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-dim); }
+  .analyzer-saldo-box .val{ font-size:18px; font-weight:bold; }
+  .analyzer-rate-pills{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 12px; }
+  .analyzer-rate-pill{ flex:1; min-width:90px; background:rgba(0,0,0,.22); border:1px solid rgba(191,161,95,.2); border-radius:14px; padding:4px 10px; text-align:center; font-size:10px; }
+  .analyzer-rate-pill .lbl{ color:var(--ink-dim); margin-right:4px; }
+  .analyzer-checkbox-row{ display:flex; align-items:center; gap:7px; padding:6px 2px 10px; font-size:10.5px; color:var(--ink-dim); border-bottom:1px dashed rgba(191,161,95,.15); margin-bottom:8px; }
+  .analyzer-checkbox-row input{ cursor:pointer; }
+  .analyzer-drops-title{ font-family:var(--font-display); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--gold-bright); margin:4px 0 6px; }
+  .analyzer-drops-list{ display:flex; flex-direction:column; gap:3px; max-height:220px; overflow-y:auto; }
+  .analyzer-drop-row{ display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:4px; background:rgba(0,0,0,.16); }
+  .analyzer-drop-row .item-icon{ width:22px; height:22px; flex:none; }
+  .analyzer-drop-row .name{ flex:1; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .analyzer-drop-row .qty{ color:var(--ink-dim); font-size:10px; margin-left:2px; }
+  .analyzer-drop-row .value{ color:var(--gold-bright); font-size:10.5px; white-space:nowrap; }
+  /* Cor por raridade -- as regras existentes (linha ~407) só valem dentro de
+     .loot-item, então repetidas aqui escopadas pro drop-row (mesmas cores). */
+  .analyzer-drop-row .rarity-comum{ color:var(--ink-dim); }
+  .analyzer-drop-row .rarity-incomum{ color:var(--ok); }
+  .analyzer-drop-row .rarity-rara{ color:var(--mp-a); }
+  .analyzer-drop-row .rarity-épica{ color:#b98af0; }
+  .analyzer-drop-row .rarity-lendária{ color:var(--gold-bright); }
+  .analyzer-footnote{ margin-top:8px; padding-top:6px; border-top:1px dashed rgba(191,161,95,.15); font-size:9.5px; color:var(--ink-dim); line-height:1.4; }
 
-  #attrs-panel{ top:60px; right:250px; width:230px; display:none; z-index:6; }
+  #attrs-panel{ top:60px; right:420px; width:230px; display:none; z-index:6; }
   #attrs-panel.open{ display:block; }
 
   /* ===== ÁRVORE DE HABILIDADES — 10 ARQUÉTIPOS REAIS DE RAVENDAWN ===== */
@@ -2608,6 +2640,9 @@
   let party = null; // { id, leaderUsername, members:[...] }
   let rateio = null; // projecao ao vivo do Rateio de custo em grupo (ver getRateioSnapshot no servidor) -- null = desligado/sem grupo
   let huntStats = { kills:0, lootGold:0, suppliesCost:0, suppliesUsed:{} }; // contadores reais de sessao (Analisador) -- ver huntStats no servidor
+  let dropsValued = []; // [{itemId,name,rarity,count,npcUnit,npcTotal,marketUnit,marketTotal}] -- ver computeDropsValued no server.js. Lista "Drops da sessão" do Analisador (reforma pedida pelo usuário copiando o analisador de um idle de Pokémon).
+  const LS_ANALYZER_USE_MARKET = 'elemental_analyzer_use_market';
+  let analyzerUseMarketPrice = localStorage.getItem(LS_ANALYZER_USE_MARKET) === '1'; // toggle "Considerar preço dos itens no Mercado" -- só afeta a EXIBIÇÃO do Analisador, nunca a economia real
   let activeTradeId = null;
   let currentTrade = null;
   let fragments = 0; // Fragmentos do Altar — moeda do Reset de Estrela
@@ -4489,16 +4524,33 @@
             // sempre, sem NENHUMA mudança de comportamento.
             const walkEntry = m.walkAtlas ? SpriteManager.monsterWalkSprite(m.walkAtlas) : null;
             const hasWalkAtlas = !!(walkEntry && walkEntry.loaded);
-            // Espelha o monstro esquerda/direita conforme m.facingLeft (já
-            // calculado no servidor a partir da direção de perseguição/ataque
-            // — ver huntEngine.js "m.facingLeft = dx < 0"). Só faz sentido
-            // pro ÍCONE PLANO antigo (1 imagem só, sem direção própria) --
-            // o atlas de andar já tem as 4 direções reais desenhadas (down/
-            // up/right/left, sem espelhamento nenhum), igual ao traje de
-            // Arquétipo do jogador (ver hasRealLeftFrames em
-            // drawCharacterLayers) -- por isso NUNCA espelha quando
-            // hasWalkAtlas.
-            const monsterMirror = !hasWalkAtlas && !!m.facingLeft;
+            // 10ª rodada (20/09/2026) -- usuário reportou de novo "girando em
+            // graus", "andam de lado", "não ficam viradas pra mim" MESMO
+            // depois da 9ª rodada (que só mexeu em m.facingDir). Causa raiz
+            // finalmente achada: a maioria dos tipos de monstro (contado:
+            // 147 walkAtlas distintos no catálogo, só 25 arquivos .png de
+            // atlas existem de verdade em Elemental_assets/monsters/atlas/)
+            // NUNCA carrega o atlas de andar de verdade (404 -> img.onerror
+            // -> entry.failed=true, entry.loaded fica false pra sempre) --
+            // "Azure Fledgling" (walkAtlas 2098) tem atlas real, mas "Snowy
+            // Fledgling" (walkAtlas 2104) e a maioria dos outros NÃO. Esses
+            // caem no branch `!hasWalkAtlas` abaixo, que usava
+            // `m.facingLeft` -- uma flag SEPARADA e SEM NENHUMA das 9
+            // rodadas de correção aplicadas (nunca trava no alvo perto,
+            // nunca tem histerese, e ainda por cima usa `vx` DEPOIS do
+            // empurrão de separação -- exatamente o bug "pião" da 8ª rodada,
+            // só que nunca corrigido aqui porque essa flag nem é lida por
+            // esse código antes de agora). Fix: o ícone plano passa a usar o
+            // MESMO `m.facingDir` já 100% corrigido (servidor, 9 rodadas)
+            // que o atlas de andar usa -- só espelha esquerda/direita
+            // (`left`), nunca gira/inclina, e pra cima/baixo (`up`/`down`)
+            // mantém o ícone reto sem espelhar (não existe arte própria de
+            // cima/baixo pro ícone plano — pedido explícito do usuário:
+            // "mantenha-os sempre em pé"). `m.facingLeft` só sobra como
+            // fallback pro instantinho antes do 1º snapshot do servidor
+            // chegar (facingDir ainda null).
+            const monsterFacingDir = m.facingDir || (m.facingLeft ? 'left' : 'right');
+            const monsterMirror = !hasWalkAtlas && monsterFacingDir === 'left';
             if(monsterMirror){ ctx.save(); ctx.translate(s.x, 0); ctx.scale(-1, 1); ctx.translate(-s.x, 0); }
             // SPRITE_SCALE mantém o monstro do mesmo tamanho relativo ao
             // SQM de sempre, agora que o tile (TILE_SCREEN_PX) ficou maior.
@@ -5067,6 +5119,7 @@
     party = msg.party; activeTradeId = msg.activeTradeId;
     rateio = msg.rateio || null;
     huntStats = msg.huntStats || huntStats;
+    dropsValued = msg.dropsValued || dropsValued;
     guildId = msg.guildId || null; guildSummary = msg.guild || null;
     bestiaryKilled = msg.bestiaryKilled || [];
     bestiaryKillCounts = msg.bestiaryKillCounts || {};
@@ -8812,23 +8865,63 @@
       const lootGoldPerHour = lootGold / elapsedH;
       const gastoPerHour = gasto / elapsedH;
       const saldoCacadaPerHour = saldoCacada / elapsedH;
+      // Reforma "Geral" (20/09/2026) -- pedido do usuário: "olha esse
+      // analisador de um idle de pokemon, podemos copiar e fazer igual no
+      // nosso analizador, claro que vamos retirar as coisas sobre pokemon."
+      // Grade de caixas pros números-chave, caixa de Saldo destacada, pílulas
+      // de taxa/hora, checkbox "considerar preço de Mercado" e lista de
+      // drops da sessão com ícone real -- usando o `dropsValued` que o
+      // servidor já calcula (computeDropsValued em server.js, com preço NPC
+      // do Ferreiro Bran por raridade E menor oferta ativa no Mercado, se
+      // existir pro item). O toggle é só de EXIBIÇÃO/estimativa -- não muda
+      // Gold/Gasto/Saldo reais (que vêm de venda de verdade), só a coluna de
+      // valor estimado ao lado de cada drop.
+      const dropsList = dropsValued || [];
+      const dropsTotalEstimado = dropsList.reduce((sum, d) => {
+        const unitPreferido = (analyzerUseMarketPrice && d.marketTotal != null) ? d.marketTotal : d.npcTotal;
+        return sum + unitPreferido;
+      }, 0);
       body.innerHTML = `
-        <div class="analyzer-row"><span>Tempo de sessão</span><b>${fmtDuration(now()-session.startedAt)}</b></div>
-        <div class="analyzer-row"><span>Inimigos mortos</span><b>${kills.toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>EXP total</span><b>${Math.round(sessionXp).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>EXP/h</span><b>${Math.round(xpPerHour).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Próximo level</span><b>${etaNextLevel}</b></div>
-        <div class="analyzer-row"><span>Gold</span><b>${Math.round(lootGold).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Gasto</span><b class="rateio-pay">${Math.round(gasto).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Saldo</span><b class="${saldoCacada>=0?'rateio-receive':'rateio-pay'}">${Math.round(saldoCacada).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Gold/h</span><b>${Math.round(lootGoldPerHour).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Gasto/h</span><b class="rateio-pay">${Math.round(gastoPerHour).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Saldo/h</span><b class="${saldoCacadaPerHour>=0?'rateio-receive':'rateio-pay'}">${Math.round(saldoCacadaPerHour).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Lucro total</span><b>${Math.round(sessionWealth).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Lucro/h</span><b>${Math.round(profitPerHour).toLocaleString('pt-BR')}</b></div>
-        <div class="analyzer-row"><span>Ouro em mãos</span><b>${Math.round(player.gold)}</b></div>
-        <div class="analyzer-row"><span>Ouro no banco</span><b>${Math.round(player.bankGold)}</b></div>
+        <div class="analyzer-stat-grid">
+          <div class="analyzer-stat-box"><span class="lbl">EXP/h</span><span class="val">${Math.round(xpPerHour).toLocaleString('pt-BR')}</span></div>
+          <div class="analyzer-stat-box"><span class="lbl">Lucro/h</span><span class="val">${Math.round(profitPerHour).toLocaleString('pt-BR')}</span></div>
+          <div class="analyzer-stat-box"><span class="lbl">Próximo level</span><span class="val">${etaNextLevel}</span></div>
+          <div class="analyzer-stat-box"><span class="lbl">Inimigos mortos</span><span class="val">${kills.toLocaleString('pt-BR')}</span></div>
+          <div class="analyzer-stat-box"><span class="lbl">Tempo de sessão</span><span class="val">${fmtDuration(now()-session.startedAt)}</span></div>
+          <div class="analyzer-stat-box"><span class="lbl">EXP total</span><span class="val">${Math.round(sessionXp).toLocaleString('pt-BR')}</span></div>
+          <div class="analyzer-stat-box"><span class="lbl">Ouro em mãos</span><span class="val">${Math.round(player.gold).toLocaleString('pt-BR')}</span></div>
+          <div class="analyzer-stat-box"><span class="lbl">Ouro no banco</span><span class="val">${Math.round(player.bankGold).toLocaleString('pt-BR')}</span></div>
+        </div>
+        <div class="analyzer-saldo-box">
+          <span class="lbl">Saldo da caçada</span>
+          <span class="val ${saldoCacada>=0?'rateio-receive':'rateio-pay'}">${saldoCacada>=0?'+':''}${Math.round(saldoCacada).toLocaleString('pt-BR')} gp</span>
+        </div>
+        <div class="analyzer-rate-pills">
+          <div class="analyzer-rate-pill"><span class="lbl">Gold/h</span><b>${Math.round(lootGoldPerHour).toLocaleString('pt-BR')}</b></div>
+          <div class="analyzer-rate-pill"><span class="lbl">Gasto/h</span><b class="rateio-pay">${Math.round(gastoPerHour).toLocaleString('pt-BR')}</b></div>
+          <div class="analyzer-rate-pill"><span class="lbl">Saldo/h</span><b class="${saldoCacadaPerHour>=0?'rateio-receive':'rateio-pay'}">${Math.round(saldoCacadaPerHour).toLocaleString('pt-BR')}</b></div>
+        </div>
+        <label class="analyzer-checkbox-row">
+          <input type="checkbox" id="analyzer-market-toggle" ${analyzerUseMarketPrice?'checked':''}>
+          Considerar preço dos itens no Mercado (em vez do NPC) na estimativa abaixo
+        </label>
+        <div class="analyzer-drops-title">Drops da sessão ${dropsList.length ? `— estimado ${Math.round(dropsTotalEstimado).toLocaleString('pt-BR')} gp` : ''}</div>
+        <div class="analyzer-drops-list">
+          ${dropsList.length ? dropsList.map(d=>{
+            const usaMercado = analyzerUseMarketPrice && d.marketTotal != null;
+            const total = usaMercado ? d.marketTotal : d.npcTotal;
+            const iconHtml = resolveItemIconHtml({ id: d.itemId, rarity: d.rarity });
+            return `<div class="analyzer-drop-row">${iconHtml}<span class="name rarity-${d.rarity}">${escapeHtml(d.name)}</span><span class="qty">×${d.count}</span><span class="value">${Math.round(total).toLocaleString('pt-BR')} gp</span></div>`;
+          }).join('') : `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum drop registrado ainda nesta sessão.</div>`}
+        </div>
+        <div class="analyzer-footnote">Estimativa ${analyzerUseMarketPrice ? 'pela menor oferta ativa no Mercado (quando o item não tem oferta, cai pro preço do NPC)' : 'pelo preço de venda ao Ferreiro Bran (NPC)'} — não é Gold real até você vender de verdade. Gold/Gasto/Saldo acima são sempre os valores reais da caçada.</div>
       `;
+      const marketToggle = document.getElementById('analyzer-market-toggle');
+      if(marketToggle) marketToggle.addEventListener('change', e=>{
+        analyzerUseMarketPrice = e.target.checked;
+        try { localStorage.setItem(LS_ANALYZER_USE_MARKET, analyzerUseMarketPrice ? '1' : '0'); } catch(err){}
+        renderAnalyzer();
+      });
     } else if(activeTab==='suprimentos'){
       const used = Object.values(huntStats.suppliesUsed || {});
       body.innerHTML = used.length ? used.map(u=>`
