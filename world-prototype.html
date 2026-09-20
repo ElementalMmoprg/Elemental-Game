@@ -879,6 +879,12 @@
   .tower-btns button{ flex:1; font-family:var(--font-mono); font-size:9.5px; padding:5px; border:1px solid var(--gold-deep); border-radius:4px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
   .tower-btns button:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
   .tower-btns button:disabled{ opacity:.4; cursor:not-allowed; }
+  .tower-attempts-line{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); padding:2px 2px 10px; border-bottom:1px solid var(--gold-deep); margin-bottom:8px; }
+  .tower-extra-btns{ margin-top:6px; flex-wrap:wrap; }
+  .tower-extra-btns button{ flex:1 1 auto; }
+  .tower-boss-btn{ border-color:#ff3b30 !important; color:#ff9a80 !important; }
+  .tower-boss-btn:hover{ background:rgba(226,84,43,.15) !important; }
+  .tower-reset-btn:hover{ border-color:#ff9a80; color:#ff9a80; }
   #attrs-panel .cap-line{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:8px; display:flex; justify-content:space-between; }
   .attr-row{ display:flex; align-items:center; gap:6px; margin-bottom:6px; font-family:var(--font-mono); font-size:10.5px; }
   .attr-row .name{ width:56px; }
@@ -989,6 +995,19 @@
   #tower-climb-banner.boss .line1{ font-size:28px; color:#ff3b30; font-weight:bold; }
   #tower-climb-banner .line2{ font-size:12px; color:var(--ink-dim); margin-top:6px; }
   #tower-climb-banner.boss .line2{ color:#ff9a80; }
+
+  /* ============ TORRE — banner de "caído" (state.towerDowned) + Revive ============ */
+  #tower-downed-banner{
+    position:absolute; top:36%; left:50%; transform:translate(-50%,-50%);
+    z-index:60; display:none; text-align:center; font-family:var(--font-mono);
+    background:rgba(10,7,5,.92); border:1px solid var(--danger); border-radius:10px;
+    padding:18px 26px; box-shadow:0 10px 40px rgba(0,0,0,.6);
+  }
+  #tower-downed-banner.show{ display:block; }
+  #tower-downed-banner .line1{ font-size:20px; color:#ff5030; font-weight:bold; letter-spacing:.5px; }
+  #tower-downed-banner .line2{ font-size:12px; color:#ff9a80; margin-top:6px; }
+  #tower-downed-banner .tower-downed-btns{ display:flex; gap:10px; margin-top:14px; justify-content:center; }
+  #tower-downed-banner .tower-downed-btns button{ font-size:11px; padding:8px 14px; }
 
   /* ============ MODAL DE CONFIRMAÇÃO (substitui o confirm() nativo do
      navegador, que aparecia com a cara de um alerta do Windows) ============ */
@@ -1479,6 +1498,18 @@
   <div id="tower-climb-banner">
     <div class="line1"></div>
     <div class="line2"></div>
+  </div>
+
+  <!-- Caído na Torre (state.towerDowned) — janela de Revive, ver
+       updateTowerDownedBanner. Fica por CIMA de tudo (z-index alto) já que
+       o combate está congelado (tickPlayer, servidor) até o jogador decidir. -->
+  <div id="tower-downed-banner">
+    <div class="line1">☠️ Você caiu na Torre!</div>
+    <div class="line2" id="tower-downed-timer"></div>
+    <div class="tower-downed-btns">
+      <button id="tower-downed-revive" class="party-btn primary">Reviver</button>
+      <button id="tower-downed-giveup" class="party-btn">Desistir (perde Bênçãos)</button>
+    </div>
   </div>
 
   <div id="confirm-modal-backdrop">
@@ -2540,6 +2571,11 @@
   let skillPoints = { total:0, spent:0 };
   let elementalCoins = 0;
   let towers = { central:0, fogo:0, agua:0, terra:0, ar:0, luz:0, trevas:0 };
+  // Reforma da Torre (20/09/2026): tentativas de Escalada usadas hoje (1x
+  // Free/2x Premium, ver huntEngine.getTowerClimbStatus) + estado de
+  // "caído" (ver state.towerDowned no servidor) que libera o banner de Revive.
+  let towerClimb = { usedToday:0, limit:1, remaining:1, towerKeys:0 };
+  let towerDowned = null;
   let materials = { enchantCrystal:0, enchantProtector:0, antiBreakWard:0, infusionShard:0 }; // Cristal + Bênção do Ferreiro + Selo Inquebrável + Fragmento de Infusão
   let professions = { forja:{level:1,xp:0}, carpintaria:{level:1,xp:0}, tecelagem:{level:1,xp:0} }; // Forja/Carpintaria/Tecelagem
   // Craft com tempo real (ver huntEngine.startCraft/completeCraftIfDone no
@@ -4950,6 +4986,9 @@
     processCombatFx(msg.combatFx);
     if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
+    if(msg.towerClimb) towerClimb = msg.towerClimb;
+    if(typeof msg.towerDowned !== 'undefined'){ towerDowned = msg.towerDowned || null; updateTowerDownedBanner(); }
+    renderTowersIfOpen();
     if(msg.materials) materials = msg.materials;
     if(msg.professions) professions = msg.professions;
     // Craft com tempo real: craftingJob vem null quando não tem nada em
@@ -9203,30 +9242,86 @@
   ];
   const towersPanel = document.getElementById('towers-panel');
   document.getElementById('btn-open-towers').addEventListener('click', ()=>{ towersPanel.classList.toggle('open'); renderTowers(); });
+  // Chaves de Chefe dropadas (ver TOWER_BOSS_KEY_DROP_CHANCE no servidor) —
+  // id = tower_boss_key__<towerId>__<floor>. Devolve a lista de andares
+  // desafiáveis (com Chave em mãos) daquela torre, já reconquistados na
+  // Escalada (challengeTowerBoss exige isso também, checagem é só cosmética
+  // aqui pra não mostrar um botão que o servidor recusaria).
+  function towerBossKeysFor(towerId, floorLimit){
+    const prefix = 'tower_boss_key__'+towerId+'__';
+    return (bag||[]).filter(it=> it.id && it.id.indexOf(prefix)===0)
+      .map(it=> parseInt(it.id.slice(prefix.length),10))
+      .filter(f=> Number.isFinite(f) && f<=floorLimit);
+  }
   function renderTowers(){
     if(!towersPanel.classList.contains('open')) return;
     const body = document.getElementById('towers-body');
-    body.innerHTML = TOWERS_CATALOG_CLIENT.map(t=>{
+    const attemptsLine = `<div class="tower-attempts-line">Tentativas de Escalada hoje: <b style="color:${towerClimb.remaining>0?'var(--ok)':'#ff9a80'}">${towerClimb.usedToday}/${towerClimb.limit}</b>`
+      + (towerClimb.towerKeys>0 ? ` · <span style="color:var(--gold-bright)">🗝️ ${towerClimb.towerKeys} Chave(s) da Torre</span>` : '')
+      + `</div>`;
+    body.innerHTML = attemptsLine + TOWERS_CATALOG_CLIENT.map(t=>{
       const floor = (towers && towers[t.id]) || 0;
       const climbing = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && activeHunt.towerId===t.id;
       const statusLine = climbing
         ? `<div class="floor" style="color:var(--gold-bright);">⛰️ Escalando agora — andar ${activeHunt.climbFloor}/100</div>`
         : '';
+      const bossFloors = towerBossKeysFor(t.id, floor);
+      const canClimb = towerClimb.remaining>0 || towerClimb.towerKeys>0;
+      const climbBtnLabel = floor>0 ? 'Continuar Escalada' : 'Subir a Torre';
+      const climbBtnTitle = canClimb ? '' : 'title="Sem tentativas hoje — compre uma Chave da Torre na Loja de Elemental Coin"';
       return `<div class="tower-row">
         <div class="top"><h3>${t.icon} ${t.name}</h3><span class="floor">Andar salvo: ${floor}/100</span></div>
         <div class="tower-bar-track"><div class="tower-bar-fill" style="width:${floor}%"></div></div>
         ${statusLine}
         <div class="tower-btns">
           <button data-tower="${t.id}" data-mode="dungeon" ${activeHunt.running?'disabled':''}>Treino (Sentinelas)</button>
-          <button data-tower="${t.id}" data-mode="boss" ${activeHunt.running?'disabled':''}>${floor>0?'Continuar Escalada':'Subir a Torre'}</button>
+          <button data-tower="${t.id}" data-mode="boss" ${(activeHunt.running||!canClimb)?'disabled':''} ${climbBtnTitle}>${climbBtnLabel}</button>
+        </div>
+        <div class="tower-btns tower-extra-btns">
+          ${bossFloors.map(f=>`<button class="tower-boss-btn" data-boss-tower="${t.id}" data-boss-floor="${f}" ${activeHunt.running?'disabled':''}>👑 Desafiar Chefe (andar ${f})</button>`).join('')}
+          <button class="tower-reset-btn" data-reset-tower="${t.id}" ${(activeHunt.running||floor===0)?'disabled':''} title="Reseta o andar salvo desta torre pro 1">↺ Resetar Torre</button>
         </div>
       </div>`;
     }).join('');
     body.querySelectorAll('button[data-tower]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'tower:enter', towerId:btn.dataset.tower, mode:btn.dataset.mode }));
     });
+    body.querySelectorAll('button[data-boss-tower]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'tower:challengeBoss', towerId:btn.dataset.bossTower, floor:parseInt(btn.dataset.bossFloor,10) }));
+    });
+    body.querySelectorAll('button[data-reset-tower]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const towerId = btn.dataset.resetTower;
+        const t = TOWERS_CATALOG_CLIENT.find(x=>x.id===towerId);
+        if(confirm(`Resetar o progresso de ${t?t.name:'Torre'}? Você volta pro andar 1 e perde toda a progressão salva.`)) {
+          sendWS({ type:'tower:reset', towerId });
+        }
+      });
+    });
   }
   function renderTowersIfOpen(){ if(towersPanel.classList.contains('open')) renderTowers(); }
+
+  /* ---- Banner de "caído" na Torre (state.towerDowned) — Revive/Desistir ---- */
+  const towerDownedBannerEl = document.getElementById('tower-downed-banner');
+  function updateTowerDownedBanner(){
+    if(!towerDownedBannerEl) return;
+    if(!towerDowned){ towerDownedBannerEl.classList.remove('show'); return; }
+    towerDownedBannerEl.classList.add('show');
+    const t = TOWERS_CATALOG_CLIENT.find(x=>x.id===towerDowned.towerId);
+    const secsLeft = Math.max(0, Math.ceil((towerDowned.deadlineAt - Date.now())/1000));
+    const cost = Math.round(4000 + (towerDowned.floor||1) * 200);
+    document.getElementById('tower-downed-timer').textContent =
+      `${t?t.name:'Torre'} · andar ${towerDowned.floor} · ${secsLeft}s pra decidir`;
+    document.getElementById('tower-downed-revive').textContent = `Reviver (${cost.toLocaleString('pt-BR')} Ouro)`;
+    document.getElementById('tower-downed-revive').disabled = secsLeft<=0;
+  }
+  document.getElementById('tower-downed-revive').addEventListener('click', ()=> sendWS({ type:'tower:revive' }));
+  document.getElementById('tower-downed-giveup').addEventListener('click', ()=>{
+    if(confirm('Desistir e voltar pra Cidade? Você perde as Bênçãos ativas, mas mantém o andar já conquistado.')) {
+      sendWS({ type:'hunt:returnToCity' });
+    }
+  });
+  setInterval(updateTowerDownedBanner, 200);
 
   /* ---- Banner central de "Subindo para o andar N" / aviso vermelho de
      Boss — puramente reativo ao que o servidor manda em activeHunt
@@ -9379,6 +9474,9 @@
     { id:'premium_30d', days:30, priceBRL:19.90 },
     { id:'premium_90d', days:90, priceBRL:49.90 },
   ];
+  // Chave da Torre — espelho de exibição de huntEngine.TOWER_KEY_SHOP_PRICE_COIN;
+  // quem valida e cobra de verdade é sempre o servidor (ver 'tower:buyKey').
+  const TOWER_KEY_PRICE_COIN = 60;
   function renderCoinShop(){
     const list = document.getElementById('coinshop-items-list');
     const premiumIcon = `<img class="cicon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_premium.png" onerror="this.replaceWith(document.createTextNode('✨'));" />`;
@@ -9390,12 +9488,16 @@
       <div class="coin-pkg-row"><span class="cname">${premiumIcon} Premium ${p.days} dias</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-premium="${p.id}">Comprar</button></div>
     `).join('') + `<div class="panel-title" style="margin-top:10px;">Elemental Coin</div>` + ELEMENTAL_COIN_PACKAGES.map(p=>`
       <div class="coin-pkg-row"><span class="cname">${coinIcon} ${p.coins}${p.bonusCoins?` <span class="coin-bonus-badge">+${p.bonusCoins} bônus</span>`:''}</span><span class="cprice">R$ ${p.priceBRL.toFixed(2)}</span><button class="party-btn primary" data-buy-coin="${p.id}">Comprar</button></div>
-    `).join('');
+    `).join('') + `<div class="panel-title" style="margin-top:10px;">Itens (Elemental Coin)</div>
+      <div class="coin-pkg-row"><span class="cname">🗝️ Chave da Torre <span style="color:var(--ink-dim);">(+1 tentativa de Escalada no dia)</span></span><span class="cprice">${TOWER_KEY_PRICE_COIN} 💎</span><button class="party-btn primary" data-buy-tower-key="1">Comprar</button></div>`;
     list.querySelectorAll('[data-buy-coin]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'shop:buyElementalCoins', packageId: btn.dataset.buyCoin }));
     });
     list.querySelectorAll('[data-buy-premium]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'shop:buyPremium', packageId: btn.dataset.buyPremium }));
+    });
+    list.querySelectorAll('[data-buy-tower-key]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'tower:buyKey', qty: parseInt(btn.dataset.buyTowerKey,10)||1 }));
     });
   }
 
