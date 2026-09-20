@@ -495,6 +495,21 @@
   .opt-row .req{ font-size:9px; color:var(--ink-dim); margin-left:auto; }
   .cond-select{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:7px; font-family:var(--font-mono); font-size:11px; margin:8px 0; }
   .cond-threshold{ width:100%; accent-color:var(--gold); }
+  /* task #127 (22/09/2026): o construtor de Condições da hotbar usava
+     <select> cru (sem .cond-select), então saía com o dropdown BRANCO
+     padrão do navegador no meio de um modal escuro -- essa era a raiz do
+     "vamos melhorar o modal, fazer com uma estética melhor" do usuário
+     (print de referência mostrava os dropdowns escuros/estilizados do
+     jogo-fonte). .cond-select-sm reusa a mesma paleta de .cond-select só
+     que compacta o bastante pra 3 caberem lado a lado numa linha. */
+  .hotbar-cond-row{ display:flex; gap:4px; align-items:center; margin:4px 0; }
+  .cond-select-sm{ flex:1; min-width:0; width:auto; margin:0; padding:5px 4px; font-size:9.5px; }
+  .cond-select-sm:disabled{ opacity:.5; cursor:not-allowed; }
+  .cond-select-op{ flex:1.3; }
+  .hotbar-cond-value{ display:flex; align-items:center; gap:1px; flex-shrink:0; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; padding:0 4px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .hotbar-cond-value input{ width:32px; background:transparent; border:none; color:var(--ink); font-family:var(--font-mono); font-size:11px; padding:5px 0; text-align:right; }
+  .hotbar-cond-value input:focus{ outline:none; }
+  .hotbar-cond-remove{ cursor:pointer; color:#ff9a80; flex-shrink:0; padding:0 2px; }
   #action-close{ text-align:center; padding:8px; font-family:var(--font-mono); font-size:10px; color:var(--danger); cursor:pointer; border-top:1px solid var(--gold-deep); }
 
   /* ============ INVENTÁRIO DIVIDIDO ============ */
@@ -587,12 +602,17 @@
   #inv-items-col{ flex:1; display:flex; flex-direction:column; overflow:hidden; }
   #inv-items-grid{ flex:1; padding:14px; display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; overflow-y:auto; align-content:start; }
   .item-slot{ aspect-ratio:1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:18px; position:relative; background-size:100% 100%; background-repeat:no-repeat; }
-  /* Visual do slot PADRONIZADO (item 1 da lista de tarefas, 20/09/2026):
-     antes o jogador escolhia entre 6 modelos cosméticos (picker removido,
-     ver histórico em hud-assets-notas.md) — agora é sempre o Modelo 1
-     (fire), fixo pra todo mundo, sem seletor. Escopo: só a Bolsa/Mochila
-     (#inventory-modal .item-slot) — Lixeira usa .trash-row, não afetada. */
-  #inventory-modal .item-slot{ background-image:url(https://elementalmmoprg.github.io/Elemental_assets/assets/hud/invslot/model_fire.png); border-color:transparent; }
+  /* Visual do slot da Bolsa/Mochila (item 1 da lista de tarefas, 20/09/2026,
+     revisado 21/09/2026): o pedido original era remover o SELETOR de 6
+     modelos cosméticos (fire/arcane/ice/lightning/nature/skull, ver
+     histórico em hud-assets-notas.md) e usar "o slot padrão" -- só que
+     nenhum dos 6 assets é neutro, são todos temáticos, e a sessão anterior
+     tinha fixado o Modelo 1 (fire) como se fosse esse "padrão". O usuário
+     confirmou que não é isso: "padrão" é a caixa lisa sem tema nenhum, que
+     já é o visual base de .item-slot (fundo escuro + borda dourada) -- por
+     isso este override de background-image foi removido (não substituído
+     por outro modelo). Se quiser reskin temático de novo no futuro, é só
+     re-adicionar esta regra apontando pro model_*.png desejado. */
   /* Lixeira de Itens — linhas de largura cheia (não o grid quadrado de ícone
      usado por Bolsa/Mochila), pra caber nome + contagem regressiva + botões. */
   .trash-row{ grid-column:1/-1; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; gap:10px; padding:7px 10px; }
@@ -5154,6 +5174,16 @@
   }
   connectToServer();
 
+  // Mensagem amigável do gate de nível (task #126) -- reaproveitada pelos 3
+  // pontos que podem recusar por nível (hunt:start solo, party:huntInvite e
+  // party:go em grupo, ver requestHuntApproach/canPartyGo/partyGo no
+  // huntEngine.js). membro_nivel_insuficiente inclui msg.username de QUEM
+  // do grupo não tem nível — mostra o nick pra ficar claro quem precisa upar.
+  function huntLevelGateMessage(msg){
+    if(msg.reason === 'nivel_insuficiente') return `Nível insuficiente para essa caçada (precisa nível ${msg.requiredLevel}).`;
+    if(msg.reason === 'membro_nivel_insuficiente') return `${msg.username || 'Um membro do grupo'} ainda não tem o nível ${msg.requiredLevel} necessário para essa caçada.`;
+    return null;
+  }
   function handleAck(msg){
     if(msg.forType === 'hunt:start'){
       if(msg.ok){
@@ -5161,11 +5191,11 @@
         // avisa o servidor e a caçada começa (ver hunt:arrivedAtTeleport).
         startAutoWalkToTeleport(()=> sendWS({ type:'hunt:arrivedAtTeleport' }));
       } else {
-        logLoot(`⚠️ Não foi possível iniciar: ${msg.reason}`);
+        logLoot(`⚠️ ${huntLevelGateMessage(msg) || `Não foi possível iniciar: ${msg.reason}`}`);
       }
     }
-    if(msg.forType === 'party:huntInvite' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode iniciar com o time.' : msg.reason}`);
-    if(msg.forType === 'party:go' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode clicar em IR.' : msg.reason}`);
+    if(msg.forType === 'party:huntInvite' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode iniciar com o time.' : (huntLevelGateMessage(msg) || msg.reason)}`);
+    if(msg.forType === 'party:go' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode clicar em IR.' : (huntLevelGateMessage(msg) || msg.reason)}`);
     if(msg.forType === 'matchmaking:join'){
       if(msg.ok){
         matchmakingActive = true; matchmakingKey = msg.queueKey;
@@ -7982,18 +8012,39 @@
   // as 3 listas abaixo -- ver configureHotbarSlot/evalHotbarCondition no
   // huntEngine.js pra saber exatamente o que é validado/avaliado de
   // verdade no servidor (o cliente só monta a UI, quem manda é o servidor).
-  // Ficaram de FORA (não têm mecânica real no jogo ainda, ver notas do
-  // projeto): subject "Área"/"Aliado" genérico e os tipos "Alvos"
-  // (contagem de inimigos)/"Preso"/"Paralisado"/"Magic Shield" -- não existe
-  // sistema de status/CC nem contagem de área neste motor.
+  // task #127 (22/09/2026, print de referência do jogo-fonte): "Área"
+  // (conta monstros vivos no ponto de caçada) e "Aliado" (lê o aliado com
+  // menos vida da party) ENTRARAM como subject de verdade, cada um com seu
+  // próprio type fixo (monsterCount/hp) -- ver evalHotbarCondition no
+  // huntEngine.js, que é quem valida/avalia de verdade (o cliente só monta a
+  // UI). "Preso"/"Paralisado" CONTINUAM de fora: o jogo-fonte real tem esse
+  // status (achado no Lua: paralysis_powder/spear_throw_stun/shadowbind/
+  // Chain Jail), mas nenhuma magia com esse efeito foi portada pro nosso
+  // ARCHETYPE_SPELLBOOK ainda, e nenhum sistema de status/CC existe neste
+  // motor -- adicionar exigiria os dois primeiro, escopo bem maior que só
+  // "melhorar o modal", fica pra o usuário abrir como task própria se quiser.
+  // "Magic Shield" (Escudo Mágico) entrou antes (item 124, 21/09/2026):
+  // mecânica real desde antes (kind:'defense' em castSpell/huntEngine.js,
+  // state.shieldHp/shieldExpiresAt) -- pedido do usuário: "um mago não
+  // consegue ficar salvo sem um escudo de mana", serve pra reconjurar
+  // automaticamente quando o escudo cair/expirar.
   const HOTBAR_COND_SUBJECTS = [
     { id:'you', label:'Você' },
     { id:'target', label:'Alvo' },
+    { id:'area', label:'Área' },
+    { id:'ally', label:'Aliado' },
   ];
   const HOTBAR_COND_TYPES = [
     { id:'hp', label:'HP' },
-    { id:'mana', label:'Mana' }, // escondido quando subject==='target' (monstro não tem mana)
+    { id:'mana', label:'Mana' }, // só aparece pra subject==='you' (monstro/aliado/área não têm mana monitorável aqui)
+    { id:'shield', label:'Escudo Mágico' }, // só aparece pra subject==='you' -- 100% = ativo, 0% = caído/expirado
+    { id:'monsterCount', label:'Alvos (quantidade)' }, // só aparece pra subject==='area' -- contagem, não %
   ];
+  // Type fixo por subject (task #127) -- 'target'/'ally' só têm HP
+  // monitorável aqui, 'area' só tem a contagem; só 'you' de fato escolhe
+  // entre HP/Mana/Escudo. Usado tanto pro filtro do <select> de type quanto
+  // pra saber se o valor é "%" (HP/Mana/Escudo) ou uma contagem crua (Alvos).
+  const HOTBAR_COND_FIXED_TYPE = { target: 'hp', ally: 'hp', area: 'monsterCount' };
   const HOTBAR_COND_OPERATORS = [
     { id:'lt',  label:'menor que' },
     { id:'lte', label:'menor ou igual a' },
@@ -8329,14 +8380,27 @@
         html += `<div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);opacity:.7;padding:4px 0;">Nada — dispara sempre que possível.</div>`;
       }
       slot.conditions.forEach((c,idx)=>{
-        html += `<div class="hotbar-cond-row" style="display:flex;gap:4px;align-items:center;margin:4px 0;">
-          <select data-cond-idx="${idx}" data-cond-field="subject" style="flex:1;min-width:0;">${HOTBAR_COND_SUBJECTS.map(s=>`<option value="${s.id}" ${c.subject===s.id?'selected':''}>${s.label}</option>`).join('')}</select>
-          <select data-cond-idx="${idx}" data-cond-field="type" style="flex:1;min-width:0;">${HOTBAR_COND_TYPES.filter(t=> c.subject!=='target' || t.id==='hp').map(t=>`<option value="${t.id}" ${c.type===t.id?'selected':''}>${t.label}</option>`).join('')}</select>
-          <select data-cond-idx="${idx}" data-cond-field="operator" style="flex:1.6;min-width:0;">${HOTBAR_COND_OPERATORS.map(o=>`<option value="${o.id}" ${c.operator===o.id?'selected':''}>${o.label}</option>`).join('')}</select>
-          <input type="number" min="1" max="100" data-cond-idx="${idx}" data-cond-field="value" value="${c.value}" style="width:42px;">%
-          <span data-cond-remove="${idx}" style="cursor:pointer;color:#ff9a80;">✖</span>
+        // task #127: subject 'target'/'ally'/'area' têm o type TRAVADO
+        // (ver HOTBAR_COND_FIXED_TYPE) -- só 'you' escolhe de verdade entre
+        // HP/Mana/Escudo. 'Alvos' (contagem de monstros) é um NÚMERO cru,
+        // as outras 3 são %, então o teto/sufixo mudam junto com o subject.
+        const fixedType = HOTBAR_COND_FIXED_TYPE[c.subject];
+        const isCount = (fixedType || c.type) === 'monsterCount';
+        html += `<div class="hotbar-cond-row">
+          <select class="cond-select cond-select-sm" data-cond-idx="${idx}" data-cond-field="subject">${HOTBAR_COND_SUBJECTS.map(s=>`<option value="${s.id}" ${c.subject===s.id?'selected':''}>${s.label}</option>`).join('')}</select>
+          <select class="cond-select cond-select-sm" data-cond-idx="${idx}" data-cond-field="type" ${fixedType?'disabled':''}>${HOTBAR_COND_TYPES.filter(t=> fixedType ? t.id===fixedType : t.id!=='monsterCount').map(t=>`<option value="${t.id}" ${(fixedType||c.type)===t.id?'selected':''}>${t.label}</option>`).join('')}</select>
+          <select class="cond-select cond-select-sm cond-select-op" data-cond-idx="${idx}" data-cond-field="operator">${HOTBAR_COND_OPERATORS.map(o=>`<option value="${o.id}" ${c.operator===o.id?'selected':''}>${o.label}</option>`).join('')}</select>
+          <div class="hotbar-cond-value"><input type="number" min="${isCount?0:1}" max="${isCount?99:100}" data-cond-idx="${idx}" data-cond-field="value" value="${c.value}">${isCount?'':'%'}</div>
+          <span data-cond-remove="${idx}" class="hotbar-cond-remove">✖</span>
         </div>`;
       });
+      // Item 124 (21/09/2026): Escudo Mágico não tem "%" real (é só
+      // ativo/caído) -- explica a escala 0/100 só quando o jogador de fato
+      // usa esse tipo, pra não poluir a UI nos outros casos (HP/Mana, que
+      // já são autoexplicativos).
+      if(slot.conditions.some(c=>c.type==='shield')){
+        html += `<div style="font-family:var(--font-mono);font-size:8.5px;color:var(--ink-dim);opacity:.8;margin:2px 0 4px;">Escudo Mágico conta como 100% enquanto ativo e 0% quando cai/expira — "menor que 50" dispara quando ele CAI (padrão), "maior ou igual a 50" dispara enquanto ele estiver ATIVO.</div>`;
+      }
       html += `</div>`;
       const availableToIgnore = currentZoneMonsterNames().filter(n=>!slot.ignoredMonsters.includes(n));
       html += `<div style="margin-top:12px;">
@@ -8438,9 +8502,23 @@
       body.querySelectorAll('[data-cond-field]').forEach(el=> el.addEventListener('change', e=>{
         const c = slot.conditions[+el.dataset.condIdx]; if(!c) return;
         const field = el.dataset.condField;
-        if(field==='value') c.value = Math.max(1, Math.min(100, Math.round(+e.target.value)||50));
-        else c[field] = e.target.value;
-        if(field==='subject' && c.subject==='target') c.type = 'hp'; // monstro não tem mana
+        if(field==='value'){
+          const isCount = HOTBAR_COND_FIXED_TYPE[c.subject]==='monsterCount';
+          c.value = isCount ? Math.max(0, Math.round(+e.target.value)||1) : Math.max(1, Math.min(100, Math.round(+e.target.value)||50));
+        } else c[field] = e.target.value;
+        // task #127: trocar o subject pra 'target'/'ally'/'area' TRAVA o type
+        // (ver HOTBAR_COND_FIXED_TYPE) -- monstro/aliado só têm HP
+        // monitorável aqui, Área só tem a contagem de Alvos.
+        const fixedType = HOTBAR_COND_FIXED_TYPE[c.subject];
+        if(field==='subject' && fixedType) c.type = fixedType;
+        // Item 124 (21/09/2026): trocar pra "Escudo Mágico" já deixa
+        // pré-configurado no caso mais comum (disparar quando ele CAI) --
+        // sem isso o jogador precisaria adivinhar que "menor que 50" é o
+        // jeito de expressar "escudo inativo" nessa escala 0/100 binária.
+        if(field==='type' && c.type==='shield'){ c.operator = 'lt'; c.value = 50; }
+        // task #127: trocar pra 'area' (Alvos) já sugere um valor sensato --
+        // "menor ou igual a 100%" não fazia sentido pra uma contagem crua.
+        if(field==='subject' && c.subject==='area'){ c.operator = 'gte'; c.value = 3; }
         pushHotbarConfigure(); renderActionBody(); renderHotbar();
       }));
       const addIgnoredBtn = body.querySelector('[data-add-ignored-btn]');
@@ -9937,9 +10015,21 @@
   const CRAFT_RARITY_SUFFIX_CLIENT = { comum:'common', incomum:'uncommon', rara:'rare', 'épica':'epic', 'lendária':'legendary' };
   const CRAFT_RARITY_WEIGHTS_LOW_CLIENT = [55, 28, 12, 4, 1];
   const CRAFT_RARITY_WEIGHTS_HIGH_CLIENT = [25, 30, 25, 13, 7];
-  function craftRarityOddsClient(profLevel){
+  // Espelho de CRAFT_CATALYST_RARITY_BONUS em huntEngine.js (task #128) --
+  // só pra mostrar a prévia de % com o catalisador escolhido ANTES de
+  // clicar "Criar"; quem decide de verdade continua sendo o servidor.
+  const CRAFT_CATALYST_RARITY_BONUS_CLIENT = {
+    'épica': { 'épica': 2.5, 'lendária': 1.5 },
+    'lendária': { 'épica': 5, 'lendária': 3 },
+  };
+  function craftRarityOddsClient(profLevel, catalystRarity){
     const t = Math.max(0, Math.min(1, ((profLevel || 1) - 1) / 99));
     const weights = CRAFT_RARITY_TIERS_CLIENT.map((_, i) => CRAFT_RARITY_WEIGHTS_LOW_CLIENT[i] + (CRAFT_RARITY_WEIGHTS_HIGH_CLIENT[i] - CRAFT_RARITY_WEIGHTS_LOW_CLIENT[i]) * t);
+    const bonus = CRAFT_CATALYST_RARITY_BONUS_CLIENT[catalystRarity];
+    if(bonus){
+      weights[CRAFT_RARITY_TIERS_CLIENT.indexOf('épica')] += bonus['épica'];
+      weights[CRAFT_RARITY_TIERS_CLIENT.indexOf('lendária')] += bonus['lendária'];
+    }
     const total = weights.reduce((a, b) => a + b, 0);
     return CRAFT_RARITY_TIERS_CLIENT.map((tier, i) => ({ tier, pct: weights[i] / total * 100 }));
   }
@@ -9950,6 +10040,16 @@
   // comentário grandão no HTML do modal (#profession-search). 'all' = sem
   // filtro de categoria (comportamento de antes, mostra tudo da aba).
   let professionCategoryFilter = 'all';
+  // Catalisador de raridade (task #128, ideia do usuário 20/09/2026): loot
+  // Épico/Lendário OPCIONAL da Mochila, escolhido 1x pro PRÓXIMO craft que o
+  // jogador clicar "Criar" (não é por receita -- o mesmo catalisador vale
+  // pra qualquer uma, já que a bonificação é sempre sobre a MESMA rolagem de
+  // raridade final, ver CRAFT_CATALYST_RARITY_BONUS no huntEngine.js).
+  // Reseta sozinho quando o item some da Mochila (foi usado ou vendido) ou
+  // quando o jogador troca de aba/reabre o modal, pra nunca mandar um id que
+  // não existe mais.
+  let professionCatalystItemId = null;
+  const professionCatalystEligible = () => bag.filter(it => !it.slot && (it.rarity === 'épica' || it.rarity === 'lendária'));
   const professionTabsEl = document.getElementById('profession-tabs');
   const professionFilterEl = document.getElementById('profession-filter-row');
   const professionSearchEl = document.getElementById('profession-search');
@@ -10048,6 +10148,21 @@
           <div class="craft-progress-sub">${remainingS}s restantes</div>
         </div>`;
     })() : '';
+    // Catalisador (task #128) -- revalida a cada render: se o item escolhido
+    // sumiu da Mochila (foi vendido/usado por outra tela) a seleção cai
+    // sozinha pra "Nenhum" em vez de mandar um id fantasma no próximo craft.
+    if(professionCatalystItemId && !professionCatalystEligible().some(it=>it.id===professionCatalystItemId)) professionCatalystItemId = null;
+    const activeCatalystItem = professionCatalystItemId ? bag.find(it=>it.id===professionCatalystItemId && !it.slot) : null;
+    const catalystEligibleList = professionCatalystEligible();
+    const catalystBox = catalystEligibleList.length ? `
+      <div class="profession-recipe-box" style="margin-bottom:8px;">
+        <div class="prec-name">✨ Catalisador de Raridade (opcional)</div>
+        <div class="prec-desc">Sacrifica 1 loot Épico/Lendário da Mochila junto do próximo craft pra aumentar a chance do resultado sair melhor.</div>
+        <select id="profession-catalyst-select" style="width:100%;margin-top:4px;">
+          <option value="">Nenhum</option>
+          ${catalystEligibleList.map(it=>`<option value="${it.id}" ${it.id===professionCatalystItemId?'selected':''} style="color:${RARITY_COLORS[it.rarity]||''}">${it.name} (${it.qty||1}x, ${it.rarity})</option>`).join('')}
+        </select>
+      </div>` : '';
     const rows = visibleRecipes.length ? visibleRecipes.map(r=>{
       const locked = prof.level < r.levelReq;
       const matLines = r.materials.map(m=>{
@@ -10073,7 +10188,7 @@
       // a melhor opção para craftar") -- mesma fórmula base do boneco de
       // equipamento (computeBaseItemStatsClient), sem Encantamento/Infusão
       // (o item nasce nível 0 dos dois).
-      const oddsLines = craftRarityOddsClient(prof.level).map(o=>{
+      const oddsLines = craftRarityOddsClient(prof.level, activeCatalystItem ? activeCatalystItem.rarity : null).map(o=>{
         const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`];
         const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier) : {};
         const statPreview = Object.keys(stats).length ? `<div class="prec-stat-preview">${formatStats(stats)}</div>` : '';
@@ -10120,10 +10235,16 @@
       ${progressBox}
       ${(craftingJob && !jobIsThisTab) ? `<div class="craft-busy-note">⏳ Só dá pra iniciar outro craft quando esse terminar.</div>` : ''}
       ${refineBox}
+      ${catalystBox}
       ${rows}
     `;
+    const catalystSelectEl = document.getElementById('profession-catalyst-select');
+    if(catalystSelectEl) catalystSelectEl.addEventListener('change', ()=>{
+      professionCatalystItemId = catalystSelectEl.value || null;
+      renderProfessions(); // refaz as % de chance de cada receita com o novo catalisador
+    });
     body.querySelectorAll('[data-craft-recipe]').forEach(btn=>{
-      btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe }));
+      btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe, catalystItemId: professionCatalystItemId || undefined }));
     });
     const refineBtn = document.getElementById('btn-profession-refine');
     if(refineBtn) refineBtn.addEventListener('click', ()=> sendWS({ type:'profession:refine', profession: professionSelectedTab }));
