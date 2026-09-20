@@ -4364,12 +4364,30 @@
     if(activeHunt.running){
       activeHunt.lurePoints.forEach((p,i)=>{
         const isCurrent = i===activeHunt.currentIndex;
-        const waitingCooldown = p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
+        const waitingCooldown = !p.isPortal && p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
         drawList.push({ baseCart:{x:p.x,y:p.y}, draw:()=>{
           const s = toScreen(p.x,p.y);
-          ctx.beginPath(); ctx.ellipse(s.x, s.y, BLOCK_HW*0.85*SPRITE_SCALE, BLOCK_HH*0.85*SPRITE_SCALE, 0, 0, Math.PI*2);
-          ctx.fillStyle = isCurrent ? 'rgba(240,211,138,.22)' : 'rgba(191,161,95,.08)'; ctx.fill();
-          ctx.lineWidth = isCurrent?2:1; ctx.strokeStyle = waitingCooldown ? '#5a7ac0' : '#bfa15f'; ctx.stroke();
+          if(p.isPortal){
+            // Portal físico da Torre (Escalada) — anel roxo/azul pulsante,
+            // bem diferente do "lure" translúcido comum, pra ficar óbvio
+            // que dali o personagem some pro próximo andar. Sem sprite
+            // externo: só um efeito de canvas (o projeto ainda não tem
+            // arte de portal própria).
+            const pulse = 0.5 + 0.5*Math.sin(now()/1000*2.4);
+            const rw = BLOCK_HW*0.95*SPRITE_SCALE, rh = BLOCK_HH*0.95*SPRITE_SCALE;
+            const grad = ctx.createRadialGradient(s.x, s.y, 2, s.x, s.y, Math.max(rw,rh));
+            grad.addColorStop(0, `rgba(180,120,255,${0.55+0.25*pulse})`);
+            grad.addColorStop(0.6, `rgba(90,60,200,${0.35+0.2*pulse})`);
+            grad.addColorStop(1, 'rgba(60,30,140,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.ellipse(s.x, s.y, rw, rh, 0, 0, Math.PI*2); ctx.fill();
+            ctx.lineWidth = 2.5; ctx.strokeStyle = `rgba(220,190,255,${0.7+0.3*pulse})`;
+            ctx.beginPath(); ctx.ellipse(s.x, s.y, rw*(0.7+0.08*pulse), rh*(0.7+0.08*pulse), 0, 0, Math.PI*2); ctx.stroke();
+          } else {
+            ctx.beginPath(); ctx.ellipse(s.x, s.y, BLOCK_HW*0.85*SPRITE_SCALE, BLOCK_HH*0.85*SPRITE_SCALE, 0, 0, Math.PI*2);
+            ctx.fillStyle = isCurrent ? 'rgba(240,211,138,.22)' : 'rgba(191,161,95,.08)'; ctx.fill();
+            ctx.lineWidth = isCurrent?2:1; ctx.strokeStyle = waitingCooldown ? '#5a7ac0' : '#bfa15f'; ctx.stroke();
+          }
         }});
         p.monsters.forEach(m=>{
           // Fase de "respiração" própria por monstro (fixada uma vez no
@@ -4384,6 +4402,18 @@
           drawList.push({ baseCart:{x:m.x,y:m.y}, draw:()=>{
             const bob = Math.sin(now()/1000*1.6 + m._bobPhase)*1.6;
             const s = toScreen(m.x,m.y);
+            // Bosses tinham a MESMA caixa de desenho (68px) de qualquer
+            // monstro comum — o único jeito de perceber "chefe" era a cor
+            // da barra de vida/nome (ver drawTargetPlate isBoss). Pedido
+            // explícito do usuário: "bosses são conhecidos por ser
+            // grandes... tem que dar uma sensação de que você está
+            // enfrentando um boss". BOSS_DRAW_SCALE aumenta a caixa de
+            // desenho (mantendo o PÉ ancorado no chão -- ver bottomY nos
+            // dois branches abaixo) e sobe o headLift proporcionalmente,
+            // pra cabeça/nick/hp-bar não ficarem afundados dentro do corpo
+            // maior.
+            const BOSS_DRAW_SCALE = 1.55;
+            const bScale = m.isBoss ? BOSS_DRAW_SCALE : 1;
             const sprite = m.spriteId ? SpriteManager.monsterSprite(m.spriteId) : null;
             // Atlas de ANDAR real nas 4 direções (ver
             // claude/motor-4-direcoes-monstro-notas.md no projeto) -- só
@@ -4424,14 +4454,14 @@
               // anim.dir só cobre o instante antes do 1º snapshot chegar.
               const anim = updateWalkAnim('mon:'+m.id, s.x, s.y);
               const dir = m.facingDir || anim.dir;
-              drew = !!SpriteManager.drawBodyDirFrame(ctx, walkEntry, dir, anim.frameIdx, s.x, s.y+bob, 68*SPRITE_SCALE, 68*SPRITE_SCALE, false);
+              drew = !!SpriteManager.drawBodyDirFrame(ctx, walkEntry, dir, anim.frameIdx, s.x, s.y+bob, 68*SPRITE_SCALE*bScale, 68*SPRITE_SCALE*bScale, false);
             }
-            if(!drew) drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34*SPRITE_SCALE, s.y-68*SPRITE_SCALE+bob, 68*SPRITE_SCALE,68*SPRITE_SCALE);
+            if(!drew) drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34*SPRITE_SCALE*bScale, s.y-68*SPRITE_SCALE*bScale+bob, 68*SPRITE_SCALE*bScale,68*SPRITE_SCALE*bScale);
             if(!drew){
               // sem sprite carregado ainda (ou espécie sem arte) — bolinha
               // procedural com o ícone do bestiário por cima, nunca quebra.
-              ctx.beginPath(); ctx.arc(s.x, s.y-13*SPRITE_SCALE+bob, 13*SPRITE_SCALE, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
-              if(m.icon){ ctx.font = `${Math.round(21*SPRITE_SCALE)}px sans-serif`; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-6*SPRITE_SCALE+bob); }
+              ctx.beginPath(); ctx.arc(s.x, s.y-13*SPRITE_SCALE*bScale+bob, 13*SPRITE_SCALE*bScale, 0, Math.PI*2); ctx.fillStyle = '#8a2020'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke();
+              if(m.icon){ ctx.font = `${Math.round(21*SPRITE_SCALE*bScale)}px sans-serif`; ctx.textAlign='center'; ctx.fillText(m.icon, s.x, s.y-6*SPRITE_SCALE*bScale+bob); }
             }
             // flash branco rápido ao acertar (ver monsterHitFlash/processCombatFx) —
             // sem isso um golpe no monstro não tinha NENHUM retorno visual nele.
@@ -4440,14 +4470,14 @@
               const flashAge = now() - hitAt;
               if(flashAge < MONSTER_HIT_FLASH_MS){
                 ctx.globalAlpha = 1 - flashAge/MONSTER_HIT_FLASH_MS;
-                ctx.beginPath(); ctx.arc(s.x, s.y-30*SPRITE_SCALE+bob, 26*SPRITE_SCALE, 0, Math.PI*2);
+                ctx.beginPath(); ctx.arc(s.x, s.y-30*SPRITE_SCALE*bScale+bob, 26*SPRITE_SCALE*bScale, 0, Math.PI*2);
                 ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(); ctx.globalAlpha = 1;
               } else {
                 monsterHitFlash.delete(m.id);
               }
             }
             if(monsterMirror) ctx.restore();
-          }, headCart:{x:m.x,y:m.y}, headLift:24*SPRITE_SCALE, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster', monsterId:m.id, monsterName:m.name, monsterIsBoss:!!m.isBoss });
+          }, headCart:{x:m.x,y:m.y}, headLift:(m.isBoss?24*1.55:24)*SPRITE_SCALE, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster', monsterId:m.id, monsterName:m.name, monsterIsBoss:!!m.isBoss });
         });
       });
     }
@@ -4546,6 +4576,11 @@
     if(activeHunt.running){
       activeHunt.lurePoints.forEach((p,i)=>{
         const s = toScreen(p.x,p.y);
+        if(p.isPortal){
+          ctx.font = 'bold 10px "JetBrains Mono"'; ctx.fillStyle='#d8c4ff'; ctx.textAlign='center';
+          ctx.fillText('PORTAL', s.x, s.y-14);
+          return;
+        }
         const waitingCooldown = p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
         ctx.font = '9px "JetBrains Mono"'; ctx.fillStyle='#a99872'; ctx.textAlign='center';
         ctx.fillText(`Lure ${i+1}`, s.x, s.y-14);
@@ -5248,6 +5283,51 @@
     if(msg.forType === 'stamina:recharge'){
       if(msg.ok) logLoot(`⚡ Stamina recarregada (+6h) por ${msg.cost} Gold.`);
       else logLoot(`⚠️ Recarga falhou: ${msg.reason}`);
+    }
+    /* ---- TORRES ELEMENTAIS — nenhuma das 5 mensagens tinha feedback nenhum
+       aqui até agora (bug real: clicar em "Subir a Torre" sem stamina, sem
+       tentativa livre no dia, ou já em outra atividade, falhava em SILÊNCIO
+       total no cliente — "cliquei e nada aconteceu" reportado pelo usuário).
+       Reasons batendo 1:1 com enterTower/resetTower/reviveInTower/
+       challengeTowerBoss/buyTowerKey em huntEngine.js. ---- */
+    const TOWER_REASON_MSG = {
+      ja_em_atividade: 'você já está em outra atividade (caçada/torre) agora.',
+      torre_invalida: 'torre inválida.',
+      modo_invalido: 'modo inválido.',
+      sem_stamina: 'sem stamina — descanse ou recarregue.',
+      sem_tentativas_hoje: 'sem tentativas de Escalada hoje — compre uma Chave da Torre na Loja de Elemental Coin.',
+      andar_invalido: 'andar inválido.',
+      andar_nao_conquistado: 'você ainda não conquistou esse andar nesta torre.',
+      sem_chave: 'você não tem a Chave desse chefe.',
+      ja_desafiado_hoje: 'você já desafiou esse chefe hoje.',
+      nao_esta_caido: 'você não está caído na Torre agora.',
+      janela_expirada: 'a janela pra reviver expirou.',
+      ouro_insuficiente: 'ouro insuficiente.',
+      moedas_insuficientes: 'Elemental Coin insuficiente.',
+    };
+    if(msg.forType === 'tower:enter'){
+      if(msg.ok) logLoot(lastTowerEnterMode === 'boss' ? '⛰️ Escalada iniciada!' : '⚔️ Treino iniciado na Torre.');
+      else logLoot(`⚠️ Não foi possível entrar na Torre: ${TOWER_REASON_MSG[msg.reason] || msg.reason}`);
+      renderTowersIfOpen();
+    }
+    if(msg.forType === 'tower:reset'){
+      if(msg.ok) logLoot('↺ Progresso da Torre resetado pro andar 1.');
+      else logLoot(`⚠️ Não foi possível resetar: ${TOWER_REASON_MSG[msg.reason] || msg.reason}`);
+      renderTowersIfOpen();
+    }
+    if(msg.forType === 'tower:revive'){
+      if(msg.ok) logLoot(`❤️ Revivido na Torre por ${msg.cost.toLocaleString('pt-BR')} Gold!`);
+      else logLoot(`⚠️ Não foi possível reviver: ${TOWER_REASON_MSG[msg.reason] || msg.reason}`);
+    }
+    if(msg.forType === 'tower:challengeBoss'){
+      if(msg.ok) logLoot('👑 Desafio de Chefe iniciado!');
+      else logLoot(`⚠️ Não foi possível desafiar o chefe: ${TOWER_REASON_MSG[msg.reason] || msg.reason}`);
+      renderTowersIfOpen();
+    }
+    if(msg.forType === 'tower:buyKey'){
+      if(msg.ok) logLoot(`🗝️ Compradas ${msg.qty} Chave(s) da Torre por ${msg.cost} 💎${msg.wentToTrash ? ' (mochila cheia — foi pra Lixeira)' : ''}.`);
+      else logLoot(`⚠️ Não foi possível comprar: ${TOWER_REASON_MSG[msg.reason] || msg.reason}`);
+      renderTowersIfOpen();
     }
     if(msg.forType === 'party:invite' && !msg.ok) logLoot(`⚠️ Convite falhou: ${msg.reason}`);
     if(msg.forType === 'bank:deposit' || msg.forType === 'bank:withdraw'){
@@ -9241,6 +9321,7 @@
     { id:'ar', name:'Torre do Ar', icon:'🌪️', color:'#bcd6d0' }, { id:'luz', name:'Torre da Luz', icon:'✨', color:'#e8d98a' }, { id:'trevas', name:'Torre das Trevas', icon:'🌑', color:'#4a3560' },
   ];
   const towersPanel = document.getElementById('towers-panel');
+  let lastTowerEnterMode = null; // 'dungeon'|'boss' — só pra escolher a mensagem certa no handleAck de tower:enter
   document.getElementById('btn-open-towers').addEventListener('click', ()=>{ towersPanel.classList.toggle('open'); renderTowers(); });
   // Chaves de Chefe dropadas (ver TOWER_BOSS_KEY_DROP_CHANCE no servidor) —
   // id = tower_boss_key__<towerId>__<floor>. Devolve a lista de andares
@@ -9274,7 +9355,6 @@
         <div class="tower-bar-track"><div class="tower-bar-fill" style="width:${floor}%"></div></div>
         ${statusLine}
         <div class="tower-btns">
-          <button data-tower="${t.id}" data-mode="dungeon" ${activeHunt.running?'disabled':''}>Treino (Sentinelas)</button>
           <button data-tower="${t.id}" data-mode="boss" ${(activeHunt.running||!canClimb)?'disabled':''} ${climbBtnTitle}>${climbBtnLabel}</button>
         </div>
         <div class="tower-btns tower-extra-btns">
@@ -9284,7 +9364,7 @@
       </div>`;
     }).join('');
     body.querySelectorAll('button[data-tower]').forEach(btn=>{
-      btn.addEventListener('click', ()=> sendWS({ type:'tower:enter', towerId:btn.dataset.tower, mode:btn.dataset.mode }));
+      btn.addEventListener('click', ()=>{ lastTowerEnterMode = btn.dataset.mode; sendWS({ type:'tower:enter', towerId:btn.dataset.tower, mode:btn.dataset.mode }); });
     });
     body.querySelectorAll('button[data-boss-tower]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'tower:challengeBoss', towerId:btn.dataset.bossTower, floor:parseInt(btn.dataset.bossFloor,10) }));
@@ -9323,26 +9403,30 @@
   });
   setInterval(updateTowerDownedBanner, 200);
 
-  /* ---- Banner central de "Subindo para o andar N" / aviso vermelho de
-     Boss — puramente reativo ao que o servidor manda em activeHunt
-     (climbCountdownUntil/climbNextFloor/climbNextFloorIsBoss); o servidor
-     é dono do relógio, o cliente só reflete o que já chegou no snapshot. ---- */
+  /* ---- Banner central de "Indo para o andar N" / aviso vermelho de Boss —
+     puramente reativo ao que o servidor manda em activeHunt
+     (climbNextFloor/climbNextFloorIsBoss). Reforma do portal físico
+     (20/09/2026, pedido do usuário: personagem anda sozinho — idle, sem
+     controle do jogador — até um portal que aparece na arena, em vez de um
+     timer fixo): não existe mais contagem de segundos, o banner fica
+     visível enquanto climbNextFloor estiver setado (ou seja, enquanto o
+     personagem ainda está andando até o portal — ver point.isPortal em
+     huntEngine.js updateMovementAndCombat). ---- */
   const towerClimbBannerEl = document.getElementById('tower-climb-banner');
   function updateTowerClimbBanner(){
-    const active = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && activeHunt.climbCountdownUntil > Date.now();
+    const active = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && !!activeHunt.climbNextFloor;
     if(!active){ towerClimbBannerEl.classList.remove('show','boss'); return; }
     const tower = TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId);
-    const secsLeft = Math.max(0, Math.ceil((activeHunt.climbCountdownUntil - Date.now())/1000));
     towerClimbBannerEl.classList.add('show');
     towerClimbBannerEl.classList.toggle('boss', !!activeHunt.climbNextFloorIsBoss);
     const line1 = towerClimbBannerEl.querySelector('.line1');
     const line2 = towerClimbBannerEl.querySelector('.line2');
     if(activeHunt.climbNextFloorIsBoss){
       line1.textContent = '⚠️ CUIDADO: BOSS! ⚠️';
-      line2.textContent = `${tower?tower.name:'Torre'} · andar ${activeHunt.climbNextFloor} em ${secsLeft}s`;
+      line2.textContent = `${tower?tower.name:'Torre'} · andar ${activeHunt.climbNextFloor} · indo até o portal...`;
     } else {
-      line1.textContent = `Subindo para o andar ${activeHunt.climbNextFloor}...`;
-      line2.textContent = `${tower?tower.name:'Torre'} · ${secsLeft}s`;
+      line1.textContent = `Indo para o andar ${activeHunt.climbNextFloor}...`;
+      line2.textContent = `${tower?tower.name:'Torre'} · a caminho do portal`;
     }
   }
   setInterval(updateTowerClimbBanner, 200);
