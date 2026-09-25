@@ -1549,6 +1549,255 @@
   @keyframes rankupFlash{ 0%{opacity:0;} 15%{opacity:1;} 70%{opacity:1;} 100%{opacity:0;} }
   #rankup-overlay.show #rankup-text{ animation:rankupPop 1.8s ease-out; }
   @keyframes rankupPop{ 0%{transform:scale(0.3) rotate(-6deg);} 25%{transform:scale(1.15) rotate(2deg);} 40%{transform:scale(1) rotate(0deg);} 80%{transform:scale(1) rotate(0deg);} 100%{transform:scale(1.3) rotate(0deg);} }
+
+  /* =====================================================================
+     TORNEIO PVP SEMANAL — modal de revelação de oponente + overlay da
+     grade da arena. Portado de pvp-opponent-modal.html / pvp-arena-view.html
+     (ver claude/pvp-torneio-semanal-notas.md no projeto). Variáveis de cor
+     escopadas nos próprios overlays (não em :root) pra não misturar com a
+     paleta do resto do jogo (--gold/--ink/etc. acima).
+     ===================================================================== */
+  .pvp-modal-overlay, .pvp-arena-overlay {
+    --bg-panel: #14141c; --bg-card: #1e1e2a; --border: #35354a;
+    --text: #eceaf6; --text-dim: #9c99b5; --accent: #ffb648;
+    --vs-glow: rgba(255, 182, 72, 0.35); --cor-a: #5c9bff; --cor-b: #ff5c5c;
+  }
+
+  /* ---------- modal de revelação de oponente ---------- */
+  .pvp-modal-overlay {
+    position: fixed; inset: 0; background: rgba(5, 5, 10, 0.72);
+    display: none; align-items: center; justify-content: center;
+    z-index: 9999; backdrop-filter: blur(3px);
+    animation: pvpFadeIn 0.25s ease-out;
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  }
+  .pvp-modal-overlay.pvp-open { display: flex; }
+  @keyframes pvpFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .pvp-modal {
+    width: min(560px, 92vw);
+    background: linear-gradient(180deg, var(--bg-panel), #0f0f17);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02) inset;
+    overflow: hidden;
+    transform: translateY(10px) scale(0.98);
+    animation: pvpPopIn 0.28s cubic-bezier(.2,.9,.25,1.1) forwards;
+    color: var(--text);
+  }
+  @keyframes pvpPopIn { to { transform: translateY(0) scale(1); } }
+
+  .pvp-modal__header {
+    padding: 18px 22px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+  .pvp-modal__title { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .pvp-modal__timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pvp-modal__timer strong { color: var(--text); font-size: 15px; }
+  .pvp-modal__close {
+    background: none; border: none; color: var(--text-dim); font-size: 20px; line-height: 1;
+    cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: 0.15s;
+  }
+  .pvp-modal__close:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
+  .pvp-modal__body { padding: 22px; }
+
+  .pvp-matchup { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; }
+  .pvp-vs {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: #0c0c14;
+    background: radial-gradient(circle at 35% 30%, #ffe2a8, var(--accent));
+    box-shadow: 0 0 0 6px var(--vs-glow);
+    flex-shrink: 0;
+  }
+
+  .pvp-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    border-top: 3px solid var(--classe-cor, #6c6c8a);
+    transition: transform 0.15s;
+  }
+  .pvp-card::before {
+    content: ''; position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+    width: 140px; height: 80px; border-radius: 50%;
+    background: var(--classe-cor, #6c6c8a); opacity: 0.18; filter: blur(18px);
+    pointer-events: none;
+  }
+
+  .pvp-card__nick { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; word-break: break-word; }
+  .pvp-card__level { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; }
+
+  .pvp-card__classe {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.03em;
+    background: color-mix(in srgb, var(--classe-cor, #6c6c8a) 22%, transparent);
+    color: var(--classe-cor, #cfcfe8);
+    border: 1px solid color-mix(in srgb, var(--classe-cor, #6c6c8a) 55%, transparent);
+    margin-bottom: 12px;
+  }
+  .pvp-card__classe .pvp-classe-icon { font-size: 13px; }
+
+  .pvp-card__stars { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .pvp-card__stars-row { font-size: 18px; letter-spacing: 2px; line-height: 1; }
+  .pvp-star-filled { color: var(--star-cor, #ffd166); text-shadow: 0 0 6px var(--star-cor, #ffd166); }
+  .pvp-star-empty { color: #3a3a4e; }
+  .pvp-card__rank-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--star-cor, #9c99b5);
+  }
+
+  .pvp-modal__footer { padding: 14px 22px 20px; display: flex; justify-content: center; }
+  .pvp-btn-fechar {
+    padding: 10px 28px; border-radius: 10px; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04); color: var(--text);
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.15s;
+  }
+  .pvp-btn-fechar:hover { background: rgba(255,255,255,0.09); border-color: #55557a; }
+
+  @media (max-width: 480px) {
+    .pvp-matchup { grid-template-columns: 1fr; }
+    .pvp-vs { margin: 0 auto; }
+  }
+
+  /* ---------- overlay da grade da arena ---------- */
+  .pvp-arena-overlay {
+    position: fixed; inset: 0; background: rgba(5, 5, 10, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 9998; backdrop-filter: blur(3px); padding: 24px 12px;
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+    color: var(--text);
+    animation: pvpFadeIn 0.25s ease-out;
+  }
+  .pvp-arena-overlay.pvp-open { display: flex; }
+  .pvp-arena-box { position: relative; width: min(980px, 100%); max-height: 92vh; overflow-y: auto; }
+  .pvp-arena-close {
+    position: absolute; top: -14px; right: -14px; width: 32px; height: 32px;
+    border-radius: 50%; border: 1px solid var(--border); background: var(--bg-panel);
+    color: var(--text); font-size: 15px; line-height: 1; cursor: pointer; z-index: 2;
+    display: flex; align-items: center; justify-content: center; transition: 0.15s;
+  }
+  .pvp-arena-close:hover { background: rgba(255,255,255,0.12); }
+
+  .pvp-arena-app { width: 100%; }
+
+  .pvp-arena-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px 12px 0 0;
+    padding: 12px 18px;
+  }
+  .pvp-arena-side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .pvp-arena-side.side-b { flex-direction: row-reverse; text-align: right; }
+  .pvp-arena-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .pvp-arena-nick { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pvp-arena-classe { font-size: 11px; color: var(--text-dim); }
+  .pvp-arena-score { font-size: 22px; font-weight: 800; letter-spacing: 0.05em; color: var(--accent); white-space: nowrap; padding: 0 16px; }
+
+  .pvp-arena-wrap {
+    background: var(--bg-card); border: 1px solid var(--border); border-top: none;
+    padding: 16px;
+  }
+  .pvp-arena-grid {
+    position: relative;
+    width: 100%; aspect-ratio: 15 / 10;
+    background-color: #0e0e17;
+    background-image:
+      repeating-linear-gradient(to right, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, transparent 1px, transparent calc(100% / 15)),
+      repeating-linear-gradient(to bottom, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, transparent 1px, transparent calc(100% / 10));
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .pvp-arena-grid::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(255,182,72,0.05), transparent 60%);
+    pointer-events: none;
+  }
+
+  .pvp-token {
+    position: absolute;
+    width: calc(100% / 15); height: calc(100% / 10);
+    transition: left 0.32s ease, top 0.32s ease;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .pvp-token__hp {
+    width: 78%; height: 5px; border-radius: 3px; background: rgba(0,0,0,0.5);
+    overflow: hidden; margin-bottom: 3px; border: 1px solid rgba(255,255,255,0.15);
+  }
+  .pvp-token__hp-fill { height: 100%; width: 100%; transition: width 0.25s ease, background 0.25s ease; }
+  .pvp-token__avatar {
+    width: 60%; aspect-ratio: 1; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: #0c0c14;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.5);
+    transition: transform 0.15s;
+  }
+  .pvp-token.pvp-token--hit .pvp-token__avatar { animation: pvpHitFlash 0.28s ease; }
+  @keyframes pvpHitFlash {
+    0% { transform: scale(1); filter: brightness(1); }
+    35% { transform: scale(0.85); filter: brightness(2.4); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  .pvp-token.pvp-token--ko .pvp-token__avatar { opacity: 0.25; filter: grayscale(1); }
+
+  .pvp-dmg-float {
+    position: absolute; font-weight: 800; font-size: 15px; color: #ff8080;
+    text-shadow: 0 0 6px rgba(0,0,0,0.8); pointer-events: none;
+    animation: pvpDmgFloat 0.9s ease-out forwards;
+    transform: translate(-50%, -50%);
+  }
+  @keyframes pvpDmgFloat {
+    0% { opacity: 1; transform: translate(-50%, -50%); }
+    100% { opacity: 0; transform: translate(-50%, calc(-50% - 30px)); }
+  }
+
+  .pvp-banner {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(6,6,12,0.72); backdrop-filter: blur(2px);
+    font-size: 20px; font-weight: 800; text-align: center; padding: 20px; color: var(--text);
+  }
+  .pvp-banner.pvp-show { display: flex; }
+  .pvp-banner span { color: var(--accent); }
+
+  .pvp-arena-controls {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--bg-panel); border: 1px solid var(--border); border-top: none;
+    padding: 12px 18px;
+  }
+  .pvp-btn {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.05); color: var(--text); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: 0.15s;
+  }
+  .pvp-btn:hover { background: rgba(255,255,255,0.1); }
+  .pvp-btn:disabled { opacity: 0.4; cursor: default; }
+  .pvp-speed-group { display: flex; gap: 4px; margin-left: auto; }
+  .pvp-speed-group button.active { background: var(--accent); color: #16130b; border-color: var(--accent); }
+  .pvp-turn-label { font-size: 12px; color: var(--text-dim); }
+
+  .pvp-arena-log {
+    background: #0e0e17; border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 12px 12px;
+    max-height: 150px; overflow-y: auto; padding: 10px 18px; font-size: 12.5px; line-height: 1.7;
+    color: var(--text-dim);
+  }
+  .pvp-arena-log .log-a { color: var(--cor-a); font-weight: 700; }
+  .pvp-arena-log .log-b { color: var(--cor-b); font-weight: 700; }
+  .pvp-arena-log div:last-child { color: var(--text); }
 </style>
 </head>
 <body>
@@ -2355,6 +2604,84 @@
     </div>
     <div class="win-resize"></div>
   </div>
+
+  <!-- ============================================================
+       TORNEIO PVP SEMANAL — modal de revelação de oponente
+       (pvp:opponentReveal) + overlay da grade da arena
+       (pvp:arenaResolved). Só abrem automaticamente pros 2 jogadores
+       do confronto — ainda não existe tela de bracket/apostas pra
+       espectadores escolherem o que assistir (ver
+       claude/pvp-torneio-semanal-notas.md no projeto). -->
+  <div class="pvp-modal-overlay" id="pvpOpponentOverlay">
+    <div class="pvp-modal" role="dialog" aria-modal="true" aria-labelledby="pvpModalTitle">
+      <div class="pvp-modal__header">
+        <div id="pvpModalTitle" class="pvp-modal__title">⚔ Confronto revelado</div>
+        <div class="pvp-modal__timer">Combate em <strong id="pvpCountdown">3:00</strong></div>
+        <button class="pvp-modal__close" id="pvpCloseBtn" aria-label="Fechar">✕</button>
+      </div>
+      <div class="pvp-modal__body">
+        <div class="pvp-matchup">
+          <div class="pvp-card" id="pvpCardA"></div>
+          <div class="pvp-vs">VS</div>
+          <div class="pvp-card" id="pvpCardB"></div>
+        </div>
+      </div>
+      <div class="pvp-modal__footer">
+        <button class="pvp-btn-fechar" id="pvpCloseBtnFooter">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pvp-arena-overlay" id="pvpArenaOverlay">
+    <div class="pvp-arena-box">
+      <button class="pvp-arena-close" id="pvpArenaCloseBtn" aria-label="Fechar">✕</button>
+      <div class="pvp-arena-app">
+        <div class="pvp-arena-topbar">
+          <div class="pvp-arena-side side-a">
+            <span class="pvp-arena-dot" style="background:var(--cor-a)"></span>
+            <div>
+              <div class="pvp-arena-nick" id="pvpNickA">—</div>
+              <div class="pvp-arena-classe" id="pvpClasseA">—</div>
+            </div>
+          </div>
+          <div class="pvp-arena-score" id="pvpScore">0 x 0</div>
+          <div class="pvp-arena-side side-b">
+            <span class="pvp-arena-dot" style="background:var(--cor-b)"></span>
+            <div>
+              <div class="pvp-arena-nick" id="pvpNickB">—</div>
+              <div class="pvp-arena-classe" id="pvpClasseB">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pvp-arena-wrap">
+          <div class="pvp-arena-grid" id="pvpGrid">
+            <div class="pvp-token" id="pvpTokenA">
+              <div class="pvp-token__hp"><div class="pvp-token__hp-fill" id="pvpHpFillA"></div></div>
+              <div class="pvp-token__avatar" style="background:var(--cor-a)">A</div>
+            </div>
+            <div class="pvp-token" id="pvpTokenB">
+              <div class="pvp-token__hp"><div class="pvp-token__hp-fill" id="pvpHpFillB"></div></div>
+              <div class="pvp-token__avatar" style="background:var(--cor-b)">B</div>
+            </div>
+            <div class="pvp-banner" id="pvpBanner"><div></div></div>
+          </div>
+        </div>
+
+        <div class="pvp-arena-controls">
+          <button class="pvp-btn" id="pvpPlayBtn">▶ Assistir</button>
+          <button class="pvp-btn" id="pvpRestartBtn">⟲ Reiniciar confronto</button>
+          <span class="pvp-turn-label" id="pvpTurnLabel">Jogo 1 — aguardando início</span>
+          <div class="pvp-speed-group">
+            <button class="pvp-btn" data-speed="1">1x</button>
+            <button class="pvp-btn" data-speed="2">2x</button>
+            <button class="pvp-btn" data-speed="4">4x</button>
+          </div>
+        </div>
+        <div class="pvp-arena-log" id="pvpLog"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -2694,6 +3021,13 @@
   let hairColors = ['black','blue','brown','green','purple','red','white','yellow'];
   let guildId = null, guildSummary = null; // resumo leve (nome/tag/tier/bônus) — vem em todo snapshot
   let guildDetail = null; // payload completo — só chega via 'guild:get' / 'guild:update'
+
+  // TORNEIO PVP SEMANAL — ficha dos 2 jogadores de cada arena (vem em
+  // 'pvp:opponentReveal', casada por arenaId) pra poder montar o modal e,
+  // depois, a grade da arena quando 'pvp:arenaResolved' chegar pro mesmo
+  // arenaId — ver o switch(msg.type) do WS logo abaixo.
+  let pvpArenaFichas = {};
+  let pvpLastBettingWindowCloseAt = 0;
 
   // MERCADO — catálogo (12 itens empilháveis: materiais + poções) e taxa de
   // venda vêm uma vez no 'welcome', igual outfitCatalog. O livro de ofertas
@@ -5357,6 +5691,36 @@
           if(parts.length) logLoot(`📦 Enquanto você estava fora, o Mercado entregou: ${parts.join(', ')}.`);
           break;
         }
+        // ---- Torneio PvP Semanal — ver claude/pvp-torneio-semanal-notas.md.
+        // Só o modal de oponente + a grade da arena estão integrados aqui;
+        // ainda não existe bracket/apostas/inscrição no cliente, então estes
+        // 2 eventos só abrem algo automaticamente pros 2 jogadores do
+        // confronto (o evento em si é público, pra apostadores/plateia
+        // futuros, mas não há pra onde mostrar isso ainda).
+        case 'pvp:bettingWindowOpen':
+          pvpLastBettingWindowCloseAt = msg.closesAt;
+          break;
+        case 'pvp:opponentReveal': {
+          pvpArenaFichas[msg.arenaId] = { playerA: msg.playerA, playerB: msg.playerB };
+          const meuIdReveal = SELECTED_CHARACTER && SELECTED_CHARACTER.id;
+          const souEuNoConfronto = meuIdReveal && (msg.playerA.characterId === meuIdReveal || msg.playerB.characterId === meuIdReveal);
+          if (souEuNoConfronto && window.pvpOpponentModal) {
+            window.pvpOpponentModal.open(msg.playerA, msg.playerB, pvpLastBettingWindowCloseAt || (Date.now() + 3 * 60 * 1000));
+          }
+          break;
+        }
+        case 'pvp:arenaResolved': {
+          const fichas = pvpArenaFichas[msg.arenaId];
+          const meuIdArena = SELECTED_CHARACTER && SELECTED_CHARACTER.id;
+          const souEuNaArena = fichas && meuIdArena && (fichas.playerA.characterId === meuIdArena || fichas.playerB.characterId === meuIdArena);
+          if (souEuNaArena && window.pvpArenaView) {
+            if (window.pvpOpponentModal) window.pvpOpponentModal.close();
+            document.getElementById('pvpArenaOverlay').classList.add('pvp-open');
+            window.pvpArenaView.loadMatch(msg, fichas.playerA, fichas.playerB);
+            window.pvpArenaView.play();
+          }
+          break;
+        }
         case 'error': logLoot(`⚠️ ${msg.error}`); break;
       }
     });
@@ -5369,6 +5733,335 @@
       ws.send(JSON.stringify({ type:'move', x:player.x, y:player.y }));
     }, 400);
   }
+
+  /* =====================================================================
+     TORNEIO PVP SEMANAL — modal de revelação de oponente. Portado de
+     pvp-opponent-modal.html (ver claude/pvp-torneio-semanal-notas.md no
+     projeto). IIFE própria (escopo isolado) só pra não colidir nome de
+     função/variável nenhuma com o resto do arquivo -- quem pluga isto no
+     resto do jogo é o switch(msg.type) do WS lá em cima
+     (case 'pvp:opponentReveal'/'pvp:bettingWindowOpen'), via
+     window.pvpOpponentModal.open/close.
+     ===================================================================== */
+  (function () {
+    'use strict';
+
+    // Cor + ícone por classe (classeSlug -- ver pvpArchetypeDisplay em
+    // server.js, é sempre 1 dos 8 arquétipos do jogo, ou 'default').
+    const CLASSE_STYLE = {
+      warfare:    { cor: '#ff5c5c', icone: '⚔️' },
+      protection: { cor: '#5c9bff', icone: '🛡️' },
+      shadow:     { cor: '#9a5cff', icone: '🗡️' },
+      archery:    { cor: '#5cff8a', icone: '🏹' },
+      wizardry:   { cor: '#5ce1ff', icone: '🔮' },
+      holy:       { cor: '#ffe45c', icone: '✨' },
+      spiritual:  { cor: '#ff9ff0', icone: '🌙' },
+      witchcraft: { cor: '#c65cff', icone: '🕸️' },
+      default:    { cor: '#9c99b5', icone: '❔' },
+    };
+
+    // Cor por tier de estrela (rank -- ver huntEngine.describeStarLevel).
+    const RANK_STYLE = {
+      nenhum:   { cor: '#8a889f', label: 'Sem Rank' },
+      bronze:   { cor: '#c98a4b', label: 'Bronze' },
+      prata:    { cor: '#c9cdd6', label: 'Prata' },
+      ouro:     { cor: '#ffd166', label: 'Ouro' },
+      diamante: { cor: '#7fe7ff', label: 'Diamante' },
+    };
+
+    function renderStars(nivelEstrela) {
+      const ne = nivelEstrela || { rank: 'nenhum', starsInTier: 0, starsMax: 5 };
+      const filled = '★'.repeat(ne.starsInTier || 0);
+      const empty = '☆'.repeat(Math.max(0, (ne.starsMax || 5) - (ne.starsInTier || 0)));
+      return { filled, empty, rank: ne.rank || 'nenhum' };
+    }
+
+    function pvpEscapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+    }
+
+    // Monta o HTML de 1 card de jogador a partir da ficha que o servidor
+    // manda (buildPvpPlayerSummary em server.js): { nick, classe,
+    // classeSlug, level, nivelEstrela }
+    function renderPlayerCard(el, player) {
+      const classeInfo = CLASSE_STYLE[player.classeSlug] || CLASSE_STYLE.default;
+      const stars = renderStars(player.nivelEstrela);
+      const rankInfo = RANK_STYLE[stars.rank] || RANK_STYLE.nenhum;
+
+      el.style.setProperty('--classe-cor', classeInfo.cor);
+      el.style.setProperty('--star-cor', rankInfo.cor);
+      el.innerHTML = `
+        <div class="pvp-card__nick">${pvpEscapeHtml(player.nick || '???')}</div>
+        <div class="pvp-card__level">Nível ${Number(player.level) || 1}</div>
+        <div class="pvp-card__classe"><span class="pvp-classe-icon">${classeInfo.icone}</span>${pvpEscapeHtml(player.classe || 'Aventureiro')}</div>
+        <div class="pvp-card__stars">
+          <div class="pvp-card__stars-row"><span class="pvp-star-filled">${stars.filled}</span><span class="pvp-star-empty">${stars.empty}</span></div>
+          <div class="pvp-card__rank-label">${rankInfo.label}</div>
+        </div>
+      `;
+    }
+
+    const overlay = document.getElementById('pvpOpponentOverlay');
+    const countdownEl = document.getElementById('pvpCountdown');
+    let countdownTimer = null;
+
+    function closeModal() {
+      overlay.classList.remove('pvp-open');
+      if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    }
+
+    function formatMs(ms) {
+      const totalSec = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return m + ':' + String(s).padStart(2, '0');
+    }
+
+    // Abre o modal pra 1 revelação de confronto. `closesAt` é o timestamp
+    // em que o combate começa -- mandado no 'pvp:bettingWindowOpen'.
+    function openOpponentModal(playerA, playerB, closesAt) {
+      renderPlayerCard(document.getElementById('pvpCardA'), playerA);
+      renderPlayerCard(document.getElementById('pvpCardB'), playerB);
+
+      overlay.classList.add('pvp-open');
+      if (countdownTimer) clearInterval(countdownTimer);
+
+      function tick() {
+        const remaining = closesAt - Date.now();
+        countdownEl.textContent = formatMs(remaining);
+        if (remaining <= 0) closeModal(); // some sozinho quando o combate começa
+      }
+      tick();
+      countdownTimer = setInterval(tick, 250);
+    }
+
+    document.getElementById('pvpCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('pvpCloseBtnFooter').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+    window.pvpOpponentModal = { open: openOpponentModal, close: closeModal };
+  })();
+
+  /* =====================================================================
+     TORNEIO PVP SEMANAL — grade visual da arena. Portado de
+     pvp-arena-view.html (ver claude/pvp-torneio-semanal-notas.md no
+     projeto). Mesma lógica de IIFE isolada do modal acima; quem pluga isto
+     é o case 'pvp:arenaResolved' do WS lá em cima, via
+     window.pvpArenaView.loadMatch/play. O botão de fechar (#pvpArenaCloseBtn)
+     é novo aqui -- não existia na página isolada (lá a "página" inteira ERA
+     a arena; aqui ela é um overlay que o jogador pode fechar a qualquer
+     momento, inclusive no meio da animação).
+     ===================================================================== */
+  (function () {
+    'use strict';
+
+    const ARENA_W = 15, ARENA_H = 10; // ver pvpEngine.ARENA_W/ARENA_H -- tem que bater com o servidor
+
+    let match = null;      // { playerA, playerB, score, logs: [[...]], hpMax: [{a,b}] }
+    let gameIndex = 0;
+    let actionIndex = 0;
+    let speed = 1;
+    let playing = false;
+    let playTimer = null;
+    let pos = { A: {}, B: {} };
+    // Placar de VERDADE do payload (match.score) é o resultado FINAL do
+    // Md3 -- mostrá-lo antes da hora entrega o resultado antes da animação
+    // terminar. runningScore só conta jogos que já foram ASSISTIDOS até o fim.
+    let runningScore = { a: 0, b: 0 };
+
+    const el = {
+      overlay: document.getElementById('pvpArenaOverlay'),
+      grid: document.getElementById('pvpGrid'),
+      tokenA: document.getElementById('pvpTokenA'),
+      tokenB: document.getElementById('pvpTokenB'),
+      hpFillA: document.getElementById('pvpHpFillA'),
+      hpFillB: document.getElementById('pvpHpFillB'),
+      banner: document.getElementById('pvpBanner'),
+      nickA: document.getElementById('pvpNickA'),
+      nickB: document.getElementById('pvpNickB'),
+      classeA: document.getElementById('pvpClasseA'),
+      classeB: document.getElementById('pvpClasseB'),
+      score: document.getElementById('pvpScore'),
+      playBtn: document.getElementById('pvpPlayBtn'),
+      restartBtn: document.getElementById('pvpRestartBtn'),
+      closeBtn: document.getElementById('pvpArenaCloseBtn'),
+      turnLabel: document.getElementById('pvpTurnLabel'),
+      log: document.getElementById('pvpLog'),
+      speedBtns: document.querySelectorAll('#pvpArenaOverlay [data-speed]'),
+    };
+
+    function pctFromSqm(x, y) {
+      return { left: ((x - 0.5) / ARENA_W) * 100, top: ((y - 0.5) / ARENA_H) * 100 };
+    }
+
+    function hpColor(pct) {
+      if (pct > 0.5) return '#57d17a';
+      if (pct > 0.2) return '#ffcf4d';
+      return '#ff5c5c';
+    }
+
+    function setTokenPos(side, x, y) {
+      const p = pctFromSqm(x, y);
+      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
+      tokenEl.style.left = p.left + '%';
+      tokenEl.style.top = p.top + '%';
+      pos[side].x = x; pos[side].y = y;
+    }
+
+    function setHp(side, hp, hpMax) {
+      const pct = Math.max(0, Math.min(1, hp / (hpMax || 1)));
+      const fillEl = side === 'A' ? el.hpFillA : el.hpFillB;
+      fillEl.style.width = (pct * 100) + '%';
+      fillEl.style.background = hpColor(pct);
+      pos[side].hp = hp;
+      if (hp <= 0) (side === 'A' ? el.tokenA : el.tokenB).classList.add('pvp-token--ko');
+    }
+
+    function flashHit(side) {
+      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
+      tokenEl.classList.remove('pvp-token--hit');
+      void tokenEl.offsetWidth;
+      tokenEl.classList.add('pvp-token--hit');
+    }
+
+    function floatDamage(side, dano) {
+      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
+      const f = document.createElement('div');
+      f.className = 'pvp-dmg-float';
+      f.textContent = '-' + dano;
+      f.style.left = tokenEl.style.left;
+      f.style.top = tokenEl.style.top;
+      el.grid.appendChild(f);
+      setTimeout(() => f.remove(), 950);
+    }
+
+    function logLine(html) {
+      const line = document.createElement('div');
+      line.innerHTML = html;
+      el.log.appendChild(line);
+      el.log.scrollTop = el.log.scrollHeight;
+      while (el.log.children.length > 80) el.log.removeChild(el.log.firstChild);
+    }
+
+    function resetGameVisuals() {
+      el.log.innerHTML = '';
+      el.banner.classList.remove('pvp-show');
+      el.tokenA.classList.remove('pvp-token--ko');
+      el.tokenB.classList.remove('pvp-token--ko');
+      const hpMax = match.hpMax[gameIndex] || { a: 1, b: 1 };
+      setTokenPos('A', 1, 5); // START_A -- ver pvpEngine.START_A
+      setTokenPos('B', ARENA_W, 5); // START_B -- ver pvpEngine.START_B
+      setHp('A', hpMax.a, hpMax.a);
+      setHp('B', hpMax.b, hpMax.b);
+      el.turnLabel.textContent = `Jogo ${gameIndex + 1} de ${match.logs.length} — placar ${runningScore.a} x ${runningScore.b}`;
+      el.score.textContent = `${runningScore.a} x ${runningScore.b}`;
+    }
+
+    function nickOf(side) { return side === 'A' ? match.playerA.nick : match.playerB.nick; }
+
+    function applyAction(action) {
+      const side = action.player;
+      if (action.acao === 'andar') {
+        setTokenPos(side, action.x, action.y);
+        logLine(`Turno ${action.turno} — <span class="log-${side.toLowerCase()}">${nickOf(side)}</span> avançou para (${action.x}, ${action.y})`);
+      } else if (action.acao === 'ataque') {
+        const alvo = side === 'A' ? 'B' : 'A';
+        const hpMax = match.hpMax[gameIndex][alvo.toLowerCase()];
+        flashHit(alvo);
+        floatDamage(alvo, action.dano);
+        setHp(alvo, action.hpAlvo, hpMax);
+        logLine(`Turno ${action.turno} — <span class="log-${side.toLowerCase()}">${nickOf(side)}</span> atacou <span class="log-${alvo.toLowerCase()}">${nickOf(alvo)}</span> por <strong>${action.dano}</strong> (restam ${action.hpAlvo} HP)`);
+      } else if (action.acao === 'tempo_esgotado') {
+        logLine(`Turno ${action.turno} — tempo esgotado, decisão por % de vida restante`);
+      }
+    }
+
+    function showBanner(html, ms) {
+      el.banner.querySelector('div').innerHTML = html;
+      el.banner.classList.add('pvp-show');
+      if (ms) setTimeout(() => el.banner.classList.remove('pvp-show'), ms);
+    }
+
+    function stepDelayMs() { return 420 / speed; }
+
+    function playNextAction() {
+      if (!playing) return;
+      const log = match.logs[gameIndex];
+      if (actionIndex >= log.length) {
+        const wonA = pos.A.hp > 0;
+        if (wonA) runningScore.a++; else runningScore.b++;
+        el.score.textContent = `${runningScore.a} x ${runningScore.b}`;
+        showBanner(`Jogo ${gameIndex + 1} — Vitória de <span>${wonA ? nickOf('A') : nickOf('B')}</span>`, 1400);
+        playTimer = setTimeout(() => {
+          gameIndex++;
+          if (gameIndex >= match.logs.length || runningScore.a === 2 || runningScore.b === 2) {
+            const championSide = runningScore.a > runningScore.b ? 'A' : 'B';
+            showBanner(`🏆 Vencedor do confronto: <span>${nickOf(championSide)}</span> (${runningScore.a} x ${runningScore.b})`);
+            playing = false;
+            el.playBtn.textContent = '▶ Assistir';
+            el.playBtn.disabled = true;
+            return;
+          }
+          actionIndex = 0;
+          resetGameVisuals();
+          playTimer = setTimeout(playNextAction, stepDelayMs());
+        }, 1500);
+        return;
+      }
+      applyAction(log[actionIndex]);
+      actionIndex++;
+      playTimer = setTimeout(playNextAction, stepDelayMs());
+    }
+
+    function play() {
+      if (playing) return;
+      playing = true;
+      el.playBtn.textContent = '⏸ Pausar';
+      playNextAction();
+    }
+    function pause() {
+      playing = false;
+      el.playBtn.textContent = '▶ Assistir';
+      if (playTimer) clearTimeout(playTimer);
+    }
+    function restart() {
+      pause();
+      gameIndex = 0; actionIndex = 0;
+      runningScore = { a: 0, b: 0 };
+      el.playBtn.disabled = false;
+      resetGameVisuals();
+    }
+    function closeArena() {
+      pause();
+      el.overlay.classList.remove('pvp-open');
+    }
+
+    el.playBtn.addEventListener('click', () => (playing ? pause() : play()));
+    el.restartBtn.addEventListener('click', restart);
+    el.closeBtn.addEventListener('click', closeArena);
+    el.overlay.addEventListener('click', (e) => { if (e.target === el.overlay) closeArena(); });
+    el.speedBtns.forEach(btn => btn.addEventListener('click', () => {
+      speed = Number(btn.dataset.speed);
+      el.speedBtns.forEach(b => b.classList.toggle('active', b === btn));
+    }));
+    if (el.speedBtns[0]) el.speedBtns[0].classList.add('active');
+
+    // Carrega um confronto: `matchData` = payload de 'pvp:arenaResolved'
+    // (score, logs, hpMax) + as fichas dos 2 jogadores (nick/classe --
+    // vêm de 'pvp:opponentReveal', casadas por arenaId no switch do WS).
+    function loadMatch(matchData, playerA, playerB) {
+      match = { ...matchData, playerA, playerB };
+      el.nickA.textContent = playerA.nick; el.classeA.textContent = playerA.classe;
+      el.nickB.textContent = playerB.nick; el.classeB.textContent = playerB.classe;
+      // NÃO usa matchData.score aqui de propósito -- é o resultado FINAL do
+      // Md3, mostrar isso antes da animação rodar entrega o resultado antes
+      // da hora. O placar exibido (runningScore) só sobe conforme cada jogo
+      // termina de ser ASSISTIDO -- ver restart()/playNextAction().
+      restart();
+    }
+    window.pvpArenaView = { loadMatch, play, pause, restart, close: closeArena };
+  })();
+
   connectToServer();
 
   // Mensagem amigável do gate de nível (task #126) -- reaproveitada pelos 3
