@@ -1,0 +1,32 @@
+{
+  "3": {
+    "clientid": 2394,
+    "frameCount": 4,
+    "w": 32,
+    "h": 32
+  },
+  "4": {
+    "clientid": 2407,
+    "frameCount": 12,
+    "w": 32,
+    "h": 32
+  },
+  "5": {
+    "clientid": 2424,
+    "frameCount": 4,
+    "w": 32,
+    "h": 32
+  },
+  "6": {
+    "clientid": 2410,
+    "frameCount": 4,
+    "w": 32,
+    "h": 32
+  },
+  "8": {
+    "clientid": 2386,
+    "frameCount": 4,
+    "w": 32,
+    "h": 32
+  }
+}

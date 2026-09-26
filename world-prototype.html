@@ -1948,6 +1948,62 @@
   #pvp-shop-modal.open{ display:flex; }
   #pvp-tournament-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:820px; max-width:94vw; height:640px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
   #pvp-tournament-modal.open{ display:flex; }
+
+  /* ---- INSCRIÇÃO + PRESETS DE COMBATE (Central do Torneio) — pedido
+     "faça todos" (26/09/2026): servidor já suportava 'pvp:register'/
+     'pvp:savePreset'/'pvp:setActivePreset' (ver pvpEngine.js), só faltava a
+     UI. Fica entre o cabeçalho de stats e a grade de arenas. ---- */
+  .pvpth-reg-box{ margin-bottom:16px; padding:14px 16px; border-radius:12px; background:linear-gradient(180deg, var(--glass-1), var(--glass-2)); border:1px solid #3a2f1c; }
+  .pvpth-reg-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  .pvpth-reg-info{ font-size:11.5px; color:var(--ink-dim); }
+  .pvpth-reg-info b{ color:var(--gold-bright); }
+  .pvpth-reg-btn{ padding:9px 18px; border:none; border-radius:9px; font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:.02em; cursor:pointer; background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#231a06; transition:filter .15s, transform .1s; }
+  .pvpth-reg-btn:hover{ filter:brightness(1.1); }
+  .pvpth-reg-btn:active{ transform:scale(.96); }
+  .pvpth-reg-btn[disabled]{ background:#4a463c; color:#8a8578; cursor:not-allowed; filter:none; }
+  .pvpth-reg-btn.done{ background:rgba(126,224,138,.18); color:#7ee08a; cursor:default; }
+  .pvpth-presets{ display:grid; gap:8px; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); }
+  .pvpth-preset-card{ border-radius:10px; border:1px solid #3a2f1c; background:rgba(0,0,0,.22); padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+  .pvpth-preset-card.active{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
+  .pvpth-preset-name{ font-weight:700; font-size:12px; color:var(--ink); display:flex; align-items:center; justify-content:space-between; }
+  .pvpth-preset-name .tag-active{ font-size:9px; color:#231a06; background:var(--gold-bright); padding:1px 6px; border-radius:999px; font-family:var(--font-mono); }
+  .pvpth-preset-meta{ font-size:10.5px; color:var(--ink-dim); font-family:var(--font-mono); }
+  .pvpth-preset-actions{ display:flex; gap:6px; margin-top:2px; }
+  .pvpth-preset-actions button{ flex:1; padding:6px; border-radius:7px; border:1px solid #3a2f1c; background:rgba(255,255,255,.04); color:var(--ink); cursor:pointer; font-family:var(--font-body); font-size:10.5px; font-weight:600; }
+  .pvpth-preset-actions button:hover{ background:rgba(255,255,255,.09); }
+  .pvpth-preset-actions button.use.active{ background:var(--gold); color:#231a06; border-color:var(--gold); cursor:default; }
+
+  /* editor de preset — overlay próprio, mesmo padrão do .pvpth-bet-modal-overlay */
+  .pvpth-preset-modal-overlay{ position:fixed; inset:0; background:rgba(5,5,10,.72); display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(3px); }
+  .pvpth-preset-modal-overlay.open{ display:flex; }
+  .pvpth-preset-modal{ width:min(360px, 92vw); background:linear-gradient(180deg, var(--glass-1), var(--glass-2)); border:1px solid #3a2f1c; border-radius:14px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
+  .pvpth-preset-modal h3{ color:var(--gold-bright); font-size:15px; margin-bottom:12px; font-family:var(--font-display); }
+  .pvpth-preset-modal label{ display:block; font-size:10.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+  .pvpth-preset-modal input[type="text"]{ width:100%; padding:9px; border-radius:8px; border:1px solid #3a2f1c; background:rgba(0,0,0,.3); color:var(--ink); font-family:var(--font-body); font-size:13px; margin-bottom:12px; }
+  .pvpth-preset-modal .sqm-choice{ display:flex; gap:6px; margin-bottom:14px; }
+  .pvpth-preset-modal .sqm-choice button{ flex:1; padding:8px; border-radius:8px; border:1px solid #3a2f1c; background:rgba(255,255,255,.04); color:var(--ink); cursor:pointer; font-family:var(--font-mono); font-weight:700; }
+  .pvpth-preset-modal .sqm-choice button.active{ background:var(--gold); border-color:var(--gold); color:#231a06; }
+  .pvpth-preset-modal .hint{ font-size:10px; color:var(--ink-dim); margin-bottom:12px; }
+  .pvpth-preset-modal .row{ display:flex; gap:8px; }
+  .pvpth-preset-modal .row button{ flex:1; padding:9px; border-radius:8px; border:none; cursor:pointer; font-family:var(--font-display); font-weight:700; }
+  .pvpth-preset-modal .row .confirm{ background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#231a06; }
+  .pvpth-preset-modal .row .cancel{ background:rgba(255,255,255,.06); color:var(--ink-dim); }
+
+  /* ---- PAINEL DE BUFFS ATIVOS (Loja de PvP) — integrado de pvp-buffs-panel.html
+     (arquivo isolado já validado). Flutua sem caixa/borda, ancorado logo
+     abaixo do #top-bar real (52px de altura), centralizado na horizontal.
+     pointer-events:none -- é só um indicador, nunca intercepta clique. ---- */
+  #pvpBuffsPanel{ position:fixed; left:50%; top:64px; transform:translateX(-50%); display:flex; gap:10px; flex-wrap:wrap; justify-content:center; pointer-events:none; z-index:12; }
+  .buff-pill{ display:flex; align-items:center; gap:8px; padding:4px 14px 4px 4px; border-radius:999px; background:linear-gradient(180deg, rgba(40,32,18,.92), rgba(10,8,5,.94)); border:1.5px solid var(--gold-deep); box-shadow:0 4px 14px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.02) inset; transition:opacity .25s ease, transform .25s ease; transform:scale(1); opacity:1; }
+  .buff-pill.buff-pill--enter{ opacity:0; transform:scale(.6); }
+  .buff-pill.buff-pill--leave{ opacity:0; transform:scale(.7); }
+  .buff-pill__icon{ width:26px; height:26px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:14px; line-height:1; background:radial-gradient(circle at 35% 30%, var(--gold-bright), var(--gold) 55%, var(--gold-deep)); border:1.5px solid rgba(255,255,255,.25); box-shadow:0 0 8px rgba(240,211,138,.4); }
+  .buff-pill__icon img{ width:100%; height:100%; object-fit:cover; }
+  .buff-pill__time{ font-family:var(--font-mono); font-weight:700; font-size:12.5px; color:var(--gold-bright); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .buff-pill.buff-pill--ending{ border-color:var(--hp-a,#ff7a7a); animation:buffPillPulse 1s infinite; }
+  .buff-pill.buff-pill--ending .buff-pill__time{ color:var(--hp-a,#ff7a7a); }
+  .buff-pill.buff-pill--ending .buff-pill__icon{ background:radial-gradient(circle at 35% 30%, #ffb3b3, var(--hp-a,#ff7a7a) 55%, var(--hp-b,#8a1f2b)); box-shadow:0 0 10px rgba(255,122,122,.5); }
+  @keyframes buffPillPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35); } }
 </style>
 </head>
 <body>
@@ -1956,6 +2012,10 @@
   <canvas id="world-canvas"></canvas>
 
   <div id="toast-stack"></div>
+
+  <!-- Painel de Buffs Ativos (Loja de PvP) — integrado de pvp-buffs-panel.html,
+       flutua sem caixa/borda logo abaixo do #top-bar (ver CSS #pvpBuffsPanel). -->
+  <div id="pvpBuffsPanel"></div>
 
   <div id="tower-climb-banner">
     <div class="line1"></div>
@@ -2303,7 +2363,39 @@
           <div class="pvpth-stat"><div class="n" id="pvpthArenasAtivas">0</div><div class="l">Arenas na Rodada</div></div>
         </div>
       </div>
+
+      <!-- Inscrição + Presets de combate — pedido "faça todos" (26/09/2026):
+           servidor já tinha 'pvp:register'/'pvp:savePreset'/'pvp:setActivePreset'
+           prontos (ver pvpEngine.js), só faltava esta UI. -->
+      <div class="pvpth-reg-box">
+        <div class="pvpth-reg-row">
+          <div class="pvpth-reg-info" id="pvpthRegInfo">Carregando estado do torneio...</div>
+          <button class="pvpth-reg-btn" id="pvpthRegBtn" style="display:none;">Inscrever-se</button>
+        </div>
+        <div class="pvpth-presets" id="pvpthPresets"></div>
+      </div>
+
       <div class="pvpth-grid" id="pvpthGrid"></div>
+    </div>
+  </div>
+
+  <div class="pvpth-preset-modal-overlay" id="pvpthPresetOverlay">
+    <div class="pvpth-preset-modal">
+      <h3>Editar Preset de Combate</h3>
+      <label>Nome</label>
+      <input type="text" id="pvpthPresetName" maxlength="24" placeholder="Ex.: Corpo-a-corpo">
+      <label>Distância de Ataque (SQM)</label>
+      <div class="sqm-choice" id="pvpthPresetSqmChoice">
+        <button data-sqm="1">1</button>
+        <button data-sqm="2">2</button>
+        <button data-sqm="3">3</button>
+        <button data-sqm="4">4</button>
+      </div>
+      <div class="hint">Salva o equipamento e a hotbar de habilidades ATUAIS do personagem neste slot.</div>
+      <div class="row">
+        <button class="cancel" id="pvpthPresetCancel">Cancelar</button>
+        <button class="confirm" id="pvpthPresetConfirm">Salvar com equipamento atual</button>
+      </div>
     </div>
   </div>
 
@@ -3311,9 +3403,17 @@
   // não só a minha — pvpArenaFichas acima já cobre nick/classe dos 2 lados.
   let pvpShopState = { moedasPvP: 0, catalog: [], activeBuffs: [] };
   let pvpTournamentState = null;
+  let pvpMyRegistered = false; // vem em 'pvp:getState'.myRegistered (por-jogador, não dá pra ir na visão pública do torneio)
   let pvpArenaResolvedCache = {};
   let pvpthBetTargetArenaId = null;
   let pvpthBetSelectedSide = null;
+  // Progresso de PvP do próprio personagem (título, até 3 presets de
+  // combate, stats) — vem pronto em TODO 'hunt:state' (ver serializeHuntSnapshot
+  // no server.js), sem precisar de round-trip extra pra abrir a Central do
+  // Torneio. Presets/registro — pedido "faça todos" (26/09/2026).
+  let myPvp = { title: null, titleExpiresAt: null, presets: [], activePresetIndex: 0, stats: { wins:0, losses:0, tournamentsPlayed:0, bestRoundReached:0 } };
+  let pvpthPresetEditingSlot = null; // qual slot (0..2) o editor de preset está editando agora
+  let pvpthPresetSqmChoice = 1;
 
   // MERCADO — catálogo (12 itens empilháveis: materiais + poções) e taxa de
   // venda vêm uma vez no 'welcome', igual outfitCatalog. O livro de ofertas
@@ -4039,10 +4139,14 @@
   // quanto pra cada entrada de remotePlayers, já que agora 'positions' manda
   // gender/hairId/outfit de todo mundo. Cai pro boneco procedural (elipse +
   // círculo) sempre que faltar sprite carregado, sem nunca travar o desenho.
-  // Quantos quadros cada aura tem — hoje só existe 1 aura (4 quadros); se no
-  // futuro cada uma tiver sua própria contagem, isso pode vir do auraCatalog
-  // (auraCatalog[i].frameCount) em vez de um valor fixo aqui.
-  const AURA_FRAME_COUNT = 4, AURA_FRAME_MS = 150;
+  // Quantos quadros cada aura tem — varia por aura (de 1 a 35 quadros, ver
+  // AURA_CATALOG no servidor), então busca no auraCatalog recebido do servidor
+  // pelo id; 4 é só o fallback pra quando o catálogo ainda não chegou.
+  const AURA_FRAME_MS = 150;
+  function auraFrameCount(auraId){
+    const def = auraCatalog.find(a => a.id === auraId);
+    return (def && def.frameCount > 0) ? def.frameCount : 4;
+  }
   // ---- RECOLORIR DE OUTFIT EM TEMPO REAL (arquetipos) ----
   // Color Swapping por Máscara, igual ao Tibia de verdade -- MESMO algoritmo
   // já corrigido em character-select.html depois que o sistema antigo (HSV/
@@ -4277,7 +4381,7 @@
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
     // jogador vê a MESMA animação em sincronia, sem precisar coordenar via rede.
     if(auraId){
-      const frameIdx = Math.floor(Date.now()/AURA_FRAME_MS) % AURA_FRAME_COUNT;
+      const frameIdx = Math.floor(Date.now()/AURA_FRAME_MS) % auraFrameCount(auraId);
       const aura = SpriteManager.auraFrame(auraId, frameIdx);
       if(aura.loaded){
         const iw = aura.img.naturalWidth, ih = aura.img.naturalHeight;
@@ -5855,6 +5959,79 @@
   let lastPanelRenderAt = 0;
   const PANEL_RENDER_THROTTLE_MS = 250;
 
+  /* =====================================================================
+     PAINEL DE BUFFS ATIVOS — motor genérico de pílulas, portado de
+     pvp-buffs-panel.html (arquivo isolado já validado, ver
+     claude/pvp-torneio-semanal-notas.md). Integrado agora (pedido "faça
+     todos", 26/09/2026): sincronizarPílulasDoServidor é chamado a cada
+     'hunt:state' (ver applyHuntSnapshot logo abaixo) com msg.pvpShopBuffs
+     ([{key,name,icon,expiresAt,magnitudePct}], ver serializeHuntSnapshot no
+     server.js) -- AJUSTA pro expiresAt absoluto do servidor, nunca soma
+     (diferente de adicionarPílulaBuff, que funde tempo -- não usada aqui
+     porque o snapshot chega a ~30Hz e fundiria sem parar). #pvpBuffsPanel é
+     uma div comum, sempre visível, pointer-events:none -- não intercepta
+     clique, é só um HUD indicador. ===================================== */
+  const pvpBuffPillsById = new Map(); // id -> { el, expiresAt }
+  function pvpBuffEhImagem(iconeUrl){
+    return typeof iconeUrl === 'string' && (/^https?:\/\//.test(iconeUrl) || /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(iconeUrl));
+  }
+  function pvpBuffFormatarTempoCompacto(ms){
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+    if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`;
+    return `${s}s`;
+  }
+  function pvpBuffCriarElementoPílula(id, iconeUrl){
+    const el = document.createElement('div');
+    el.className = 'buff-pill buff-pill--enter';
+    el.dataset.buffId = id;
+    const iconHtml = pvpBuffEhImagem(iconeUrl) ? `<img src="${iconeUrl}" alt="">` : (iconeUrl || '✨');
+    el.innerHTML = `<div class="buff-pill__icon">${iconHtml}</div><div class="buff-pill__time"></div>`;
+    document.getElementById('pvpBuffsPanel').appendChild(el);
+    requestAnimationFrame(() => el.classList.remove('buff-pill--enter'));
+    return el;
+  }
+  function pvpBuffRemoverPílula(id){
+    const pill = pvpBuffPillsById.get(id);
+    if (!pill) return;
+    pvpBuffPillsById.delete(id);
+    pill.el.classList.add('buff-pill--leave');
+    pill.el.addEventListener('transitionend', () => pill.el.remove(), { once: true });
+    setTimeout(() => { if (pill.el.parentNode) pill.el.remove(); }, 400);
+  }
+  function pvpBuffAtualizarTextoPílula(pill, now){
+    const remaining = pill.expiresAt - now;
+    pill.el.querySelector('.buff-pill__time').textContent = pvpBuffFormatarTempoCompacto(remaining);
+    pill.el.classList.toggle('buff-pill--ending', remaining > 0 && remaining <= 30000);
+  }
+  function sincronizarPílulasDoServidor(pvpShopBuffsArray){
+    const now = Date.now();
+    const idsDoServidor = new Set();
+    (pvpShopBuffsArray || []).forEach(b => {
+      idsDoServidor.add(b.key);
+      let pill = pvpBuffPillsById.get(b.key);
+      if (!pill) {
+        const el = pvpBuffCriarElementoPílula(b.key, b.icon || '✨');
+        pill = { el, expiresAt: b.expiresAt };
+        pvpBuffPillsById.set(b.key, pill);
+      } else {
+        pill.expiresAt = b.expiresAt;
+      }
+      pvpBuffAtualizarTextoPílula(pill, now);
+    });
+    [...pvpBuffPillsById.keys()].forEach(id => { if (!idsDoServidor.has(id)) pvpBuffRemoverPílula(id); });
+  }
+  setInterval(() => {
+    const now = Date.now();
+    pvpBuffPillsById.forEach((pill, id) => {
+      if (pill.expiresAt <= now) { pvpBuffRemoverPílula(id); return; }
+      pvpBuffAtualizarTextoPílula(pill, now);
+    });
+  }, 1000);
+
   function applyHuntSnapshot(msg){
     // Cidade = o cliente já é dono da posição (WASD/clique — ver
     // updateWasdMovement); o servidor só ecoa de volta o que o próprio
@@ -5926,6 +6103,11 @@
     if(msg.skillTree) skillTree = msg.skillTree;
     if(msg.skillPoints) skillPoints = msg.skillPoints;
     if(typeof msg.elementalCoins === 'number') elementalCoins = msg.elementalCoins;
+    // PvP: presets/título/stats (ver comentário de myPvp acima) + Buffs
+    // ativos da Loja de PvP (painel de pílulas, ver sincronizarPílulasDoServidor
+    // mais abaixo) — pedido "faça todos" (26/09/2026).
+    if(msg.pvp) myPvp = msg.pvp;
+    if(Array.isArray(msg.pvpShopBuffs) && typeof sincronizarPílulasDoServidor === 'function') sincronizarPílulasDoServidor(msg.pvpShopBuffs);
     if(typeof msg.usedFreeSkillReset === 'boolean') usedFreeSkillReset = msg.usedFreeSkillReset;
     if(msg.statAllocation) statAllocation = msg.statAllocation;
     if(msg.statPoints) statPoints = msg.statPoints;
@@ -6033,7 +6215,7 @@
       refreshTacticsUI();
       renderAttrs(); renderParty(); renderInventoryIfOpen(); renderWikiIfOpen(); renderAltar(); renderFriends(); renderShop(); renderFusionIfOpen();
       renderCoinShopIfOpen(); renderEnchantIfOpen(); renderProfessionsIfOpen(); updateRankPill();
-      renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen();
+      renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen(); renderPvpTournamentIfOpen();
       if(currentTrade) renderTrade();
       if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="treino"]').classList.contains('active')) renderTreinoTab();
       if(typeof renderCharacterModalIfOpen === 'function') renderCharacterModalIfOpen();
@@ -6200,6 +6382,51 @@
             window.pvpArenaView.play();
           }
           refreshPvpTournamentIfOpen();
+          break;
+        }
+        // ---- Eventos sem toast/listener ainda (pedido "faça todos",
+        // 26/09/2026) -- agora com aviso no chat/log + refresh da Central do
+        // Torneio quando ela estiver aberta. Ouro/Moedas PvP creditados já
+        // chegam no próximo 'hunt:state' de qualquer forma (gold/moedasPvP
+        // fazem parte do snapshot) -- isto aqui é só o AVISO de por que mudou.
+        case 'pvp:tournamentOpened':
+          pvpMyRegistered = false; // torneio novo -- inscrição da semana passada não vale mais
+          logLoot('🏆 Inscrições do Torneio PvP Semanal estão abertas! Veja a Central do Torneio.');
+          refreshPvpTournamentIfOpen();
+          break;
+        case 'pvp:tournamentCancelled':
+          logLoot(`🏆 O Torneio PvP Semanal foi cancelado (${msg.reason || 'motivo não informado'}).`);
+          refreshPvpTournamentIfOpen();
+          break;
+        case 'pvp:bracketReady':
+          logLoot(`🏆 Nova rodada do Torneio PvP Semanal começou.`);
+          refreshPvpTournamentIfOpen();
+          break;
+        case 'pvp:tournamentFinished': {
+          const meuIdFim = SELECTED_CHARACTER && SELECTED_CHARACTER.id;
+          if (msg.championId && meuIdFim && msg.championId === meuIdFim) logLoot('👑 Você é o Campeão do Torneio PvP Semanal!');
+          else logLoot('🏆 O Torneio PvP Semanal terminou — confira o resultado na Central do Torneio.');
+          refreshPvpTournamentIfOpen();
+          break;
+        }
+        case 'pvp:playerRegistered':
+          if (pvpTournamentState) { pvpTournamentState.registeredCount = msg.registeredCount; pvpTournamentState.ouroPool = msg.ouroPool; }
+          renderPvpTournamentIfOpen();
+          break;
+        case 'pvp:goldCredited':
+          logLoot(`🪙 Recebeu ${Math.round(msg.amount).toLocaleString('pt-BR')} de Ouro do Torneio PvP.`);
+          break;
+        case 'pvp:moedasCredited':
+          logLoot(`🎖️ Recebeu ${Math.round(msg.amount).toLocaleString('pt-BR')} Moedas PvP.`);
+          break;
+        case 'pvp:offlineResult': {
+          if (msg.goldGained > 0) logLoot(`📦 Enquanto você estava fora, o Torneio PvP creditou ${Math.round(msg.goldGained).toLocaleString('pt-BR')} de Ouro.`);
+          if (msg.moedasGained > 0) logLoot(`📦 Enquanto você estava fora, o Torneio PvP creditou ${Math.round(msg.moedasGained).toLocaleString('pt-BR')} Moedas PvP.`);
+          break;
+        }
+        case 'pvp:placementAwarded': {
+          const meuIdPlacement = SELECTED_CHARACTER && SELECTED_CHARACTER.id;
+          if (meuIdPlacement && msg.characterId === meuIdPlacement) logLoot(`🎖️ Você recebeu o título "${msg.titleLabel}" — +${msg.coins} Moedas PvP!`);
           break;
         }
         case 'error': logLoot(`⚠️ ${msg.error}`); break;
@@ -7026,7 +7253,35 @@
       renderInventoryIfOpen();
     }
     if(msg.forType === 'pvp:getState'){
-      if(msg.ok) pvpTournamentState = msg.tournament;
+      if(msg.ok){ pvpTournamentState = msg.tournament; pvpMyRegistered = !!msg.myRegistered; }
+      renderPvpTournamentIfOpen();
+    }
+    // Inscrição/Presets — pedido "faça todos" (26/09/2026). Servidor já
+    // validava tudo (pvpEngine.js); isto só liga a UI nova nas respostas.
+    if(msg.forType === 'pvp:register'){
+      if(msg.ok){
+        pvpMyRegistered = true;
+        if (pvpTournamentState) { pvpTournamentState.registeredCount = msg.registeredCount; pvpTournamentState.ouroPool = msg.ouroPool; }
+        logLoot(msg.alreadyRegistered ? '🏆 Você já estava inscrito neste Torneio.' : `🏆 Inscrito no Torneio PvP Semanal! (Taxa: ${Math.round(msg.entryFeePaid||0).toLocaleString('pt-BR')} Ouro)`);
+      } else {
+        const reasonMap = { inscricoes_fechadas:'as inscrições desta semana já fecharam.', ouro_insuficiente:`Ouro insuficiente (taxa: ${Math.round(msg.entryFee||0).toLocaleString('pt-BR')}).` };
+        logLoot(`⚠️ Não foi possível se inscrever: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderPvpTournamentIfOpen();
+    }
+    if(msg.forType === 'pvp:savePreset'){
+      if(msg.ok){
+        logLoot(`✅ Preset "${msg.preset.name}" salvo.`);
+        document.getElementById('pvpthPresetOverlay').classList.remove('open');
+      } else {
+        const reasonMap = { slot_invalido_0_a_2:'slot inválido.', distancia_ataque_deve_ser_1_a_4:'escolha uma Distância de Ataque de 1 a 4.' };
+        logLoot(`⚠️ Não foi possível salvar o preset: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderPvpTournamentIfOpen();
+    }
+    if(msg.forType === 'pvp:setActivePreset'){
+      if(msg.ok) logLoot(`✅ Preset ativo trocado.`);
+      else logLoot(`⚠️ Não foi possível trocar de preset: ${msg.reason}`);
       renderPvpTournamentIfOpen();
     }
     if(msg.forType === 'pvp:bet'){
@@ -12580,6 +12835,76 @@
     });
     return card;
   }
+  // Inscrição + Presets de combate — pedido "faça todos" (26/09/2026). Vive
+  // separado da grade de arenas (renderPvpTournamentGrid) porque depende de
+  // myPvp (chega em TODO 'hunt:state', não só na resposta de 'pvp:getState').
+  function pvpthRenderPresetCard(slotIndex){
+    const preset = myPvp.presets && myPvp.presets[slotIndex];
+    const isActive = myPvp.activePresetIndex === slotIndex && !!preset;
+    const card = document.createElement('div');
+    card.className = 'pvpth-preset-card' + (isActive ? ' active' : '');
+    card.innerHTML = preset
+      ? `<div class="pvpth-preset-name"><span>${preset.name}</span>${isActive?'<span class="tag-active">ATIVO</span>':''}</div>
+         <div class="pvpth-preset-meta">Distância de Ataque: ${preset.sqmDistance} SQM</div>
+         <div class="pvpth-preset-actions">
+           <button data-action="edit">✏️ Editar</button>
+           <button data-action="use" class="use${isActive?' active':''}" ${isActive?'disabled':''}>${isActive?'Em uso':'Usar'}</button>
+         </div>`
+      : `<div class="pvpth-preset-name"><span>Slot ${slotIndex+1} — vazio</span></div>
+         <div class="pvpth-preset-meta">Nenhum preset salvo neste slot.</div>
+         <div class="pvpth-preset-actions"><button data-action="edit" style="flex:1;">➕ Criar preset</button></div>`;
+    card.querySelector('[data-action="edit"]').addEventListener('click', ()=> pvpthOpenPresetEditor(slotIndex));
+    const useBtn = card.querySelector('[data-action="use"]');
+    if(useBtn) useBtn.addEventListener('click', ()=> sendWS({ type:'pvp:setActivePreset', slotIndex }));
+    return card;
+  }
+  function renderPvpthRegAndPresets(){
+    const t = pvpTournamentState;
+    const infoEl = document.getElementById('pvpthRegInfo');
+    const btn = document.getElementById('pvpthRegBtn');
+    if(!t){
+      infoEl.textContent = 'Aguardando o próximo Torneio Semanal (sábado, 18h) para abrir inscrições.';
+      btn.style.display = 'none';
+    } else if(t.status !== 'aberto'){
+      infoEl.innerHTML = `Inscrições encerradas — torneio ${t.status === 'em_andamento' ? 'em andamento' : t.status}.`;
+      btn.style.display = 'none';
+    } else if(pvpMyRegistered){
+      infoEl.innerHTML = `✅ <b>Você está inscrito</b> neste Torneio Semanal.`;
+      btn.style.display = 'inline-block'; btn.textContent = 'Inscrito'; btn.disabled = true; btn.classList.add('done');
+    } else {
+      infoEl.innerHTML = `Inscrições abertas — taxa de <b>${Math.round(t.entryFee||0).toLocaleString('pt-BR')} Ouro</b> (vai para o OuroPool do torneio).`;
+      btn.style.display = 'inline-block'; btn.textContent = 'Inscrever-se'; btn.disabled = false; btn.classList.remove('done');
+    }
+    const presetsEl = document.getElementById('pvpthPresets');
+    presetsEl.innerHTML = '';
+    for(let i=0;i<3;i++) presetsEl.appendChild(pvpthRenderPresetCard(i));
+  }
+  document.getElementById('pvpthRegBtn').addEventListener('click', ()=> sendWS({ type:'pvp:register' }));
+
+  // Editor de preset — reaproveita equipment/hotbar (globais já usados pela
+  // Mochila/Hotbar) como snapshot na hora de salvar, exatamente como o
+  // servidor espera (ver validatePreset em pvpEngine.js).
+  function pvpthOpenPresetEditor(slotIndex){
+    pvpthPresetEditingSlot = slotIndex;
+    const preset = myPvp.presets && myPvp.presets[slotIndex];
+    document.getElementById('pvpthPresetName').value = preset ? preset.name : `Preset ${slotIndex+1}`;
+    pvpthPresetSqmChoice = preset ? preset.sqmDistance : (sqmDistance || 1);
+    document.querySelectorAll('#pvpthPresetSqmChoice button').forEach(b=> b.classList.toggle('active', Number(b.dataset.sqm)===pvpthPresetSqmChoice));
+    document.getElementById('pvpthPresetOverlay').classList.add('open');
+  }
+  document.querySelectorAll('#pvpthPresetSqmChoice button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      pvpthPresetSqmChoice = Number(b.dataset.sqm);
+      document.querySelectorAll('#pvpthPresetSqmChoice button').forEach(x=> x.classList.toggle('active', x===b));
+    });
+  });
+  document.getElementById('pvpthPresetCancel').addEventListener('click', ()=> document.getElementById('pvpthPresetOverlay').classList.remove('open'));
+  document.getElementById('pvpthPresetConfirm').addEventListener('click', ()=>{
+    if(pvpthPresetEditingSlot === null) return;
+    const name = document.getElementById('pvpthPresetName').value.trim().slice(0,24) || `Preset ${pvpthPresetEditingSlot+1}`;
+    sendWS({ type:'pvp:savePreset', slotIndex: pvpthPresetEditingSlot, preset: { name, sqmDistance: pvpthPresetSqmChoice, equipment, hotbar } });
+  });
+
   function renderPvpTournamentGrid(){
     if(!pvpTournamentModal.classList.contains('open')) return;
     const t = pvpTournamentState;
@@ -12592,6 +12917,7 @@
     document.getElementById('pvpthOuroPool').textContent = pvpShopFormatMoedas(t ? t.ouroPool : 0);
     document.getElementById('pvpthRegistered').textContent = t ? t.registeredCount : 0;
     document.getElementById('pvpthArenasAtivas').textContent = matches.filter(m=> !m.winner).length;
+    renderPvpthRegAndPresets();
     if(!matches.length){
       grid.innerHTML = `<div class="pvpth-empty"><div class="big">🏆</div><div>${t ? 'Nenhuma arena na rodada atual.' : 'Aguardando o próximo Torneio Semanal (sábado, 18h).'}</div></div>`;
       return;
