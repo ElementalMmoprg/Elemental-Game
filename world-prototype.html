@@ -4766,15 +4766,20 @@
     const bounds = isTowerArena
       ? [ { x: activeHunt.lurePoints[0].x-220, y: activeHunt.lurePoints[0].y-220 }, { x: activeHunt.lurePoints[0].x+220, y: activeHunt.lurePoints[0].y+220 } ]
       : (activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS);
-    let minX = Math.min(...bounds.map(p=>p.x))-100, maxX = Math.max(...bounds.map(p=>p.x))+100;
-    let minY = Math.min(...bounds.map(p=>p.y))-100, maxY = Math.max(...bounds.map(p=>p.y))+100;
+    let minX = Math.min(...bounds.map(p=>p.x)), maxX = Math.max(...bounds.map(p=>p.x));
+    let minY = Math.min(...bounds.map(p=>p.y)), maxY = Math.max(...bounds.map(p=>p.y));
     // Câmera de tela cheia com viewport estendido: em telas grandes/
     // fullscreen o chão precisa cobrir 100% da tela, nunca só a área do
     // conteúdo (cidade/lure points) — une os dois bounds em vez de travar
     // num raio fixo tipo "15x11". Torre Elemental fica de fora de propósito:
-    // a arena é um quadrado fechado por design (ver comentário acima), não
-    // faz sentido desenhar chão além da muralha dela.
+    // a arena é um quadrado fechado por design (ver Paredes reais abaixo) --
+    // ANTES o padding de ±100 rodava incondicionalmente aqui em cima (mesmo
+    // pra Torre), desenhando chão até ±320 quando a muralha de verdade fica
+    // em ±220 -- ou seja, o chão "vazava" pra fora da parede. Agora o
+    // padding só entra fora de Torre (mapa aberto de sempre); dentro da
+    // arena o chão bate exatamente com onde a parede fecha.
     if(!isTowerArena){
+      minX -= 100; maxX += 100; minY -= 100; maxY += 100;
       const viewTL = screenToWorld(0, 0);
       const viewBR = screenToWorld(viewW, viewH);
       const pad = TILE_STEP; // 1 tile de folga além da borda visível, evita "piscar" tile cortado ao mover
@@ -4800,6 +4805,39 @@
             drawFloorSquare(s.x, s.y, fill);
           }
         }
+      }
+    }
+    // Paredes reais no perímetro da arena da Torre (pedido do usuário,
+    // 26/09/2026: "fechar as paredes nas bordas"). Antes só existiam 4
+    // pilares decorativos soltos nos cantos (buildTowerArenaScenery, ainda
+    // desenhados abaixo, inalterados) -- nenhuma muralha de verdade fechava
+    // o quadrado. Aqui a muralha é desenhada RASA (mesma técnica/plano do
+    // piso, sem altura/volume 3D) de propósito: uma parede "de verdade" com
+    // volume/altura (drawSceneryBlock) do lado mais perto da câmera tampa a
+    // visão do personagem quando ele encosta nela -- problema clássico de
+    // sala fechada em câmera isométrica. Rasa, ela fecha visualmente o
+    // ambiente (e a colisão de verdade já impede atravessar -- ver
+    // TOWER_ARENA_HALF_PX/clampToTowerArena em huntEngine.js) sem nunca
+    // esconder ninguém. HALF tem que bater com TOWER_ARENA_HALF_PX do
+    // servidor -- os dois lados (desenho e colisão física) precisam
+    // concordar, senão a parede aparece separada de onde o jogador
+    // realmente para.
+    if(isTowerArena){
+      const HALF = 220; // == TOWER_ARENA_HALF_PX no servidor (huntEngine.js)
+      const arenaCenter = activeHunt.lurePoints[0];
+      const wallCountPerSide = Math.max(4, Math.round((HALF*2)/TILE_STEP));
+      const wallStep = (HALF*2)/wallCountPerSide;
+      const wallFill = shadeHexColor(arenaColor, 0.14); // mais escuro que o piso (0.22-0.30), pra marcar a borda mesmo sem tema/atlas (ex: Torre Central)
+      const wallSpriteId = towerThemeReady ? towerTheme.wall : null;
+      for(let i=0;i<=wallCountPerSide;i++){
+        const gx = arenaCenter.x - HALF + i*wallStep;
+        let s = toScreen(gx, arenaCenter.y-HALF); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
+        s = toScreen(gx, arenaCenter.y+HALF); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
+      }
+      for(let i=1;i<wallCountPerSide;i++){ // i=0 e i=wallCountPerSide (cantos) já saíram no loop acima
+        const gy = arenaCenter.y - HALF + i*wallStep;
+        let s = toScreen(arenaCenter.x-HALF, gy); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
+        s = toScreen(arenaCenter.x+HALF, gy); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
       }
     }
 
@@ -10273,7 +10311,29 @@
   };
   const towersPanel = document.getElementById('towers-panel');
   let lastTowerEnterMode = null; // 'dungeon'|'boss' — só pra escolher a mensagem certa no handleAck de tower:enter
-  document.getElementById('btn-open-towers').addEventListener('click', ()=>{ towersPanel.classList.toggle('open'); renderTowers(); });
+  // lastTowersRenderSig / FIX do "clique não registra" (ver comentário grande
+  // em applyHuntSnapshot sobre DESTRUÍDO E RECRIADO entre mousedown/mouseup):
+  // antes, renderTowers() reconstruía os botões (innerHTML + addEventListener
+  // novo) toda vez que o painel estava aberto e o throttle de 250ms permitia,
+  // MESMO QUE NADA nos dados da torre tivesse mudado. Isso significa que, na
+  // prática, os botões eram destruídos e recriados ~4x/segundo o tempo todo
+  // que o painel ficava aberto — dando várias chances por segundo de o clique
+  // do jogador cair exatamente no meio de uma recriação e ser silenciosamente
+  // descartado pelo navegador. A maioria dos snapshots não muda nada relevante
+  // pra esse painel (andar salvo, tentativas, chave, hunt ativa), então a
+  // reconstrução era desnecessária quase sempre. Guardando uma "assinatura" do
+  // que foi renderizado da última vez e só reconstruindo quando ela muda, os
+  // botões passam a viver o tempo todo em que o jogador realmente não fez
+  // progresso nenhum — ou seja, na prática, o DOM só é recriado quando o
+  // estado da torre realmente muda (o que é raro comparado a 4x/segundo),
+  // eliminando a janela de corrida quase por completo (bem mais robusto que
+  // só esperar o throttle de 250ms "torcer" pra não coincidir com o clique).
+  let lastTowersRenderSig = null;
+  document.getElementById('btn-open-towers').addEventListener('click', ()=>{
+    towersPanel.classList.toggle('open');
+    lastTowersRenderSig = null; // força reconstrução ao abrir, garantindo que mostra o estado atual
+    renderTowers();
+  });
   // Chaves de Chefe dropadas (ver TOWER_BOSS_KEY_DROP_CHANCE no servidor) —
   // id = tower_boss_key__<towerId>__<floor>. Devolve a lista de andares
   // desafiáveis (com Chave em mãos) daquela torre, já reconquistados na
@@ -10287,6 +10347,19 @@
   }
   function renderTowers(){
     if(!towersPanel.classList.contains('open')) return;
+    // Assinatura de tudo que influencia o HTML abaixo (ver comentário no
+    // addEventListener de btn-open-towers) — se nada disso mudou desde a
+    // última chamada, não reconstrói o DOM (evita destruir/recriar os
+    // botões sem necessidade e o clique cair no meio dessa troca).
+    const bossKeyIds = (bag||[]).filter(it=> it.id && it.id.indexOf('tower_boss_key__')===0).map(it=>it.id).sort().join(',');
+    const towersSig = JSON.stringify({
+      climb: [towerClimb.usedToday, towerClimb.limit, towerClimb.remaining, towerClimb.towerKeys],
+      towers: towers,
+      hunt: [activeHunt.running, activeHunt.isTower, activeHunt.towerMode, activeHunt.towerId, activeHunt.climbFloor],
+      bossKeyIds,
+    });
+    if(towersSig === lastTowersRenderSig) return;
+    lastTowersRenderSig = towersSig;
     const body = document.getElementById('towers-body');
     const attemptsLine = `<div class="tower-attempts-line">Tentativas de Escalada hoje: <b style="color:${towerClimb.remaining>0?'var(--ok)':'#ff9a80'}">${towerClimb.usedToday}/${towerClimb.limit}</b>`
       + (towerClimb.towerKeys>0 ? ` · <span style="color:var(--gold-bright)">🗝️ ${towerClimb.towerKeys} Chave(s) da Torre</span>` : '')
