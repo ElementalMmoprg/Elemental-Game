@@ -3049,6 +3049,10 @@
     // huntEngine.js enterTower/completeTowerRun e serializeHuntSnapshot no servidor.
     isTower:false, towerId:null, towerMode:null, climbFloor:null,
     climbCountdownUntil:0, climbNextFloor:null, climbNextFloorIsBoss:false,
+    // Visual Dinâmico por Elemento (pedido do usuário, 26/09/2026): elemento
+    // ativo da Torre mandado pelo servidor (ver serializeHuntSnapshot) — usado
+    // em draw() pra escolher o tileset certo em TOWER_ELEMENT_TILE_THEME.
+    visualTheme:null,
   };
   const remotePlayers = new Map(); // username -> {x,y,location}
 
@@ -4200,14 +4204,18 @@
   // Monta os 4 pilares que marcam os cantos da "área quadrada" de uma Torre
   // (um por elemento, incluindo a Central) — mesma técnica de sempre
   // (drawSceneryBlock procedural), só trocando a cor pela do elemento da Torre.
-  function buildTowerArenaScenery(point, tower){
+  function buildTowerArenaScenery(point, tower, wallSpriteId){
     if(!point) return [];
     const R = 170, color = tower ? tower.color : '#bfa15f';
+    // wallSpriteId (Visual Dinâmico por Elemento, pedido 26/09/2026): sprite
+    // REAL do atlas Tibia pro topo dos 4 pilares da arena — ver
+    // TOWER_ELEMENT_TILE_THEME e drawSceneryBlock (topSpriteId). null/undefined
+    // pra Torre Central (sem elemento) mantém o topo de cor lisa de sempre.
     return [
-      { type:'arenaPilar', x:point.x-R, y:point.y,       h:64, color },
-      { type:'arenaPilar', x:point.x+R, y:point.y,       h:64, color },
-      { type:'arenaPilar', x:point.x,   y:point.y-R*0.55, h:64, color },
-      { type:'arenaPilar', x:point.x,   y:point.y+R*0.55, h:64, color },
+      { type:'arenaPilar', x:point.x-R, y:point.y,       h:64, color, wallSpriteId },
+      { type:'arenaPilar', x:point.x+R, y:point.y,       h:64, color, wallSpriteId },
+      { type:'arenaPilar', x:point.x,   y:point.y-R*0.55, h:64, color, wallSpriteId },
+      { type:'arenaPilar', x:point.x,   y:point.y+R*0.55, h:64, color, wallSpriteId },
     ];
   }
   // Bloco de cenário (parede/prédio/árvore/pilar) em grade reta: um retângulo
@@ -4215,7 +4223,7 @@
   // mais claro por cima simulando a face/altura do objeto — sem nenhum
   // bisel/losango isométrico. hw/hh continuam sendo a meia-largura/altura do
   // footprint (mesmos valores de SCENERY_STYLE, não precisou mudar).
-  function drawSceneryBlock(sx, sy, height, topColor, sideColorL, sideColorR, hw, hh){
+  function drawSceneryBlock(sx, sy, height, topColor, sideColorL, sideColorR, hw, hh, topSpriteId){
     // SPRITE_SCALE mantém paredes/prédios/pilares/árvores na MESMA proporção
     // de antes em relação ao tile, agora que o tile (TILE_SCREEN_PX) ficou
     // maior — só multiplicar aqui já cobre TODOS os chamadores de uma vez.
@@ -4230,10 +4238,21 @@
     ctx.fillStyle = sideColorR;
     ctx.fillRect(sx-hw, sy-hh-height, hw*2, height);
     ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.strokeRect(sx-hw, sy-hh-height, hw*2, height);
-    // topo (telhado/copa/tampo)
-    ctx.fillStyle = topColor;
-    ctx.fillRect(sx-hw, sy-hh-height, hw*2, hh*0.9);
-    ctx.strokeStyle = 'rgba(191,161,95,.5)'; ctx.strokeRect(sx-hw, sy-hh-height, hw*2, hh*0.9);
+    // topo (telhado/copa/tampo): Visual Dinâmico por Elemento (pedido
+    // 26/09/2026) — quando topSpriteId vem preenchido (pilares de Torre
+    // Elemental, ver buildTowerArenaScenery) e o atlas da Cidade já carregou,
+    // estampa o sprite REAL do elemento em vez da cor lisa; senão (Torre
+    // Central, cenário normal da Cidade/Dungeon, ou atlas ainda carregando)
+    // cai no retângulo de cor de sempre — nada muda pros outros chamadores.
+    const topRect = (topSpriteId && CITY_ATLAS_IMG && CITY_ATLAS_MANIFEST) ? cityRectFor(topSpriteId) : null;
+    if(topRect){
+      ctx.drawImage(CITY_ATLAS_IMG, topRect.x, topRect.y, topRect.w, topRect.h, sx-hw, sy-hh-height, hw*2, hh*0.9);
+      ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.strokeRect(sx-hw, sy-hh-height, hw*2, hh*0.9);
+    } else {
+      ctx.fillStyle = topColor;
+      ctx.fillRect(sx-hw, sy-hh-height, hw*2, hh*0.9);
+      ctx.strokeStyle = 'rgba(191,161,95,.5)'; ctx.strokeRect(sx-hw, sy-hh-height, hw*2, hh*0.9);
+    }
   }
   // Tile de chão em grade reta: um quadrado simples (lado = 1 tile em
   // pixels de tela, já com WORLD_SCALE aplicado), sem nenhum diamante.
@@ -4243,6 +4262,21 @@
     ctx.fillRect(sx-half, sy-half, half*2, half*2);
     ctx.strokeStyle = 'rgba(191,161,95,.10)';
     ctx.strokeRect(sx-half, sy-half, half*2, half*2);
+  }
+  // Piso de Torre Elemental com sprite REAL do atlas Tibia (Visual Dinâmico
+  // por Elemento, pedido do usuário 26/09/2026) — mesma técnica/atlas já
+  // usado pela Cidade Elemental (CITY_ATLAS_IMG/CITY_ATLAS_MANIFEST,
+  // ver drawCityTiles acima), só que aplicado no grid livre da arena da
+  // Torre em vez do grid fixo do town.otbm. IDs vêm de
+  // TOWER_ELEMENT_TILE_THEME (mais abaixo, perto de TOWERS_CATALOG_CLIENT).
+  // Se o atlas ainda não carregou (ou o spriteId não existe no manifest),
+  // cai no quadrado de cor lisa de sempre — nunca quebra a arena.
+  function drawThemedFloorTile(sx, sy, spriteId, fallbackFill){
+    const r = spriteId ? cityRectFor(spriteId) : null;
+    if(!r){ drawFloorSquare(sx, sy, fallbackFill); return; }
+    const half = TILE_SCREEN_PX/2;
+    const dw = r.w*(TILE_SCREEN_PX/32), dh = r.h*(TILE_SCREEN_PX/32);
+    ctx.drawImage(CITY_ATLAS_IMG, r.x, r.y, r.w, r.h, sx-half-(dw-TILE_SCREEN_PX), sy-half-(dh-TILE_SCREEN_PX), dw, dh);
   }
   function drawStarShape(cx,cy,r,color){
     ctx.beginPath();
@@ -4721,6 +4755,14 @@
     const isTowerArena = activeHunt.running && activeHunt.isTower;
     const arenaTower = isTowerArena ? TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId) : null;
     const arenaColor = arenaTower ? arenaTower.color : '#bfa15f';
+    // Visual Dinâmico por Elemento (pedido do usuário, 26/09/2026): tema real
+    // do atlas Tibia pro elemento da Torre atual (null pra Torre Central ou
+    // fora de Torre — mantém o piso/pilar de cor lisa de sempre nesses casos).
+    // "Ready" só quando o atlas da Cidade já carregou (mesmo atlas reciclado,
+    // ver CITY_ATLAS_IMG/CITY_ATLAS_MANIFEST) — sem isso cairia num
+    // drawImage undefined em vez do fallback de cor.
+    const towerTheme = isTowerArena && activeHunt.visualTheme ? TOWER_ELEMENT_TILE_THEME[activeHunt.visualTheme] : null;
+    const towerThemeReady = !!(towerTheme && CITY_ATLAS_IMG && CITY_ATLAS_MANIFEST);
     const bounds = isTowerArena
       ? [ { x: activeHunt.lurePoints[0].x-220, y: activeHunt.lurePoints[0].y-220 }, { x: activeHunt.lurePoints[0].x+220, y: activeHunt.lurePoints[0].y+220 } ]
       : (activeHunt.running && activeHunt.lurePoints.length ? activeHunt.lurePoints : CITY_BOUNDS_POINTS);
@@ -4752,7 +4794,11 @@
           const fill = isTowerArena
             ? shadeHexColor(arenaColor, even?0.30:0.22)
             : (location==='city' ? (even?'#2a2013':'#241b10') : (even?'#1c1712':'#181310'));
-          drawFloorSquare(s.x, s.y, fill);
+          if(isTowerArena && towerThemeReady){
+            drawThemedFloorTile(s.x, s.y, towerTheme.floor, fill);
+          } else {
+            drawFloorSquare(s.x, s.y, fill);
+          }
         }
       }
     }
@@ -4771,14 +4817,14 @@
     // ver drawCityTiles), o cenário procedural antigo (muro/prédio/fonte de
     // caixinha colorida) ficaria por cima do mapa de verdade sem fazer
     // sentido — só entra quando ainda não há tiles reais carregados.
-    const scenery = isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower) : (location==='city' ? (cityTilesDrawn ? [] : SCENERY_CITY) : SCENERY_DUNGEON);
+    const scenery = isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower, towerThemeReady ? towerTheme.wall : null) : (location==='city' ? (cityTilesDrawn ? [] : SCENERY_CITY) : SCENERY_DUNGEON);
     scenery.forEach(s=> drawList.push({
       baseCart:{x:s.x,y:s.y},
       draw:()=>{
         const sc = toScreen(s.x,s.y);
         const style = SCENERY_STYLE[s.type] || SCENERY_STYLE.pilastra;
         const top = s.color || ((s.type==='pilastra' && location==='dungeon') ? style.topDungeon : style.top);
-        drawSceneryBlock(sc.x, sc.y, s.h, top, style.l, style.r, style.hw, style.hh);
+        drawSceneryBlock(sc.x, sc.y, s.h, top, style.l, style.r, style.hw, style.hh, s.wallSpriteId);
         // Copa da árvore e espelho d'água da fonte são só um desenho a mais
         // por cima do mesmo bloco (nenhum sprite novo) — dão silhueta de
         // árvore/fonte sem precisar de arte externa. Mesma conta de
@@ -5536,10 +5582,12 @@
       activeHunt.climbCountdownUntil = msg.hunt.climbCountdownUntil || 0;
       activeHunt.climbNextFloor = msg.hunt.climbNextFloor;
       activeHunt.climbNextFloorIsBoss = !!msg.hunt.climbNextFloorIsBoss;
+      activeHunt.visualTheme = msg.hunt.visualTheme || null;
     } else {
       activeHunt.running = false; activeHunt.lurePoints = [];
       activeHunt.isTower = false; activeHunt.towerId = null; activeHunt.towerMode = null; activeHunt.climbFloor = null;
       activeHunt.climbCountdownUntil = 0; activeHunt.climbNextFloor = null; activeHunt.climbNextFloorIsBoss = false;
+      activeHunt.visualTheme = null;
     }
     updateTowerClimbBanner();
     // ---- RENDER DE PAINÉIS — por que isso é THROTTLED e não roda a cada
@@ -10204,6 +10252,25 @@
     { id:'agua', name:'Torre da Água', icon:'💧', color:'#3d7fa8' }, { id:'terra', name:'Torre da Terra', icon:'🪨', color:'#7a5a34' },
     { id:'ar', name:'Torre do Ar', icon:'🌪️', color:'#bcd6d0' }, { id:'luz', name:'Torre da Luz', icon:'✨', color:'#e8d98a' }, { id:'trevas', name:'Torre das Trevas', icon:'🌑', color:'#4a3560' },
   ];
+  // Visual Dinâmico por Elemento das Torres — pedido do usuário (26/09/2026).
+  // IDs REAIS minerados visualmente do atlas Tibia já usado pela Cidade
+  // Elemental (Elemental_assets/assets/tilesets/tibia_tileset_atlas.png +
+  // tibia_tileset_atlas_manifest.json, ver CITY_ATLAS_IMG/CITY_ATLAS_MANIFEST
+  // e drawCityTiles acima) — NENHUM id foi chutado: cada candidato passou por
+  // um contact-sheet de revisão visual (mesma disciplina já usada pra minerar
+  // os sprites dos Bosses das Torres, ver
+  // claude/correcao-10-sprites-boss-e-escala-visual-2026-09-20-notas.md)
+  // antes de entrar aqui. 'central' fica de fora de propósito — não tem
+  // elemento (TOWERS_CATALOG.element===null no servidor) e continua com o
+  // piso/pilar de cor lisa de sempre (ver towerThemeReady em draw()).
+  const TOWER_ELEMENT_TILE_THEME = {
+    fogo:   { floor:'3135_v0', wall:'1284'    }, // piso vulcânico (lava/brasa) · parede de rocha escura avermelhada
+    agua:   { floor:'222_v0',  wall:'1034_v0' }, // piso de gelo/cristal aquático · parede de água profunda
+    terra:  { floor:'2427_v0', wall:'1464_v0' }, // piso de grama antiga · parede de raízes entrelaçadas
+    ar:     { floor:'1582',    wall:'221_v0'  }, // piso etéreo/nuvem compacta · parede de nuvem densa
+    luz:    { floor:'114_v0',  wall:'240'     }, // piso dourado/areal solar · parede dourada polida
+    trevas: { floor:'2159',    wall:'2255_v2' }, // piso de pedra vazia/sombria · parede de rocha ondulada sombria
+  };
   const towersPanel = document.getElementById('towers-panel');
   let lastTowerEnterMode = null; // 'dungeon'|'boss' — só pra escolher a mensagem certa no handleAck de tower:enter
   document.getElementById('btn-open-towers').addEventListener('click', ()=>{ towersPanel.classList.toggle('open'); renderTowers(); });
