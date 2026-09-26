@@ -1193,6 +1193,12 @@
   #infusion-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:500px; max-width:94vw; display:none; z-index:17; }
   #infusion-modal.open{ display:block; }
   #infusion-body{ max-height:64vh; overflow-y:auto; }
+  /* FUSÃO — mesma regra de posição/z-index/display de Encantamento/Infusão
+     acima, aprendendo com o bug documentado ali (#infusion-modal ficou sem
+     ela por um tempo e sumia "atrás" da UI). */
+  #fusion-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:520px; max-width:94vw; display:none; z-index:17; }
+  #fusion-modal.open{ display:block; }
+  #fusion-body{ max-height:64vh; overflow-y:auto; }
   .enchant-slot-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
   .enchant-slot-tab{ padding:4px 8px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
   .enchant-slot-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
@@ -1362,6 +1368,39 @@
   #craft-reveal-card .crc-icon-ring img{ width:56px; height:56px; object-fit:contain; }
   #craft-reveal-card .crc-name{ font-family:var(--font-display); font-size:20px; font-weight:700; text-shadow:0 0 20px rgba(0,0,0,.8); }
   #craft-reveal-card .crc-sub{ font-family:var(--font-mono); font-size:11px; color:var(--gold-bright); }
+
+  /* ============ FUSÃO MÍTICA — aviso pra TODOS os jogadores quando alguém
+     funde/consegue um item Mítica (pedido do usuário, 26/09/2026: "vai
+     aparecer uma mensagem no meio da tela de todos os jogadores... a foto
+     real do item com a borda"). Mesmo espírito visual do craft-reveal
+     acima (que é só PESSOAL, pro próprio crafter) mas broadcast-wide, mais
+     dramático (maior, brilho vermelho da raridade Mítica) e com o nick de
+     quem conquistou. ============ */
+  #mythic-announce-overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; z-index:32; background:radial-gradient(ellipse at center, rgba(255,43,43,.22), transparent 62%); }
+  #mythic-announce-overlay.show{ animation:mythicAnnounceFlash 5s ease-out; }
+  @keyframes mythicAnnounceFlash{ 0%{opacity:0;} 8%{opacity:1;} 88%{opacity:1;} 100%{opacity:0;} }
+  #mythic-announce-card{ display:flex; flex-direction:column; align-items:center; gap:9px; transform:scale(0.6); }
+  #mythic-announce-overlay.show #mythic-announce-card{ animation:mythicAnnouncePop 5s ease-out; }
+  @keyframes mythicAnnouncePop{ 0%{transform:scale(0.4) translateY(20px);} 14%{transform:scale(1.12) translateY(0);} 24%{transform:scale(1) translateY(0);} 90%{transform:scale(1) translateY(0);} 100%{transform:scale(0.9) translateY(-10px);} }
+  #mythic-announce-card .mac-label{ font-family:var(--font-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#ff6b6b; text-shadow:0 0 14px rgba(255,43,43,.8); }
+  #mythic-announce-card .mac-icon-ring{ width:112px; height:112px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.45); box-shadow:0 0 0 3px #ff2b2b, 0 0 46px rgba(255,43,43,.75); }
+  #mythic-announce-card .mac-icon-ring img.item-icon{ width:64px; height:64px; object-fit:contain; }
+  #mythic-announce-card .mac-icon-ring .rarity-frame{ width:112px; height:112px; }
+  #mythic-announce-card .mac-name{ font-family:var(--font-display); font-size:24px; font-weight:700; color:#ff2b2b; text-shadow:0 0 24px rgba(0,0,0,.85); }
+  #mythic-announce-card .mac-sub{ font-family:var(--font-mono); font-size:12px; color:var(--gold-bright); }
+  .chat-mythic-link{ color:#ff6b6b; text-decoration:underline; cursor:pointer; font-weight:600; }
+  .chat-mythic-link:hover{ color:#ff9b9b; }
+
+  /* Modal de detalhe do item Mítica — reaberto a qualquer momento clicando
+     no link deixado no chat Sistema (pedido do usuário). */
+  #item-showcase-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:340px; max-width:92vw; display:none; z-index:19; text-align:center; }
+  #item-showcase-modal.open{ display:block; }
+  #item-showcase-icon-ring{ width:96px; height:96px; margin:10px auto 12px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); }
+  #item-showcase-icon-ring img.item-icon{ width:56px; height:56px; object-fit:contain; }
+  #item-showcase-icon-ring .rarity-frame{ width:96px; height:96px; }
+  #item-showcase-name{ font-family:var(--font-display); font-size:18px; font-weight:700; margin-bottom:4px; }
+  #item-showcase-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:8px; }
+  #item-showcase-stats{ font-family:var(--font-mono); font-size:10.5px; padding:0 14px 14px; }
 
   /* ============ MERCADO (compra e venda entre jogadores) ============
      Escopo "Mercado completo" escolhido pelo usuário -- livro de ordens de
@@ -1542,6 +1581,13 @@
   #chat-input-row{ display:flex; border-top:1px solid var(--gold-deep); flex-shrink:0; }
   #chat-input{ flex:1; background:rgba(0,0,0,.35); border:none; color:var(--ink); padding:7px 9px; font-family:var(--font-body); font-size:11.5px; outline:none; }
   #chat-input::placeholder{ color:var(--ink-dim); }
+  /* Abas de PM dinâmicas (uma por jogador, com botão de fechar) — substituem
+     o antigo window.prompt() de sussurro (pedido do usuário, 26/09/2026). */
+  .chat-tab.pm{ color:#d9a8f0; display:flex; align-items:center; gap:5px; }
+  .chat-tab.pm.active{ color:#f0d8ff; background:rgba(191,161,95,.08); }
+  .chat-tab.pm.unread{ font-weight:700; color:#f0d8ff; }
+  .chat-tab-close{ opacity:.55; padding:0 2px; border-radius:3px; }
+  .chat-tab-close:hover{ opacity:1; color:var(--danger); background:rgba(255,255,255,.08); }
 
   #rankup-overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; z-index:30; background:radial-gradient(ellipse at center, rgba(240,211,138,.25), transparent 60%); }
   #rankup-overlay.show{ animation:rankupFlash 1.8s ease-out; }
@@ -1798,6 +1844,110 @@
   .pvp-arena-log .log-a { color: var(--cor-a); font-weight: 700; }
   .pvp-arena-log .log-b { color: var(--cor-b); font-weight: 700; }
   .pvp-arena-log div:last-child { color: var(--text); }
+
+  /* =====================================================================
+     LOJA DE PVP + CENTRAL DO TORNEIO — portado de pvp-shop.html /
+     pvp-tournament-hall.html (ver claude/pvp-torneio-semanal-notas.md,
+     pendência 3 — integração pedida pelo usuário em 26/09/2026 depois de
+     notar que não existia ícone/tela nenhuma pra isso no jogo). Ao
+     contrário do modal de oponente/arena acima, estes 2 standalones já
+     nasceram reaproveitando as MESMAS variáveis de cor/fonte do :root
+     real deste arquivo (--gold/--gold-bright/--ink/--font-display etc.),
+     então nada precisa ser redefinido aqui — só o CSS de layout mesmo.
+     ===================================================================== */
+  .pvpshop-wrap{ padding:0 14px 14px; }
+  .pvpshop-header{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; padding:14px 18px; border-radius:12px; margin-bottom:16px; background:linear-gradient(180deg, var(--glass-1), var(--glass-2)); border:1px solid #3a2f1c; }
+  .pvpshop-title{ font-size:18px; font-weight:800; color:var(--gold-bright); letter-spacing:.03em; font-family:var(--font-display); }
+  .pvpshop-balance{ display:flex; align-items:center; gap:10px; padding:8px 14px; border-radius:10px; background:rgba(0,0,0,.3); border:1px solid var(--gold-deep); font-family:var(--font-mono); font-size:15px; font-weight:700; color:var(--gold-bright); }
+  .pvpshop-balance .label{ font-family:var(--font-body); font-size:11px; color:var(--ink-dim); font-weight:400; margin-right:4px; }
+  .pvpshop-tabs{ display:flex; gap:6px; margin-bottom:14px; }
+  .pvpshop-tab{ flex:1; padding:9px; text-align:center; border-radius:9px; border:1px solid #3a2f1c; background:rgba(255,255,255,.03); color:var(--ink-dim); font-family:var(--font-display); font-weight:700; font-size:11.5px; letter-spacing:.02em; cursor:pointer; transition:.15s; }
+  .pvpshop-tab:hover{ background:rgba(255,255,255,.06); color:var(--ink); }
+  .pvpshop-tab.active{ background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#231a06; border-color:var(--gold); }
+  .pvpshop-panel{ display:none; }
+  .pvpshop-panel.active{ display:block; }
+  .pvpshop-section-title{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-dim); margin:14px 4px 8px; }
+  .pvpshop-section-title:first-child{ margin-top:0; }
+  .pvpshop-grid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); }
+  .pvpshop-item{ border-radius:12px; border:1px solid #3a2f1c; background:linear-gradient(180deg, var(--glass-1), var(--glass-2)); box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden; display:flex; flex-direction:column; transition:transform .16s ease, border-color .16s ease; }
+  .pvpshop-item:hover{ transform:translateY(-2px); border-color:var(--gold-deep); }
+  .pvpshop-item__icon{ font-size:28px; text-align:center; padding:14px 0 4px; }
+  .pvpshop-item__name{ font-weight:700; font-size:12px; text-align:center; padding:0 10px; color:var(--ink); min-height:30px; }
+  .pvpshop-item__desc{ font-size:10.5px; color:var(--ink-dim); text-align:center; padding:5px 12px 0; flex:1; }
+  .pvpshop-item__footer{ padding:10px 12px 12px; }
+  .pvpshop-item__price{ display:flex; align-items:center; justify-content:center; gap:5px; font-family:var(--font-mono); font-weight:700; color:var(--gold-bright); font-size:12.5px; margin-bottom:5px; }
+  .pvpshop-item__limit{ text-align:center; font-size:9.5px; color:var(--ink-dim); margin-bottom:7px; font-family:var(--font-mono); }
+  .pvpshop-item__buy{ width:100%; padding:8px; border:none; border-radius:8px; font-family:var(--font-display); font-weight:700; font-size:11.5px; letter-spacing:.02em; cursor:pointer; background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#231a06; transition:filter .15s, transform .1s; }
+  .pvpshop-item__buy:hover{ filter:brightness(1.1); }
+  .pvpshop-item__buy:active{ transform:scale(.96); }
+  .pvpshop-item__buy[disabled]{ background:#4a463c; color:#8a8578; cursor:not-allowed; filter:none; }
+  .pvpshop-empty{ text-align:center; padding:40px 16px; color:var(--ink-dim); }
+  .pvpshop-empty .big{ font-size:32px; margin-bottom:10px; }
+
+  .pvpth-wrap{ padding:0 14px 14px; }
+  .pvpth-header{ margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:14px 18px; border-radius:12px; background:linear-gradient(180deg, var(--glass-1), var(--glass-2)); border:1px solid #3a2f1c; }
+  .pvpth-title{ font-size:18px; font-weight:800; color:var(--gold-bright); letter-spacing:.03em; display:flex; align-items:center; gap:8px; font-family:var(--font-display); }
+  .pvpth-subtitle{ font-size:11.5px; color:var(--ink-dim); margin-top:3px; }
+  .pvpth-stats{ display:flex; gap:16px; flex-wrap:wrap; }
+  .pvpth-stat{ text-align:center; min-width:76px; }
+  .pvpth-stat .n{ font-family:var(--font-mono); font-size:16px; font-weight:700; color:var(--gold-bright); }
+  .pvpth-stat .l{ font-size:10px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.05em; }
+  .pvpth-grid{ display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); }
+  .pvpth-card{ border-radius:14px; border:1px solid #3a2f1c; background:linear-gradient(180deg, var(--glass-1), var(--glass-2)); box-shadow:0 8px 26px rgba(0,0,0,.4); overflow:hidden; display:flex; flex-direction:column; transition:transform .18s ease, border-color .18s ease; }
+  .pvpth-card:hover{ transform:translateY(-2px); border-color:var(--gold-deep); }
+  .pvpth-card__head{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:rgba(0,0,0,.25); border-bottom:1px solid #3a2f1c; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; }
+  .pvpth-card__head .arena-id{ color:var(--gold); }
+  .pvpth-timer{ font-variant-numeric:tabular-nums; }
+  .pvpth-timer strong{ color:var(--ink); }
+  .pvpth-timer.pvpth-live{ color:var(--ok); font-weight:700; }
+  .pvpth-matchup{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; padding:14px 12px 10px; }
+  .pvpth-fighter{ text-align:center; }
+  .pvpth-fighter .avatar{ width:44px; height:44px; border-radius:50%; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:16px; font-weight:800; color:#0c0a06; background:conic-gradient(from 220deg, var(--gold-bright), var(--gold), var(--gold-deep)); border:2px solid rgba(255,255,255,.15); }
+  .pvpth-fighter.side-b .avatar{ background:conic-gradient(from 40deg, #e88, #c0453f, #7a2a26); color:#f6e6e6; }
+  .pvpth-fighter .nick{ font-weight:700; font-size:12.5px; color:var(--ink); }
+  .pvpth-fighter .classe{ font-size:10px; color:var(--ink-dim); margin-top:2px; }
+  .pvpth-fighter .estrela{ font-size:10.5px; color:var(--gold-bright); margin-top:2px; }
+  .pvpth-vs{ width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:12.5px; color:#0c0a06; background:radial-gradient(circle at 35% 30%, var(--gold-bright), var(--gold) 60%, var(--gold-deep)); box-shadow:0 0 14px rgba(240,211,138,.5); }
+  .pvpth-bet-bar-wrap{ padding:2px 14px 4px; }
+  .pvpth-bet-bar{ height:8px; border-radius:5px; overflow:hidden; display:flex; background:rgba(255,255,255,.06); }
+  .pvpth-bet-bar__a{ background:#4a8fd6; transition:width .35s ease; }
+  .pvpth-bet-bar__b{ background:#c0453f; transition:width .35s ease; }
+  .pvpth-odds{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); padding:5px 14px 0; }
+  .pvpth-odds .a{ color:#4a8fd6; }
+  .pvpth-odds .b{ color:#c0453f; }
+  .pvpth-actions{ padding:10px 12px 14px; margin-top:auto; }
+  .pvpth-btn{ width:100%; padding:9px; border:none; border-radius:9px; font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:.02em; cursor:pointer; transition:filter .15s, transform .1s; }
+  .pvpth-btn:active{ transform:scale(.97); }
+  .pvpth-btn:hover{ filter:brightness(1.12); }
+  .pvpth-btn--bet{ background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#231a06; }
+  .pvpth-btn--watch{ background:linear-gradient(180deg, #7ee08a, #2f9e46); color:#06210b; }
+  .pvpth-btn--done{ background:rgba(255,255,255,.06); color:var(--ink-dim); cursor:default; }
+  .pvpth-btn--done:hover{ filter:none; }
+  .pvpth-result-banner{ padding:7px 12px; text-align:center; font-family:var(--font-mono); font-size:10.5px; background:rgba(0,0,0,.25); border-top:1px solid #3a2f1c; color:var(--gold-bright); }
+  .pvpth-empty{ text-align:center; padding:40px 16px; color:var(--ink-dim); }
+  .pvpth-empty .big{ font-size:32px; margin-bottom:10px; }
+
+  /* modal de aposta da Central do Torneio — overlay fixo próprio (namespace
+     pvpth-bet-* separado de pvp-modal-overlay lá em cima, de propósito, pra
+     não colidir com o modal de revelação de oponente). */
+  .pvpth-bet-modal-overlay{ position:fixed; inset:0; background:rgba(5,5,10,.72); display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(3px); }
+  .pvpth-bet-modal-overlay.open{ display:flex; }
+  .pvpth-bet-modal{ width:min(340px, 92vw); background:linear-gradient(180deg, var(--glass-1), var(--glass-2)); border:1px solid #3a2f1c; border-radius:14px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
+  .pvpth-bet-modal h3{ color:var(--gold-bright); font-size:15px; margin-bottom:12px; font-family:var(--font-display); }
+  .pvpth-bet-modal .side-choice{ display:flex; gap:8px; margin-bottom:12px; }
+  .pvpth-bet-modal .side-choice button{ flex:1; padding:8px; border-radius:8px; border:1px solid #3a2f1c; background:rgba(255,255,255,.04); color:var(--ink); cursor:pointer; font-family:var(--font-body); font-weight:600; }
+  .pvpth-bet-modal .side-choice button.sel-a.active{ background:#4a8fd6; border-color:#4a8fd6; color:#fff; }
+  .pvpth-bet-modal .side-choice button.sel-b.active{ background:#c0453f; border-color:#c0453f; color:#fff; }
+  .pvpth-bet-modal input{ width:100%; padding:9px; border-radius:8px; border:1px solid #3a2f1c; background:rgba(0,0,0,.3); color:var(--ink); font-family:var(--font-mono); font-size:13px; margin-bottom:12px; }
+  .pvpth-bet-modal .row{ display:flex; gap:8px; }
+  .pvpth-bet-modal .row button{ flex:1; padding:9px; border-radius:8px; border:none; cursor:pointer; font-family:var(--font-display); font-weight:700; }
+  .pvpth-bet-modal .row .confirm{ background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#231a06; }
+  .pvpth-bet-modal .row .cancel{ background:rgba(255,255,255,.06); color:var(--ink-dim); }
+
+  #pvp-shop-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:640px; max-width:94vw; height:600px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
+  #pvp-shop-modal.open{ display:flex; }
+  #pvp-tournament-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:820px; max-width:94vw; height:640px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
+  #pvp-tournament-modal.open{ display:flex; }
 </style>
 </head>
 <body>
@@ -1819,6 +1969,14 @@
     <div class="cfb-track"><div class="cfb-fill" id="cfb-fill" style="width:0%;"></div></div>
     <div class="cfb-sub" id="cfb-sub">—</div>
   </div>
+
+  <!-- Fusão Mítica: aviso pra TODOS os jogadores (ver showMythicAnnounceOverlay/handleMythicAnnounce) -->
+  <div id="mythic-announce-overlay"><div id="mythic-announce-card">
+    <div class="mac-label">⚡ Item Mítico conquistado! ⚡</div>
+    <div class="mac-icon-ring" id="mac-icon-ring"></div>
+    <div class="mac-name" id="mac-name"></div>
+    <div class="mac-sub" id="mac-sub"></div>
+  </div></div>
 
   <!-- Forja: "surpresa" do item recém-criado (ver showCraftRevealOverlay) -->
   <div id="craft-reveal-overlay"><div id="craft-reveal-card">
@@ -1938,8 +2096,21 @@
       <div class="tb-icon" id="btn-open-attrs" title="Atributos Livres"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/attributes.png" alt=""></div>
       <div class="tb-icon" id="btn-open-skilltree" title="Árvore de Habilidades"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/skilltree.png" alt=""></div>
       <div class="tb-icon" id="btn-open-towers" title="Torres Elementais"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/tower.png" alt=""></div>
+      <!-- Loja de PvP + Central do Torneio (Torneio PvP Semanal) — pedido do
+           usuário em 26/09/2026: as 2 telas já existiam prontas/testadas
+           (ver claude/pvp-torneio-semanal-notas.md) mas nunca tinham ganhado
+           ícone/integração aqui, por isso não apareciam pra ele no jogo. Sem
+           asset de ícone próprio ainda, seguindo o mesmo padrão de emoji já
+           usado em Infusão (🔮) e Wiki (📖) logo abaixo. -->
+      <div class="tb-icon" id="btn-open-pvp-tournament" title="Central do Torneio PvP">🏆</div>
+      <div class="tb-icon" id="btn-open-pvp-shop" title="Loja de PvP">🏪</div>
       <div class="tb-icon" id="btn-open-enchant" title="Refinamento"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
       <div class="tb-icon" id="btn-open-infusion" title="Infusão (Tier + Grade)">🔮</div>
+      <!-- Fusão de Equipamentos — pedido do usuário (26/09/2026): funde N
+           cópias do mesmo item + Gold + Cristal de Fusão pra subir a
+           raridade, até chegar em Mítica. Sem asset próprio ainda, mesmo
+           padrão de emoji já usado em Infusão/Wiki/Torneio acima. -->
+      <div class="tb-icon" id="btn-open-fusion" title="Fusão de Equipamentos">⚗️</div>
       <div class="tb-icon" id="btn-open-pets" title="Pets"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/pets.png" alt=""></div>
       <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
       <div class="tb-icon" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
@@ -2073,6 +2244,84 @@
     <div class="towers-body" id="towers-body"></div>
   </div>
 
+  <!-- LOJA DE PVP — pedido 5 (25/09/2026), integrada em 26/09 (ver
+       claude/pvp-torneio-semanal-notas.md, pendência 3). Portada de
+       pvp-shop.html: mesma estrutura de abas/grid; a diferença é que aqui
+       ela é alimentada de verdade por pvp:shop:getState/buy/use (ver
+       handleAck) em vez do catálogo de demo do arquivo isolado. -->
+  <div id="pvp-shop-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🏪 Loja de PvP<span class="rule"></span><span class="win-close-x" data-close-win="pvp-shop-modal">✕</span></div>
+    <div class="pvpshop-wrap">
+      <div class="pvpshop-header">
+        <div class="pvpshop-title">Loja de PvP</div>
+        <div class="pvpshop-balance"><span class="label">Suas Moedas PvP:</span> <span id="pvpshopBalance">0</span> 🪙</div>
+      </div>
+      <div class="pvpshop-tabs">
+        <div class="pvpshop-tab" data-tab="cosmeticos">Cosméticos</div>
+        <div class="pvpshop-tab active" data-tab="consumiveis">Consumíveis / Bônus</div>
+        <div class="pvpshop-tab" data-tab="fortalecimento">Fortalecimento / Buffs</div>
+      </div>
+      <div class="pvpshop-panel" data-panel="cosmeticos">
+        <div class="pvpshop-empty">
+          <div class="big">🎨</div>
+          <div><strong>Em Breve</strong></div>
+          <div style="margin-top:6px;max-width:360px;margin-left:auto;margin-right:auto;font-size:10.5px;">
+            Auras Exclusivas (Flamejante, Raios, Sombria) e Skins de Personagem — aguardando os arquivos de sprite reais.
+          </div>
+        </div>
+      </div>
+      <div class="pvpshop-panel active" data-panel="consumiveis">
+        <div class="pvpshop-section-title">📜 EXP em Dobro</div>
+        <div class="pvpshop-grid" id="pvpshopGridExp"></div>
+        <div class="pvpshop-section-title">🧾 Drop em Dobro</div>
+        <div class="pvpshop-grid" id="pvpshopGridDrop"></div>
+      </div>
+      <div class="pvpshop-panel" data-panel="fortalecimento">
+        <div class="pvpshop-section-title">⚔️ Buffs de Combate (2 Horas)</div>
+        <div class="pvpshop-grid" id="pvpshopGridBuffs"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTRAL DO TORNEIO — pedido 5 (25/09/2026), integrada em 26/09.
+       Portada de pvp-tournament-hall.html: lutas da rodada corrente do
+       Torneio PvP Semanal com apostas ao vivo. "Assistir Ao Vivo" reaproveita
+       o pvpArenaOverlay já existente (ver pvpArenaResolvedCache mais abaixo),
+       agora em modo espectador pra QUALQUER jogador, não só os 2 duelistas
+       (decisão 19 do doc do projeto). -->
+  <div id="pvp-tournament-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🏆 Central do Torneio<span class="rule"></span><span class="win-close-x" data-close-win="pvp-tournament-modal">✕</span></div>
+    <div class="pvpth-wrap">
+      <div class="pvpth-header">
+        <div>
+          <div class="pvpth-title">🏆 Torneio PvP Semanal</div>
+          <div class="pvpth-subtitle" id="pvpthSubtitle">Nenhum torneio ativo no momento.</div>
+        </div>
+        <div class="pvpth-stats">
+          <div class="pvpth-stat"><div class="n" id="pvpthOuroPool">0</div><div class="l">OuroPool</div></div>
+          <div class="pvpth-stat"><div class="n" id="pvpthRegistered">0</div><div class="l">Inscritos</div></div>
+          <div class="pvpth-stat"><div class="n" id="pvpthArenasAtivas">0</div><div class="l">Arenas na Rodada</div></div>
+        </div>
+      </div>
+      <div class="pvpth-grid" id="pvpthGrid"></div>
+    </div>
+  </div>
+
+  <div class="pvpth-bet-modal-overlay" id="pvpthBetOverlay">
+    <div class="pvpth-bet-modal">
+      <h3>Apostar Ouro</h3>
+      <div class="side-choice">
+        <button class="sel-a" data-side="A">Jogador A</button>
+        <button class="sel-b" data-side="B">Jogador B</button>
+      </div>
+      <input type="number" id="pvpthBetAmount" placeholder="Quantidade de Ouro" min="1">
+      <div class="row">
+        <button class="cancel" id="pvpthBetCancel">Cancelar</button>
+        <button class="confirm" id="pvpthBetConfirm">Confirmar Aposta</button>
+      </div>
+    </div>
+  </div>
+
   <!-- LOJA DO FERREIRO BRAN — compra só é processada pelo servidor na Cidade Principal -->
   <div id="shop-modal" class="glass ornate win">
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ <span id="shop-npc-name">Ferreiro Bran</span><span class="rule"></span><span class="win-close-x" data-close-win="shop-modal">✕</span></div>
@@ -2167,6 +2416,30 @@
       <div class="infusion-slot-grid" id="infusion-slot-tabs"></div>
       <div id="infusion-body"></div>
     </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- FUSÃO DE EQUIPAMENTOS — pedido do usuário (26/09/2026): sistema
+       PARALELO ao Refinamento/Infusão acima (nenhum dos dois muda) --
+       forma alternativa de subir a raridade de um item, fundindo N cópias
+       do mesmo id + Gold + Cristal de Fusão em vez de depender só do RNG
+       de loot/Forja. Ver renderFusion()/getFusionGroups(). -->
+  <div id="fusion-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ ⚗️ Fusão de Equipamentos<span class="rule"></span><span class="win-close-x" data-close-win="fusion-modal">✕</span></div>
+    <div style="padding:0 14px 14px;">
+      <div id="fusion-body"></div>
+    </div>
+    <div class="win-resize"></div>
+  </div>
+
+  <!-- Modal de detalhe de item Mítica — reaberto pelo link deixado no chat
+       Sistema (pedido do usuário, 26/09/2026), ver openItemShowcaseModal(). -->
+  <div id="item-showcase-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Item Mítica<span class="rule"></span><span class="win-close-x" data-close-win="item-showcase-modal">✕</span></div>
+    <div id="item-showcase-icon-ring"></div>
+    <div id="item-showcase-name"></div>
+    <div id="item-showcase-sub"></div>
+    <div id="item-showcase-stats"></div>
     <div class="win-resize"></div>
   </div>
 
@@ -3028,6 +3301,19 @@
   // arenaId — ver o switch(msg.type) do WS logo abaixo.
   let pvpArenaFichas = {};
   let pvpLastBettingWindowCloseAt = 0;
+  // Loja de PvP + Central do Torneio (integradas em 26/09/2026, ver
+  // claude/pvp-torneio-semanal-notas.md) — pvpShopState espelha o formato
+  // de huntEngine.getPvpShopSnapshot(); pvpTournamentState espelha
+  // pvpPublicTournamentView (server.js), já resolvido pra 'pvp:getState'.
+  // pvpArenaResolvedCache guarda o payload CRU de 'pvp:arenaResolved' por
+  // arenaId (mesmo pros confrontos que não são os meus) pra "Assistir Ao
+  // Vivo" da Central do Torneio poder abrir o replay de QUALQUER arena,
+  // não só a minha — pvpArenaFichas acima já cobre nick/classe dos 2 lados.
+  let pvpShopState = { moedasPvP: 0, catalog: [], activeBuffs: [] };
+  let pvpTournamentState = null;
+  let pvpArenaResolvedCache = {};
+  let pvpthBetTargetArenaId = null;
+  let pvpthBetSelectedSide = null;
 
   // MERCADO — catálogo (12 itens empilháveis: materiais + poções) e taxa de
   // venda vêm uma vez no 'welcome', igual outfitCatalog. O livro de ofertas
@@ -3071,21 +3357,46 @@
     local:    { label:'Local',    messages:[] },
     guild:    { label:'Guild',    messages:[] },
     combate:  { label:'Combate',  messages:[] },
-    // Mensagem privada (menu de contexto do botão direito num jogador) -- só
-    // leitura aqui (não está em CHAT_SENDABLE); pra responder, usa o mesmo
-    // menu de novo no personagem de quem mandou.
-    sussurro: { label:'Sussurro', messages:[] },
   };
   const CHAT_SENDABLE = ['global','local','guild'];
   let activeChatTab = 'sistema';
   const chatTabsEl = document.getElementById('chat-tabs');
   const chatMsgEl = document.getElementById('chat-messages');
+  const chatInputEl = document.getElementById('chat-input');
+
+  /* Abas de PM (uma por jogador com quem você trocou sussurro) — pedido do
+     usuário (26/09/2026): antes, mandar sussurro abria um window.prompt()
+     nativo e toda resposta caía numa única aba genérica "Sussurro" (só
+     leitura). Agora cada conversa vira sua própria aba `pm:<nick>`,
+     digitável no campo normal do chat, com um "✕" pra fechar a aba. */
+  function pmTabId(nick){ return 'pm:'+nick; }
+  function openPmTab(nick, focusInput){
+    const id = pmTabId(nick);
+    if(!chatTabsData[id]) chatTabsData[id] = { label: nick, messages: [], pm:true, pmTarget: nick };
+    if(focusInput){ activeChatTab = id; renderChatTabs(); renderChatMessages(); chatInputEl.focus(); }
+    return id;
+  }
+  function closePmTab(id){
+    delete chatTabsData[id];
+    if(activeChatTab === id) activeChatTab = 'sistema';
+    renderChatTabs(); renderChatMessages();
+  }
   function renderChatTabs(){
-    chatTabsEl.innerHTML = Object.keys(chatTabsData).map(id=>
-      `<div class="chat-tab${id===activeChatTab?' active':''}" data-id="${id}">${chatTabsData[id].label}</div>`
-    ).join('');
+    chatTabsEl.innerHTML = Object.keys(chatTabsData).map(id=>{
+      const t = chatTabsData[id];
+      const cls = ['chat-tab', id===activeChatTab?'active':'', t.pm?'pm':'', (t.pm && t.unread && id!==activeChatTab)?'unread':''].filter(Boolean).join(' ');
+      const closeBtn = t.pm ? `<span class="chat-tab-close" data-close-pm="${id}">✕</span>` : '';
+      return `<div class="${cls}" data-id="${id}">${escapeHtml(t.label)}${closeBtn}</div>`;
+    }).join('');
+    chatTabsEl.querySelectorAll('.chat-tab-close').forEach(el=>{
+      el.addEventListener('click', e=>{ e.stopPropagation(); closePmTab(el.dataset.closePm); });
+    });
     chatTabsEl.querySelectorAll('.chat-tab').forEach(el=>{
-      el.addEventListener('click', ()=>{ activeChatTab = el.dataset.id; renderChatTabs(); renderChatMessages(); });
+      el.addEventListener('click', ()=>{
+        activeChatTab = el.dataset.id;
+        const t = chatTabsData[activeChatTab]; if(t) t.unread = false;
+        renderChatTabs(); renderChatMessages();
+      });
     });
   }
   function renderChatMessages(){
@@ -3095,15 +3406,20 @@
   }
   function logChat(channel, text, cls){
     if(!chatTabsData[channel]) channel = 'sistema';
-    chatTabsData[channel].messages.push({ cls: cls || ('ch-'+channel), text });
-    if(chatTabsData[channel].messages.length > 150) chatTabsData[channel].messages.shift();
+    const t = chatTabsData[channel];
+    t.messages.push({ cls: cls || ('ch-'+channel), text });
+    if(t.messages.length > 150) t.messages.shift();
     if(activeChatTab===channel) renderChatMessages();
+    else if(t.pm) t.unread = true, renderChatTabs();
   }
   renderChatTabs(); renderChatMessages();
-  document.getElementById('chat-input').addEventListener('keydown', e=>{
+  chatInputEl.addEventListener('keydown', e=>{
     if(e.key !== 'Enter' || !e.target.value.trim()) return;
     const text = e.target.value.trim();
-    if(CHAT_SENDABLE.includes(activeChatTab)){
+    const activeTabData = chatTabsData[activeChatTab];
+    if(activeTabData && activeTabData.pm){
+      sendWS({ type:'chat:whisper', targetUsername: activeTabData.pmTarget, text });
+    } else if(CHAT_SENDABLE.includes(activeChatTab)){
       sendWS({ type:'chat', channel:activeChatTab, text });
     } else {
       logChat('sistema', 'Este canal é só leitura — fale em Global, Local ou Guild.');
@@ -4186,10 +4502,16 @@
     predio:   { top:'#a4895a', l:'#3a2c1a', r:'#4f3c22', hw:BLOCK_HW*1.3, hh:BLOCK_HH*1.3 },
     fonte:    { top:'#5f88a8', l:'#20343f', r:'#2a4450', hw:BLOCK_HW*0.75, hh:BLOCK_HH*0.75 },
     arvore:   { top:'#3f6b34', l:'#2a2015', r:'#352718', hw:BLOCK_HW*0.35, hh:BLOCK_HH*0.35 },
-    // Pilar decorativo das arenas de Torre — a cor de verdade vem de
+    // Bloco de muralha das arenas de Torre — a cor de verdade vem de
     // s.color (definido por elemento em buildTowerArenaScenery), esta
-    // entrada só fornece o footprint/lados neutros de fallback.
-    arenaPilar: { top:'#6a5a3a', l:'#171310', r:'#221c17', hw:BLOCK_HW*0.55, hh:BLOCK_HH*0.55 },
+    // entrada só fornece o footprint/lados neutros de fallback. hw/hh=27
+    // (não a conta antiga de BLOCK_HW/HH*0.55=21.45/11) foi calibrado pra
+    // fechar sem buraco nem sobreposição visível: o espaçamento real entre
+    // blocos na muralha é TILE_STEP (mesmo do piso) convertido pra tela via
+    // WORLD_SCALE (~63.7px), enquanto o footprint aqui escala por
+    // SPRITE_SCALE (fator diferente, ~1.214 vs ~1.882) — hw=27 é o valor que
+    // faz `hw*SPRITE_SCALE*2` bater com esse espaçamento de tela.
+    arenaPilar: { top:'#6a5a3a', l:'#171310', r:'#221c17', hw:27, hh:27 },
   };
   // Escurece/clareia uma cor hex por um fator (0-1 escurece, >1 clareia) —
   // usado pra variar o tom do piso e dos pilares de cada arena de Torre
@@ -4201,22 +4523,43 @@
     const b = Math.max(0,Math.min(255,Math.round(parseInt(h.substr(4,2),16)*factor)));
     return `rgb(${r},${g},${b})`;
   }
-  // Monta os 4 pilares que marcam os cantos da "área quadrada" de uma Torre
-  // (um por elemento, incluindo a Central) — mesma técnica de sempre
-  // (drawSceneryBlock procedural), só trocando a cor pela do elemento da Torre.
+  // Muralha real no perímetro da arena da Torre (pedido do usuário,
+  // 26/09/2026, com print de referência de outro jogo top-down): ANTES eram
+  // só 4 pilares soltos nos cantos (raio 170, bem pra dentro da parede).
+  // Agora é uma fileira CONTÍNUA de blocos modulares (mesmo espaçamento
+  // TILE_STEP do piso, pra fechar sem buraco) cobrindo os 4 lados do
+  // quadrado de colisão de verdade (HALF=220 == TOWER_ARENA_HALF_PX no
+  // servidor — os dois têm que bater). Cada bloco usa a MESMA técnica de
+  // sempre (drawSceneryBlock: base + face erguida + topo com o sprite real
+  // do elemento), só repetida em vez de só 4 posições soltas. Por entrar no
+  // `scenery` normal (que já vai pro drawList com baseCart e z-sort por Y —
+  // ver draw() mais abaixo), a muralha desenha ATRÁS de quem estiver mais
+  // longe da câmera e NA FRENTE de quem estiver mais perto dela,
+  // automaticamente, sem tratamento especial: exatamente o comportamento da
+  // imagem de referência (monstro/jogador some atrás da parede de cima,
+  // fica na frente da de baixo).
   function buildTowerArenaScenery(point, tower, wallSpriteId){
     if(!point) return [];
-    const R = 170, color = tower ? tower.color : '#bfa15f';
+    const HALF = 220; // == TOWER_ARENA_HALF_PX no servidor (huntEngine.js)
+    const color = tower ? tower.color : '#bfa15f';
+    const count = Math.max(4, Math.round((HALF*2)/TILE_STEP)); // ~13 blocos por lado, mesmo espaçamento do piso
+    const step = (HALF*2)/count;
+    const blocks = [];
     // wallSpriteId (Visual Dinâmico por Elemento, pedido 26/09/2026): sprite
-    // REAL do atlas Tibia pro topo dos 4 pilares da arena — ver
-    // TOWER_ELEMENT_TILE_THEME e drawSceneryBlock (topSpriteId). null/undefined
-    // pra Torre Central (sem elemento) mantém o topo de cor lisa de sempre.
-    return [
-      { type:'arenaPilar', x:point.x-R, y:point.y,       h:64, color, wallSpriteId },
-      { type:'arenaPilar', x:point.x+R, y:point.y,       h:64, color, wallSpriteId },
-      { type:'arenaPilar', x:point.x,   y:point.y-R*0.55, h:64, color, wallSpriteId },
-      { type:'arenaPilar', x:point.x,   y:point.y+R*0.55, h:64, color, wallSpriteId },
-    ];
+    // REAL do atlas Tibia pro topo de cada bloco — ver TOWER_ELEMENT_TILE_THEME
+    // e drawSceneryBlock (topSpriteId). null/undefined pra Torre Central
+    // (sem elemento) mantém o topo de cor lisa de sempre.
+    for(let i=0;i<=count;i++){
+      const gx = point.x - HALF + i*step;
+      blocks.push({ type:'arenaPilar', x:gx, y:point.y-HALF, h:70, color, wallSpriteId });
+      blocks.push({ type:'arenaPilar', x:gx, y:point.y+HALF, h:70, color, wallSpriteId });
+    }
+    for(let i=1;i<count;i++){ // i=0 e i=count (cantos) já saíram no laço acima -- não duplica
+      const gy = point.y - HALF + i*step;
+      blocks.push({ type:'arenaPilar', x:point.x-HALF, y:gy, h:70, color, wallSpriteId });
+      blocks.push({ type:'arenaPilar', x:point.x+HALF, y:gy, h:70, color, wallSpriteId });
+    }
+    return blocks;
   }
   // Bloco de cenário (parede/prédio/árvore/pilar) em grade reta: um retângulo
   // de "base" (o footprint do objeto no chão, visto de cima) e um retângulo
@@ -4410,12 +4753,48 @@
     ctx.strokeStyle = isBoss ? '#ff9a80' : '#f0d38a';
     ctx.lineWidth = 1;
     ctx.strokeRect(barX-0.5, barY-0.5, barW+1, barH+1);
-    ctx.fillStyle = isBoss ? '#ff5030' : '#c94040';
+    // Cor da vida por faixa (pedido do usuário, 26/09/2026 -- ver hpBarColor
+    // abaixo) -- ANTES era sempre um vermelho fixo (isBoss?'#ff5030':'#c94040'),
+    // não refletia a vida real do alvo (um chefe com 90% de vida parecia tão
+    // crítico quanto um com 5%).
+    ctx.fillStyle = hpBarColor(pct);
     ctx.fillRect(barX, barY, barW*pct, barH);
     // nome do monstro, centralizado acima da barra
     ctx.font = `${isBoss?'bold ':''}10px "JetBrains Mono"`; ctx.textAlign = 'center';
     ctx.fillStyle = isBoss ? '#ff9a80' : '#f0d38a';
     ctx.fillText(name || '', cx, barY - 6);
+  }
+  // Cor da barra de vida por faixa de HP (pedido do usuário, 26/09/2026):
+  // verde com vida alta, amarelo na faixa média, vermelho com vida baixa --
+  // igual Tibia/Huntera. Usada por toda barra de vida flutuante do jogo
+  // (jogador local, outros jogadores, monstro comum e placa de alvo acima).
+  function hpBarColor(pct){
+    if(pct > 0.6) return '#3fbf4a';
+    if(pct > 0.3) return '#e0c23a';
+    return '#d64545';
+  }
+  // Nome flutuante simples (monstro comum, fora de foco) -- mesma borda
+  // preta + texto branco do nick de jogador (drawNickAndStar), sem a
+  // estrela de prestígio (que só existe pra conta de jogador). Antes só o
+  // monstro selecionado como ALVO (drawTargetPlate) mostrava nome -- um
+  // monstro comum ficava só com a barrinha, sem nenhum texto (pedido do
+  // usuário: nome flutuante em TODO mundo, não só no alvo).
+  function drawFloatingName(cx, y, name){
+    ctx.font = `${Math.round(10*SPRITE_SCALE)}px "JetBrains Mono"`;
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.strokeText(name||'', cx, y);
+    ctx.fillStyle = '#fff'; ctx.fillText(name||'', cx, y);
+  }
+  // Barra de vida flutuante genérica (jogador OU monstro comum fora de
+  // foco) -- fundo preto fino (borda) + preenchimento colorido por faixa de
+  // HP (hpBarColor), largura proporcional a hpPct. `y` é o TOPO da barra
+  // (mesma convenção que o `fillRect` que já existia aqui antes).
+  function drawFloatingHpBar(cx, y, hpPct, w, h){
+    const pct = Math.max(0, Math.min(1, hpPct==null?1:hpPct));
+    ctx.fillStyle = '#000';
+    ctx.fillRect(cx-w/2-1, y-1, w+2, h+2);
+    ctx.fillStyle = hpBarColor(pct);
+    ctx.fillRect(cx-w/2, y, w*pct, h);
   }
   function findMonsterById(id){
     for(const p of activeHunt.lurePoints){ const m = p.monsters.find(mm=>mm.id===id); if(m) return m; }
@@ -4807,39 +5186,12 @@
         }
       }
     }
-    // Paredes reais no perímetro da arena da Torre (pedido do usuário,
-    // 26/09/2026: "fechar as paredes nas bordas"). Antes só existiam 4
-    // pilares decorativos soltos nos cantos (buildTowerArenaScenery, ainda
-    // desenhados abaixo, inalterados) -- nenhuma muralha de verdade fechava
-    // o quadrado. Aqui a muralha é desenhada RASA (mesma técnica/plano do
-    // piso, sem altura/volume 3D) de propósito: uma parede "de verdade" com
-    // volume/altura (drawSceneryBlock) do lado mais perto da câmera tampa a
-    // visão do personagem quando ele encosta nela -- problema clássico de
-    // sala fechada em câmera isométrica. Rasa, ela fecha visualmente o
-    // ambiente (e a colisão de verdade já impede atravessar -- ver
-    // TOWER_ARENA_HALF_PX/clampToTowerArena em huntEngine.js) sem nunca
-    // esconder ninguém. HALF tem que bater com TOWER_ARENA_HALF_PX do
-    // servidor -- os dois lados (desenho e colisão física) precisam
-    // concordar, senão a parede aparece separada de onde o jogador
-    // realmente para.
-    if(isTowerArena){
-      const HALF = 220; // == TOWER_ARENA_HALF_PX no servidor (huntEngine.js)
-      const arenaCenter = activeHunt.lurePoints[0];
-      const wallCountPerSide = Math.max(4, Math.round((HALF*2)/TILE_STEP));
-      const wallStep = (HALF*2)/wallCountPerSide;
-      const wallFill = shadeHexColor(arenaColor, 0.14); // mais escuro que o piso (0.22-0.30), pra marcar a borda mesmo sem tema/atlas (ex: Torre Central)
-      const wallSpriteId = towerThemeReady ? towerTheme.wall : null;
-      for(let i=0;i<=wallCountPerSide;i++){
-        const gx = arenaCenter.x - HALF + i*wallStep;
-        let s = toScreen(gx, arenaCenter.y-HALF); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
-        s = toScreen(gx, arenaCenter.y+HALF); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
-      }
-      for(let i=1;i<wallCountPerSide;i++){ // i=0 e i=wallCountPerSide (cantos) já saíram no loop acima
-        const gy = arenaCenter.y - HALF + i*wallStep;
-        let s = toScreen(arenaCenter.x-HALF, gy); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
-        s = toScreen(arenaCenter.x+HALF, gy); drawThemedFloorTile(s.x, s.y, wallSpriteId, wallFill);
-      }
-    }
+    // Muralha da arena da Torre: desenhada como cenário 3D de verdade agora
+    // (ver buildTowerArenaScenery, chamada logo abaixo na montagem de
+    // `scenery`) -- entra no drawList normal com z-sort por Y, então some
+    // atrás de quem estiver mais longe da câmera e fica na frente de quem
+    // estiver mais perto, igual a imagem de referência do usuário
+    // (26/09/2026). Nada a desenhar aqui na camada de piso.
 
     if(activeHunt.running && activeHunt.lurePoints.length){
       const pts = activeHunt.lurePoints;
@@ -5035,7 +5387,13 @@
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
         drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
-      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember });
+      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember,
+      // Barra de vida flutuante (pedido do usuário, 26/09/2026) -- hp/hpMax
+      // de QUALQUER jogador só chegam aqui a partir de agora (ver
+      // broadcastPositions em server.js); null/null em snapshots antigos ou
+      // antes do primeiro tick não quebra (drawFloatingHpBar trata null como
+      // barra cheia, ver função).
+      hpPct: (rp.hpMax ? rp.hp/rp.hpMax : null) });
     });
 
     drawList.push({ baseCart:{x:player.x,y:player.y}, draw:()=>{
@@ -5061,7 +5419,12 @@
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
         : anim;
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
-    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK });
+    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK,
+    // Barra de vida flutuante do próprio jogador (pedido do usuário,
+    // 26/09/2026) -- antes só existia o HP fixo do canto inferior esquerdo;
+    // player.hp/hpMax já vêm do snapshot de caçada de sempre (ver
+    // applyHuntSnapshot), só faltava desenhar em cima da cabeça também.
+    hpPct: (player.hpMax ? player.hp/player.hpMax : null) });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     drawList.forEach(item=> item.draw());
@@ -5084,9 +5447,19 @@
         if(currentTargetMonsterId && item.monsterId === currentTargetMonsterId){
           drawTargetPlate(s.x, headY-30*SPRITE_SCALE, item.monsterName, item.hpPct, item.monsterIsBoss);
         } else {
-          ctx.fillStyle='#000'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE, 4*SPRITE_SCALE);
-          ctx.fillStyle='#c94040'; ctx.fillRect(s.x-12*SPRITE_SCALE, headY-24*SPRITE_SCALE, 24*SPRITE_SCALE*item.hpPct, 4*SPRITE_SCALE);
+          // Nome flutuante SEMPRE (pedido do usuário, 26/09/2026) -- antes só
+          // o monstro selecionado como alvo (ramo acima) mostrava nome; um
+          // monstro comum fora de foco ficava só com a barrinha, sem texto
+          // nenhum. Cor da barra agora por faixa de HP (hpBarColor), não mais
+          // um vermelho fixo.
+          drawFloatingName(s.x, headY-30*SPRITE_SCALE, item.monsterName);
+          drawFloatingHpBar(s.x, headY-24*SPRITE_SCALE, item.hpPct, 24*SPRITE_SCALE, 4*SPRITE_SCALE);
         }
+      } else if(item.hpPct!=null){
+        // Barra de vida flutuante de jogador (local e outros, pedido do
+        // usuário, 26/09/2026) -- fica entre o nick (headY-10, acima) e a
+        // cabeça do boneco (headY), sem tampar nenhum dos dois.
+        drawFloatingHpBar(s.x, headY-5*SPRITE_SCALE, item.hpPct, 32*SPRITE_SCALE, 4*SPRITE_SCALE);
       }
     });
 
@@ -5658,7 +6031,7 @@
       renderSkillTreeIfOpen(); renderTowersIfOpen();
       renderTargetModeOptions();
       refreshTacticsUI();
-      renderAttrs(); renderParty(); renderInventoryIfOpen(); renderWikiIfOpen(); renderAltar(); renderFriends(); renderShop();
+      renderAttrs(); renderParty(); renderInventoryIfOpen(); renderWikiIfOpen(); renderAltar(); renderFriends(); renderShop(); renderFusionIfOpen();
       renderCoinShopIfOpen(); renderEnchantIfOpen(); renderProfessionsIfOpen(); updateRankPill();
       renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen();
       if(currentTrade) renderTrade();
@@ -5704,12 +6077,17 @@
           break;
         case 'chat':
           if(msg.channel === 'sussurro'){
-            const label = msg.self ? `Você → <b>${escapeHtml(msg.to)}</b>` : `<b>${escapeHtml(msg.from)}</b> → você`;
-            logChat('sussurro', `${label}: ${escapeHtml(msg.text)}`);
+            // Cada conversa privada vira/usa sua própria aba pm:<nick> (ver
+            // openPmTab) em vez da antiga aba única "Sussurro" só-leitura.
+            const otherNick = msg.self ? msg.to : msg.from;
+            const pmId = openPmTab(otherNick, false);
+            const label = msg.self ? `Você` : `<b>${escapeHtml(otherNick)}</b>`;
+            logChat(pmId, `${label}: ${escapeHtml(msg.text)}`);
           } else {
             logChat(msg.channel, `<b>${escapeHtml(msg.from)}</b>: ${escapeHtml(msg.text)}`);
           }
           break;
+        case 'item:mythicAnnounce': handleMythicAnnounce(msg); break;
         case 'positions':
           remotePlayers.clear();
           msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
@@ -5785,6 +6163,7 @@
         // futuros, mas não há pra onde mostrar isso ainda).
         case 'pvp:bettingWindowOpen':
           pvpLastBettingWindowCloseAt = msg.closesAt;
+          refreshPvpTournamentIfOpen();
           break;
         case 'pvp:opponentReveal': {
           pvpArenaFichas[msg.arenaId] = { playerA: msg.playerA, playerB: msg.playerB };
@@ -5793,9 +6172,24 @@
           if (souEuNoConfronto && window.pvpOpponentModal) {
             window.pvpOpponentModal.open(msg.playerA, msg.playerB, pvpLastBettingWindowCloseAt || (Date.now() + 3 * 60 * 1000));
           }
+          refreshPvpTournamentIfOpen();
+          break;
+        }
+        // Central do Torneio (26/09/2026): odds mudam a cada aposta de
+        // QUALQUER jogador -- só corrige o número em memória + re-renderiza
+        // se a tela estiver aberta, sem precisar pedir 'pvp:getState' de
+        // novo (esse broadcast já é bem mais frequente que os outros 2).
+        case 'pvp:oddsChanged': {
+          const match = pvpTournamentState && findPvpMatchByArenaId(msg.arenaId);
+          if (match) { match.odds = msg.odds; renderPvpTournamentIfOpen(); }
           break;
         }
         case 'pvp:arenaResolved': {
+          // Cache CRU por arenaId, sempre -- inclusive pra confrontos que não
+          // são meus, pra "Assistir Ao Vivo" da Central do Torneio poder abrir
+          // o replay de qualquer arena (decisão 19 do doc, ver
+          // pvpthOpenSpectatorView mais abaixo).
+          pvpArenaResolvedCache[msg.arenaId] = msg;
           const fichas = pvpArenaFichas[msg.arenaId];
           const meuIdArena = SELECTED_CHARACTER && SELECTED_CHARACTER.id;
           const souEuNaArena = fichas && meuIdArena && (fichas.playerA.characterId === meuIdArena || fichas.playerB.characterId === meuIdArena);
@@ -5805,6 +6199,7 @@
             window.pvpArenaView.loadMatch(msg, fichas.playerA, fichas.playerB);
             window.pvpArenaView.play();
           }
+          refreshPvpTournamentIfOpen();
           break;
         }
         case 'error': logLoot(`⚠️ ${msg.error}`); break;
@@ -6318,10 +6713,38 @@
       renderSkillTreeIfOpen();
     }
     if(msg.forType === 'npc:buy'){
-      if(msg.ok) logLoot(`🛒 Comprou ${msg.qty}x ${msg.item.name} por ${msg.cost} Gold.`);
+      if(msg.ok){
+        // receivedQty (26/09/2026) -- quando o item vende em pacote (ex:
+        // Cristal de Fusão, 1.000.000 por compra), receivedQty é diferente
+        // de msg.qty (que é só quantas VEZES comprou, não quanto recebeu).
+        const gotQty = msg.receivedQty || msg.qty;
+        const costLabel = msg.currency === 'elementalCoin' ? `${msg.cost} Elemental Coin` : `${msg.cost} Gold`;
+        if(msg.item.kind === 'gold'){
+          // Saco de Gold (Teste, 26/09/2026) -- credita direto na carteira,
+          // não é "comprou Nx item", é "recebeu Gold" mesmo.
+          logLoot(`🪙 Recebeu ${gotQty.toLocaleString('pt-BR')} Gold na carteira, pago com ${costLabel}.`);
+        } else {
+          logLoot(`🛒 Comprou ${gotQty.toLocaleString('pt-BR')}x ${msg.item.name} por ${costLabel}.`);
+        }
+      }
       else if(msg.reason === 'apenas_na_cidade_principal') logLoot('⚠️ Só é possível comprar de NPCs na Cidade Principal.');
       else if(msg.reason === 'ouro_insuficiente') logLoot('⚠️ Ouro insuficiente para essa compra.');
+      else if(msg.reason === 'elemental_coin_insuficiente') logLoot('⚠️ Elemental Coin insuficiente para essa compra.');
       else logLoot(`⚠️ Compra falhou: ${msg.reason}`);
+      renderFusionIfOpen(); // compra de Cristal de Fusão muda a lista de fundíveis
+    }
+    // FUSÃO DE EQUIPAMENTOS — ver huntEngine.fuseItem() (servidor sempre
+    // autoritativo; renderFusion() já mostrava a prévia de "dá ou não dá"
+    // antes de clicar, este ack é só o resultado real).
+    if(msg.forType === 'item:fuse'){
+      if(msg.ok){
+        logLoot(`⚗️ Fusão concluída: <b style="color:${RARITY_COLORS[msg.targetRarity]||'#a99872'};">${escapeHtml(msg.item.name)}</b> (${CRAFT_RARITY_LABEL_CAP_CLIENT[msg.targetRarity]||msg.targetRarity})${msg.isMythic?' — 🔺 MÍTICA!':''}${msg.wentToTrash?' (Mochila cheia — foi pra Lixeira)':''}`);
+      } else if(msg.reason === 'itens_insuficientes') logLoot(`⚠️ Fusão precisa de ${msg.need} cópias iguais desse item (você tem ${msg.have}).`);
+      else if(msg.reason === 'ouro_insuficiente') logLoot(`⚠️ Ouro insuficiente pra Fusão (precisa de ${(msg.cost||0).toLocaleString('pt-BR')}).`);
+      else if(msg.reason === 'cristais_insuficientes') logLoot(`⚠️ Cristal de Fusão insuficiente (precisa de ${msg.need}, você tem ${msg.have}).`);
+      else if(msg.reason === 'raridade_maxima') logLoot('⚠️ Esse item já está na raridade máxima (Mítica) — não dá pra fundir mais.');
+      else if(msg.reason) logLoot(`⚠️ Fusão falhou: ${msg.reason}`);
+      renderFusionIfOpen(); renderInventoryIfOpen();
     }
     if(msg.forType === 'friend:add'){
       if(msg.ok) logLoot('👤 Amigo adicionado.');
@@ -6575,6 +6998,45 @@
       }
       renderBattlePassIfOpen();
     }
+    // Loja de PvP + Central do Torneio (integradas em 26/09/2026) — ver
+    // comentário de topo de cada seção (procure "LOJA DE PVP" / "CENTRAL DO
+    // TORNEIO" mais abaixo neste arquivo) pro fio completo até o servidor.
+    if(msg.forType === 'pvp:shop:getState'){
+      if(msg.ok) pvpShopState = msg.shop;
+      renderPvpShopIfOpen();
+    }
+    if(msg.forType === 'pvp:shop:buy'){
+      if(msg.ok){ pvpShopState = msg.shop; logLoot(`🏪 Comprado: ${msg.item.icon} ${msg.item.name} — foi para sua Mochila.`); }
+      else {
+        const reasonMap = { item_invalido:'item inválido.', limite_semanal_atingido:'limite semanal desse item já foi atingido.', moedas_insuficientes:'Moedas PvP insuficientes.', mochila_cheia:'Mochila cheia — abra espaço antes de comprar.' };
+        logLoot(`⚠️ Não foi possível comprar: ${reasonMap[msg.reason] || msg.reason}`);
+        if(msg.shop) pvpShopState = msg.shop;
+      }
+      renderPvpShopIfOpen();
+      renderInventoryIfOpen();
+    }
+    if(msg.forType === 'pvp:shop:use'){
+      if(msg.ok) logLoot(`✨ Usou ${msg.item.icon} ${msg.item.name} — buff ativo por mais tempo.`);
+      else {
+        const reasonMap = { item_nao_encontrado_na_mochila:'esse pergaminho não está na sua Mochila.', item_invalido:'item inválido.' };
+        logLoot(`⚠️ Não foi possível usar: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      if(msg.shop) pvpShopState = msg.shop;
+      renderPvpShopIfOpen();
+      renderInventoryIfOpen();
+    }
+    if(msg.forType === 'pvp:getState'){
+      if(msg.ok) pvpTournamentState = msg.tournament;
+      renderPvpTournamentIfOpen();
+    }
+    if(msg.forType === 'pvp:bet'){
+      if(msg.ok){ logLoot(`🪙 Aposta registrada na Arena.`); if(msg.odds){ const m = findPvpMatchByArenaId(pvpthBetTargetArenaId); if(m) m.odds = msg.odds; } }
+      else {
+        const reasonMap = { arena_nao_encontrada:'essa arena não existe mais (a rodada pode já ter fechado).', valor_invalido:'valor de aposta inválido.', ouro_insuficiente:'ouro insuficiente para essa aposta.', apostas_encerradas:'as apostas dessa arena já encerraram.' };
+        logLoot(`⚠️ Aposta não realizada: ${reasonMap[msg.reason] || msg.reason}`);
+      }
+      renderPvpTournamentIfOpen();
+    }
   }
 
   function showRankUpOverlay(){
@@ -6610,6 +7072,64 @@
     overlay.classList.add('show');
     setTimeout(()=> overlay.classList.remove('show'), 2600);
   }
+
+  /* =========================================================
+     FUSÃO MÍTICA — aviso pra TODOS os jogadores quando alguém funde/
+     conquista um item Mítica (pedido do usuário, 26/09/2026). Um único
+     broadcast do servidor ('item:mythicAnnounce', ver server.js) alimenta
+     DUAS telas: o overlay central acima (broadcast-wide, ver CSS
+     #mythic-announce-overlay) e uma linha clicável no chat Sistema que
+     reabre um modal de detalhe do item — mesma ideia do craft-reveal
+     acima, só que PÚBLICA em vez de pessoal, e com o nick de quem
+     conquistou. mythicAnnounceLog guarda o payload de cada anúncio desta
+     sessão do cliente (só em memória -- não precisa persistir: o link só
+     precisa funcionar enquanto a mensagem ainda está visível no chat).
+     ========================================================= */
+  let mythicAnnounceSeq = 0;
+  const mythicAnnounceLog = new Map();
+  function handleMythicAnnounce(msg){
+    const id = ++mythicAnnounceSeq;
+    mythicAnnounceLog.set(id, msg);
+    showMythicAnnounceOverlay(msg);
+    const isSelf = msg.playerNick === (player.nick || AUTH_USERNAME);
+    const who = isSelf ? 'Você' : `<b>${escapeHtml(msg.playerNick)}</b>`;
+    logChat('sistema', `⚡ ${who} conquistou <b style="color:#ff2b2b;">${escapeHtml(msg.item.name||msg.item.id)}</b> (Mítica)! <span class="chat-mythic-link" data-mythic-id="${id}">Ver item</span>`);
+  }
+  function showMythicAnnounceOverlay(msg){
+    const overlay = document.getElementById('mythic-announce-overlay');
+    const ring = document.getElementById('mac-icon-ring');
+    const nameEl = document.getElementById('mac-name');
+    const subEl = document.getElementById('mac-sub');
+    const it = msg.item;
+    ring.innerHTML = `${resolveItemIconHtml(it)}${rarityFrameHtml('mítica')}`;
+    nameEl.textContent = it.name || it.id;
+    subEl.textContent = `conquistado por ${msg.playerNick}`;
+    // reinicia a animação CSS mesmo se 2 anúncios chegarem em sequência rápida
+    // (mesma técnica do craft-reveal acima)
+    overlay.classList.remove('show'); void overlay.offsetWidth;
+    overlay.classList.add('show');
+    setTimeout(()=> overlay.classList.remove('show'), 5000);
+  }
+  function openItemShowcaseModal(id){
+    const msg = mythicAnnounceLog.get(id);
+    if(!msg) return;
+    const it = msg.item;
+    const modal = document.getElementById('item-showcase-modal');
+    document.getElementById('item-showcase-icon-ring').innerHTML = `${resolveItemIconHtml(it)}${rarityFrameHtml(it.rarity||'mítica')}`;
+    const nameEl = document.getElementById('item-showcase-name');
+    nameEl.textContent = it.name || it.id;
+    nameEl.style.color = RARITY_COLORS[it.rarity] || '#ff2b2b';
+    document.getElementById('item-showcase-sub').innerHTML = `Mítica &middot; conquistado por <b>${escapeHtml(msg.playerNick)}</b>`;
+    document.getElementById('item-showcase-stats').innerHTML = it.slot ? formatStats(getItemTotalStatsClient(it), it) : escapeHtml(it.description||'');
+    modal.classList.add('open');
+  }
+  // Delegado no container do chat -- funciona pra QUALQUER linha antiga
+  // ainda visível no histórico de mensagens (até 150, ver logChat), não só
+  // pra mensagem que acabou de chegar.
+  chatMsgEl.addEventListener('click', e=>{
+    const link = e.target.closest('[data-mythic-id]');
+    if(link) openItemShowcaseModal(Number(link.dataset.mythicId));
+  });
 
   /* =========================================================
      TÁTICA: Postura / Alvo / SQM — barra compacta persistente no rodapé.
@@ -7052,9 +7572,13 @@
       return;
     }
     const isLeader = party.leaderUsername === AUTH_USERNAME;
-    list.innerHTML = party.members.map(u=>`
-      <div class="party-row"><span class="pname">${u===party.leaderUsername?'<span class="crown">👑</span> ':''}${u}${u===AUTH_USERNAME?' (você)':''}</span><span>${rateio && rateio.members ? (()=>{ const m = rateio.members.find(x=>x.username===u); return m ? `${Math.round(m.gasto).toLocaleString('pt-BR')} gp` : ''; })() : ''}</span></div>
-    `).join('');
+    // Pedido do usuário (26/09/2026): o painel mostrava a CONTA (party.members
+    // é sempre username) em vez do nick do personagem -- party.nicks já vem
+    // do servidor pra isso (ver comentário em server.js), só faltava usar
+    // aqui (o seletor de Alvo e o "Membro da party" já usavam corretamente).
+    list.innerHTML = party.members.map(u=>{ const nick = escapeHtml((party.nicks && party.nicks[u]) || u); return `
+      <div class="party-row"><span class="pname">${u===party.leaderUsername?'<span class="crown">👑</span> ':''}${nick}${u===AUTH_USERNAME?' (você)':''}</span><span>${rateio && rateio.members ? (()=>{ const m = rateio.members.find(x=>x.username===u); return m ? `${Math.round(m.gasto).toLocaleString('pt-BR')} gp` : ''; })() : ''}</span></div>
+    `; }).join('');
     // Rateio de custo em grupo: iguala o Gasto (poções/suprimentos) entre os
     // membros, loot de cada um continua individual (ver toggleCostSplit no
     // servidor). Só o Líder liga; parar exige o SIM de todos os membros.
@@ -7696,7 +8220,12 @@
   // clicar no monstro não faz nada": o clique nunca chegava a disparar.
   // Corrigido botando o redesenho do Wiki na mesma leva throttled acima.
   function renderWikiIfOpen(){ if(wikiModal && wikiModal.classList.contains('open')) renderWiki(); }
-  const RARITY_COLORS = { comum:'#a99872', incomum:'#6fae6f', rara:'#7fc6ff', 'épica':'#b98af0', 'lendária':'#f0d38a' };
+  // 'mítica' (pedido do usuário, 26/09/2026): 6ª raridade, reservada de
+  // propósito desde a Infusão Tier 6 (ver ITEM_TIER_BY_RARITY/TIER_ATTRIBUTE_SLOTS
+  // abaixo e o mesmo comentário em huntEngine.js) -- só a COR/MOLDURA visual
+  // entra aqui agora; nenhuma tabela de loot/craft/preço foi mexida, então
+  // nenhum item chega nessa raridade ainda (decisão de design em aberto).
+  const RARITY_COLORS = { comum:'#a99872', incomum:'#6fae6f', rara:'#7fc6ff', 'épica':'#b98af0', 'lendária':'#f0d38a', 'mítica':'#ff2b2b' };
   // Item 122 da lista de tarefas (21/09/2026): "itens craftados não aparece
   // o preço e não da a opção de vender eles no npc" -- na verdade a Venda
   // Rápida já aceita QUALQUER item da Mochila (inclusive equipamento
@@ -7706,7 +8235,7 @@
   // entrada lá, vinda da wiki), então pareciam "sem preço" mesmo tendo.
   // Espelho fiel de NPC_FERREIRO_BRAN_PRICES (huntEngine.js) -- preço real
   // por raridade que o NPC Ferreiro Bran paga na Venda Rápida.
-  const NPC_FERREIRO_BRAN_PRICES = { comum: 2, incomum: 5, rara: 8, 'épica': 18, 'lendária': 40 };
+  const NPC_FERREIRO_BRAN_PRICES = { comum: 2, incomum: 5, rara: 8, 'épica': 18, 'lendária': 40, 'mítica': 90 }; // 'mítica' 26/09/2026 -- preview aproximado (só usado pra MOSTRAR o preço antes de vender; o servidor sempre decide o valor real, ver huntEngine.js)
   function npcSellPriceFor(it){ return (NPC_FERREIRO_BRAN_PRICES[it && it.rarity] ?? 2) * (it && it.qty || 1); }
   // Molduras reais por raridade (assets/rarity-frames/, origem: projeto "Sentinel"
   // do usuário, mapeamento por raridade confirmado com ele) — sobrepostas ao
@@ -7719,6 +8248,7 @@
     rara: URL_BASE + 'rarity-frames/rarity_frame_rara.png',
     'épica': URL_BASE + 'rarity-frames/rarity_frame_epica.png',
     'lendária': URL_BASE + 'rarity-frames/rarity_frame_lendaria.png',
+    'mítica': URL_BASE + 'rarity-frames/rarity_frame_mitica.png',
   };
   function rarityFrameHtml(rarity){
     const url = RARITY_FRAME_URL[rarity];
@@ -8489,7 +9019,7 @@
       const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
       const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
       const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
-      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}`;
+      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
       invItemTooltip.style.display = 'block';
     });
     slot.addEventListener('mousemove', positionInvTooltip);
@@ -8702,7 +9232,7 @@
         // então itens craftados (sem entrada em ITEM_INFO, que só cobre
         // loot de monstro) pareciam não ter preço/opção de venda nenhuma.
         const priceLine = invTab==='mochila' ? `<span class="tt-price">Venda ao NPC: ${npcSellPriceFor(it)} ouro${it.qty>1?` (x${it.qty})`:''}</span>` : '';
-        invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats)}</span>`:''}${healLine}${priceLine}`;
+        invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}${healLine}${priceLine}`;
         invItemTooltip.style.display = 'block';
       });
       slot.addEventListener('mousemove', positionInvTooltip);
@@ -8855,7 +9385,7 @@
       const enchantLine = item.enchantLevel ? ` · +${item.enchantLevel}` : '';
       const infusionLine = item.infusionGrade ? ` · Grade ${item.infusionGrade}` : '';
       const descLine = item.description ? `<span class="hint" style="font-style:italic;">${item.description}</span>` : '';
-      invItemTooltip.innerHTML = `<b>${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats)}</span>`;
+      invItemTooltip.innerHTML = `<b>${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats, item)}</span>`;
       invItemTooltip.style.display = 'block';
     });
     el.addEventListener('mousemove', positionInvTooltip);
@@ -10546,12 +11076,21 @@
       const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
       const iconHtml = it.icon
         ? `<img src="${equipIconUrl(it.icon)}" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" onerror="handleEquipIconError(this)" />`
-        : `<span style="color:${rarityColor};font-size:16px;">${it.kind==='pouch' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
+        : `<span style="color:${rarityColor};font-size:16px;">${it.kind==='gold' ? '🪙' : it.kind==='pouch' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
+      // currency/packQty/goldAmount (26/09/2026, junto com Cristal de Fusão
+      // e Saco de Gold) -- espelha huntEngine.js: item pode custar Elemental
+      // Coin (moeda cash) em vez de Gold, pode render mais de 1 unidade por
+      // compra (packQty, item de Mochila) ou creditar Gold direto na
+      // carteira (goldAmount, kind:'gold'). Nenhum outro item da loja usa
+      // isso hoje.
+      const costLabel = it.currency === 'elementalCoin' ? `${it.cost} 💎 Coin` : `${it.cost} Gold`;
+      const bulkAmount = it.kind==='gold' ? it.goldAmount : it.packQty;
+      const packLine = bulkAmount > 1 ? `<span class="sdesc" style="color:var(--gold-bright);">Recebe ${bulkAmount.toLocaleString('pt-BR')}${it.kind==='gold' ? ' Gold' : ''} de uma vez</span>` : '';
       return `
       <div class="shop-item-row">
         <span class="sicon">${iconHtml}</span>
-        <span class="sname-col"><span class="sname">${it.name}</span>${it.description ? `<span class="sdesc">${it.description}</span>` : ''}</span>
-        <span class="scost">${it.cost} Gold</span>
+        <span class="sname-col"><span class="sname">${it.name}</span>${it.description ? `<span class="sdesc">${it.description}</span>` : ''}${packLine}</span>
+        <span class="scost">${costLabel}</span>
         <button class="party-btn primary" data-buy-item="${it.id}">Comprar</button>
       </div>`;
     }).join('');
@@ -10650,7 +11189,7 @@
   // aqui é só a CHAVE do painel de Encantamento/Infusão que muda.
   const ENCHANT_SLOTS = ['weapon','offhand','helmet','armor','boots','legs','accessory1','accessory2','amulet'];
   const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', legs:'Calças', accessory1:'Acessório 1', accessory2:'Acessório 2', amulet:'Colar' };
-  const RARITY_STAT_MULT = { comum:1, incomum:1.4, rara:2, 'épica':3, 'lendária':4.5 };
+  const RARITY_STAT_MULT = { comum:1, incomum:1.4, rara:2, 'épica':3, 'lendária':4.5, 'mítica':7 }; // 'mítica' 26/09/2026, espelha huntEngine.js — ver comentário lá
   const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, legs:{def:5}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3}, gloves:{atk:3,critPct:2} };
   const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %' };
   const ENCHANT_MAX_LEVEL = 10;
@@ -10719,10 +11258,32 @@
     getInfusionScaledSecondaryClient(item).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
     return out;
   }
-  function formatStats(stats){
+  // Pedido do usuário (26/09/2026): arma de Cajado (weaponType:'staff') é
+  // dano MÁGICO -- mostrar "Ataque" genérico nela confundia com dano físico.
+  // weaponType já vem em todo item de arma (huntEngine.js) e nos catálogos
+  // de Forja/Carpintaria do cliente, então não precisou de mudança no servidor.
+  function attackLabelFor(item){ return (item && item.weaponType === 'staff') ? 'Ataque Mágico' : 'Ataque'; }
+  function formatStats(stats, item){
     const keys = Object.keys(stats);
     if(!keys.length) return '<span style="color:var(--ink-dim);">nenhum status</span>';
-    return keys.map(k=>`${STAT_LABEL[k]||k}: <b>+${stats[k]}</b>`).join(' · ');
+    return keys.map(k=>`${k==='atk' ? attackLabelFor(item) : (STAT_LABEL[k]||k)}: <b>+${stats[k]}</b>`).join(' · ');
+  }
+  // Tooltip rica reaproveitada em QUALQUER slot de equipamento (Mochila,
+  // Armazém, Personagem, e agora também as abas de Refinamento/Infusão, que
+  // antes só mostravam o `title` nativo do navegador sem status nenhum --
+  // pedido do usuário, 26/09/2026: a descrição precisa mostrar tudo que o
+  // item ganhou (base + Encantamento + Infusão), igual à Mochila).
+  function equipTooltipHtml(it){
+    const stats = it.slot ? getItemTotalStatsClient(it) : {};
+    const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+    const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
+    const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
+    const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
+    return `<b>${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
+  }
+  function showEquipSlotTooltip(it){
+    invItemTooltip.innerHTML = equipTooltipHtml(it);
+    invItemTooltip.style.display = 'block';
   }
   document.getElementById('btn-open-enchant').addEventListener('click', ()=>{ enchantModal.classList.toggle('open'); renderEnchant(); });
   function renderEnchantIfOpen(){ if(enchantModal.classList.contains('open')) renderEnchant(); }
@@ -10746,6 +11307,21 @@
     enchantSelectedSlot = tab.dataset.enchantSlot;
     renderEnchant();
   });
+  // Pedido do usuário (26/09/2026): essa fileira de ícones só mostrava o
+  // `title` NATIVO do navegador ao passar o mouse (nome + slot, sem status
+  // nenhum) -- listener delegado (mesmo motivo do clique acima: as abas são
+  // recriadas a cada render) troca pela tooltip rica de verdade (mesma da
+  // Mochila/Personagem, com status reais incluindo Encantamento/Infusão).
+  enchantTabsEl.addEventListener('mouseover', (e)=>{
+    const tab = e.target.closest('[data-enchant-slot]');
+    const it = tab && equipment[tab.dataset.enchantSlot];
+    if(!it) return;
+    showEquipSlotTooltip(it);
+  });
+  enchantTabsEl.addEventListener('mousemove', positionInvTooltip);
+  enchantTabsEl.addEventListener('mouseout', (e)=>{
+    if(!e.relatedTarget || !enchantTabsEl.contains(e.relatedTarget)) invItemTooltip.style.display = 'none';
+  });
   function renderEnchant(){
     if(!enchantModal.classList.contains('open')) return;
     // 2026-09-21 (pedido do usuário, task #119): trocada a fileira de abas de
@@ -10763,7 +11339,7 @@
       const iconHtml = (it && it.icon)
         ? `<img class="item-icon" style="width:26px;height:26px;object-fit:contain;" src="${equipIconUrl(it.icon)}" data-rarity-color="${RARITY_COLORS[it.rarity]||'#a99872'}" data-fallback-slot="${it.slot||placeholderSlot}" onerror="handleEquipIconError(this)" />`
         : (it ? `<span class="item-icon" style="color:${RARITY_COLORS[it.rarity]||'#a99872'};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>` : equipSlotPlaceholderHtml(placeholderSlot));
-      const title = it ? `${it.name} — ${label}` : `${label} (vazio)`;
+      const title = it ? '' : `${label} (vazio)`;
       return `<div class="equip-slot${it?' filled':''}${s===enchantSelectedSlot?' active':''}" data-enchant-slot="${s}" title="${title}">`
         + `<span class="slot-icon">${iconHtml}</span>`
         + (it ? rarityFrameHtml(it.rarity) : '')
@@ -10813,7 +11389,7 @@
         <div class="infusion-preview-info">
           <div class="infusion-preview-name" style="color:${RARITY_COLORS[item.rarity]||'var(--ink)'}">${item.name} <span style="color:var(--ink-dim);font-size:9px;">(${item.rarity})</span></div>
           <div class="infusion-pip-row">Refino <div class="infusion-pips">${enchantPipsHtml}</div><span>${atMax?'MÁXIMO':`+${level} → +${nextLevel}`}</span></div>
-          <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);margin-top:3px;">${formatStats(stats)}${(item.bonusStats||[]).length ? `<br><span class="enchant-affix">Bônus únicos: ${item.bonusStats.map(b=>`${b.label} +${b.value}`).join(', ')}</span>` : ''}</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);margin-top:3px;">${formatStats(stats, item)}${(item.bonusStats||[]).length ? `<br><span class="enchant-affix">Bônus únicos: ${item.bonusStats.map(b=>`${b.label} +${b.value}`).join(', ')}</span>` : ''}</div>
         </div>
       </div>
       ${!atMax ? `
@@ -10853,14 +11429,17 @@
       document.getElementById('enchant-buy-ward').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'ward', qty:1 }));
       document.getElementById('enchant-use-protector').addEventListener('change', e=>{ enchantUseProtector = e.target.checked; });
       document.getElementById('enchant-use-ward').addEventListener('change', e=>{ enchantUseWard = e.target.checked; });
-      document.getElementById('enchant-go-btn').addEventListener('click', ()=>{
+      document.getElementById('enchant-go-btn').addEventListener('click', async ()=>{
         const useProtector = enchantUseProtector;
         const useWard = enchantUseWard;
         const finalChance = Math.round((baseChance+(useProtector?ENCHANT_PROTECTOR_CHANCE_BONUS:0))*100);
         const warn = (canBreak && !useWard)
           ? `Tentar refinar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso — falhar pode QUEBRAR o item de vez (perda total). Continuar?`
           : `Tentar refinar de +${level} pra +${nextLevel} tem ${finalChance}% de chance de sucesso${useWard?' (Selo Inquebrável garante que não vai quebrar mesmo falhando)':''}. Continuar?`;
-        if(!confirm(warn)) return;
+        // Pedido do usuário (26/09/2026): esse confirm() nativo abria uma
+        // caixa branca do navegador -- trocado pelo showConfirmModal() já
+        // usado em outras confirmações do jogo (ex.: transferência bancária).
+        if(!(await showConfirmModal(warn))) return;
         sendWS({ type:'item:enchant', slot: enchantSelectedSlot, useProtector, useWard });
         enchantUseProtector = false; enchantUseWard = false; // reseta pra próxima tentativa (não "reusar" sem decidir de novo)
       });
@@ -10879,7 +11458,7 @@
      claude/forja-ravendawn-tier-grade-notas.md pra pesquisa/design.
      ========================================================= */
   const infusionModal = document.getElementById('infusion-modal');
-  const ITEM_TIER_BY_RARITY = { comum:1, incomum:2, rara:3, 'épica':4, 'lendária':5 };
+  const ITEM_TIER_BY_RARITY = { comum:1, incomum:2, rara:3, 'épica':4, 'lendária':5, 'mítica':6 };
   const TIER_ATTRIBUTE_SLOTS = { 1:{primary:0,secondary:0}, 2:{primary:1,secondary:0}, 3:{primary:2,secondary:0}, 4:{primary:2,secondary:1}, 5:{primary:2,secondary:2}, 6:{primary:2,secondary:3} };
   const INFUSION_MAX_GRADE = 9;
   const PRIMARY_STAT_LABEL = { might:'Might', intelligence:'Intelligence', dexterity:'Dexterity', wisdom:'Wisdom', vitality:'Vitality' };
@@ -10894,6 +11473,18 @@
     if(!tab) return;
     infusionSelectedSlot = tab.dataset.infusionSlot;
     renderInfusion();
+  });
+  // Mesma tooltip rica da fileira de Refinamento acima (pedido do usuário,
+  // 26/09/2026) -- essa fileira também só tinha o `title` nativo antes.
+  infusionTabsEl.addEventListener('mouseover', (e)=>{
+    const tab = e.target.closest('[data-infusion-slot]');
+    const it = tab && equipment[tab.dataset.infusionSlot];
+    if(!it) return;
+    showEquipSlotTooltip(it);
+  });
+  infusionTabsEl.addEventListener('mousemove', positionInvTooltip);
+  infusionTabsEl.addEventListener('mouseout', (e)=>{
+    if(!e.relatedTarget || !infusionTabsEl.contains(e.relatedTarget)) invItemTooltip.style.display = 'none';
   });
   function renderInfusion(){
     if(!infusionModal.classList.contains('open')) return;
@@ -10912,7 +11503,7 @@
       const iconHtml = (it && it.icon)
         ? `<img class="item-icon" style="width:26px;height:26px;object-fit:contain;" src="${equipIconUrl(it.icon)}" data-rarity-color="${RARITY_COLORS[it.rarity]||'#a99872'}" data-fallback-slot="${it.slot||placeholderSlot}" onerror="handleEquipIconError(this)" />`
         : (it ? `<span class="item-icon" style="color:${RARITY_COLORS[it.rarity]||'#a99872'};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>` : equipSlotPlaceholderHtml(placeholderSlot));
-      const title = it ? `${it.name} — ${label}` : `${label} (vazio)`;
+      const title = it ? '' : `${label} (vazio)`;
       return `<div class="equip-slot${it?' filled':''}${s===infusionSelectedSlot?' active':''}" data-infusion-slot="${s}" title="${title}">`
         + `<span class="slot-icon">${iconHtml}</span>`
         + (it ? rarityFrameHtml(it.rarity) : '')
@@ -11160,7 +11751,7 @@
       { id:'a_boots_protectors_boots', name:'Protector\'s Boots', icon:'a_boots_protectors_boots.png', description:'Pesadas o bastante pra segurar terreno, leves o bastante pra correr.' },
     ]},
   };
-  const CRAFT_RARITY_LABEL_CAP_CLIENT = { comum:'Comum', incomum:'Incomum', rara:'Rara', 'épica':'Épica', 'lendária':'Lendária' };
+  const CRAFT_RARITY_LABEL_CAP_CLIENT = { comum:'Comum', incomum:'Incomum', rara:'Rara', 'épica':'Épica', 'lendária':'Lendária', 'mítica':'Mítica' };
   // Label em português de cada categoria (weaponType||slot, ver comentário
   // em recipesOut acima) -- usado nos chips de filtro do modal da Forja.
   const CRAFT_CATEGORY_LABEL_CLIENT = {
@@ -11244,6 +11835,82 @@
     return CRAFT_RARITY_TIERS_CLIENT.map((tier, i) => ({ tier, pct: weights[i] / total * 100 }));
   }
   function bagQty(id){ return bag.filter(it=>it.id===id).reduce((s,it)=>s+(it.qty||1),0); }
+
+  /* =========================================================
+     FUSÃO DE EQUIPAMENTOS — pedido do usuário (26/09/2026): funde N cópias
+     EXATAS do mesmo equipamento (mesmo id de catálogo) + Gold + Cristal de
+     Fusão (comprado no Ferreiro Bran) num item de raridade seguinte,
+     nascendo +0 Encantamento / Grade 0 Infusão. Espelho fiel de
+     FUSION_RARITY_ORDER/FUSION_RECIPE/FUSION_CRYSTAL_ITEM_ID em
+     huntEngine.js — igual a todo o resto do jogo, o servidor é sempre
+     autoritativo (fuseItem lá faz a mesma validação de novo); isto aqui é
+     só pra MOSTRAR progresso/custo e montar o botão "Fundir".
+     ========================================================= */
+  const FUSION_RARITY_ORDER_CLIENT = ['comum', 'incomum', 'rara', 'épica', 'lendária', 'mítica'];
+  const FUSION_RECIPE_CLIENT = {
+    incomum:    { qty: 2,  gold: 500,    crystals: 1 },
+    rara:       { qty: 4,  gold: 2000,   crystals: 2 },
+    'épica':    { qty: 10, gold: 8000,   crystals: 4 },
+    'lendária': { qty: 20, gold: 30000,  crystals: 8 },
+    'mítica':   { qty: 40, gold: 120000, crystals: 16 },
+  };
+  const FUSION_CRYSTAL_ITEM_ID_CLIENT = 'cristal_fusao';
+  // Agrupa a Mochila por id de equipamento (cada cópia é 1 entrada separada
+  // do array, equipamento nunca empilha — ver stackInto do servidor) e
+  // calcula, pra cada grupo, a receita pra subir 1 raridade. Item de
+  // raridade máxima (Mítica) ou raridade desconhecida não entra na lista —
+  // não tem pra onde fundir.
+  function getFusionGroups(){
+    const groups = {};
+    bag.forEach(it=>{
+      if(!it.slot) return; // só equipamento -- material (Cristal de Fusão etc.) não funde
+      if(!groups[it.id]) groups[it.id] = { item: it, owned: 0 };
+      groups[it.id].owned++;
+    });
+    return Object.values(groups).map(g=>{
+      const idx = FUSION_RARITY_ORDER_CLIENT.indexOf(g.item.rarity || 'comum');
+      if(idx === -1 || idx >= FUSION_RARITY_ORDER_CLIENT.length - 1) return null;
+      const targetRarity = FUSION_RARITY_ORDER_CLIENT[idx + 1];
+      return { ...g, targetRarity, recipe: FUSION_RECIPE_CLIENT[targetRarity] };
+    }).filter(Boolean).sort((a,b)=> FUSION_RARITY_ORDER_CLIENT.indexOf(a.item.rarity) - FUSION_RARITY_ORDER_CLIENT.indexOf(b.item.rarity) || (a.item.name||'').localeCompare(b.item.name||''));
+  }
+  const fusionModal = document.getElementById('fusion-modal');
+  function renderFusionIfOpen(){ if(fusionModal.classList.contains('open')) renderFusion(); }
+  function renderFusion(){
+    const body = document.getElementById('fusion-body');
+    const crystalQty = bagQty(FUSION_CRYSTAL_ITEM_ID_CLIENT);
+    const groups = getFusionGroups();
+    const header = `<div class="italic-note" style="margin-bottom:10px;">Funda cópias EXATAS do mesmo equipamento + Gold + Cristal de Fusão pra subir a raridade dele — o resultado nasce +0 Encantamento / Grade 0 Infusão (o progresso dos itens consumidos se perde). Cristal de Fusão à venda na Loja do Ferreiro Bran. Você tem <b style="color:var(--gold-bright);">${crystalQty}</b> Cristal(is) de Fusão.</div>`;
+    if(!groups.length){
+      body.innerHTML = header + `<div class="italic-note">Nenhum equipamento fundível na Mochila agora — precisa de pelo menos 2 cópias EXATAS de um mesmo item (Comum ou raridade acima, menos Mítica) pra começar.</div>`;
+      return;
+    }
+    body.innerHTML = header + groups.map(g=>{
+      const it = g.item;
+      const color = RARITY_COLORS[it.rarity] || '#a99872';
+      const targetColor = RARITY_COLORS[g.targetRarity] || '#a99872';
+      const enoughItems = g.owned >= g.recipe.qty;
+      const enoughGold = (player.gold + player.bankGold) >= g.recipe.gold;
+      const enoughCrystals = crystalQty >= g.recipe.crystals;
+      const canFuse = enoughItems && enoughGold && enoughCrystals;
+      return `<div class="fusion-row" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(191,161,95,.15);">
+        <div class="item-slot" style="width:40px;height:40px;flex-shrink:0;">${resolveItemIconHtml(it)}${rarityFrameHtml(it.rarity)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;color:${color};">${escapeHtml(it.name||it.id)}</div>
+          <div class="hint" style="font-size:10px;">→ <b style="color:${targetColor};">${CRAFT_RARITY_LABEL_CAP_CLIENT[g.targetRarity]}</b>
+            &nbsp;·&nbsp;Itens: <span style="color:${enoughItems?'var(--ok)':'var(--danger)'};">${g.owned}/${g.recipe.qty}</span>
+            &nbsp;·&nbsp;Gold: <span style="color:${enoughGold?'var(--ok)':'var(--danger)'};">${g.recipe.gold.toLocaleString('pt-BR')}</span>
+            &nbsp;·&nbsp;Cristais: <span style="color:${enoughCrystals?'var(--ok)':'var(--danger)'};">${crystalQty}/${g.recipe.crystals}</span></div>
+        </div>
+        <button type="button" class="treino-inline-btn" data-fuse-item="${it.id}" ${canFuse?'':'disabled'} style="flex-shrink:0;">Fundir</button>
+      </div>`;
+    }).join('');
+    body.querySelectorAll('[data-fuse-item]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'item:fuse', itemId: btn.dataset.fuseItem }));
+    });
+  }
+  document.getElementById('btn-open-fusion').addEventListener('click', ()=>{ fusionModal.classList.toggle('open'); renderFusion(); });
+
   let professionSelectedTab = 'forja';
   // Filtro de categoria (chips) + busca por nome -- item 7 da lista de
   // tarefas ("melhorar UX do modal da Forja, difícil achar itens"), ver
@@ -11456,7 +12123,7 @@
       const oddsLines = craftRarityOddsClient(prof.level, activeCatalystItem ? activeCatalystItem.rarity : null).map(o=>{
         const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`];
         const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier) : {};
-        const statPreview = Object.keys(stats).length ? `<div class="prec-stat-preview">${formatStats(stats)}</div>` : '';
+        const statPreview = Object.keys(stats).length ? `<div class="prec-stat-preview">${formatStats(stats, r)}</div>` : '';
         return `<div class="prec-row"><span style="color:${RARITY_COLORS[o.tier]||'var(--ink)'}">${item ? item.name : o.tier}</span><span>${o.pct.toFixed(1)}%</span></div>${statPreview}`;
       }).join('');
       // Foto+descrição do item nomeado (a arte/descrição são as mesmas nos 5
@@ -11773,6 +12440,220 @@
   }
 
   /* =========================================================
+     LOJA DE PVP — integrada em 26/09/2026 (ver
+     claude/pvp-torneio-semanal-notas.md, pendência 3). Portada de
+     pvp-shop.html (era só uma tela de revisão isolada, nunca colada aqui —
+     por isso o usuário não achava a loja no jogo). Backend já existia
+     inteiro desde o Pedido 5 (pvpShopEngine.js/huntEngine.js/server.js);
+     esta seção é só o "fio" que liga a UI a pvp:shop:getState/buy/use.
+     ========================================================= */
+  const pvpShopModal = document.getElementById('pvp-shop-modal');
+  document.getElementById('btn-open-pvp-shop').addEventListener('click', ()=>{
+    pvpShopModal.classList.toggle('open');
+    if(pvpShopModal.classList.contains('open')) sendWS({ type:'pvp:shop:getState' });
+  });
+  function renderPvpShopIfOpen(){ if(pvpShopModal.classList.contains('open')) renderPvpShop(); }
+  function pvpShopFormatMoedas(n){ return Math.round(n||0).toLocaleString('pt-BR'); }
+  function pvpShopRenderItem(def){
+    const el = document.createElement('div');
+    el.className = 'pvpshop-item';
+    const esgotado = def.remaining <= 0;
+    const semSaldo = pvpShopState.moedasPvP < def.price;
+    const disabled = esgotado || semSaldo;
+    el.innerHTML = `
+      <div class="pvpshop-item__icon">${def.icon}</div>
+      <div class="pvpshop-item__name">${def.name}</div>
+      <div class="pvpshop-item__desc">${def.description}</div>
+      <div class="pvpshop-item__footer">
+        <div class="pvpshop-item__price">${def.price} 🪙</div>
+        <div class="pvpshop-item__limit">Disponível nesta semana: [${def.remaining}/${def.weeklyLimit}]</div>
+        <button class="pvpshop-item__buy" ${disabled?'disabled':''}>${esgotado?'Esgotado':(semSaldo?'Moedas Insuficientes':'Comprar')}</button>
+      </div>
+    `;
+    if(!disabled) el.querySelector('.pvpshop-item__buy').addEventListener('click', ()=> sendWS({ type:'pvp:shop:buy', itemId: def.id }));
+    return el;
+  }
+  function renderPvpShop(){
+    if(!pvpShopModal.classList.contains('open')) return;
+    document.getElementById('pvpshopBalance').textContent = pvpShopFormatMoedas(pvpShopState.moedasPvP);
+    const gridExp = document.getElementById('pvpshopGridExp');
+    const gridDrop = document.getElementById('pvpshopGridDrop');
+    const gridBuffs = document.getElementById('pvpshopGridBuffs');
+    gridExp.innerHTML = ''; gridDrop.innerHTML = ''; gridBuffs.innerHTML = '';
+    pvpShopState.catalog.forEach(def=>{
+      if(def.effect === 'exp2x') gridExp.appendChild(pvpShopRenderItem(def));
+      else if(def.effect === 'drop2x') gridDrop.appendChild(pvpShopRenderItem(def));
+      else if(def.category === 'buff') gridBuffs.appendChild(pvpShopRenderItem(def));
+    });
+  }
+  document.querySelectorAll('#pvp-shop-modal .pvpshop-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('#pvp-shop-modal .pvpshop-tab').forEach(t=> t.classList.remove('active'));
+      document.querySelectorAll('#pvp-shop-modal .pvpshop-panel').forEach(p=> p.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelector(`#pvp-shop-modal .pvpshop-panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
+    });
+  });
+
+  /* =========================================================
+     CENTRAL DO TORNEIO — integrada em 26/09/2026 (mesma pendência acima).
+     Portada de pvp-tournament-hall.html, ligada a 'pvp:getState' (1ª carga
+     e refresh nos broadcasts do torneio) + 'pvp:bet'. "Assistir Ao Vivo"
+     reaproveita o overlay pvpArenaOverlay/window.pvpArenaView que já existe
+     (integrado no Pedido 3), agora em modo espectador pra qualquer jogador.
+     ========================================================= */
+  const pvpTournamentModal = document.getElementById('pvp-tournament-modal');
+  document.getElementById('btn-open-pvp-tournament').addEventListener('click', ()=>{
+    pvpTournamentModal.classList.toggle('open');
+    if(pvpTournamentModal.classList.contains('open')) sendWS({ type:'pvp:getState' });
+  });
+  function renderPvpTournamentIfOpen(){ if(pvpTournamentModal.classList.contains('open')) renderPvpTournamentGrid(); }
+  function refreshPvpTournamentIfOpen(){ if(pvpTournamentModal.classList.contains('open')) sendWS({ type:'pvp:getState' }); }
+  function pvpTournamentMatches(){
+    // Só a RODADA MAIS RECENTE do bracket -- rodadas antigas já estão 100%
+    // resolvidas (não têm mais aposta pendente nem "ao vivo" pra mostrar) e
+    // deixariam a grade crescendo pra sempre até o fim do torneio inteiro.
+    if(!pvpTournamentState || !pvpTournamentState.rounds || !pvpTournamentState.rounds.length) return [];
+    return pvpTournamentState.rounds[pvpTournamentState.rounds.length-1].matches || [];
+  }
+  function findPvpMatchByArenaId(arenaId){ return pvpTournamentMatches().find(m=> m.arenaId === arenaId) || null; }
+  function pvpthEstrelaLabel(nivelEstrela){ return nivelEstrela || '☆ Sem Estrela'; }
+  function pvpthFormatCountdown(ms){
+    if(ms <= 0) return '00:00';
+    const totalSec = Math.ceil(ms/1000);
+    return String(Math.floor(totalSec/60)).padStart(2,'0') + ':' + String(totalSec%60).padStart(2,'0');
+  }
+  function pvpthRenderCard(match){
+    const now = Date.now();
+    const odds = match.odds || { totalA:0, totalB:0, oddA:null, oddB:null };
+    const totalArena = (odds.totalA||0) + (odds.totalB||0);
+    const pctA = totalArena > 0 ? (odds.totalA/totalArena)*100 : 50;
+    const pctB = 100 - pctA;
+    const card = document.createElement('div');
+    card.className = 'pvpth-card';
+    card.dataset.arenaId = match.arenaId;
+    const isFinished = !!match.winner;
+    const isLive = !isFinished && match.liveStartsAt && now >= match.liveStartsAt;
+    let actionsHtml;
+    if(isFinished) actionsHtml = `<button class="pvpth-btn pvpth-btn--done" disabled>Luta Encerrada</button>`;
+    else if(isLive) actionsHtml = `<button class="pvpth-btn pvpth-btn--watch" data-action="watch">▶ Assistir Ao Vivo</button>`;
+    else actionsHtml = `<button class="pvpth-btn pvpth-btn--bet" data-action="bet">🪙 Apostar Ouro</button>`;
+    card.innerHTML = `
+      <div class="pvpth-card__head">
+        <span>Arena <span class="arena-id">#${(match.arenaId||'').toString().slice(0,6)}</span></span>
+        <span class="pvpth-timer ${isLive?'pvpth-live':''}" data-role="timer">
+          ${isFinished ? '' : (isLive ? '● AO VIVO' : ('Fecha em <strong data-role="clock">'+pvpthFormatCountdown((match.bettingClosesAt||now)-now)+'</strong>'))}
+        </span>
+      </div>
+      <div class="pvpth-matchup">
+        <div class="pvpth-fighter side-a">
+          <div class="avatar">${(match.playerA.nick||'?').slice(0,2).toUpperCase()}</div>
+          <div class="nick">${match.playerA.nick||'???'}</div>
+          <div class="classe">${match.playerA.classe||'???'}</div>
+          <div class="estrela">${pvpthEstrelaLabel(match.playerA.nivelEstrela)}</div>
+        </div>
+        <div class="pvpth-vs">VS</div>
+        <div class="pvpth-fighter side-b">
+          <div class="avatar">${(match.playerB.nick||'?').slice(0,2).toUpperCase()}</div>
+          <div class="nick">${match.playerB.nick||'???'}</div>
+          <div class="classe">${match.playerB.classe||'???'}</div>
+          <div class="estrela">${pvpthEstrelaLabel(match.playerB.nivelEstrela)}</div>
+        </div>
+      </div>
+      <div class="pvpth-bet-bar-wrap">
+        <div class="pvpth-bet-bar">
+          <div class="pvpth-bet-bar__a" style="width:${pctA}%"></div>
+          <div class="pvpth-bet-bar__b" style="width:${pctB}%"></div>
+        </div>
+      </div>
+      <div class="pvpth-odds">
+        <span class="a">Odd A: ${odds.oddA?odds.oddA.toFixed(2)+'x':'—'}</span>
+        <span class="b">Odd B: ${odds.oddB?odds.oddB.toFixed(2)+'x':'—'}</span>
+      </div>
+      <div class="pvpth-actions">${actionsHtml}</div>
+      ${isFinished?`<div class="pvpth-result-banner">🏆 Vencedor: ${match.winner===match.playerA.characterId?match.playerA.nick:match.playerB.nick} (${match.score?match.score.a+' x '+match.score.b:''})</div>`:''}
+    `;
+    const btn = card.querySelector('[data-action]');
+    if(btn) btn.addEventListener('click', ()=>{
+      if(btn.dataset.action === 'bet') pvpthOpenBetModal(match.arenaId);
+      else if(btn.dataset.action === 'watch') pvpthOpenSpectatorView(match);
+    });
+    return card;
+  }
+  function renderPvpTournamentGrid(){
+    if(!pvpTournamentModal.classList.contains('open')) return;
+    const t = pvpTournamentState;
+    const grid = document.getElementById('pvpthGrid');
+    const matches = pvpTournamentMatches();
+    const lastRoundNumber = (t && t.rounds.length) ? t.rounds[t.rounds.length-1].roundNumber : 0;
+    document.getElementById('pvpthSubtitle').textContent = t
+      ? `Torneio ${t.status === 'aberto' ? 'com inscrições abertas' : (t.status === 'em_andamento' ? 'em andamento' : t.status)}${lastRoundNumber ? ' · Rodada ' + lastRoundNumber : ''}${t.championId ? ' · Torneio encerrado' : ''}`
+      : 'Nenhum torneio ativo no momento.';
+    document.getElementById('pvpthOuroPool').textContent = pvpShopFormatMoedas(t ? t.ouroPool : 0);
+    document.getElementById('pvpthRegistered').textContent = t ? t.registeredCount : 0;
+    document.getElementById('pvpthArenasAtivas').textContent = matches.filter(m=> !m.winner).length;
+    if(!matches.length){
+      grid.innerHTML = `<div class="pvpth-empty"><div class="big">🏆</div><div>${t ? 'Nenhuma arena na rodada atual.' : 'Aguardando o próximo Torneio Semanal (sábado, 18h).'}</div></div>`;
+      return;
+    }
+    grid.innerHTML = '';
+    matches.forEach(m=> grid.appendChild(pvpthRenderCard(m)));
+  }
+  function pvpthOpenBetModal(arenaId){
+    pvpthBetTargetArenaId = arenaId;
+    pvpthBetSelectedSide = null;
+    document.querySelectorAll('#pvpthBetOverlay .side-choice button').forEach(b=> b.classList.remove('active'));
+    document.getElementById('pvpthBetAmount').value = '';
+    document.getElementById('pvpthBetOverlay').classList.add('open');
+  }
+  document.querySelectorAll('#pvpthBetOverlay .side-choice button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#pvpthBetOverlay .side-choice button').forEach(b=> b.classList.remove('active'));
+      btn.classList.add('active');
+      pvpthBetSelectedSide = btn.dataset.side;
+    });
+  });
+  document.getElementById('pvpthBetCancel').addEventListener('click', ()=> document.getElementById('pvpthBetOverlay').classList.remove('open'));
+  document.getElementById('pvpthBetConfirm').addEventListener('click', ()=>{
+    const amount = Number(document.getElementById('pvpthBetAmount').value);
+    if(!pvpthBetSelectedSide){ logLoot('⚠️ Escolha um lado (Jogador A ou B) antes de apostar.'); return; }
+    if(!Number.isFinite(amount) || amount <= 0){ logLoot('⚠️ Digite uma quantidade de Ouro válida.'); return; }
+    sendWS({ type:'pvp:bet', arenaId: pvpthBetTargetArenaId, onPlayer: pvpthBetSelectedSide, amount });
+    document.getElementById('pvpthBetOverlay').classList.remove('open');
+  });
+  // Espectador: reaproveita o overlay/motor da grade da arena já integrados
+  // (Pedido 3) -- olha o cache de 'pvp:arenaResolved' por arenaId (guardado
+  // acima no switch do WS, pra QUALQUER arena, não só a minha).
+  function pvpthOpenSpectatorView(match){
+    const resolved = pvpArenaResolvedCache[match.arenaId];
+    const fichas = pvpArenaFichas[match.arenaId] || { playerA: match.playerA, playerB: match.playerB };
+    if(!resolved || !window.pvpArenaView){ logLoot('⏳ Aguardando o resultado dessa luta chegar do servidor...'); return; }
+    if(window.pvpOpponentModal) window.pvpOpponentModal.close();
+    document.getElementById('pvpArenaOverlay').classList.add('pvp-open');
+    window.pvpArenaView.loadMatch(resolved, fichas.playerA, fichas.playerB);
+    window.pvpArenaView.play();
+  }
+  // Tick de 1s só pra atualizar relógio/trocar botão pra "AO VIVO" sozinho,
+  // igual ao arquivo isolado original -- evita re-renderizar a grade inteira
+  // (perderia hover/estado) toda hora só pra contar segundo.
+  setInterval(()=>{
+    if(!pvpTournamentModal.classList.contains('open')) return;
+    const now = Date.now();
+    let needsFullRerender = false;
+    pvpTournamentMatches().forEach(m=>{
+      if(m.winner) return;
+      const wasLive = m._wasLive;
+      const isLive = m.liveStartsAt && now >= m.liveStartsAt;
+      if(isLive !== wasLive){ needsFullRerender = true; m._wasLive = isLive; return; }
+      if(!isLive){
+        const clock = document.querySelector(`.pvpth-card[data-arena-id="${m.arenaId}"] [data-role="clock"]`);
+        if(clock) clock.textContent = pvpthFormatCountdown((m.bettingClosesAt||now)-now);
+      }
+    });
+    if(needsFullRerender) renderPvpTournamentGrid();
+  }, 1000);
+
+  /* =========================================================
      PARTY DPS RESULTS — medidor de Dano/DPS do grupo (referência: telas de
      DPS meter de MMO, com barra colorida por membro e "Total"/"DPS" como
      abas). ALT+D abre/fecha, igual à referência ("Press ALT-D to show/hide
@@ -12027,8 +12908,10 @@
     const msgBtn = document.createElement('button'); msgBtn.className='party-btn'; msgBtn.textContent = `Mandar mensagem pra ${username}`;
     msgBtn.addEventListener('click', ()=>{
       playerMenu.style.display='none';
-      const text = window.prompt(`Mensagem (sussurro) pra ${username}:`, '');
-      if(text && text.trim()) sendWS({ type:'chat:whisper', targetUsername: username, text: text.trim() });
+      // Pedido do usuário (26/09/2026): em vez de window.prompt(), abre (ou
+      // reaproveita) a aba de PM desse jogador no chat e foca o campo de
+      // digitação normal -- a aba pode ser fechada depois com o "✕" nela.
+      openPmTab(username, true);
     });
     playerMenu.appendChild(addBtn); playerMenu.appendChild(inviteBtn); playerMenu.appendChild(tradeBtn); playerMenu.appendChild(msgBtn);
     playerMenu.style.left = screenX+'px'; playerMenu.style.top = screenY+'px'; playerMenu.style.display = 'flex';
