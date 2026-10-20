@@ -4505,16 +4505,38 @@
     const exBodyEntry = archetypeArmor || SpriteManager.bodySprite(gender === 'female' ? 'female' : 'male');
     const exBodyH = (exBodyEntry && exBodyEntry.loaded && exBodyEntry.frame)
       ? Math.min(48*scl/exBodyEntry.frame.sw, 64*scl/exBodyEntry.frame.sh) * exBodyEntry.frame.sh : 46*scl;
+    const exBodyW = (exBodyEntry && exBodyEntry.loaded && exBodyEntry.frame)
+      ? Math.min(48*scl/exBodyEntry.frame.sw, 64*scl/exBodyEntry.frame.sh) * exBodyEntry.frame.sw : 36*scl;
     const exDir = (drawWalkAnim && drawWalkAnim.dir) || 'down';
-    const drawExodusAttached = (relPath, key, dir) => {
+    // Âncora por aura (medida no conteúdo real de cada folha, em px da célula
+    // 64): as de chão (Essência de Fogo, Choque Elétrico, Brilho Estelar) ficam
+    // centradas no pé e ATRÁS do corpo; Vaga-lumes e Morcegos ficam centrados
+    // no meio do corpo, circulando o personagem (por cima).
+    const EX_AURA_ANCHOR = {
+      ex_aura_1: { cx:47, cy:50, at:'feet' }, ex_aura_2: { cx:44.5, cy:45.5, at:'feet' }, ex_aura_3: { cx:33, cy:35, at:'feet' },
+      ex_aura_4: { cx:32, cy:27.5, at:'body' }, ex_aura_5: { cx:33, cy:32.5, at:'body' },
+    };
+    const drawExodusAttached = (relPath, key, dir, anchor) => {
       const e = SpriteManager.load(key, relPath);
       if(!e.loaded || !e.img.naturalWidth) return;
       const cols = Math.max(1, Math.round(e.img.naturalWidth/64));
       const row = { down:0, up:1, right:2, left:3 }[dir] ?? 0;
       const col = Math.floor(Date.now()/AURA_FRAME_MS) % cols;
       const ws = exBodyH / 46;
+      if(anchor){
+        // pés: os sprites isométricos pisam ~20% da largura à direita do centro
+        // do recorte (medido em vários trajes) e o centro do círculo fica um
+        // pouco acima da última linha do pé.
+        const tx = anchor.at === 'feet' ? s.x + exBodyW*0.2 : s.x;
+        const ty = anchor.at === 'feet' ? (s.y + breathe) - exBodyH*0.06 : (s.y + breathe) - exBodyH*0.5;
+        tctx.drawImage(e.img, col*64, row*64, 64, 64, tx - anchor.cx*ws, ty - anchor.cy*ws, 64*ws, 64*ws);
+        return;
+      }
       tctx.drawImage(e.img, col*64, row*64, 64, 64, s.x - 45*ws, (s.y+breathe) - 63*ws, 64*ws, 64*ws);
     };
+    const exAuraAnchor = auraId ? EX_AURA_ANCHOR[auraId] : null;
+    // aura de chão: desenhada antes de tudo (fica embaixo do pé, atrás do corpo)
+    if(exAuraAnchor && exAuraAnchor.at === 'feet') drawExodusAttached(`exodus/auras/${auraId}.png`, 'xa_'+auraId, exDir, exAuraAnchor);
     const isExWing = !!wingId && String(wingId).startsWith('ex_wing_');
     if(isExWing && exDir !== 'up') drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
     if(wingId && !isExWing){
@@ -4614,7 +4636,7 @@
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
     // jogador vê a MESMA animação em sincronia, sem precisar coordenar via rede.
     if(auraId && String(auraId).startsWith('ex_aura_')){
-      drawExodusAttached(`exodus/auras/${auraId}.png`, 'xa_'+auraId, (walkAnim && walkAnim.dir) || 'down');
+      if(!exAuraAnchor || exAuraAnchor.at !== 'feet') drawExodusAttached(`exodus/auras/${auraId}.png`, 'xa_'+auraId, (walkAnim && walkAnim.dir) || 'down', exAuraAnchor);
     } else if(auraId){
       const frameIdx = Math.floor(Date.now()/AURA_FRAME_MS) % auraFrameCount(auraId);
       const aura = SpriteManager.auraFrame(auraId, frameIdx);
