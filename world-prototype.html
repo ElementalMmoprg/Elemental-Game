@@ -1214,7 +1214,14 @@
   .sh-card.feat .tag{ background:#b9a6ff; color:#1a1430; font-weight:700; }
   .sh-card .art{ width:104px; height:104px; border-radius:50%; background:radial-gradient(circle,#232740 0%,#151722 70%); border:1px solid #2c3042; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:40px; }
   .sh-card .art img{ max-width:96px; max-height:96px; image-rendering:pixelated; }
-  .sh-card .art canvas{ width:60px; height:100px; image-rendering:pixelated; }
+  .sh-card .art canvas{ width:62px; height:104px; image-rendering:pixelated; margin-top:-6px; }
+  .sh-card[data-sh-preview]{ cursor:help; }
+  /* Prévia animada ao passar o mouse num outfit da Loja (20/10/2026) */
+  #sh-hover{ position:fixed; z-index:9998; display:none; pointer-events:none; padding:10px 12px 8px; border-radius:8px;
+    background:linear-gradient(180deg,#1d2238,#121420); border:1px solid #7d93e8; box-shadow:0 10px 30px rgba(0,0,0,.6); text-align:center; }
+  #sh-hover canvas{ width:150px; height:225px; image-rendering:pixelated; display:block; background:radial-gradient(circle at 50% 60%,#2a3050,#141622 70%); border-radius:6px; }
+  #sh-hover .t{ font-family:var(--font-display); font-size:12px; color:#fff; margin-top:6px; }
+  #sh-hover .d{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
   .sh-card .nm{ font-size:12px; color:var(--ink); min-height:30px; display:flex; align-items:center; }
   .sh-card .pr{ font-family:var(--font-mono); font-size:15px; color:var(--gold-bright); }
   .sh-card .pr small{ font-size:10px; color:var(--ink-dim); }
@@ -13712,8 +13719,8 @@
   new MutationObserver(()=>{ if(!storeHubModal.classList.contains('open')) shUndock(); })
     .observe(storeHubModal, { attributes:true, attributeFilter:['class'] });
 
-  function shCard({ tag, feat, art, name, price, desc, btn, btnClass, btnDisabled, data }){
-    return `<div class="sh-card ${feat?'feat':''}">
+  function shCard({ tag, feat, art, name, price, desc, btn, btnClass, btnDisabled, data, preview }){
+    return `<div class="sh-card ${feat?'feat':''}"${preview ? ` data-sh-preview="${preview}"` : ''}>
       ${tag ? `<span class="tag">${tag}</span>` : ''}
       <div class="art">${art||''}</div>
       <div class="nm">${name}</div>
@@ -13734,7 +13741,7 @@
     else { btn = canPay ? 'Comprar' : 'Coin insuficiente'; dis = !canPay; }
     return shCard({
       tag: feat ? 'Destaque' : (owned ? 'Adquirido' : 'Outfit'), feat,
-      art: outfitCardArt(o), name: o.name,
+      art: `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`, name: o.name, preview: o.id,
       price: owned ? '' : `${o.cost.toLocaleString('pt-BR')} <small>💎 Coin</small>`,
       desc: o.recolorable ? 'Cores personalizáveis (cabeça, peito, calça, sapato)' : '',
       btn, btnClass: cls, btnDisabled: dis, data: `data-sh-outfit="${o.id}"`,
@@ -13748,7 +13755,49 @@
       shConfirmId = null; sendWS({ type:'outfit:buy', outfitId:id });
     }));
     main.querySelectorAll('canvas[data-draw-outfit]').forEach(cv => drawOutfitOn(cv, cv.dataset.drawOutfit, false));
+    // sprites carregam assíncronos: redesenha as miniaturas mais algumas vezes
+    [300, 900, 2000].forEach(ms => setTimeout(()=> main.querySelectorAll('canvas[data-draw-outfit]').forEach(cv => { if(cv.isConnected) drawOutfitOn(cv, cv.dataset.drawOutfit, false); }), ms));
+    main.querySelectorAll('[data-sh-preview]').forEach(card => {
+      card.addEventListener('mouseenter', e => shHoverStart(card.dataset.shPreview, e));
+      card.addEventListener('mousemove', e => shHoverMove(e));
+      card.addEventListener('mouseleave', shHoverStop);
+    });
   }
+  // Prévia animada: o personagem do jogador vestindo o outfit, com as cores
+  // dele, andando e girando pelas 4 direções (baixo → direita → cima → esquerda).
+  const shHover = document.createElement('div'); shHover.id = 'sh-hover';
+  shHover.innerHTML = '<canvas width="120" height="180"></canvas><div class="t"></div><div class="d">Visualização no seu personagem</div>';
+  document.body.appendChild(shHover);
+  let shHoverId = null, shHoverRaf = 0, shHoverT0 = 0;
+  function shHoverStart(id, e){
+    shHoverId = id; shHoverT0 = performance.now();
+    const def = outfitCatalog.find(o => o.id === id);
+    shHover.querySelector('.t').textContent = def ? def.name : '';
+    shHover.style.display = 'block'; shHoverMove(e);
+    cancelAnimationFrame(shHoverRaf);
+    const cv = shHover.querySelector('canvas'), c2 = cv.getContext('2d');
+    const dirs = ['down','right','up','left'];
+    const tick = (t)=>{
+      if(!shHoverId) return;
+      const el = t - shHoverT0;
+      const dir = dirs[Math.floor(el/2200) % 4];
+      const frameIdx = Math.floor(el/130);
+      c2.clearRect(0,0,cv.width,cv.height);
+      const a = outfitPortraitArgs();
+      try{ drawCharacterLayers({ x: cv.width/2, y: 160 }, 0, a.genero, a.hairId, shHoverId, null, null, '#d3ab54', c2, a.hairStyleId, { dir, frameIdx }, cosmeticColors); }catch(_){}
+      shHoverRaf = requestAnimationFrame(tick);
+    };
+    shHoverRaf = requestAnimationFrame(tick);
+  }
+  function shHoverMove(e){
+    const w = 176, h = 270; let x = e.clientX + 18, y = e.clientY - h/2;
+    if(x + w > window.innerWidth) x = e.clientX - w - 18;
+    y = Math.max(8, Math.min(window.innerHeight - h - 8, y));
+    shHover.style.left = x + 'px'; shHover.style.top = y + 'px';
+  }
+  function shHoverStop(){ shHoverId = null; cancelAnimationFrame(shHoverRaf); shHover.style.display = 'none'; }
+  new MutationObserver(()=>{ if(!storeHubModal.classList.contains('open')) shHoverStop(); })
+    .observe(storeHubModal, { attributes:true, attributeFilter:['class'] });
   const SH_PREMIUM_ICON = `<img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_premium.png" onerror="this.replaceWith(document.createTextNode('👑'))">`;
   const SH_COIN_ICON = `<img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_diamond.png" onerror="this.replaceWith(document.createTextNode('💎'))">`;
   function shPremiumCards(){
