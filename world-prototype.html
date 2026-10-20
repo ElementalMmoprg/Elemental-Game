@@ -567,7 +567,7 @@
   #action-close{ text-align:center; padding:8px; font-family:var(--font-mono); font-size:10px; color:var(--danger); cursor:pointer; border-top:1px solid var(--gold-deep); }
 
   /* ============ INVENTÁRIO DIVIDIDO ============ */
-  #inventory-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:760px; max-width:94vw; height:540px; max-height:88vh; display:none; flex-direction:column; z-index:22; }
+  #inventory-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:860px; max-width:94vw; height:540px; max-height:88vh; display:none; flex-direction:column; z-index:22; }
   #inventory-modal.open{ display:flex; }
   #inv-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); }
   .inv-tab{ padding:10px 18px; font-family:var(--font-display); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
@@ -576,15 +576,29 @@
   #inv-body{ flex:1; display:flex; overflow:hidden; position:relative; }
 
   /* STATS — coluna nova (referência "Morgan Hearson"), valores reais */
-  #inv-stats-col{ width:130px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:14px 12px; display:flex; flex-direction:column; gap:7px; overflow-y:auto; }
-  .inv-stat-row{ display:flex; flex-direction:column; gap:1px; font-family:var(--font-mono); }
-  .inv-stat-icon{ font-size:13px; }
-  .inv-stat-label{ font-size:9px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.05em; }
-  .inv-stat-row b{ font-size:16px; color:var(--gold-bright); font-family:var(--font-display); }
+  /* 20/10/2026: coluna de stats redesenhada — barras de Vida/Mana, grupos
+     Ataque/Defesa e linhas compactas (ícone · nome · valor à direita). */
+  #inv-stats-col{ width:168px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:12px 10px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+  .inv-res{ display:flex; flex-direction:column; gap:3px; padding:6px 8px; border-radius:6px; background:rgba(0,0,0,.28); border:1px solid rgba(191,161,95,.18); }
+  .inv-res-top{ display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.05em; }
+  .inv-res-top b{ margin-left:auto; font-family:var(--font-display); font-size:12px; color:var(--ink); letter-spacing:0; text-transform:none; }
+  .inv-res-bar{ height:6px; border-radius:3px; background:#0a0806; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,.6); }
+  .inv-res-bar i{ display:block; height:100%; width:0; border-radius:3px; transition:width .3s; }
+  .inv-res-bar.hp i{ background:linear-gradient(90deg,#8e1f1f,#e0483d); }
+  .inv-res-bar.mp i{ background:linear-gradient(90deg,#1d3f8e,#4d8ff0); }
+  .inv-stat-group{ font-family:var(--font-display); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin:6px 0 0; display:flex; align-items:center; gap:6px; }
+  .inv-stat-group::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(191,161,95,.4), transparent); }
+  .inv-stat-row{ display:flex; align-items:center; gap:6px; font-family:var(--font-mono); padding:3px 6px; border-radius:4px; }
+  .inv-stat-row:nth-child(odd){ background:rgba(255,255,255,.025); }
+  .inv-stat-icon{ font-size:12px; width:16px; text-align:center; flex-shrink:0; }
+  .inv-stat-label{ font-size:9.5px; color:var(--ink-dim); white-space:nowrap; }
+  .inv-stat-row b{ margin-left:auto; font-size:12px; color:var(--gold-bright); font-family:var(--font-display); white-space:nowrap; }
+  .inv-set-chip{ margin-top:4px; padding:5px 8px; border-radius:6px; border:1px dashed rgba(191,161,95,.35); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .inv-set-chip b{ display:block; color:var(--gold-bright); font-family:var(--font-display); font-size:11px; margin-top:1px; }
 
   /* coluna do meio: nome + retrato do personagem (mesmo sprite do mundo,
      ampliado em pixel-art) + boneco de equipamento */
-  #inv-equip-col{ width:230px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px; overflow-y:auto; }
+  #inv-equip-col{ width:276px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px; overflow-y:auto; }
   #inv-char-name{ font-family:var(--font-display); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-bright); }
   /* Layout 2026-09-18 (pedido do usuário com print EXATA do Character(X) do
      jogo-fonte): o retrato fica ENTRE as 2 colunas de equipamento (flanking),
@@ -593,7 +607,9 @@
      contexto, pra caber ao lado das 2 colunas de 46px dentro dos 230px do
      #inv-equip-col (46+8+84+8+46=192, cabe nos 198px úteis). */
   #inv-portrait-wrap{ display:flex; justify-content:center; flex-shrink:0; }
-  #inv-portrait-canvas{ width:84px; height:140px; image-rendering:pixelated; }
+  #inv-portrait-canvas{ width:120px; height:200px; image-rendering:pixelated; } /* 20/10/2026: era 84x140, o usuário achou pequeno */
+  #inv-char-ornament{ height:30px; width:auto; display:none; margin-bottom:-4px; image-rendering:auto; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+  #inv-char-ornament.on{ display:block; }
   .equip-slot{ width:46px; height:46px; border-radius:6px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:17px; position:relative; cursor:pointer; }
   .equip-slot:hover{ border-color:var(--gold-bright); }
   .equip-slot .slot-tag{ position:absolute; bottom:-13px; left:0; right:0; text-align:center; font-family:var(--font-mono); font-size:7px; color:var(--ink-dim); }
@@ -1698,6 +1714,12 @@
   .chat-tab.active{ color:var(--gold-bright); background:rgba(191,161,95,.08); }
   #chat-messages{ flex:1; overflow-y:auto; padding:7px 10px; font-size:11.5px; line-height:1.5; }
   #chat-messages div{ margin-bottom:2px; }
+  /* Link de item no chat (20/10/2026) */
+  .chat-item-link{ cursor:pointer; font-weight:700; border-bottom:1px dotted currentColor; }
+  .chat-item-link:hover{ filter:brightness(1.25); }
+  #item-link-menu{ position:fixed; z-index:10000; display:none; background:linear-gradient(180deg,#221d16,#14110c); border:1px solid var(--gold); border-radius:6px; padding:4px; box-shadow:0 8px 24px rgba(0,0,0,.6); }
+  #item-link-menu div{ padding:6px 12px; font-family:var(--font-mono); font-size:11px; color:var(--ink); cursor:pointer; border-radius:4px; white-space:nowrap; }
+  #item-link-menu div:hover{ background:rgba(191,161,95,.18); color:var(--gold-bright); }
   .ch-sistema{ color:var(--gold-bright); }
   .ch-guild{ color:var(--mp-a); }
   .ch-global{ color:var(--ink); }
@@ -2832,19 +2854,26 @@
            "Morgan Hearson". Valores reais (player.hp/mp + soma dos status do
            equipamento via getItemTotalStatsClient), não decorativos. -->
       <div id="inv-stats-col">
-        <div class="panel-title" style="align-self:flex-start;">Stats</div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">❤️</span><span class="inv-stat-label">Vida</span><b id="inv-stat-life">0</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">💧</span><span class="inv-stat-label">Mana</span><b id="inv-stat-mana">0</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">⚔️</span><span class="inv-stat-label">DPS</span><b id="inv-stat-dps">0</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">🛡️</span><span class="inv-stat-label">Armadura</span><b id="inv-stat-armor">0</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">🎯</span><span class="inv-stat-label">Chance Crítico</span><b id="inv-stat-critchance">0%</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">💥</span><span class="inv-stat-label">Dano Crítico</span><b id="inv-stat-critdmg">0%</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">🌀</span><span class="inv-stat-label">Esquiva</span><b id="inv-stat-dodge">0%</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">🔮</span><span class="inv-stat-label">Dano Mágico</span><b id="inv-stat-magicdmg">0%</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">🗡️</span><span class="inv-stat-label">Dano Físico</span><b id="inv-stat-physdmg">0%</b></div>
-        <div class="inv-stat-row"><span class="inv-stat-icon">🛡️</span><span class="inv-stat-label">Conjunto</span><b id="inv-stat-setbonus">Nenhum</b></div>
+        <div class="panel-title" style="align-self:flex-start;">Atributos</div>
+        <div class="inv-res"><div class="inv-res-top">❤️ Vida <b id="inv-stat-life">0</b></div><div class="inv-res-bar hp"><i id="inv-bar-life"></i></div></div>
+        <div class="inv-res"><div class="inv-res-top">💧 Mana <b id="inv-stat-mana">0</b></div><div class="inv-res-bar mp"><i id="inv-bar-mana"></i></div></div>
+        <div class="inv-stat-group">Ataque</div>
+        <div>
+          <div class="inv-stat-row"><span class="inv-stat-icon">⚔️</span><span class="inv-stat-label">DPS</span><b id="inv-stat-dps">0</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon">🎯</span><span class="inv-stat-label">Chance Crít.</span><b id="inv-stat-critchance">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon">💥</span><span class="inv-stat-label">Dano Crítico</span><b id="inv-stat-critdmg">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon">🗡️</span><span class="inv-stat-label">Dano Físico</span><b id="inv-stat-physdmg">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon">🔮</span><span class="inv-stat-label">Dano Mágico</span><b id="inv-stat-magicdmg">0%</b></div>
+        </div>
+        <div class="inv-stat-group">Defesa</div>
+        <div>
+          <div class="inv-stat-row"><span class="inv-stat-icon">🛡️</span><span class="inv-stat-label">Armadura</span><b id="inv-stat-armor">0</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon">🌀</span><span class="inv-stat-label">Esquiva</span><b id="inv-stat-dodge">0%</b></div>
+        </div>
+        <div class="inv-set-chip">Bônus de Conjunto<b id="inv-stat-setbonus">Nenhum</b></div>
       </div>
       <div id="inv-equip-col">
+        <img id="inv-char-ornament" alt="" title="Ornamento" />
         <div id="inv-char-name">—</div>
         <!-- Os 3 cosméticos ficam numa linha horizontal centralizada, LOGO
              ACIMA do retrato (igual ao Huntera). Cada slot começa vazio
@@ -3673,15 +3702,91 @@
     if(activeChatTab===channel) renderChatMessages();
     else if(t.pm) t.unread = true, renderChatTabs();
   }
+  /* LINK DE ITEM NO CHAT (20/10/2026) — botão direito em qualquer item
+     (Mochila, Bolsa, Armazém, Lixeira, equipado, Wiki, Loja do NPC) →
+     "Linkar no chat": põe [Nome] no campo do chat; ao enviar, o item vai
+     junto. Na mensagem aparece [Nome] na cor da raridade; passar o mouse
+     mostra o tooltip do item (status completos se for um item real do
+     jogador — o servidor confere; senão só nome/raridade/descrição). */
+  const linkableItems = new WeakMap();
+  function markLinkable(el, item){ if(!el) return; if(item) linkableItems.set(el, item); else linkableItems.delete(el); }
+  let chatPendingLinks = [];
+  const chatLinkStore = [];
+  function chatTextWithLinks(text, links){
+    const html = escapeHtml(text || '');
+    if(!Array.isArray(links) || !links.length) return html;
+    return html.replace(/\{\{i([0-2])\}\}/g, (m, n) => {
+      const it = links[Number(n)];
+      if(!it) return m;
+      const idx = chatLinkStore.push(it) - 1;
+      if(chatLinkStore.length > 400) chatLinkStore[chatLinkStore.length - 401] = null;
+      const color = RARITY_COLORS[it.rarity] || '#a99872';
+      return `<span class="chat-item-link" data-chat-link="${idx}" style="color:${color}">[${escapeHtml(it.name || it.id || 'Item')}${it.enchantLevel ? ' +' + it.enchantLevel : ''}]</span>`;
+    });
+  }
+  function itemLinkTooltipHtml(it){
+    if(it.slot && !it.catalogOnly) return equipTooltipHtml(it);
+    const color = RARITY_COLORS[it.rarity] || '#a99872';
+    const info = ITEM_INFO[it.id];
+    const desc = it.description || (info && info.desc) || '';
+    return `<b style="color:${color}">${escapeHtml(it.name || it.id || 'Item')}</b><span class="tt-rarity" style="color:${color}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>${it.qty>1?` · x${it.qty}`:''}${desc ? `<span class="hint" style="font-style:italic;">${escapeHtml(desc)}</span>` : ''}${it.catalogOnly && it.slot ? '<span class="hint">Item da Wiki/Loja — os status variam por raridade</span>' : ''}`;
+  }
+  chatMsgEl.addEventListener('mouseover', e=>{
+    const a = e.target.closest('[data-chat-link]'); if(!a) return;
+    const it = chatLinkStore[Number(a.dataset.chatLink)]; if(!it) return;
+    invItemTooltip.innerHTML = itemLinkTooltipHtml(it);
+    invItemTooltip.style.borderColor = RARITY_COLORS[it.rarity] || '';
+    invItemTooltip.style.display = 'block';
+    positionInvTooltip(e);
+  });
+  chatMsgEl.addEventListener('mousemove', e=>{ if(e.target.closest('[data-chat-link]')) positionInvTooltip(e); });
+  chatMsgEl.addEventListener('mouseout', e=>{ if(e.target.closest('[data-chat-link]')) invItemTooltip.style.display = 'none'; });
+  const itemLinkMenu = document.createElement('div'); itemLinkMenu.id = 'item-link-menu';
+  itemLinkMenu.innerHTML = '<div data-act="link">🔗 Linkar no chat</div>';
+  document.body.appendChild(itemLinkMenu);
+  let itemLinkMenuItem = null;
+  document.addEventListener('contextmenu', e=>{
+    let el = e.target;
+    while(el && el !== document.body && !linkableItems.has(el)) el = el.parentElement;
+    if(!el || !linkableItems.has(el)) return;
+    e.preventDefault();
+    itemLinkMenuItem = linkableItems.get(el);
+    itemLinkMenu.style.display = 'block';
+    itemLinkMenu.style.left = Math.min(e.clientX, window.innerWidth - 170) + 'px';
+    itemLinkMenu.style.top = Math.min(e.clientY, window.innerHeight - 50) + 'px';
+  });
+  document.addEventListener('click', e=>{
+    if(itemLinkMenu.style.display !== 'block') return;
+    if(e.target.closest('#item-link-menu [data-act="link"]') && itemLinkMenuItem){
+      const it = itemLinkMenuItem;
+      const label = `[${it.name || it.id}]`;
+      chatPendingLinks = chatPendingLinks.filter(x => `[${x.name || x.id}]` !== label).concat([it]);
+      const v = chatInputEl.value;
+      chatInputEl.value = (v && !/\s$/.test(v) ? v + ' ' : v) + label + ' ';
+      chatInputEl.focus();
+    }
+    itemLinkMenu.style.display = 'none'; itemLinkMenuItem = null;
+  });
   renderChatTabs(); renderChatMessages();
   chatInputEl.addEventListener('keydown', e=>{
     if(e.key !== 'Enter' || !e.target.value.trim()) return;
-    const text = e.target.value.trim();
+    let text = e.target.value.trim();
+    // Links de item: cada "[Nome]" que veio do "Linkar no chat" vira {{iN}}
+    // e o item vai junto em links[] (o servidor confere se é seu de verdade).
+    const links = [];
+    chatPendingLinks.forEach(it => {
+      const label = `[${it.name || it.id}]`;
+      const pos = text.indexOf(label);
+      if(pos < 0 || links.length >= 3) return;
+      text = text.slice(0, pos) + `{{i${links.length}}}` + text.slice(pos + label.length);
+      links.push(it);
+    });
+    chatPendingLinks = [];
     const activeTabData = chatTabsData[activeChatTab];
     if(activeTabData && activeTabData.pm){
-      sendWS({ type:'chat:whisper', targetUsername: activeTabData.pmTarget, text });
+      sendWS({ type:'chat:whisper', targetUsername: activeTabData.pmTarget, text, links });
     } else if(CHAT_SENDABLE.includes(activeChatTab)){
-      sendWS({ type:'chat', channel:activeChatTab, text });
+      sendWS({ type:'chat', channel:activeChatTab, text, links });
     } else {
       logChat('sistema', 'Este canal é só leitura — fale em Global, Local ou Guild.');
     }
@@ -6544,9 +6649,9 @@
             const otherNick = msg.self ? msg.to : msg.from;
             const pmId = openPmTab(otherNick, false);
             const label = msg.self ? `Você` : `<b>${escapeHtml(otherNick)}</b>`;
-            logChat(pmId, `${label}: ${escapeHtml(msg.text)}`);
+            logChat(pmId, `${label}: ${chatTextWithLinks(msg.text, msg.links)}`);
           } else {
-            logChat(msg.channel, `<b>${escapeHtml(msg.from)}</b>: ${escapeHtml(msg.text)}`);
+            logChat(msg.channel, `<b>${escapeHtml(msg.from)}</b>: ${chatTextWithLinks(msg.text, msg.links)}`);
           }
           break;
         case 'item:mythicAnnounce': handleMythicAnnounce(msg); break;
@@ -8977,6 +9082,7 @@
         </div>
       </div>`;
     }).join('') || '<div class="italic-note">Nenhum item encontrado.</div>';
+    list.querySelectorAll('.wiki-item-row').forEach((el, i) => { const it = items[i]; if(it) markLinkable(el, { id: it.id, name: it.name, rarity: it.rarity }); });
   }
 
   function getWikiMonsterCatalog(){
@@ -9569,7 +9675,7 @@
     // não mais uma lista de linhas -- reaproveita a MESMA classe .item-slot
     // e o MESMO grid (#inv-items-grid) já usado pela Bolsa/Mochila.
     trash.forEach((it,i)=>{
-      const slot = document.createElement('div'); slot.className = 'item-slot';
+      const slot = document.createElement('div'); slot.className = 'item-slot'; markLinkable(slot, it);
       const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
       slot.style.borderColor = rarityColor;
       slot.style.cursor = 'pointer';
@@ -9610,7 +9716,7 @@
     // Slot compartilhado entre a metade "Mochila" e "Armazém" do Armazém --
     // mesma classe .item-slot (visual igual Bolsa/Mochila), só troca a ação
     // do clique (guardar vs. recuperar).
-    const slot = document.createElement('div'); slot.className = 'item-slot';
+    const slot = document.createElement('div'); slot.className = 'item-slot'; markLinkable(slot, it);
     const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
     slot.style.borderColor = rarityColor;
     slot.style.cursor = 'pointer';
@@ -9699,6 +9805,7 @@
     if(!document.querySelector('.equip-slot[data-equip]:hover')) invItemTooltip.style.display = 'none';
     document.querySelectorAll('.equip-slot[data-equip]').forEach(el=>{
       const key = el.dataset.equip; const item = equipment[key];
+      markLinkable(el, item || null);
       el.classList.toggle('filled', !!item);
       el.title = item ? item.name : el.querySelector('.slot-tag').textContent;
       const iconSpan = el.querySelector('.slot-icon');
@@ -9755,8 +9862,10 @@
     const cs = combatStats || {};
     document.getElementById('inv-stat-life').textContent = `${Math.round(player.hp)}/${player.hpMax}`;
     document.getElementById('inv-stat-mana').textContent = `${Math.round(player.mp)}/${player.mpMax}`;
+    document.getElementById('inv-bar-life').style.width = `${Math.max(0, Math.min(100, player.hpMax ? player.hp/player.hpMax*100 : 0))}%`;
+    document.getElementById('inv-bar-mana').style.width = `${Math.max(0, Math.min(100, player.mpMax ? player.mp/player.mpMax*100 : 0))}%`;
     document.getElementById('inv-stat-dps').textContent = cs.dps!=null ? cs.dps : sumEquipStat('atk');
-    document.getElementById('inv-stat-armor').textContent = cs.armor!=null ? cs.armor : sumEquipStat('def');
+    document.getElementById('inv-stat-armor').textContent = Math.round(cs.armor!=null ? cs.armor : sumEquipStat('def'));
     document.getElementById('inv-stat-critchance').textContent = `${(cs.critChancePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-critdmg').textContent = `${(cs.critDamagePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-dodge').textContent = `${(cs.dodgeChancePct||0).toFixed(1)}%`;
@@ -9769,6 +9878,15 @@
     // pequena dedicada, ampliada via CSS (image-rendering:pixelated) pra
     // parecer um "retrato" em vez do bonequinho minúsculo do mapa.
     document.getElementById('inv-char-name').textContent = PLAYER_NICK || '—';
+    // Ornamento (título) equipado acima do nome
+    const ornEl = document.getElementById('inv-char-ornament');
+    if(cosmetics.ornament){
+      const src = URL_BASE + 'ornaments/' + cosmetics.ornament + '.png';
+      if(ornEl.getAttribute('src') !== src) ornEl.setAttribute('src', src);
+      const odef = ornamentCatalog.find(o => o.id === cosmetics.ornament);
+      ornEl.title = odef ? odef.name : 'Ornamento';
+      ornEl.classList.add('on');
+    } else ornEl.classList.remove('on');
     const portraitCanvas = document.getElementById('inv-portrait-canvas');
     const pctx = portraitCanvas.getContext('2d');
     pctx.clearRect(0, 0, portraitCanvas.width, portraitCanvas.height);
@@ -9797,7 +9915,7 @@
     cap.textContent = `${invTab === 'bolsa' ? 'Bolsa (consumíveis)' : 'Mochila (loot)'}: ${items.length}/${capMax}`;
     grid.innerHTML = '';
     items.forEach((it,i)=>{
-      const slot = document.createElement('div'); slot.className = 'item-slot';
+      const slot = document.createElement('div'); slot.className = 'item-slot'; markLinkable(slot, it);
       const gemIconUrl = GEM_ICON_URL[it.id];
       const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
       slot.style.borderColor = rarityColor;
@@ -11713,6 +11831,7 @@
         <button class="party-btn primary" data-buy-item="${it.id}">Comprar</button>
       </div>`;
     }).join('');
+    list.querySelectorAll('.shop-item-row').forEach((el, i) => { const it = shop.items[i]; if(it) markLinkable(el, { id: it.id, name: it.name, rarity: it.rarity, slot: it.slot, icon: it.icon, description: it.description }); });
     list.querySelectorAll('[data-buy-item]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'npc:buy', npcId: SHOP_NPC_ID, itemId: btn.dataset.buyItem, qty: 1 }));
     });
