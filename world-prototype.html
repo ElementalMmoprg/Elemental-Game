@@ -4196,6 +4196,12 @@
     if(_recolorCache[key]) return _recolorCache[key];
     if(!palette || !palette.length) return null;
     const baseEntry = SpriteManager.outfitTemplateSprite(outfitId, 'base');
+    // Trajes de COR FIXA (OUTFIT_CATALOG[].fixedColor, ex. os trajes 'rd_*'
+    // da loja de Elemental Coin, 20/10/2026): mesmo atlas 4 direções x N
+    // quadros dos Arquétipos, só que de 1 camada (sem máscara) -- não há o
+    // que recolorir, então devolve o próprio atlas base.
+    const fixedDef = outfitCatalog.find(o => o.id === outfitId);
+    if(fixedDef && fixedDef.fixedColor) return (baseEntry.loaded && baseEntry.frame) ? baseEntry : null;
     const maskEntry = SpriteManager.outfitTemplateSprite(outfitId, 'mask');
     if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
     const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
@@ -4256,7 +4262,9 @@
     // claude/outfit-atlas-4-direcoes-notas.md) -- ver comentário do mirror
     // logo abaixo pra entender por quê.
     const outfitDef = (outfitId && outfitId !== 'padrao') ? outfitCatalog.find(o => o.id === outfitId) : null;
-    const isArchetypeOutfit = !!(outfitDef && outfitDef.recolorable);
+    // fixedColor (trajes 'rd_*', 1 camada sem máscara) usa o MESMO motor de
+    // atlas 4 direções dos Arquétipos -- ver getRecoloredArmor.
+    const isArchetypeOutfit = !!(outfitDef && (outfitDef.recolorable || outfitDef.fixedColor));
     const archetypeArmor = isArchetypeOutfit
       ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
       : null;
@@ -8025,9 +8033,9 @@
         const owned = ownedOutfits.includes(o.id);
         const equipped = cosmetics.outfit === o.id;
         return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-outfit="${o.id}">
-          <div class="oc-icon">🧍</div>
+          <div class="oc-icon">${o.fixedColor ? `<img src="${URL_BASE}player/outfits_template/${o.id}_icon.png" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🧍';" />` : '🧍'}</div>
           <div class="oc-name">${escapeHtml(o.name)}</div>
-          <div class="oc-price">${owned ? (equipped?'Equipado':'Adquirido — clique p/ vestir') : (o.cost>0?`${o.cost.toLocaleString('pt-BR')} Gold`:'Grátis')}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipado':'Adquirido — clique p/ vestir') : (o.cost>0?(o.currency==='elementalCoin'?`${o.cost.toLocaleString('pt-BR')} 💎 Coin`:`${o.cost.toLocaleString('pt-BR')} Gold`):'Grátis')}</div>
         </div>`;
       }).join('');
       grid.querySelectorAll('.outfit-card').forEach(card=>{
@@ -8086,7 +8094,7 @@
         const owned = ownedAuras.includes(a.id);
         const equipped = cosmetics.aura === a.id;
         return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-aura="${a.id}">
-          <div class="oc-icon"><img src="${URL_BASE}items/icons/${a.id}.png" style="width:28px;height:28px;object-fit:contain;" /></div>
+          <div class="oc-icon"><img src="${URL_BASE}auras/${a.id}/f00.png" style="width:28px;height:28px;object-fit:contain;" /></div>
           <div class="oc-name">${escapeHtml(a.name)}</div>
           <div class="oc-price">${owned ? (equipped?'Equipada':'Adquirida — clique p/ vestir') : `${a.cost.toLocaleString('pt-BR')} Gold`}</div>
         </div>`;
@@ -9370,8 +9378,8 @@
       el.title = id ? (def ? def.name : id) : el.querySelector('.slot-tag').textContent;
       // Ícone real em vez do emoji fixo de antes — Asas usa a própria sprite
       // (assets/wings/<id>.png, mesmo arquivo que renderiza nas costas do
-      // personagem) e Aura usa o ícone quadrado dedicado (assets/items/icons/
-      // <id>.png, o mesmo já usado no card da Loja) — sem nada equipado,
+      // personagem) e Aura usa o 1º quadro da própria animação (assets/auras/
+      // <id>/f00.png, o mesmo já usado no card da Loja) — sem nada equipado,
       // volta pro emoji original como placeholder. Outfit não passa por
       // aqui: sempre tem valor (default 'padrao'), tratado no bloco da
       // prévia em canvas logo abaixo, junto do retrato.
@@ -9379,7 +9387,7 @@
       if(iconSpan && key==='wings'){
         iconSpan.innerHTML = id ? `<img src="${URL_BASE}wings/${id}.png" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🪽';" />` : '🪽';
       } else if(iconSpan && key==='aura'){
-        iconSpan.innerHTML = id ? `<img src="${URL_BASE}items/icons/${id}.png" style="width:28px;height:28px;object-fit:contain;" onerror="this.parentElement.textContent='✨';" />` : '✨';
+        iconSpan.innerHTML = id ? `<img src="${URL_BASE}auras/${id}/f00.png" style="width:28px;height:28px;object-fit:contain;" onerror="this.parentElement.textContent='✨';" />` : '✨';
       }
     });
 
