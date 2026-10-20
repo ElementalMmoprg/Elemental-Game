@@ -5937,6 +5937,43 @@
     return st;
   }
 
+  // ---- ANIMAÇÃO DE ANDAR DO MONSTRO (atlas v4, 20/10/2026) ----
+  // Atlas v4 (Elemental_assets/assets/monsters/atlas/<id>.png): 4 linhas
+  // (baixo, cima, direita, esquerda) e, pros outfits que têm grupo "parado"
+  // no .dat, a COLUNA 0 é o quadro PARADO de verdade e as colunas 1..N são o
+  // ciclo de andar. Os outfits sem grupo parado (aranhas, aves, gênios,
+  // criaturas que flutuam...) têm um único grupo que anima SEMPRE, parado ou
+  // andando — igual o cliente Tibia/OTClient faz.
+  // O quadro do ciclo de andar segue a DISTÂNCIA andada (1 ciclo completo
+  // por SQM, igual o OTClient: duração do passo / nº de quadros), então as
+  // patas acompanham o deslocamento sem "patinar" nem ficar em câmera lenta,
+  // qualquer que seja a velocidade do monstro ou o atraso da rede.
+  const MONSTER_ATLAS_IDLE_COL = new Set([35, 63, 69, 79, 80, 81, 98, 152, 311, 313, 324, 358, 360, 361, 362, 369, 371, 372, 373, 413, 414, 415, 809, 812, 814, 815, 817, 818, 819, 820, 995, 996, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1058, 1107, 1108, 1110, 1111, 1112, 1206, 1310, 1322, 1323, 1327, 1338, 1353, 1401, 1402, 1404, 1406, 1417, 1420, 1423, 1426, 1429, 1432, 1441, 1456, 1507, 1513, 1544, 1549, 1552, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 2104, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2299, 3274, 7395, 8066, 8070, 8698]);
+  const MONSTER_WALK_CYCLE_WORLD = TILE_STEP; // 1 ciclo de andar = 1 SQM
+  const MONSTER_ALWAYS_ANIM_MS = 110;         // quadro dos que animam sempre
+  const MONSTER_WALK_STOP_GRACE_MS = 140;     // sem deslocamento por mais que isso = parado
+  const monsterAnimStates = new Map();
+  function monsterAnimFrame(m, entry){
+    const row = entry && entry.dirFrames && entry.dirFrames.down;
+    const total = row ? row.length : 1;
+    if(total <= 1) return 0;
+    const tsNow = Date.now();
+    if(!MONSTER_ATLAS_IDLE_COL.has(Number(m.walkAtlas))){
+      // grupo único: anima o tempo todo (defasado por monstro pra não ficarem sincronizados)
+      const seed = String(m.id||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+      return Math.floor((tsNow + seed*37) / MONSTER_ALWAYS_ANIM_MS) % total;
+    }
+    const walkN = total - 1;
+    let st = monsterAnimStates.get(m.id);
+    if(!st){ st = { x:m.x, y:m.y, dist:0, lastMoveAt:0 }; monsterAnimStates.set(m.id, st); }
+    const d = Math.hypot(m.x - st.x, m.y - st.y);
+    st.x = m.x; st.y = m.y;
+    if(d > 0.01 && d < TILE_STEP*3){ st.dist += d; st.lastMoveAt = tsNow; }
+    if(tsNow - st.lastMoveAt > MONSTER_WALK_STOP_GRACE_MS){ st.dist = 0; return 0; }
+    const per = MONSTER_WALK_CYCLE_WORLD / walkN;
+    return 1 + (Math.floor(st.dist / per) % walkN);
+  }
+
   function draw(){
     ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
     ctx.fillRect(0,0,viewW,viewH);
@@ -6178,7 +6215,8 @@
               // anim.dir só cobre o instante antes do 1º snapshot chegar.
               const anim = updateWalkAnim('mon:'+m.id, s.x, s.y);
               const dir = m.facingDir || anim.dir;
-              drew = !!SpriteManager.drawBodyDirFrame(ctx, walkEntry, dir, anim.frameIdx, s.x, s.y+bob, 68*SPRITE_SCALE*bScale, 68*SPRITE_SCALE*bScale, false);
+              const mFrame = monsterAnimFrame(m, walkEntry);
+              drew = !!SpriteManager.drawBodyDirFrame(ctx, walkEntry, dir, mFrame, s.x, s.y, /* sem balanço: o atlas real já tem quadro parado/andar */ 68*SPRITE_SCALE*bScale, 68*SPRITE_SCALE*bScale, false);
             }
             if(!drew) drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34*SPRITE_SCALE*bScale, s.y-68*SPRITE_SCALE*bScale+bob, 68*SPRITE_SCALE*bScale,68*SPRITE_SCALE*bScale);
             if(!drew){
@@ -6201,7 +6239,7 @@
               }
             }
             if(monsterMirror) ctx.restore();
-          }, headCart:{x:m.x,y:m.y}, headLift:(m.isBoss?24*1.55:24)*SPRITE_SCALE, bobOffset:()=>Math.sin(now()/1000*1.6 + m._bobPhase)*1.6, hpPct:m.hp/m.hpMax, kind:'monster', monsterId:m.id, monsterName:m.name, monsterIsBoss:!!m.isBoss });
+          }, headCart:{x:m.x,y:m.y}, headLift:(m.isBoss?24*1.55:24)*SPRITE_SCALE, bobOffset:()=>(m.walkAtlas ? 0 : Math.sin(now()/1000*1.6 + m._bobPhase)*1.6), hpPct:m.hp/m.hpMax, kind:'monster', monsterId:m.id, monsterName:m.name, monsterIsBoss:!!m.isBoss });
         });
       });
     }
