@@ -185,6 +185,7 @@
      visível se sobrar recarga hoje; some quando não é premium ou já usou as 4. */
   #stam-recharge-btn{ display:none; width:18px; height:18px; border-radius:50%; border:1px solid var(--premium); background:rgba(240,211,138,.1); color:var(--premium); align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; line-height:1; cursor:pointer; flex-shrink:0; }
   #stam-recharge-btn.show{ display:flex; }
+  #stam-recharge-btn.full{ opacity:.45; cursor:not-allowed; } /* stamina cheia: não dá pra comprar */
   #stam-recharge-btn .popover{ bottom:calc(100% + 8px); right:0; width:190px; }
 
   /* ============ POPOVERS DE HOVER ============ */
@@ -1047,7 +1048,8 @@
   .glass.win > .panel-title .rule{ background:linear-gradient(90deg, rgba(255,255,255,.28), transparent); }
 
   /* ============ PARTY — membros, convite, botão IR (só líder) ============ */
-  #party-panel{ top:60px; right:480px; width:250px; display:none; z-index:6; }
+  #party-panel{ top:60px; right:480px; width:250px; display:none; z-index:6; overflow:visible; } /* 20/10/2026: sem barra de rolagem */
+  #party-panel *{ box-sizing:border-box; }
   #party-rateio{ margin:6px 0 10px; }
   .party-rateio-off .party-btn, .party-rateio-on .party-btn{ width:100%; margin-top:6px; }
   .party-rateio-on{ font-family:var(--font-mono); font-size:10.5px; padding:8px; border:1px solid rgba(191,161,95,.25); border-radius:4px; background:rgba(0,0,0,.15); }
@@ -1055,11 +1057,11 @@
   .rateio-pay{ color:#e06666; }
   .rateio-receive{ color:#6ee06e; }
   #party-panel.open{ display:block; }
-  .party-row{ display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; padding:6px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
-  .party-row .pname{ color:var(--ink); }
+  .party-row{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:center; padding:6px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
+  .party-row .pname{ color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .party-row .crown{ color:var(--gold-bright); }
   #party-invite-row{ display:flex; gap:6px; margin-top:10px; }
-  #party-invite-input{ flex:1; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:10.5px; }
+  #party-invite-input{ flex:1; min-width:0; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:10.5px; }
   .party-btn{ padding:6px 10px; border-radius:4px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-mono); font-size:9.5px; cursor:pointer; }
   .party-btn:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
   .party-btn.primary{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); }
@@ -1652,6 +1654,10 @@
   .quicksell-group-label:first-child{ margin-top:0; }
   .quicksell-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.25); margin-bottom:5px; }
   .quicksell-row.marked{ background:rgba(126,224,138,.12); border-color:#7ee08a; }
+  .quicksell-row{ cursor:pointer; user-select:none; }
+  .quicksell-row:hover{ border-color:var(--gold-bright); }
+  .quicksell-check{ width:16px; height:16px; flex-shrink:0; border-radius:4px; border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; font-size:11px; color:#7ee08a; }
+  .quicksell-row.marked .quicksell-check{ border-color:#7ee08a; background:rgba(126,224,138,.18); }
   .quicksell-row .item-icon{ width:22px; height:22px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
   .quicksell-row .item-icon svg{ width:100%; height:100%; }
   #blessings-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:94vw; display:none; z-index:17; }
@@ -1721,6 +1727,17 @@
   #item-link-menu{ position:fixed; z-index:10000; display:none; background:linear-gradient(180deg,#221d16,#14110c); border:1px solid var(--gold); border-radius:6px; padding:4px; box-shadow:0 8px 24px rgba(0,0,0,.6); }
   #item-link-menu div{ padding:6px 12px; font-family:var(--font-mono); font-size:11px; color:var(--ink); cursor:pointer; border-radius:4px; white-space:nowrap; }
   #item-link-menu div:hover{ background:rgba(191,161,95,.18); color:var(--gold-bright); }
+  #split-modal{ position:fixed; inset:0; z-index:10001; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.45); }
+  #split-modal.open{ display:flex; }
+  #split-modal .split-box{ width:300px; max-width:92vw; padding:14px 16px; }
+  #split-modal .split-name{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11px; margin-bottom:10px; }
+  #split-modal .split-name .item-icon{ width:26px; height:26px; }
+  #split-modal .split-row{ display:flex; align-items:center; gap:10px; }
+  #split-modal input[type=range]{ flex:1; accent-color:var(--gold-bright); }
+  #split-modal input[type=number]{ width:70px; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:5px 6px; font-family:var(--font-mono); font-size:12px; }
+  #split-modal .split-hint{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin:8px 0 12px; }
+  #split-modal .split-actions{ display:flex; justify-content:flex-end; gap:8px; }
+  .item-slot.drop-hover, .panel-title.drop-hover{ outline:2px dashed var(--gold-bright); outline-offset:1px; }
   .ch-sistema{ color:var(--gold-bright); }
   .ch-guild{ color:var(--mp-a); }
   .ch-global{ color:var(--ink); }
@@ -2378,7 +2395,6 @@
   <div id="analyzer-panel" class="glass ornate win">
     <div class="analyzer-tabs win-drag">
       <div class="analyzer-tab active" data-atab="geral">Geral</div>
-      <div class="analyzer-tab" data-atab="combate">Combate</div>
       <div class="analyzer-tab" data-atab="suprimentos">Suprimentos</div>
       <span class="analyzer-reset-btn" id="analyzer-reset-btn" title="Reiniciar contadores da sessão">⟳</span>
       <span class="win-close-x" style="margin-left:auto;align-self:center;" data-close-win="analyzer-panel">✕</span>
@@ -3748,12 +3764,16 @@
   itemLinkMenu.innerHTML = '<div data-act="link">🔗 Linkar no chat</div>';
   document.body.appendChild(itemLinkMenu);
   let itemLinkMenuItem = null;
+  let itemLinkMenuStack = null; // { container, index, item } quando dá pra dividir
   document.addEventListener('contextmenu', e=>{
     let el = e.target;
     while(el && el !== document.body && !linkableItems.has(el)) el = el.parentElement;
     if(!el || !linkableItems.has(el)) return;
     e.preventDefault();
     itemLinkMenuItem = linkableItems.get(el);
+    const sInfo = stackInfoByEl.get(el);
+    itemLinkMenuStack = (sInfo && !sInfo.item.slot && (sInfo.item.qty||1) > 1) ? sInfo : null;
+    itemLinkMenu.innerHTML = '<div data-act="link">🔗 Linkar no chat</div>' + (itemLinkMenuStack ? '<div data-act="split">✂️ Dividir quantidade</div>' : '');
     itemLinkMenu.style.display = 'block';
     itemLinkMenu.style.left = Math.min(e.clientX, window.innerWidth - 170) + 'px';
     itemLinkMenu.style.top = Math.min(e.clientY, window.innerHeight - 50) + 'px';
@@ -3768,8 +3788,110 @@
       chatInputEl.value = (v && !/\s$/.test(v) ? v + ' ' : v) + label + ' ';
       chatInputEl.focus();
     }
-    itemLinkMenu.style.display = 'none'; itemLinkMenuItem = null;
+    if(e.target.closest('#item-link-menu [data-act="split"]') && itemLinkMenuStack){
+      const st = itemLinkMenuStack, q = st.item.qty || 1;
+      openSplitModal(st.item, q - 1, 'Quantas unidades separar numa casa nova?', n=> sendWS({ type:'stack:split', container: st.container, index: st.index, qty: n, toIndex: st.index + 1 }));
+    }
+    itemLinkMenu.style.display = 'none'; itemLinkMenuItem = null; itemLinkMenuStack = null;
   });
+  /* DIVIDIR PILHAS (20/10/2026) — arrastar um item empilhável pra outra casa
+     (Mochila/Bolsa/Armazém) pergunta quantas unidades mover; botão direito >
+     "Dividir quantidade" separa uma parte na casa ao lado. Servidor:
+     stack:split / stack:move / depot:store|retrieve com qty. */
+  const stackInfoByEl = new WeakMap(); // el -> { container, index, item }
+  let stackDragSrc = null;             // { container, index, item } durante o arraste
+  const splitModal = document.createElement('div');
+  splitModal.id = 'split-modal';
+  splitModal.innerHTML = `<div class="split-box glass ornate">
+      <div class="panel-title" style="margin-bottom:8px;">Dividir quantidade<span class="rule"></span></div>
+      <div id="split-item-name" class="split-name"></div>
+      <div class="split-row"><input type="range" id="split-range" min="1" value="1"><input type="number" id="split-num" min="1" value="1"></div>
+      <div class="split-hint" id="split-hint"></div>
+      <div class="split-actions"><button type="button" class="party-btn" id="split-cancel">Cancelar</button><button type="button" class="party-btn primary" id="split-ok">Confirmar</button></div>
+    </div>`;
+  document.body.appendChild(splitModal);
+  let splitModalCb = null;
+  const splitRange = splitModal.querySelector('#split-range'), splitNum = splitModal.querySelector('#split-num');
+  function openSplitModal(item, max, hint, cb){
+    splitModal.querySelector('#split-item-name').innerHTML = `${resolveItemIconHtml(item)}<span style="color:${RARITY_COLORS[item.rarity]||'#e8dcc0'}">${escapeHtml(item.name||item.id)}</span> <small>(x${item.qty||1})</small>`;
+    splitRange.max = String(max); splitNum.max = String(max);
+    const half = Math.max(1, Math.floor((item.qty||1)/2));
+    splitRange.value = splitNum.value = String(Math.min(max, half));
+    splitModal.querySelector('#split-hint').textContent = hint || '';
+    splitModalCb = cb;
+    splitModal.classList.add('open');
+    setTimeout(()=>{ splitNum.focus(); splitNum.select(); }, 0);
+  }
+  function closeSplitModal(){ splitModal.classList.remove('open'); splitModalCb = null; }
+  splitRange.addEventListener('input', ()=>{ splitNum.value = splitRange.value; });
+  splitNum.addEventListener('input', ()=>{ const v = Math.max(1, Math.min(Number(splitNum.max), Math.floor(Number(splitNum.value)||1))); splitRange.value = String(v); });
+  splitModal.querySelector('#split-cancel').addEventListener('click', closeSplitModal);
+  splitModal.addEventListener('click', e=>{ if(e.target === splitModal) closeSplitModal(); });
+  const confirmSplit = ()=>{
+    const v = Math.max(1, Math.min(Number(splitNum.max), Math.floor(Number(splitNum.value)||1)));
+    const cb = splitModalCb; closeSplitModal(); if(cb) cb(v);
+  };
+  splitModal.querySelector('#split-ok').addEventListener('click', confirmSplit);
+  splitNum.addEventListener('keydown', e=>{ if(e.key === 'Enter') confirmSplit(); if(e.key === 'Escape') closeSplitModal(); });
+  // Liga arrastar/soltar numa casa de item (it = null pra casa vazia).
+  function attachStackDnD(el, container, index, it){
+    if(it) stackInfoByEl.set(el, { container, index, item: it });
+    if(it){
+      el.draggable = true;
+      el.addEventListener('dragstart', e=>{
+        stackDragSrc = { container, index, item: it };
+        try { e.dataTransfer.setData('text/stack', container + ':' + index); } catch(err){}
+        // equipamento da Mochila continua podendo ir pro boneco (text/plain = bagIndex)
+        if(container === 'bag' && it.slot) e.dataTransfer.setData('text/plain', String(index));
+        e.dataTransfer.effectAllowed = 'move';
+        itemDragInProgress = true;
+      });
+    }
+    const crossOk = src => src && src.container !== container && ((src.container === 'bag' && container === 'depot') || (src.container === 'depot' && container === 'bag'));
+    el.addEventListener('dragover', e=>{ if(stackDragSrc && (stackDragSrc.container === container || crossOk(stackDragSrc))){ e.preventDefault(); el.classList.add('drop-hover'); } });
+    el.addEventListener('dragleave', ()=> el.classList.remove('drop-hover'));
+    el.addEventListener('drop', e=>{
+      el.classList.remove('drop-hover');
+      const src = stackDragSrc;
+      if(crossOk(src)){ e.preventDefault(); e.stopPropagation(); stackDragSrc = null; itemDragInProgress = false; depotTransfer(src, container); return; }
+      stackDragSrc = null;
+      if(!src || src.container !== container || src.index === index) return;
+      e.preventDefault(); e.stopPropagation();
+      itemDragInProgress = false;
+      const sit = src.item, q = sit.qty || 1;
+      const sameStack = it && !it.slot && !sit.slot && it.id === sit.id;
+      if(q > 1 && !sit.slot && !sameStack){
+        openSplitModal(sit, q, 'Quantas unidades vão para a casa escolhida?', n=>{
+          if(n >= q) sendWS({ type:'stack:move', container, from: src.index, to: index });
+          else sendWS({ type:'stack:split', container, index: src.index, qty: n, toIndex: index });
+        });
+      } else {
+        sendWS({ type:'stack:move', container, from: src.index, to: index });
+      }
+    });
+  }
+  // Zona de soltar do Armazém (cabeçalho "Mochila"/"Armazém"): move entre os dois.
+  function attachDepotZone(el, targetContainer){
+    el.addEventListener('dragover', e=>{ if(stackDragSrc && stackDragSrc.container !== targetContainer && (stackDragSrc.container === 'bag' || stackDragSrc.container === 'depot')){ e.preventDefault(); el.classList.add('drop-hover'); } });
+    el.addEventListener('dragleave', ()=> el.classList.remove('drop-hover'));
+    el.addEventListener('drop', e=>{
+      el.classList.remove('drop-hover');
+      const src = stackDragSrc; stackDragSrc = null;
+      if(!src || src.container === targetContainer) return;
+      e.preventDefault(); e.stopPropagation(); itemDragInProgress = false;
+      depotTransfer(src, targetContainer);
+    });
+  }
+  function depotTransfer(src, targetContainer){
+    const q = src.item.qty || 1;
+    const send = n => {
+      if(targetContainer === 'depot') sendWS({ type:'depot:store', bagIndex: src.index, qty: n });
+      else sendWS({ type:'depot:retrieve', depotIndex: src.index, qty: n });
+    };
+    if(q > 1 && !src.item.slot) openSplitModal(src.item, q, targetContainer === 'depot' ? 'Quantas unidades guardar no Armazém?' : 'Quantas unidades levar pra Mochila?', send);
+    else send(q);
+  }
+  document.addEventListener('dragend', ()=>{ stackDragSrc = null; });
   renderChatTabs(); renderChatMessages();
   chatInputEl.addEventListener('keydown', e=>{
     if(e.key !== 'Enter' || !e.target.value.trim()) return;
@@ -6091,6 +6213,8 @@
   const heldKeys = {};
   window.addEventListener('keydown', e=>{
     if(document.activeElement && document.activeElement.id === 'chat-input') return;
+    // digitando em qualquer campo (nome de guilda, troca, convite...): não anda
+    { const tg = document.activeElement && document.activeElement.tagName; if(tg === 'INPUT' || tg === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) return; }
     heldKeys[e.key.toLowerCase()] = true;
   });
   window.addEventListener('keyup', e=> heldKeys[e.key.toLowerCase()] = false);
@@ -6211,7 +6335,9 @@
     document.getElementById('stam-recharge-btn').classList.toggle('show', canRecharge);
     document.getElementById('stam-recharge-count').textContent = `${stamina.rechargesUsedToday}/${stamina.maxRechargesPerDay}`;
     document.getElementById('stam-recharge-cost').textContent = canRecharge ? `${Math.round(stamina.rechargeCost).toLocaleString('pt-BR')} Gold` : '—';
-    document.getElementById('stam-recharge-note').textContent = canRecharge ? 'Clique pra comprar — fica mais caro a cada compra do dia.' : 'Reseta à meia-noite.';
+    const staminaFull = stamina.max - stamina.current < 60000;
+    document.getElementById('stam-recharge-btn').classList.toggle('full', staminaFull);
+    document.getElementById('stam-recharge-note').textContent = !canRecharge ? 'Reseta à meia-noite.' : (staminaFull ? 'Sua stamina está cheia — dá pra recarregar quando ela baixar.' : 'Clique pra comprar — fica mais caro a cada compra do dia.');
     const rechargeHours = Math.round((stamina.rechargeMs||0) / 3600000);
     document.getElementById('stam-recharge-gain').textContent = `+${rechargeHours}h`;
     const badge = document.getElementById('premium-badge');
@@ -7233,7 +7359,7 @@
     }
     if(msg.forType === 'stamina:recharge'){
       if(msg.ok) logLoot(`⚡ Stamina recarregada (+6h) por ${msg.cost} Gold.`);
-      else logLoot(`⚠️ Recarga falhou: ${msg.reason}`);
+      else logLoot(`⚠️ Recarga falhou: ${({stamina_cheia:'sua stamina já está cheia.', ouro_insuficiente:'Gold insuficiente.', limite_diario_atingido:'limite de recargas de hoje atingido.'})[msg.reason] || msg.reason}`);
     }
     /* ---- TORRES ELEMENTAIS — nenhuma das 5 mensagens tinha feedback nenhum
        aqui até agora (bug real: clicar em "Subir a Torre" sem stamina, sem
@@ -8217,7 +8343,10 @@
   const stamRechargePopover = document.getElementById('stam-recharge-popover');
   stamRechargeBtn.addEventListener('mouseenter', ()=> stamRechargePopover.classList.add('show'));
   stamRechargeBtn.addEventListener('mouseleave', ()=> stamRechargePopover.classList.remove('show'));
-  stamRechargeBtn.addEventListener('click', ()=> sendWS({ type:'stamina:recharge' }));
+  stamRechargeBtn.addEventListener('click', ()=>{
+    if(stamRechargeBtn.classList.contains('full')){ logLoot('⚡ Sua stamina já está cheia — nada a recarregar.'); return; }
+    sendWS({ type:'stamina:recharge' });
+  });
 
   /* =========================================================
      PARTY — convite / aceitar / sair / IR (só Líder)
@@ -8678,6 +8807,10 @@
   function renderGuildMinhaTab(){
     const panel = document.getElementById('guild-panel-minha');
     if(!guildId || !guildDetail){
+      // 20/10/2026: o formulário já está na tela — não recria (antes era
+      // recriado a cada atualização do servidor e apagava o que o jogador
+      // estava digitando em Nome/Tag).
+      if(document.getElementById('guild-create-box')) return;
       panel.innerHTML = `
         <div id="guild-create-box">
           <div class="panel-title">Fundar uma Guilda<span class="rule"></span></div>
@@ -8973,7 +9106,18 @@
   // mousedown e o mouseup do clique) -- por isso "abre o bestiário mas
   // clicar no monstro não faz nada": o clique nunca chegava a disparar.
   // Corrigido botando o redesenho do Wiki na mesma leva throttled acima.
-  function renderWikiIfOpen(){ if(wikiModal && wikiModal.classList.contains('open')) renderWiki(); }
+  function renderWikiIfOpen(){
+    if(!(wikiModal && wikiModal.classList.contains('open'))) return;
+    // guarda a rolagem de tudo que rola dentro da Wiki/Bestiário e devolve
+    // depois do refresh periódico (senão a lista "pula" sozinha)
+    const scrolled = [];
+    wikiModal.querySelectorAll('*').forEach(el=>{ if(el.scrollTop > 0) scrolled.push([el.id, el.className, el.scrollTop]); });
+    renderWiki();
+    scrolled.forEach(([id, cls, top])=>{
+      const el = id ? document.getElementById(id) : wikiModal.querySelector('.' + String(cls).trim().split(/\s+/)[0]);
+      if(el) el.scrollTop = top;
+    });
+  }
   // 'mítica' (pedido do usuário, 26/09/2026): 6ª raridade, reservada de
   // propósito desde a Infusão Tier 6 (ver ITEM_TIER_BY_RARITY/TIER_ATTRIBUTE_SLOTS
   // abaixo e o mesmo comentário em huntEngine.js) -- só a COR/MOLDURA visual
@@ -9103,6 +9247,14 @@
     const list = document.getElementById('wiki-item-list');
     const q = (document.getElementById('wiki-item-search').value||'').toLowerCase();
     const items = getWikiItemCatalog().filter(it=> !q || it.name.toLowerCase().includes(q));
+    // 20/10/2026 (bug "a barra de rolagem move sozinha pra baixo"): a lista
+    // era recriada inteira a cada atualização do servidor (~4x/s) e, com os
+    // ícones recarregando, a rolagem pulava. Agora só recria quando a busca
+    // ou o catálogo mudam de verdade, e guarda a posição da rolagem.
+    const sig = q + '|' + items.map(it=>it.id).join(',');
+    if(list.dataset.sig === sig && list.childElementCount) return;
+    list.dataset.sig = sig;
+    const keepScroll = list.scrollTop;
     // 20/10/2026: cada linha mostra o ícone REAL do item (mesmo resolvedor da
     // Mochila/Armazém), a descrição e o valor que o NPC paga (preço real do
     // servidor por raridade, NPC_FERREIRO_BRAN_PRICES).
@@ -9125,6 +9277,7 @@
       </div>`;
     }).join('') || '<div class="italic-note">Nenhum item encontrado.</div>';
     list.querySelectorAll('.wiki-item-row').forEach((el, i) => { const it = items[i]; if(it) markLinkable(el, { id: it.id, name: it.name, rarity: it.rarity }); });
+    list.scrollTop = keepScroll;
   }
 
   function getWikiMonsterCatalog(){
@@ -9816,7 +9969,8 @@
       empty.textContent = 'Mochila vazia.';
       grid.appendChild(empty);
     }
-    bag.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:store', bagIndex:i }), 'Guardar no Armazém', { dataKey:'text/plain', value:i })));
+    attachDepotZone(bagHeader, 'bag');
+    bag.forEach((it,i)=>{ const sl = buildDepotSlot(it, ()=> sendWS({ type:'depot:store', bagIndex:i }), 'Guardar no Armazém (ou arraste pro Armazém)', null); attachStackDnD(sl, 'bag', i, it); grid.appendChild(sl); });
     const depotHeader = document.createElement('div');
     depotHeader.className = 'panel-title'; depotHeader.style.cssText = 'grid-column:1/-1;font-size:11px;margin:10px 0 4px;';
     depotHeader.textContent = `Armazém (${depot.length}/${depotCapacity}) — clique pra recuperar`;
@@ -9827,7 +9981,8 @@
       empty.textContent = 'Armazém vazio.';
       grid.appendChild(empty);
     }
-    depot.forEach((it,i)=> grid.appendChild(buildDepotSlot(it, ()=> sendWS({ type:'depot:retrieve', depotIndex:i }), 'Recuperar pra Mochila (precisa de espaço livre)', { dataKey:'text/depot-index', value:i })));
+    attachDepotZone(depotHeader, 'depot');
+    depot.forEach((it,i)=>{ const sl = buildDepotSlot(it, ()=> sendWS({ type:'depot:retrieve', depotIndex:i }), 'Recuperar pra Mochila (ou arraste pra Mochila)', { dataKey:'text/depot-index', value:i }); attachStackDnD(sl, 'depot', i, it); grid.appendChild(sl); });
   }
   function renderInventory(){
     // Item 5 da lista de tarefas (20/09/2026): não reconstrói NADA enquanto
@@ -9994,9 +10149,9 @@
       slot.innerHTML = `${iconHtml}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}${infusionOverlayHtml(it)}${rarityFrameHtml(it.rarity)}`;
       // só itens da Mochila com "slot" definido (arma/elmo/etc) são equipáveis —
       // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
+      // arrastar pra outra casa (dividir/reordenar) — e equipamento pro boneco
+      attachStackDnD(slot, invTab === 'bolsa' ? 'pouch' : 'bag', i, it);
       if(invTab==='mochila' && it.slot){
-        slot.draggable = true;
-        slot.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(i)); e.dataTransfer.effectAllowed = 'move'; itemDragInProgress = true; });
         // Clique equipa direto (sem precisar arrastar) -- simétrico ao clique
         // que já desequipava no slot do paperdoll (equip:remove); antes só
         // dava pra equipar arrastando, então "clicar no item da bolsa" não
@@ -10034,7 +10189,7 @@
       slot.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
       grid.appendChild(slot);
     });
-    for(let i=items.length;i<Math.min(capMax,30);i++){ const empty = document.createElement('div'); empty.className='item-slot'; empty.style.opacity='.35'; grid.appendChild(empty); }
+    for(let i=items.length;i<Math.min(capMax,30);i++){ const empty = document.createElement('div'); empty.className='item-slot'; empty.style.opacity='.35'; attachStackDnD(empty, invTab === 'bolsa' ? 'pouch' : 'bag', i, null); grid.appendChild(empty); }
   }
 
   /* =========================================================
@@ -10058,7 +10213,11 @@
     // Item 122 (21/09/2026): preço por item (e total do stack) visível em
     // toda linha -- crafted (Forja) e loot comum incluídos, mesma fórmula
     // real usada no servidor (NPC_FERREIRO_BRAN_PRICES por raridade).
-    row.innerHTML = `<input type="checkbox" class="quicksell-mark-cb" data-id="${it.id}" ${marked?'checked':''}>
+    // 20/10/2026: sem caixinha — clicar em qualquer lugar da linha marca/
+    // desmarca (a caixa pequena era difícil de acertar).
+    row.dataset.qsId = it.id;
+    row.title = marked ? 'Clique para NÃO vender' : 'Clique para marcar para venda';
+    row.innerHTML = `<span class="quicksell-check">${marked?'✓':''}</span>
       ${resolveItemIconHtml(it)}
       <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
         <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}${it.qty>1?` x${it.qty}`:''}</div>
@@ -10089,8 +10248,14 @@
         toKeep.forEach(it=> list.appendChild(renderQuickSellRow(it)));
       }
     }
-    list.querySelectorAll('.quicksell-mark-cb').forEach(cb=>{
-      cb.addEventListener('change', ()=> sendWS({ type:'shop:toggleQuickSell', itemId: cb.dataset.id }));
+    list.querySelectorAll('.quicksell-row[data-qs-id]').forEach(row=>{
+      row.addEventListener('click', ()=>{
+        const id = row.dataset.qsId;
+        // resposta imediata na tela; o servidor confirma em seguida
+        quickSellMarks = quickSellMarks.includes(id) ? quickSellMarks.filter(x=>x!==id) : quickSellMarks.concat([id]);
+        sendWS({ type:'shop:toggleQuickSell', itemId: id });
+        renderQuickSell();
+      });
     });
     // Item 122 (21/09/2026): NPC_FERREIRO_BRAN_PRICES agora tem espelho no
     // cliente (mesma fórmula do servidor), então dá pra mostrar o total
@@ -11019,6 +11184,8 @@
             return `<div class="analyzer-drop-row">${iconHtml}<span class="name rarity-${d.rarity}">${escapeHtml(d.name)}</span><span class="qty">×${d.count}</span><span class="value">${Math.round(total).toLocaleString('pt-BR')} gp</span></div>`;
           }).join('') : `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum drop registrado ainda nesta sessão.</div>`}
         </div>
+        <div class="analyzer-drops-title">Gastos da sessão ${gasto ? `— ${Math.round(gasto).toLocaleString('pt-BR')} gp` : ''}</div>
+        <div class="analyzer-drops-list">${analyzerSuppliesRowsHtml()}</div>
         <div class="analyzer-footnote">Estimativa ${analyzerUseMarketPrice ? 'pela menor oferta ativa no Mercado (quando o item não tem oferta, cai pro preço do NPC)' : 'pelo preço de venda ao Ferreiro Bran (NPC)'} — não é Gold real até você vender de verdade. Gold/Gasto/Saldo acima são sempre os valores reais da caçada.</div>
       `;
       const marketToggle = document.getElementById('analyzer-market-toggle');
@@ -11027,19 +11194,17 @@
         try { localStorage.setItem(LS_ANALYZER_USE_MARKET, analyzerUseMarketPrice ? '1' : '0'); } catch(err){}
         renderAnalyzer();
       });
-    } else if(activeTab==='suprimentos'){
-      const used = Object.values(huntStats.suppliesUsed || {});
-      body.innerHTML = used.length ? used.map(u=>`
-        <div class="analyzer-row"><span>${escapeHtml(u.name)} ×${u.count}</span><b class="rateio-pay">${Math.round(u.cost).toLocaleString('pt-BR')}</b></div>
-      `).join('') : `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum suprimento usado ainda nesta sessão.</div>`;
     } else {
-      body.innerHTML = `
-        <div class="analyzer-row"><span>Postura</span><b>${combatPosture}</b></div>
-        <div class="analyzer-row"><span>SQM</span><b>${sqmDistance}</b></div>
-        <div class="analyzer-row"><span>Alvo</span><b>${targetMode==='followPartyMember' && followUsername ? ('Seguir '+followUsername) : ((TARGET_MODE_BASE.find(t=>t.id===targetMode)||{}).label || targetMode)}</b></div>
-        <div class="analyzer-row"><span>HP/MP</span><b>${Math.round(player.hp)}/${Math.round(player.mp)}</b></div>
-      `;
+      // Suprimentos (aba Combate removida a pedido do usuário, 20/10/2026)
+      body.innerHTML = `<div class="analyzer-drops-list">${analyzerSuppliesRowsHtml()}</div>`;
     }
+  }
+  // Linhas de suprimentos gastos (poções etc.) com o ícone real do item —
+  // usado na aba Geral ("Gastos da sessão") e na aba Suprimentos.
+  function analyzerSuppliesRowsHtml(){
+    const used = Object.entries(huntStats.suppliesUsed || {});
+    if(!used.length) return `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum suprimento usado ainda nesta sessão.</div>`;
+    return used.map(([id,u])=>`<div class="analyzer-drop-row">${resolveItemIconHtml({ id, rarity:'comum' })}<span class="name">${escapeHtml(u.name)}</span><span class="qty">×${u.count}</span><span class="value" style="color:#e06666;">-${Math.round(u.cost).toLocaleString('pt-BR')} gp</span></div>`).join('');
   }
   document.getElementById('analyzer-reset-btn').addEventListener('click', ()=>{
     sendWS({ type:'hunt:resetAnalyzer' });
