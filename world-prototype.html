@@ -13741,9 +13741,9 @@
     else { btn = canPay ? 'Comprar' : 'Coin insuficiente'; dis = !canPay; }
     return shCard({
       tag: feat ? 'Destaque' : (owned ? 'Adquirido' : 'Outfit'), feat,
-      art: `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`, name: o.name, preview: o.id,
+      art: `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`, name: o.name, preview: 'outfit:'+o.id,
       price: owned ? '' : `${o.cost.toLocaleString('pt-BR')} <small>💎 Coin</small>`,
-      desc: o.recolorable ? 'Cores personalizáveis (cabeça, peito, calça, sapato)' : '',
+      desc: o.recolorable ? 'Cores personalizáveis (cabeça, peito, calça, sapato)' : '🔒 Cores fixas — este traje não permite trocar as cores',
       btn, btnClass: cls, btnDisabled: dis, data: `data-sh-outfit="${o.id}"`,
     });
   }
@@ -13757,6 +13757,9 @@
     main.querySelectorAll('canvas[data-draw-outfit]').forEach(cv => drawOutfitOn(cv, cv.dataset.drawOutfit, false));
     // sprites carregam assíncronos: redesenha as miniaturas mais algumas vezes
     [300, 900, 2000].forEach(ms => setTimeout(()=> main.querySelectorAll('canvas[data-draw-outfit]').forEach(cv => { if(cv.isConnected) drawOutfitOn(cv, cv.dataset.drawOutfit, false); }), ms));
+    shBindPreviews(main);
+  }
+  function shBindPreviews(main){
     main.querySelectorAll('[data-sh-preview]').forEach(card => {
       card.addEventListener('mouseenter', e => shHoverStart(card.dataset.shPreview, e));
       card.addEventListener('mousemove', e => shHoverMove(e));
@@ -13769,22 +13772,43 @@
   shHover.innerHTML = '<canvas width="120" height="180"></canvas><div class="t"></div><div class="d">Visualização no seu personagem</div>';
   document.body.appendChild(shHover);
   let shHoverId = null, shHoverRaf = 0, shHoverT0 = 0;
-  function shHoverStart(id, e){
-    shHoverId = id; shHoverT0 = performance.now();
-    const def = outfitCatalog.find(o => o.id === id);
+  // preview = 'outfit:<id>' | 'ornament:<id>' | 'wing:<id>' | 'aura:<id>' —
+  // sempre o personagem do jogador (traje atual + cores), trocando só a peça
+  // que está sendo vista: o outfit, a asa, a aura ou o ornamento acima do nick.
+  function shHoverStart(preview, e){
+    const sep = preview.indexOf(':');
+    const kind = sep > 0 ? preview.slice(0, sep) : 'outfit', id = sep > 0 ? preview.slice(sep+1) : preview;
+    shHoverId = preview; shHoverT0 = performance.now();
+    const cat = kind === 'outfit' ? outfitCatalog : kind === 'ornament' ? ornamentCatalog : kind === 'wing' ? wingCatalog : auraCatalog;
+    const def = cat.find(o => o.id === id);
     shHover.querySelector('.t').textContent = def ? def.name : '';
     shHover.style.display = 'block'; shHoverMove(e);
     cancelAnimationFrame(shHoverRaf);
     const cv = shHover.querySelector('canvas'), c2 = cv.getContext('2d');
     const dirs = ['down','right','up','left'];
     const tick = (t)=>{
-      if(!shHoverId) return;
+      if(shHoverId !== preview) return;
       const el = t - shHoverT0;
       const dir = dirs[Math.floor(el/2200) % 4];
       const frameIdx = Math.floor(el/130);
       c2.clearRect(0,0,cv.width,cv.height);
       const a = outfitPortraitArgs();
-      try{ drawCharacterLayers({ x: cv.width/2, y: 160 }, 0, a.genero, a.hairId, shHoverId, null, null, '#d3ab54', c2, a.hairStyleId, { dir, frameIdx }, cosmeticColors); }catch(_){}
+      const outfitId = kind === 'outfit' ? id : cosmetics.outfit;
+      const wingId = kind === 'wing' ? id : (kind === 'outfit' ? null : cosmetics.wings);
+      const auraId = kind === 'aura' ? id : (kind === 'outfit' ? null : cosmetics.aura);
+      const feetY = kind === 'ornament' ? 172 : 160;
+      try{ drawCharacterLayers({ x: cv.width/2, y: feetY }, 0, a.genero, a.hairId, outfitId, wingId, auraId, '#d3ab54', c2, a.hairStyleId, { dir, frameIdx }, cosmeticColors); }catch(_){}
+      if(kind === 'ornament'){
+        const nickY = feetY - 70;
+        c2.font = '10px "JetBrains Mono"'; c2.textAlign = 'center';
+        c2.lineWidth = 3; c2.strokeStyle = '#000'; c2.strokeText(PLAYER_NICK || '', cv.width/2, nickY);
+        c2.fillStyle = '#fff'; c2.fillText(PLAYER_NICK || '', cv.width/2, nickY);
+        const o = SpriteManager.load('or_'+id, 'ornaments/'+id+'.png');
+        if(o.loaded && o.img.naturalWidth){
+          const ow = 72, oh = ow * o.img.naturalHeight / o.img.naturalWidth;
+          c2.drawImage(o.img, Math.round(cv.width/2 - ow/2), Math.round(nickY - 10 - oh), Math.round(ow), Math.round(oh));
+        }
+      }
       shHoverRaf = requestAnimationFrame(tick);
     };
     shHoverRaf = requestAnimationFrame(tick);
@@ -13796,6 +13820,9 @@
     shHover.style.left = x + 'px'; shHover.style.top = y + 'px';
   }
   function shHoverStop(){ shHoverId = null; cancelAnimationFrame(shHoverRaf); shHover.style.display = 'none'; }
+  // a Loja redesenha os cartões a cada snapshot (o cartão sob o mouse é trocado e
+  // não dispara mouseleave) — então fecha a prévia quando o mouse não está em cima de nenhum.
+  document.addEventListener('mousemove', e=>{ if(shHoverId && !(e.target.closest && e.target.closest('[data-sh-preview]'))) shHoverStop(); });
   new MutationObserver(()=>{ if(!storeHubModal.classList.contains('open')) shHoverStop(); })
     .observe(storeHubModal, { attributes:true, attributeFilter:['class'] });
   const SH_PREMIUM_ICON = `<img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_premium.png" onerror="this.replaceWith(document.createTextNode('👑'))">`;
@@ -13851,7 +13878,7 @@
         if(!desc && !o.cost && owned) desc = 'Conquista';
         return shCard({ tag: eq ? 'Equipado' : (owned ? 'Adquirido' : (o.cost ? 'Ornamento' : 'Conquista')), feat: eq,
           art: `<img src="${URL_BASE}ornaments/${o.id}.png" style="max-width:96px;image-rendering:auto;" onerror="this.replaceWith(document.createTextNode('🏵️'))">`,
-          name: o.name, price, desc, btn, btnClass: cls, btnDisabled: dis, data: `data-sh-orn="${o.id}"` });
+          name: o.name, price, desc, btn, btnClass: cls, btnDisabled: dis, data: `data-sh-orn="${o.id}"`, preview: 'ornament:'+o.id });
       };
       const list = ornamentCatalog.slice().sort((a,b)=> (ownedOrnaments.includes(b.id) - ownedOrnaments.includes(a.id)) || ((a.cost||0) - (b.cost||0)));
       main.innerHTML = H('Ornamentos', 'Título que aparece acima do seu nome. Alguns você conquista jogando; os outros ficam à venda.')
@@ -13876,7 +13903,7 @@
           return shCard({ tag: eq ? 'Equipado' : has ? 'Adquirido' : (isW ? 'Asas' : 'Aura'), feat: eq,
             art: `<img src="${icon(x)}" onerror="this.replaceWith(document.createTextNode('${isW?'🪽':'✨'}'))">`,
             name: x.name, price: has ? '' : `${x.cost.toLocaleString('pt-BR')} <small>${coin?'💎 Coin':'Gold'}</small>`,
-            btn, btnClass: (eq||has) ? 'owned' : (conf ? 'confirm' : ''), btnDisabled: !has && !eq && !can && !conf, data: `data-sh-ca="${x.id}"` });
+            btn, btnClass: (eq||has) ? 'owned' : (conf ? 'confirm' : ''), btnDisabled: !has && !eq && !can && !conf, data: `data-sh-ca="${x.id}"`, preview: (isW ? 'wing:' : 'aura:') + x.id });
         }).join('')}</div>`;
       main.querySelectorAll('[data-sh-ca]').forEach(b => b.addEventListener('click', ()=>{
         const id = b.dataset.shCa, t = isW ? 'wing' : 'aura', key = isW ? 'wingId' : 'auraId';
