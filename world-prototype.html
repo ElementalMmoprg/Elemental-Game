@@ -3527,6 +3527,7 @@
   let bestiaryTracked = []; // Item 11 da lista de tarefas (20/09/2026): nomes das espécies "fixadas" no painel de Acompanhar Bestiário (sincronizado via snapshot)
   let xpBonus = { bestiaryCount:0, bestiaryTotal:0, bestiaryPct:0, guildPct:0, premiumPct:0, levelPct:0, scrollPct:0, totalPct:0 };
   let ownedOutfits = ['padrao'], ownedMounts = [], ownedWings = [], ownedAuras = [];
+  let ornamentCatalog = [], ownedOrnaments = []; // Ornamentos (títulos acima do nick, 20/10/2026)
   let cosmeticColors = { head:0, body:0, legs:0, feet:0 };
   let outfitCatalog = [], mountCatalog = [], wingCatalog = [], auraCatalog = [], colorPalette = [], bossCatalog = [];
   // hairId (1-8, escolhido na criação de personagem) -> cor real disponível no
@@ -4340,19 +4341,28 @@
   // usar) e começar a descartar as mais antigas (FIFO simples).
   const _recolorCache = {};
   const _recolorCacheOrder = [];
-  function getRecoloredArmor(outfitId, colors, palette){
+  // Trajes com versão por gênero (OUTFIT_CATALOG[].looks = {male, female},
+  // ex.: os 'ex_*' do Exodus) apontam pra arquivos diferentes conforme o
+  // gênero do personagem; os outros usam o próprio id como nome do arquivo.
+  function outfitSpriteIdFor(outfitId, gender){
+    const def = outfitCatalog.find(o => o.id === outfitId);
+    if(def && def.looks) return (gender === 'female' ? def.looks.female : def.looks.male) || def.looks.male || outfitId;
+    return outfitId;
+  }
+  function getRecoloredArmor(outfitId, colors, palette, spriteIdArg){
     const c = colors || { head:0, body:0, legs:0, feet:0 };
-    const key = outfitId+'|'+c.head+','+c.body+','+c.legs+','+c.feet;
+    const spriteId = spriteIdArg || outfitId;
+    const key = spriteId+'|'+c.head+','+c.body+','+c.legs+','+c.feet;
     if(_recolorCache[key]) return _recolorCache[key];
     if(!palette || !palette.length) return null;
-    const baseEntry = SpriteManager.outfitTemplateSprite(outfitId, 'base');
+    const baseEntry = SpriteManager.outfitTemplateSprite(spriteId, 'base');
     // Trajes de COR FIXA (OUTFIT_CATALOG[].fixedColor, ex. os trajes 'rd_*'
     // da loja de Elemental Coin, 20/10/2026): mesmo atlas 4 direções x N
     // quadros dos Arquétipos, só que de 1 camada (sem máscara) -- não há o
     // que recolorir, então devolve o próprio atlas base.
     const fixedDef = outfitCatalog.find(o => o.id === outfitId);
     if(fixedDef && fixedDef.fixedColor) return (baseEntry.loaded && baseEntry.frame) ? baseEntry : null;
-    const maskEntry = SpriteManager.outfitTemplateSprite(outfitId, 'mask');
+    const maskEntry = SpriteManager.outfitTemplateSprite(spriteId, 'mask');
     if(!baseEntry.loaded || !maskEntry.loaded || !baseEntry.frame) return null;
     const w = baseEntry.img.naturalWidth, h = baseEntry.img.naturalHeight;
     if(!w || !h) return null;
@@ -4453,7 +4463,7 @@
     // atlas 4 direções dos Arquétipos -- ver getRecoloredArmor.
     const isArchetypeOutfit = !!(outfitDef && (outfitDef.recolorable || outfitDef.fixedColor));
     const archetypeArmor = isArchetypeOutfit
-      ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette)
+      ? getRecoloredArmor(outfitId, cosmeticColorsArg || cosmeticColors, colorPalette, outfitSpriteIdFor(outfitId, gender))
       : null;
     // Truque estilo Tibia: o atlas ANTIGO de corpo padrão/armadura só tem 3
     // recortes realmente úteis pro ciclo de andar (Sul/frente, Norte/costas,
@@ -4480,7 +4490,27 @@
     // fallback procedural: se o sprite ainda não carregou/não existe pra
     // esse id, simplesmente não aparece nada (cosmético puro, não deve
     // desenhar um boneco de emergência no lugar).
-    if(wingId){
+    // Asas/auras do Exodus (ids 'ex_wing_N'/'ex_aura_N', 20/10/2026): folha
+    // Tibia 4 linhas (baixo/cima/direita/esquerda) x N fases, célula 64,
+    // ancorada igual ao boneco Tibia (pé em ~(45,63), altura em pé ~46px).
+    // Escala pela altura do corpo que vai ser desenhado, então encaixa em
+    // qualquer traje. Asa fica atrás do corpo, exceto olhando pra cima.
+    const exBodyEntry = archetypeArmor || SpriteManager.bodySprite(gender === 'female' ? 'female' : 'male');
+    const exBodyH = (exBodyEntry && exBodyEntry.loaded && exBodyEntry.frame)
+      ? Math.min(48*scl/exBodyEntry.frame.sw, 64*scl/exBodyEntry.frame.sh) * exBodyEntry.frame.sh : 46*scl;
+    const exDir = (drawWalkAnim && drawWalkAnim.dir) || 'down';
+    const drawExodusAttached = (relPath, key, dir) => {
+      const e = SpriteManager.load(key, relPath);
+      if(!e.loaded || !e.img.naturalWidth) return;
+      const cols = Math.max(1, Math.round(e.img.naturalWidth/64));
+      const row = { down:0, up:1, right:2, left:3 }[dir] ?? 0;
+      const col = Math.floor(Date.now()/AURA_FRAME_MS) % cols;
+      const ws = exBodyH / 46;
+      tctx.drawImage(e.img, col*64, row*64, 64, 64, s.x - 45*ws, (s.y+breathe) - 63*ws, 64*ws, 64*ws);
+    };
+    const isExWing = !!wingId && String(wingId).startsWith('ex_wing_');
+    if(isExWing && exDir !== 'up') drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
+    if(wingId && !isExWing){
       const wing = SpriteManager.wingSprite(wingId);
       if(wing.loaded) SpriteManager.drawClippedFrame(tctx, wing, 64,64, 0,0, s.x-30*scl, s.y-46*scl+breathe, 60*scl,52*scl);
     }
@@ -4571,11 +4601,14 @@
     drewHead = isArchetypeHeadIncluded ? true : !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11*scl, 15*scl, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
+    if(isExWing && exDir === 'up') drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
     if(mirror){ tctx.restore(); }
     // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
     // jogador vê a MESMA animação em sincronia, sem precisar coordenar via rede.
-    if(auraId){
+    if(auraId && String(auraId).startsWith('ex_aura_')){
+      drawExodusAttached(`exodus/auras/${auraId}.png`, 'xa_'+auraId, (walkAnim && walkAnim.dir) || 'down');
+    } else if(auraId){
       const frameIdx = Math.floor(Date.now()/AURA_FRAME_MS) % auraFrameCount(auraId);
       const aura = SpriteManager.auraFrame(auraId, frameIdx);
       if(aura.loaded){
@@ -4939,6 +4972,15 @@
     let color = null;
     if(prestige.goldStars>0) color = '#ffd54a'; else if(prestige.silverStars>0) color = '#c9d4e0'; else if(prestige.bronzeStars>0) color = '#cd7f32';
     if(color) drawStarShape(cx,cy,size/2,color);
+  }
+  // Ornamento (título) acima do nick — PNG 97x48 do Exodus, desenhado com a
+  // base logo acima do texto do nick (headY = linha de base do nick).
+  function drawOrnament(sx, nickBaseY, ornamentId){
+    const e = SpriteManager.load('or_'+ornamentId, 'ornaments/'+ornamentId+'.png');
+    if(!e.loaded || !e.img.naturalWidth) return;
+    const w = 58*SPRITE_SCALE, h = w * e.img.naturalHeight / e.img.naturalWidth;
+    const bottom = nickBaseY - 9*SPRITE_SCALE;
+    ctx.drawImage(e.img, Math.round(sx - w/2), Math.round(bottom - h), Math.round(w), Math.round(h));
   }
   function drawNickAndStar(sx, headY, nick, dim){
     // SPRITE_SCALE aqui também — nick/estrela de rank acompanham o mesmo
@@ -5686,7 +5728,7 @@
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
         drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
-      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember,
+      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
       // Barra de vida flutuante (pedido do usuário, 26/09/2026) -- hp/hpMax
       // de QUALQUER jogador só chegam aqui a partir de agora (ver
       // broadcastPositions em server.js); null/null em snapshots antigos ou
@@ -5718,7 +5760,7 @@
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
         : anim;
       drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
-    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK,
+    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK, ornament: cosmetics.ornament || null,
     // Barra de vida flutuante do próprio jogador (pedido do usuário,
     // 26/09/2026) -- antes só existia o HP fixo do canto inferior esquerdo;
     // player.hp/hpMax já vêm do snapshot de caçada de sempre (ver
@@ -5742,6 +5784,7 @@
       const headY = s.y - item.headLift - (item.isPlayer?breathe:0) - (item.bobOffset ? item.bobOffset() : 0);
       ctx.textAlign = 'center';
       if(item.nick) drawNickAndStar(s.x, headY-10*SPRITE_SCALE, item.nick, item.dimNick);
+      if(item.nick && item.ornament) drawOrnament(s.x, headY-10*SPRITE_SCALE, item.ornament);
       if(item.kind==='monster' && item.hpPct!=null){
         if(currentTargetMonsterId && item.monsterId === currentTargetMonsterId){
           drawTargetPlate(s.x, headY-30*SPRITE_SCALE, item.monsterName, item.hpPct, item.monsterIsBoss);
@@ -6290,7 +6333,7 @@
     bestiaryRandomBonus = msg.bestiaryRandomBonus || {};
     bestiaryTracked = msg.bestiaryTracked || [];
     xpBonus = msg.xpBonus || xpBonus;
-    ownedOutfits = msg.ownedOutfits || ownedOutfits; ownedMounts = msg.ownedMounts || ownedMounts; ownedWings = msg.ownedWings || ownedWings; ownedAuras = msg.ownedAuras || ownedAuras;
+    ownedOutfits = msg.ownedOutfits || ownedOutfits; ownedMounts = msg.ownedMounts || ownedMounts; ownedWings = msg.ownedWings || ownedWings; ownedAuras = msg.ownedAuras || ownedAuras; ownedOrnaments = msg.ownedOrnaments || ownedOrnaments;
     cosmeticColors = msg.cosmeticColors || cosmeticColors;
     hasTrainingKit = !!msg.hasTrainingKit; canTrainAtDummy = !!msg.canTrainAtDummy;
     trainingActive = msg.trainingActive || null; offlineTrainingArmed = msg.offlineTrainingArmed || null;
@@ -6448,7 +6491,7 @@
           // painel no futuro.
           npcShops = msg.npcShops || {};
           trainingDummies = msg.trainingDummies || [];
-          outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || []; wingCatalog = msg.wingCatalog || []; auraCatalog = msg.auraCatalog || [];
+          outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || []; wingCatalog = msg.wingCatalog || []; auraCatalog = msg.auraCatalog || []; ornamentCatalog = msg.ornamentCatalog || [];
           colorPalette = msg.colorPalette || []; bossCatalog = msg.bossCatalog || [];
           hairColors = msg.hairColors && msg.hairColors.length ? msg.hairColors : hairColors;
           marketCatalog = msg.marketCatalog || []; marketFeeRate = typeof msg.marketFeeRate === 'number' ? msg.marketFeeRate : marketFeeRate;
@@ -7204,7 +7247,9 @@
 
     if(['outfit:buy','mount:buy','wing:buy','aura:buy'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ Compra falhou: ${msg.reason}`);
     if(msg.forType === 'outfit:buy' && msg.ok) logLoot('✅ Outfit comprado! Equipe na Loja ou na janela de Outfit.');
-    if(['outfit:buy','outfit:equip','shop:buyPremium','shop:buyElementalCoins','tower:buyKey'].includes(msg.forType)) storeHubRenderIfOpen();
+    if(msg.forType === 'ornament:buy') logLoot(msg.ok ? '✅ Ornamento comprado! Equipe na Loja › Ornamentos.' : `⚠️ Compra falhou: ${msg.reason === 'coin_insuficiente' ? 'Elemental Coin insuficiente' : msg.reason}`);
+    if(msg.forType === 'ornament:equip' && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
+    if(['outfit:buy','outfit:equip','ornament:buy','ornament:equip','wing:buy','wing:equip','aura:buy','aura:equip','shop:buyPremium','shop:buyElementalCoins','tower:buyKey'].includes(msg.forType)) storeHubRenderIfOpen();
     if(['outfit:equip','mount:equip','wing:equip','aura:equip','cosmetic:color'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
     if(['equip:item','equip:remove'].includes(msg.forType)){
       if(!msg.ok) logLoot(`⚠️ ${msg.reason}`);
@@ -8259,6 +8304,7 @@
   }
   function outfitCardArt(o){
     if(String(o.id).startsWith('rd_')) return `<img src="${URL_BASE}player/outfits_template/${o.id}_icon.png" onerror="this.replaceWith(document.createTextNode('🧍'))" />`;
+    if(o.looks) return `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`; // desenhado já com a cor/gênero do personagem
     return `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`;
   }
   function renderCharOutfit(){
@@ -8332,7 +8378,7 @@
         const equipped = cosmetics.wings === w.id;
         return `<div class="outfit-card owned${equipped?' equipped':''}" data-wing="${w.id}">
           ${equipped?'<span class="oc-badge on">Vestidas</span>':''}
-          <div class="oc-art"><img src="${URL_BASE}wings/${w.id}.png" onerror="this.replaceWith(document.createTextNode('🪽'))" /></div>
+          <div class="oc-art"><img src="${String(w.id).startsWith('ex_') ? URL_BASE+'exodus/wings/'+w.id+'_icon.png' : URL_BASE+'wings/'+w.id+'.png'}" onerror="this.replaceWith(document.createTextNode('🪽'))" /></div>
           <div class="oc-name">${escapeHtml(w.name)}</div>
           <div class="oc-price">${equipped?'Equipadas':'Clique p/ vestir'}</div>
         </div>`;
@@ -8352,9 +8398,9 @@
         const owned = ownedAuras.includes(a.id);
         const equipped = cosmetics.aura === a.id;
         return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-aura="${a.id}">
-          <div class="oc-art"><img src="${URL_BASE}auras/${a.id}/f00.png" /></div>
+          <div class="oc-art"><img src="${String(a.id).startsWith('ex_aura_') ? `${URL_BASE}exodus/auras/${a.id}_icon.png` : `${URL_BASE}auras/${a.id}/f00.png`}" /></div>
           <div class="oc-name">${escapeHtml(a.name)}</div>
-          <div class="oc-price">${owned ? (equipped?'Equipada':'Clique p/ vestir') : `${a.cost.toLocaleString('pt-BR')} Gold`}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipada':'Clique p/ vestir') : `${a.cost.toLocaleString('pt-BR')} ${a.currency==='elementalCoin'?'💎 Coin':'Gold'}`}</div>
         </div>`;
       }).join('');
       grid.querySelectorAll('[data-aura]').forEach(el=>{
@@ -9654,7 +9700,7 @@
       // prévia em canvas logo abaixo, junto do retrato.
       const iconSpan = el.querySelector('.slot-icon');
       if(iconSpan && key==='wings'){
-        iconSpan.innerHTML = id ? `<img src="${URL_BASE}wings/${id}.png" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🪽';" />` : '🪽';
+        iconSpan.innerHTML = id ? `<img src="${String(id).startsWith('ex_') ? URL_BASE+'exodus/wings/'+id+'_icon.png' : URL_BASE+'wings/'+id+'.png'}" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🪽';" />` : '🪽';
       } else if(iconSpan && key==='aura'){
         iconSpan.innerHTML = id ? `<img src="${URL_BASE}auras/${id}/f00.png" style="width:28px;height:28px;object-fit:contain;" onerror="this.parentElement.textContent='✨';" />` : '✨';
       }
@@ -13614,6 +13660,9 @@
   const SH_CATS = [
     { id:'destaques', tab:'loja', name:'Destaques', icon:'⭐' },
     { id:'outfits', tab:'loja', name:'Outfits', icon:'👘', count:()=> shCoinOutfits().length },
+    { id:'ornamentos', tab:'loja', name:'Ornamentos', icon:'🏵️', count:()=> ornamentCatalog.length },
+    { id:'asas', tab:'loja', name:'Asas', icon:'🪽', count:()=> wingCatalog.filter(x=>x.forSale).length },
+    { id:'auras', tab:'loja', name:'Auras', icon:'✨', count:()=> auraCatalog.length },
     { id:'montarias', tab:'loja', name:'Montarias', icon:'🐎', count:()=> mountCatalog.length },
     { id:'premium', tab:'loja', name:'Tempo de Premium', icon:'👑', count:()=> PREMIUM_PACKAGES.length },
     { id:'coins', tab:'loja', name:'Elemental Coin', icon:'💎', count:()=> ELEMENTAL_COIN_PACKAGES.length },
@@ -13741,6 +13790,52 @@
       const list = shCoinOutfits().slice().sort((a,b)=> (ownedOutfits.includes(a.id) - ownedOutfits.includes(b.id)) || a.cost - b.cost);
       main.innerHTML = H('Outfits', 'Clique em Comprar e depois em Confirmar. As cores você ajusta na janela de Outfit.')
         + `<div class="sh-grid">${list.map(o=> shOutfitCard(o,false)).join('')}</div>`;
+    } else if(shCat === 'ornamentos'){
+      const RANK_LABEL = { bronze:'Estrela de Bronze', prata:'Estrela de Prata', ouro:'Estrela de Ouro', diamante:'Rank Diamante' };
+      const card = (o) => {
+        const owned = ownedOrnaments.includes(o.id), eq = cosmetics.ornament === o.id, conf = shConfirmId === 'or:'+o.id;
+        let btn, cls = '', dis = false, price = '', desc = '';
+        if(eq){ btn = 'Remover'; cls = 'owned'; }
+        else if(owned){ btn = 'Equipar'; cls = 'owned'; }
+        else if(o.cost){ const can = (elementalCoins||0) >= o.cost; btn = conf ? `Confirmar ${o.cost} 💎` : (can ? 'Comprar' : 'Coin insuficiente'); cls = conf ? 'confirm' : ''; dis = !can && !conf; price = `${o.cost} <small>💎 Coin</small>`; }
+        else { btn = 'Bloqueado'; dis = true; desc = o.unlockLevel ? `Libera no Nível ${o.unlockLevel}` : `Libera com ${RANK_LABEL[o.unlockRank]||o.unlockRank}`; }
+        if(!desc && !o.cost && owned) desc = 'Conquista';
+        return shCard({ tag: eq ? 'Equipado' : (owned ? 'Adquirido' : (o.cost ? 'Ornamento' : 'Conquista')), feat: eq,
+          art: `<img src="${URL_BASE}ornaments/${o.id}.png" style="max-width:96px;image-rendering:auto;" onerror="this.replaceWith(document.createTextNode('🏵️'))">`,
+          name: o.name, price, desc, btn, btnClass: cls, btnDisabled: dis, data: `data-sh-orn="${o.id}"` });
+      };
+      const list = ornamentCatalog.slice().sort((a,b)=> (ownedOrnaments.includes(b.id) - ownedOrnaments.includes(a.id)) || ((a.cost||0) - (b.cost||0)));
+      main.innerHTML = H('Ornamentos', 'Título que aparece acima do seu nome. Alguns você conquista jogando; os outros ficam à venda.')
+        + `<div class="sh-grid">${list.map(card).join('')}</div>`;
+      main.querySelectorAll('[data-sh-orn]').forEach(b => b.addEventListener('click', ()=>{
+        const id = b.dataset.shOrn;
+        if(cosmetics.ornament === id){ sendWS({ type:'ornament:equip', ornamentId:null }); return; }
+        if(ownedOrnaments.includes(id)){ sendWS({ type:'ornament:equip', ornamentId:id }); return; }
+        if(shConfirmId !== 'or:'+id){ shConfirmId = 'or:'+id; renderStoreHub(false); return; }
+        shConfirmId = null; sendWS({ type:'ornament:buy', ornamentId:id });
+      }));
+    } else if(shCat === 'asas' || shCat === 'auras'){
+      const isW = shCat === 'asas';
+      const list = (isW ? wingCatalog.filter(x=>x.forSale) : auraCatalog);
+      const owned = isW ? ownedWings : ownedAuras, eqId = isW ? cosmetics.wings : cosmetics.aura;
+      const icon = (x)=> String(x.id).startsWith('ex_') ? `${URL_BASE}exodus/${isW?'wings':'auras'}/${x.id}_icon.png` : (isW ? `${URL_BASE}wings/${x.id}.png` : `${URL_BASE}auras/${x.id}/f00.png`);
+      main.innerHTML = H(isW ? 'Asas' : 'Auras', 'Aparecem junto do seu personagem com qualquer traje. Clique em Comprar e depois em Confirmar.')
+        + `<div class="sh-grid">${list.map(x=>{
+          const has = owned.includes(x.id), eq = eqId === x.id, conf = shConfirmId === 'ca:'+x.id;
+          const coin = x.currency === 'elementalCoin', can = coin ? (elementalCoins||0) >= x.cost : true;
+          let btn = eq ? 'Remover' : has ? 'Equipar' : conf ? `Confirmar ${x.cost} ${coin?'💎':'🪙'}` : (can ? 'Comprar' : 'Coin insuficiente');
+          return shCard({ tag: eq ? 'Equipado' : has ? 'Adquirido' : (isW ? 'Asas' : 'Aura'), feat: eq,
+            art: `<img src="${icon(x)}" onerror="this.replaceWith(document.createTextNode('${isW?'🪽':'✨'}'))">`,
+            name: x.name, price: has ? '' : `${x.cost.toLocaleString('pt-BR')} <small>${coin?'💎 Coin':'Gold'}</small>`,
+            btn, btnClass: (eq||has) ? 'owned' : (conf ? 'confirm' : ''), btnDisabled: !has && !eq && !can && !conf, data: `data-sh-ca="${x.id}"` });
+        }).join('')}</div>`;
+      main.querySelectorAll('[data-sh-ca]').forEach(b => b.addEventListener('click', ()=>{
+        const id = b.dataset.shCa, t = isW ? 'wing' : 'aura', key = isW ? 'wingId' : 'auraId';
+        if(eqId === id){ sendWS({ type:t+':equip', [key]: null }); return; }
+        if(owned.includes(id)){ sendWS({ type:t+':equip', [key]: id }); return; }
+        if(shConfirmId !== 'ca:'+id){ shConfirmId = 'ca:'+id; renderStoreHub(false); return; }
+        shConfirmId = null; sendWS({ type:t+':buy', [key]: id });
+      }));
     } else if(shCat === 'montarias'){
       main.innerHTML = H('Montarias', '') + `<div class="sh-soon"><b>EM BREVE</b>As montarias estão sendo preparadas e chegam numa próxima atualização.</div>`;
     } else if(shCat === 'premium'){
@@ -13759,6 +13854,7 @@
     const q = shQuery.toLowerCase();
     const res = [];
     shCoinOutfits().forEach(o => { if(o.name.toLowerCase().includes(q)) res.push({ name:o.name, where:'Loja › Outfits', go:'outfits' }); });
+    ornamentCatalog.forEach(o => { if(o.name.toLowerCase().includes(q)) res.push({ name:o.name, where:'Loja › Ornamentos', go:'ornamentos' }); });
     const shop = npcShops && npcShops[SHOP_NPC_ID];
     (shop ? shop.items : []).forEach(it => { if(String(it.name).toLowerCase().includes(q)) res.push({ name:it.name, where:'NPC › Ferreiro Bran', go:'ferreiro' }); });
     (pvpShopState.catalog||[]).forEach(d => { if(String(d.name||'').toLowerCase().includes(q)) res.push({ name:d.name, where:'PvP › Loja de PvP', go:'pvpshop' }); });
