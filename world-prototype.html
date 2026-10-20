@@ -4648,7 +4648,10 @@
         tctx.drawImage(aura.img, s.x-dw/2, s.y-18*scl+breathe-dh/2, dw, dh);
       }
     }
-    return { drewBody, drewHead };
+    // topY = topo real do que foi desenhado (corpo/traje ou cabeça) — usado pra
+    // nick/barra de vida nunca ficarem por cima de um traje mais alto que o padrão.
+    const drawnTopY = Math.min(bodyDraw && bodyDraw.topY != null ? bodyDraw.topY : Infinity, headDraw && headDraw.topY != null ? headDraw.topY : Infinity);
+    return { drewBody, drewHead, topY: isFinite(drawnTopY) ? drawnTopY : null };
   }
 
   /* =========================================================
@@ -4698,7 +4701,7 @@
   // (o "zoom", em unidades de tela por unidade de mundo) é derivado dele +
   // TILE_STEP, então nunca fica descolado do tile de verdade.
   const TILE_STEP = 34; // tamanho de 1 tile do chão, em unidades de mundo
-  const TILE_SCREEN_PX = 64; // tamanho FIXO do SQM na tela, em pixels (pedido: 48 ou 64 — usamos 64, estilo Huntera)
+  const TILE_SCREEN_PX = 80; // tamanho FIXO do SQM na tela, em pixels (era 64; 20/10/2026 o usuário achou a câmera longe demais — +25% de zoom, sprites crescem junto via SPRITE_SCALE)
   const WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
   // Antes desta mudança, WORLD_SCALE era 1.55 e todo sprite/hitbox/offset de
   // personagem, monstro e cenário abaixo foi calibrado em cima desse valor
@@ -5028,6 +5031,7 @@
     ctx.textAlign = 'center';
   }
 
+  const drawnTopByKey = {}; // topo real (px de tela) do último desenho de cada personagem — ver drawCharacterLayers.topY
   const auraState = { equipped:true };
   const auraParticles = [];
   function spawnAuraParticles(dt){
@@ -5756,8 +5760,9 @@
       drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
-        drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
-      }, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
+        const dr = drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
+        drawnTopByKey['rp:'+uname] = dr ? dr.topY : null;
+      }, topKey:'rp:'+uname, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
       // Barra de vida flutuante (pedido do usuário, 26/09/2026) -- hp/hpMax
       // de QUALQUER jogador só chegam aqui a partir de agora (ver
       // broadcastPositions em server.js); null/null em snapshots antigos ou
@@ -5788,8 +5793,9 @@
       const castAnim = (now() < castPoseUntil)
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
         : anim;
-      drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
-    }, headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK, ornament: cosmetics.ornament || null,
+      const dr = drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
+      drawnTopByKey['__player__'] = dr ? dr.topY : null;
+    }, topKey:'__player__', headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK, ornament: cosmetics.ornament || null,
     // Barra de vida flutuante do próprio jogador (pedido do usuário,
     // 26/09/2026) -- antes só existia o HP fixo do canto inferior esquerdo;
     // player.hp/hpMax já vêm do snapshot de caçada de sempre (ver
@@ -5810,7 +5816,9 @@
     drawList.forEach(item=>{
       if(!item.headCart) return;
       const s = toScreen(item.headCart.x, item.headCart.y);
-      const headY = s.y - item.headLift - (item.isPlayer?breathe:0) - (item.bobOffset ? item.bobOffset() : 0);
+      let headY = s.y - item.headLift - (item.isPlayer?breathe:0) - (item.bobOffset ? item.bobOffset() : 0);
+      // trajes mais altos que o padrão: sobe nick/barra pra ficarem acima do topo real desenhado
+      if(item.topKey && drawnTopByKey[item.topKey] != null) headY = Math.min(headY, drawnTopByKey[item.topKey] - 2*SPRITE_SCALE);
       ctx.textAlign = 'center';
       if(item.nick) drawNickAndStar(s.x, headY-10*SPRITE_SCALE, item.nick, item.dimNick);
       if(item.nick && item.ornament) drawOrnament(s.x, headY-10*SPRITE_SCALE, item.ornament);
