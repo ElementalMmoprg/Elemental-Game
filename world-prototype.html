@@ -4260,6 +4260,43 @@
         return out;
       }catch(e){ return null; }
     }
+    // Atlas de andar de MONSTRO (gerado em 20/10/2026 na ordem certa do
+    // .dat: quadro > direção): 4 linhas (baixo, cima, direita, esquerda),
+    // células quadradas, N colunas = quadros do ciclo. Devolve o mesmo
+    // retângulo relativo (união de todo o conteúdo) em toda célula, então
+    // trocar de quadro/direção nunca muda escala nem âncora.
+    function computeMonsterUnionFrames(img){
+      try{
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if(!w || !h) return null;
+        const cell = Math.round(h/4);
+        const cols = Math.max(1, Math.round(w/cell));
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        const cctx = c.getContext('2d'); cctx.drawImage(img,0,0);
+        const data = cctx.getImageData(0,0,w,h).data;
+        let minX=cell, minY=cell, maxX=-1, maxY=-1;
+        for(let y=0; y<h; y++){
+          const ly = y % cell;
+          for(let x=0; x<w; x++){
+            if(data[(y*w+x)*4+3] < 10) continue;
+            const lx = x % cell;
+            if(lx<minX) minX=lx; if(lx>maxX) maxX=lx;
+            if(ly<minY) minY=ly; if(ly>maxY) maxY=ly;
+          }
+        }
+        if(maxX<0) return null;
+        const pad = 1;
+        const ux = Math.max(0, minX-pad), uy = Math.max(0, minY-pad);
+        const uw = Math.min(cell, maxX+1+pad) - ux, uh = Math.min(cell, maxY+1+pad) - uy;
+        const out = {};
+        ['down','up','right','left'].forEach((name, r)=>{
+          const frames = [];
+          for(let ci=0; ci<cols; ci++) frames.push({ sx: ci*cell+ux, sy: r*cell+uy, sw: uw, sh: uh });
+          out[name] = frames;
+        });
+        return out;
+      }catch(e){ return null; }
+    }
     function load(key, relPath){
       if(cache[key]) return cache[key];
       const entry = { img:new Image(), loaded:false, failed:false, frame:null, styleFrames:null, dirFrames:null };
@@ -4290,7 +4327,11 @@
         // monsterWalkSprite, então nunca passam por aqui.
         const isMonsterWalkAtlas = key.charAt(0)==='m' && key.charAt(1)==='w' && key.charAt(2)==='_';
         if(isMonsterWalkAtlas){
-          entry.dirFrames = computeOutfitCellFrames(entry.img);
+          // 20/10/2026: recorte ÚNICO pra todos os quadros (união do conteúdo
+          // de todas as células, mesmo deslocamento dentro de cada célula) --
+          // o recorte por quadro (computeOutfitCellFrames) fazia cada passo
+          // ter tamanho/centro próprios e o monstro "tremia"/encolhia ao andar.
+          entry.dirFrames = computeMonsterUnionFrames(entry.img) || computeOutfitCellFrames(entry.img);
           entry.frame = entry.dirFrames && entry.dirFrames.down && entry.dirFrames.down[0];
           entry.fullWalkFrames = true;
           return;
