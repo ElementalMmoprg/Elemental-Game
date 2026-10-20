@@ -567,7 +567,7 @@
   #action-close{ text-align:center; padding:8px; font-family:var(--font-mono); font-size:10px; color:var(--danger); cursor:pointer; border-top:1px solid var(--gold-deep); }
 
   /* ============ INVENTÁRIO DIVIDIDO ============ */
-  #inventory-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:860px; max-width:94vw; height:540px; max-height:88vh; display:none; flex-direction:column; z-index:22; }
+  #inventory-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:860px; max-width:94vw; height:596px; max-height:96vh; display:none; flex-direction:column; z-index:22; }
   #inventory-modal.open{ display:flex; }
   #inv-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); }
   .inv-tab{ padding:10px 18px; font-family:var(--font-display); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
@@ -578,7 +578,7 @@
   /* STATS — coluna nova (referência "Morgan Hearson"), valores reais */
   /* 20/10/2026: coluna de stats redesenhada — barras de Vida/Mana, grupos
      Ataque/Defesa e linhas compactas (ícone · nome · valor à direita). */
-  #inv-stats-col{ width:168px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:12px 10px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+  #inv-stats-col{ width:168px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:10px 10px; display:flex; flex-direction:column; gap:4px; overflow-y:auto; scrollbar-width:none; }
   .inv-res{ display:flex; flex-direction:column; gap:3px; padding:6px 8px; border-radius:6px; background:rgba(0,0,0,.28); border:1px solid rgba(191,161,95,.18); }
   .inv-res-top{ display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.05em; }
   .inv-res-top b{ margin-left:auto; font-family:var(--font-display); font-size:12px; color:var(--ink); letter-spacing:0; text-transform:none; }
@@ -588,7 +588,7 @@
   .inv-res-bar.mp i{ background:linear-gradient(90deg,#1d3f8e,#4d8ff0); }
   .inv-stat-group{ font-family:var(--font-display); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin:6px 0 0; display:flex; align-items:center; gap:6px; }
   .inv-stat-group::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(191,161,95,.4), transparent); }
-  .inv-stat-row{ display:flex; align-items:center; gap:6px; font-family:var(--font-mono); padding:3px 6px; border-radius:4px; }
+  .inv-stat-row{ display:flex; align-items:center; gap:6px; font-family:var(--font-mono); padding:2px 6px; border-radius:4px; }
   .inv-stat-row:nth-child(odd){ background:rgba(255,255,255,.025); }
   .inv-stat-icon{ font-size:12px; width:16px; text-align:center; flex-shrink:0; }
   .inv-stat-label{ font-size:9.5px; color:var(--ink-dim); white-space:nowrap; }
@@ -598,7 +598,8 @@
 
   /* coluna do meio: nome + retrato do personagem (mesmo sprite do mundo,
      ampliado em pixel-art) + boneco de equipamento */
-  #inv-equip-col{ width:276px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px; overflow-y:auto; }
+  #inv-equip-col{ width:276px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.2); padding:10px 16px; display:flex; flex-direction:column; align-items:center; gap:6px; overflow-y:auto; scrollbar-width:none; }
+  #inv-equip-col::-webkit-scrollbar, #inv-stats-col::-webkit-scrollbar{ display:none; } /* 20/10/2026: sem barra de rolagem visível */
   #inv-char-name{ font-family:var(--font-display); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-bright); }
   /* Layout 2026-09-18 (pedido do usuário com print EXATA do Character(X) do
      jogo-fonte): o retrato fica ENTRE as 2 colunas de equipamento (flanking),
@@ -621,7 +622,7 @@
        Arma     | Armadura | Offhand
        (vazio)  | Botas  | (vazio)
      ========================================================= */
-  .cosmetics-row{ display:flex; justify-content:center; gap:6px; margin-bottom:20px; }
+  .cosmetics-row{ display:flex; justify-content:center; gap:6px; margin-bottom:14px; }
   /* Prévia real do Outfit equipado dentro do slot 46x46 — o canvas continua
      desenhando na resolução do retrato (90x150, mesma matemática de âncora
      de drawCharacterLayers) e só é ENCOLHIDO visualmente aqui via CSS. */
@@ -639,8 +640,8 @@
      Arma+Offhand ficam centralizados numa linha à parte, ABAIXO de tudo —
      igual à posição deles no print de referência. */
   .equip-flank-row{ display:flex; align-items:center; justify-content:center; gap:8px; }
-  .equip-col-side{ display:flex; flex-direction:column; gap:10px; }
-  .equip-row-bottom{ display:flex; justify-content:center; gap:10px; margin-top:4px; }
+  .equip-col-side{ display:flex; flex-direction:column; gap:16px; } /* 16 = cabe a etiqueta (slot-tag) sem encostar no slot de baixo */
+  .equip-row-bottom{ display:flex; justify-content:center; gap:10px; margin-top:2px; }
   /* Linha flutuante ACIMA do retrato (pedido do usuário, 2026-09-18: os 2
      ícones que ficam no topo da print de referência): à esquerda o próprio
      slot de Amuleto/Colar (saiu da coluna direita pra cá — no jogo-fonte ele
@@ -648,7 +649,7 @@
      um ATALHO (não é slot de equipamento) que abre a mesma janela de
      Profissões/Forja do botão de serviço da Cidade (#btn-open-professions),
      só que acessível direto daqui do Inventário também. */
-  .equip-top-row{ display:flex; justify-content:center; gap:10px; margin-bottom:8px; }
+  .equip-top-row{ display:flex; justify-content:center; gap:10px; margin-bottom:12px; }
   .equip-slot-shortcut{ font-size:20px; }
   /* BUG (achado 2026-09-14, relatado pelo usuário via print do Inventário):
      esta regra é de ANTES de existir ícone de slot vazio — na época, um slot
@@ -2870,6 +2871,8 @@
           <div class="inv-stat-row"><span class="inv-stat-icon">🛡️</span><span class="inv-stat-label">Armadura</span><b id="inv-stat-armor">0</b></div>
           <div class="inv-stat-row"><span class="inv-stat-icon">🌀</span><span class="inv-stat-label">Esquiva</span><b id="inv-stat-dodge">0%</b></div>
         </div>
+        <div class="inv-stat-group">Atributos</div>
+        <div id="inv-primary-rows"></div>
         <div class="inv-set-chip">Bônus de Conjunto<b id="inv-stat-setbonus">Nenhum</b></div>
       </div>
       <div id="inv-equip-col">
@@ -9872,6 +9875,22 @@
     document.getElementById('inv-stat-magicdmg').textContent = `${(cs.magicDamagePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-physdmg').textContent = `${(cs.physicalDamagePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-setbonus').textContent = cs.setBonusLabel || 'Nenhum';
+    // Atributos primários (Vitality/Might/Intelligence/Dexterity/Wisdom):
+    // pontos distribuídos + bônus vindos dos itens (Infusão), igual ao que
+    // aparece no tooltip dos equipamentos.
+    (function(){
+      const box = document.getElementById('inv-primary-rows'); if(!box) return;
+      const sa = statAttributes || {};
+      const tot = sa.primaryTotals || statAllocation || {};
+      const fromItems = sa.primaryFromItems || {};
+      const PT = { vitality:'Vitalidade', might:'Força', intelligence:'Inteligência', dexterity:'Destreza', wisdom:'Sabedoria' };
+      const META = { vitality:{label:'Vitality',icon:'❤️',desc:'Aumenta seu HP máximo.'}, might:{label:'Might',icon:'⚔️',desc:'Aumenta Weapon Power (dano físico).'}, intelligence:{label:'Intelligence',icon:'🔮',desc:'Aumenta Spell Power (dano mágico).'}, dexterity:{label:'Dexterity',icon:'🏹',desc:'Aumenta Haste, Precision e Impact.'}, wisdom:{label:'Wisdom',icon:'📖',desc:'Aumenta Healing Power e seu MP máximo.'} };
+      box.innerHTML = Object.keys(META).map(k=>{
+        const m = META[k], it = Math.round(fromItems[k]||0), base = Math.round((statAllocation||{})[k]||0);
+        const tip = `${m.label} (${PT[k]}) — ${m.desc} Pontos: ${base}${it?` · Itens: +${it}`:''}`;
+        return `<div class="inv-stat-row" title="${escapeHtml(tip)}"><span class="inv-stat-icon">${m.icon}</span><span class="inv-stat-label">${m.label}</span><b>${Math.round(tot[k]||0)}${it?`<small style="color:#7fd77f;font-weight:normal;"> +${it}</small>`:''}</b></div>`;
+      }).join('');
+    })();
 
     // Retrato do personagem — reaproveita o MESMO desenhista de sprite do
     // mundo (corpo+outfit+cabeça, com fallback procedural), só que numa tela
