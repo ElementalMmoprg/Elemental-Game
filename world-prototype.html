@@ -56,7 +56,8 @@
     display:flex; align-items:center; gap:14px; padding:0 16px; z-index:8; }
   .tb-portrait{ display:flex; align-items:center; gap:8px; cursor:default; padding:4px 6px; border-radius:6px; }
   .tb-portrait:hover{ background:rgba(191,161,95,.08); }
-  .tb-avatar{ font-size:22px; }
+  .tb-avatar{ font-size:22px; width:44px; height:44px; border-radius:50%; border:2px solid var(--gold-bright); background:radial-gradient(circle at 50% 40%, #3a2e1d, #0d0a06 75%); overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(240,211,138,.25); flex-shrink:0; }
+  #tb-face-canvas{ width:44px; height:44px; image-rendering:pixelated; display:block; }
   .tb-namelv{ display:flex; flex-direction:column; line-height:1.25; }
   .tb-namelv b{ font-family:var(--font-display); font-size:12px; color:var(--gold-bright); letter-spacing:.04em; }
   .tb-namelv small{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
@@ -72,6 +73,29 @@
     border:none; border-radius:8px; padding:7px 18px;
   }
   #tb-gold-pill:hover, #btn-open-rank:hover, #btn-open-shop:hover{ filter:brightness(1.12); }
+  /* Botão Loja com aura animada nas cores dos elementos (20/10/2026, pedido do
+     usuário vendo o botão dourado do Huntera): anel girando (conic-gradient
+     num ::before maior que o botão, recortado pelo overflow) + miolo escuro
+     no ::after + brilho externo que troca de cor junto. */
+  #btn-open-shop{ position:relative; overflow:hidden; isolation:isolate; background:transparent !important;
+    display:inline-flex; align-items:center; gap:6px; font-weight:700; letter-spacing:.04em; color:#fff;
+    animation:shopGlow 6s linear infinite; }
+  #btn-open-shop::before{ content:''; position:absolute; z-index:-2; left:50%; top:50%; width:260%; aspect-ratio:1; transform:translate(-50%,-50%);
+    background:conic-gradient(from 0deg, #ff4b2b, #ff9f1c, #ffe14d, #5ee06b, #3fd9ff, #3a6bff, #b45cff, #ff4b2b);
+    animation:shopSpin 3.2s linear infinite; }
+  #btn-open-shop::after{ content:''; position:absolute; z-index:-1; inset:2px; border-radius:6px;
+    background:linear-gradient(180deg,#2a2335,#141018); box-shadow:inset 0 0 10px rgba(255,255,255,.08); }
+  @keyframes shopSpin{ to{ transform:translate(-50%,-50%) rotate(360deg); } }
+  @keyframes shopGlow{
+    0%  { box-shadow:0 0 10px 1px rgba(255,75,43,.65); }
+    16% { box-shadow:0 0 10px 1px rgba(255,159,28,.65); }
+    33% { box-shadow:0 0 10px 1px rgba(255,225,77,.6); }
+    50% { box-shadow:0 0 10px 1px rgba(94,224,107,.6); }
+    66% { box-shadow:0 0 10px 1px rgba(63,217,255,.65); }
+    83% { box-shadow:0 0 10px 1px rgba(180,92,255,.65); }
+    100%{ box-shadow:0 0 10px 1px rgba(255,75,43,.65); }
+  }
+  @media (prefers-reduced-motion: reduce){ #btn-open-shop, #btn-open-shop::before{ animation:none; } }
   /* Ícone real de moeda no pill principal de Ouro da barra superior (o mais
      visto na tela) -- não mexe nos vários 🪙 de texto espalhados em log/
      popover/etc., que continuam emoji mesmo (funcionam bem inline com texto).
@@ -326,7 +350,34 @@
   #char-progress-box .prog-total{ margin-top:6px; padding-top:8px; border-top:1px solid var(--gold-deep); font-weight:bold; }
   #char-progress-box .prog-total span, #char-progress-box .prog-total b{ color:var(--gold-bright); }
 
-  #outfit-subtabs{ display:flex; gap:6px; margin-bottom:14px; }
+  #outfit-subtabs{ display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  /* Janela de Outfit (redesenho 20/10/2026): prévia do personagem à esquerda
+     (atualiza ao vivo com traje/cores), abas + conteúdo à direita. */
+  #outfit-layout{ display:flex; gap:16px; align-items:flex-start; }
+  #outfit-preview{ flex:0 0 150px; position:sticky; top:0; display:flex; flex-direction:column; align-items:center; gap:4px;
+    border:1px solid var(--gold-deep); border-radius:8px; padding:12px 8px; background:radial-gradient(ellipse at 50% 35%, rgba(191,161,95,.16), rgba(0,0,0,.35) 70%); }
+  #outfit-preview .op-frame{ width:126px; height:180px; display:flex; align-items:flex-end; justify-content:center;
+    background:radial-gradient(ellipse at 50% 88%, rgba(0,0,0,.45) 0 22%, transparent 23%); }
+  #outfit-preview-canvas{ width:108px; height:180px; image-rendering:pixelated; }
+  #outfit-preview-name{ font-family:var(--font-display, var(--font-mono)); font-size:13px; color:var(--gold-bright); text-align:center; }
+  #outfit-preview-sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-align:center; min-height:12px; }
+  #outfit-preview-coins{ font-family:var(--font-mono); font-size:10px; color:#8fd0ff; margin-top:4px; }
+  #outfit-main{ flex:1; min-width:0; }
+  .outfit-section-title{ grid-column:1/-1; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-bright);
+    border-bottom:1px solid rgba(191,161,95,.25); padding-bottom:4px; margin-top:4px; }
+  .outfit-card{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; min-height:118px; transition:transform .08s, border-color .08s; }
+  .outfit-card:hover{ transform:translateY(-1px); border-color:var(--gold-bright); }
+  .outfit-card .oc-art{ height:64px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:6px; }
+  .outfit-card .oc-art img{ max-width:64px; max-height:64px; image-rendering:pixelated; }
+  .outfit-card .oc-art canvas{ width:48px; height:80px; image-rendering:pixelated; margin-bottom:-14px; }
+  .outfit-card .oc-badge{ position:absolute; top:6px; right:6px; font-family:var(--font-mono); font-size:8.5px; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,.55); color:var(--ink-dim); border:1px solid rgba(191,161,95,.3); }
+  .outfit-card .oc-badge.coin{ color:#8fd0ff; border-color:rgba(143,208,255,.45); }
+  .outfit-card .oc-badge.on{ color:#1b1406; background:var(--gold-bright); border-color:var(--gold-bright); }
+  .outfit-soon{ grid-column:1/-1; text-align:center; padding:40px 16px; border:1px dashed var(--gold-deep); border-radius:8px; color:var(--ink-dim); font-family:var(--font-mono); }
+  .outfit-soon b{ display:block; font-size:16px; color:var(--gold-bright); margin-bottom:6px; letter-spacing:.1em; }
+  #outfit-grid.cores-mode{ display:block; }
+  #cores-wrap{ display:flex; flex-direction:column; gap:12px; }
+  #cores-wrap .cores-note{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
   .outfit-subtab{ padding:6px 14px; border-radius:5px; border:1px solid var(--gold-deep); font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); cursor:pointer; }
   .outfit-subtab.active{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.1); }
   #outfit-colors{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
@@ -662,6 +713,11 @@
   .wiki-item-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
   .wiki-item-name{ font-family:var(--font-display); font-size:11.5px; color:var(--gold-bright); }
   .wiki-item-source{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
+  .wiki-item-icon{ width:38px; height:38px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:1px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.45); }
+  .wiki-item-icon .item-icon, .wiki-item-icon img{ width:30px !important; height:30px !important; object-fit:contain; }
+  .wiki-item-desc{ font-family:var(--font-body, inherit); font-size:10px; color:var(--ink); opacity:.85; line-height:1.3; }
+  .wiki-item-npc{ font-family:var(--font-mono); font-size:10px; color:var(--gold-bright); white-space:nowrap; }
+  .wiki-item-npc small{ color:var(--ink-dim); font-size:8px; }
   /* Grid de tipos de criatura (tela de entrada do Bestiário) — badge circular
      preto com o emoji do tipo dentro, igual ao estilo da wiki de referência
      (ravenquest.wiki.br/wiki/Criaturas), + nome embaixo + contagem de
@@ -1120,6 +1176,65 @@
   #friends-add-input{ flex:1; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:10.5px; }
 
   /* ============ LOJA (NPC) ============ */
+  /* ============ LOJA CENTRAL (20/10/2026) — estilo "Gambit Store" do Huntera ============
+     Uma janela só com abas no topo (Loja / NPC / PvP / Mercado) + categorias
+     na lateral. Janelas antigas (Loja do NPC, Loja PvP, Mercado, Pets, Battle
+     Pass, Bênçãos) são "encaixadas" dentro do painel direito quando a
+     categoria é escolhida (o mesmo DOM/lógica de sempre, só muda de lugar)
+     e voltam pro lugar original quando a Loja fecha. */
+  #storehub-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:1000px; max-width:96vw; height:640px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:18; }
+  #storehub-modal.open{ display:flex; }
+  .sh-head{ display:flex; align-items:center; gap:8px; padding:4px 14px 8px; flex-wrap:wrap; }
+  .sh-brand{ font-family:var(--font-display); font-size:15px; color:#9fb6ff; letter-spacing:.06em; }
+  .sh-brand small{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); margin-left:6px; letter-spacing:0; }
+  .sh-cur{ margin-left:auto; display:flex; gap:6px; }
+  .sh-cur span{ font-family:var(--font-mono); font-size:11px; padding:4px 12px; border-radius:14px; border:1px solid #3a3f55; background:#141622; color:var(--ink); min-width:90px; text-align:right; }
+  .sh-tabs{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:0 14px 8px; }
+  .sh-tab{ text-align:center; padding:9px 0; font-family:var(--font-display); font-size:12px; letter-spacing:.08em; color:var(--ink-dim); background:#151722; border:1px solid #2c3042; border-radius:4px; cursor:pointer; }
+  .sh-tab:hover{ color:var(--ink); border-color:#4a5070; }
+  .sh-tab.active{ color:#fff; border-color:#7d93e8; box-shadow:0 0 0 1px #7d93e8 inset, 0 0 12px rgba(125,147,232,.25); background:#1b1f33; }
+  .sh-body{ flex:1; min-height:0; display:flex; border-top:1px solid #2c3042; }
+  .sh-side{ width:178px; flex-shrink:0; overflow-y:auto; border-right:1px solid #2c3042; padding:6px; display:flex; flex-direction:column; gap:3px; }
+  .sh-cat{ display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:4px; cursor:pointer; color:var(--ink); font-size:12px; border:1px solid transparent; }
+  .sh-cat:hover{ background:#1a1d2b; }
+  .sh-cat.active{ background:#1d2238; border-color:#7d93e8; }
+  .sh-cat .ico{ width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:17px; background:#11131c; border:1px solid #2c3042; border-radius:4px; }
+  .sh-cat .ico img{ width:24px; height:24px; object-fit:contain; }
+  .sh-cat .cnt{ margin-left:auto; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); background:#11131c; border:1px solid #2c3042; border-radius:8px; padding:1px 6px; }
+  .sh-main{ flex:1; min-width:0; overflow-y:auto; padding:14px 18px; position:relative; }
+  .sh-h1{ font-family:var(--font-display); font-size:18px; color:#fff; margin:0 0 2px; }
+  .sh-sub{ font-size:11px; color:var(--ink-dim); margin-bottom:12px; }
+  .sh-section{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); margin:14px 0 8px; display:flex; align-items:center; gap:8px; }
+  .sh-section::after{ content:''; flex:1; height:1px; background:#2c3042; }
+  .sh-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+  .sh-card{ position:relative; background:#151722; border:1px solid #2c3042; border-radius:6px; padding:12px 10px 10px; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+  .sh-card:hover{ border-color:#4a5070; }
+  .sh-card.feat{ background:linear-gradient(180deg,#221d36,#151722); border-color:#9b86e0; }
+  .sh-card .tag{ font-family:var(--font-mono); font-size:9px; padding:2px 8px; border-radius:3px; background:#2a2f45; color:#c9d2ff; }
+  .sh-card.feat .tag{ background:#b9a6ff; color:#1a1430; font-weight:700; }
+  .sh-card .art{ width:104px; height:104px; border-radius:50%; background:radial-gradient(circle,#232740 0%,#151722 70%); border:1px solid #2c3042; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:40px; }
+  .sh-card .art img{ max-width:96px; max-height:96px; image-rendering:pixelated; }
+  .sh-card .art canvas{ width:60px; height:100px; image-rendering:pixelated; }
+  .sh-card .nm{ font-size:12px; color:var(--ink); min-height:30px; display:flex; align-items:center; }
+  .sh-card .pr{ font-family:var(--font-mono); font-size:15px; color:var(--gold-bright); }
+  .sh-card .pr small{ font-size:10px; color:var(--ink-dim); }
+  .sh-card .ds{ font-size:10px; color:var(--ink-dim); }
+  .sh-card button{ width:100%; padding:7px 0; border-radius:4px; border:1px solid #7d93e8; background:#24294a; color:#fff; font-family:var(--font-display); font-size:11px; letter-spacing:.05em; cursor:pointer; }
+  .sh-card button:hover:not(:disabled){ background:#323a68; }
+  .sh-card button.confirm{ background:#7d93e8; color:#10132a; }
+  .sh-card button.owned{ border-color:#3f8a55; background:#173022; color:#9be6ae; }
+  .sh-card button:disabled{ opacity:.55; cursor:default; }
+  .sh-soon{ text-align:center; padding:60px 20px; color:var(--ink-dim); }
+  .sh-soon b{ display:block; font-family:var(--font-display); font-size:24px; color:#b9a6ff; letter-spacing:.2em; margin-bottom:8px; }
+  .sh-search{ margin:8px 14px 12px; padding:8px 12px; background:#11131c; border:1px solid #2c3042; border-radius:4px; color:var(--ink); font-size:12px; }
+  .sh-note{ font-family:var(--font-mono); font-size:10px; color:#ffb48a; margin-top:12px; }
+  .sh-res{ display:flex; align-items:center; gap:10px; padding:8px 10px; background:#151722; border:1px solid #2c3042; border-radius:4px; margin-bottom:6px; cursor:pointer; }
+  .sh-res:hover{ border-color:#7d93e8; }
+  .sh-res .w{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  /* janela antiga encaixada dentro da Loja Central */
+  #sh-main > .win.sh-docked{ position:static !important; transform:none !important; inset:auto !important; width:100% !important; height:100% !important; max-width:none !important; max-height:none !important; min-height:0 !important; z-index:auto !important; background:none !important; box-shadow:none !important; padding-top:0 !important; border:none !important; }
+  #sh-main.docking{ padding:0; overflow:hidden; }
+  .win.sh-docked > .panel-title.win-drag, .win.sh-docked > .win-resize{ display:none !important; }
   #shop-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; display:none; z-index:16; }
   #shop-modal.open{ display:block; }
   .shop-item-row{ display:grid; grid-template-columns:30px 1fr auto auto; gap:8px; align-items:center; padding:7px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
@@ -2102,7 +2217,7 @@
        topo da tela, visível em qualquer área do jogo. -->
   <div id="top-bar" class="glass">
     <div class="tb-portrait hover-trigger" id="profile-hover">
-      <span class="tb-avatar">🧙</span>
+      <span class="tb-avatar"><canvas id="tb-face-canvas" width="44" height="44"></canvas></span>
       <span class="tb-namelv"><b id="tb-nick">—</b><span id="premium-badge" class="free">FREE</span><small id="tb-level">Nv. 1</small></span>
       <div class="popover glass" id="profile-popover">
         <div class="pf-pop-bar-row"><div class="char-bar-track"><div class="char-bar-fill hp" id="pf-hp-fill" style="width:100%"></div></div><span class="val" id="pf-hp-text">0/0</span></div>
@@ -2392,6 +2507,7 @@
         <button data-sqm="4">4</button>
       </div>
       <div class="hint">Salva o equipamento e a hotbar de habilidades ATUAIS do personagem neste slot.</div>
+      <div id="pvpthPresetMsg" style="min-height:14px;font-family:var(--font-mono);font-size:10px;color:#ff8a7a;margin-top:6px;"></div>
       <div class="row">
         <button class="cancel" id="pvpthPresetCancel">Cancelar</button>
         <button class="confirm" id="pvpthPresetConfirm">Salvar com equipamento atual</button>
@@ -2415,6 +2531,26 @@
   </div>
 
   <!-- LOJA DO FERREIRO BRAN — compra só é processada pelo servidor na Cidade Principal -->
+  <!-- LOJA CENTRAL (20/10/2026) — ver CSS #storehub-modal e JS "LOJA CENTRAL" -->
+  <div id="storehub-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🛒 Loja Elemental<span class="rule"></span><span class="win-close-x" data-close-win="storehub-modal">✕</span></div>
+    <div class="sh-head">
+      <span class="sh-brand">ELEMENTAL STORE<small>praticidade e estilo</small></span>
+      <div class="sh-cur">
+        <span id="sh-cur-gold" title="Gold (Mochila + Banco)">🪙 0</span>
+        <span id="sh-cur-coin" title="Elemental Coin">💎 0</span>
+        <span id="sh-cur-pvp" title="Moedas PvP">⚔️ 0</span>
+      </div>
+    </div>
+    <div class="sh-tabs" id="sh-tabs"></div>
+    <div class="sh-body">
+      <div class="sh-side" id="sh-side"></div>
+      <div class="sh-main" id="sh-main"></div>
+    </div>
+    <input type="text" class="sh-search" id="sh-search" placeholder="Digite para buscar..." autocomplete="off">
+    <div class="win-resize"></div>
+  </div>
+
   <div id="shop-modal" class="glass ornate win">
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ <span id="shop-npc-name">Ferreiro Bran</span><span class="rule"></span><span class="win-close-x" data-close-win="shop-modal">✕</span></div>
     <div style="padding:0 14px 14px;">
@@ -2940,14 +3076,24 @@
         <div id="char-progress-box"></div>
       </div>
       <div id="char-panel-outfit" class="char-panel" style="display:none;">
-        <div id="outfit-subtabs">
-          <div class="outfit-subtab active" data-osub="outfits">Outfits</div>
-          <div class="outfit-subtab" data-osub="mounts">Monturas</div>
-          <div class="outfit-subtab" data-osub="wings">Asas</div>
-          <div class="outfit-subtab" data-osub="auras">Auras</div>
-          <div class="outfit-subtab" data-osub="cores">Cores</div>
+        <div id="outfit-layout">
+          <div id="outfit-preview">
+            <div class="op-frame"><canvas id="outfit-preview-canvas" width="90" height="150"></canvas></div>
+            <div id="outfit-preview-name">—</div>
+            <div id="outfit-preview-sub"></div>
+            <div id="outfit-preview-coins"></div>
+          </div>
+          <div id="outfit-main">
+            <div id="outfit-subtabs">
+              <div class="outfit-subtab active" data-osub="outfits">Outfits</div>
+              <div class="outfit-subtab" data-osub="mounts">Montarias</div>
+              <div class="outfit-subtab" data-osub="wings">Asas</div>
+              <div class="outfit-subtab" data-osub="auras">Auras</div>
+              <div class="outfit-subtab" data-osub="cores">Cores</div>
+            </div>
+            <div id="outfit-grid"></div>
+          </div>
         </div>
-        <div id="outfit-grid"></div>
       </div>
     </div>
     <div class="win-resize"></div>
@@ -3143,7 +3289,10 @@
   // ravenquest.wiki.br (mesma fonte dos sprites de monstro). Chave = item.id
   // em possibleLoot. Nem todo item tem os dois campos (alguns não vendem no NPC).
   const ITEM_INFO = {"boar_steak":{"desc":"Um dos cortes de carne mais tradicionais; muitas famílias já se reuniram em casa para uma refeição em torno de um espeto de javali assado.","price":"167"},"boar_ears":{"desc":"Uma iguaria em algumas partes de Ravendawn — há vários pratos que pedem orelhas de javali, todos tão saborosos quanto o anterior, ou você pode simplesmente dar ao seu cachorro.","price":"77"},"boar_head":{"desc":"Um troféu de uma caçada bem-sucedida; muitos caçadores penduram a cabeça do abate na parede para provar sua destreza a todos.","price":"115"},"boar_pelt":{"desc":"Um pelo escuro e áspero, com uma subcamada espessa que cresce mais no inverno. Tradicionalmente, um couro de javali é usado como tapete diante da lareira, graças à sua leve resistência ao fogo.","price":"64"},"boar_tusks":{"desc":"Uma ferramenta e arma que os javalis usam com grande eficácia; muitos caçadores já subestimaram o poder de um javali e não viveram para contar a história.","price":"180"},"brown_bear_pelt":{"desc":"Frequentemente o orgulho da coleção de um caçador, o couro de um urso é incrivelmente macio, quente e grande o suficiente para causar impacto na casa de qualquer um.","price":"231"},"hide":{"desc":"Usado em várias receitas. Um pedaço de couro cru e não processado."},"apex_predator_claw":{"desc":"Retirada das feras mais ferozes de Ravendawn, caçadores costumam exibi-la como troféu.","price":"385"},"bear_paw":{"desc":"Pata de urso com garras enormes e afiadas, capazes de rasgar uma pessoa em pedaços sangrentos com facilidade.","price":"205"},"arctic_fur_pelt":{"desc":"Por milênios esse pelo manteve lobos aquecidos até nos climas mais frios, e há quase o mesmo tempo os humanos desejam a mesma proteção.","price":"257"},"wolf_skull":{"desc":"Um crânio de lobo limpo pelo tempo, ainda com as presas intactas; muitos caçadores o exibem como prova de uma matilha derrotada.","price":"115"},"wolf_steak":{"desc":"Carne de lobo bem preparada; um prato robusto, comum entre caçadores que passam dias na trilha.","price":"90"},"predator_tooth":{"desc":"Um dente afiado, semelhante a um canino, que claramente pertenceu a uma criatura carnívora.","price":"51"},"spool_of_hair":{"desc":"Usado em várias receitas. Um puxão suave no fio revela uma tapeçaria de texturas."},"arachnid_trophy":{"desc":"O que quer que esteja dentro dessa bola de teias... é melhor não saber. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Precisão. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"swiftseer_band_fragment":{"desc":"Um fragmento do lendário anel Swiftseer Band; diz-se que o anel melhora Sabedoria e Destreza. Se levado à pessoa certa, poderia ser restaurado..."},"red_spider_silk":{"desc":"Muito valorizada pela elite rica de várias cidades, especialmente Darzuac.","price":"270"},"smoldering_embers":{"desc":"Os restos de um aracnídeo muito quente.","price":"25"},"spider_eggs":{"desc":"Tem algo se mexendo aí dentro?","price":"102"},"crowmaiden_trophy":{"desc":"Quem sabe que rituais sinistros esse crânio já testemunhou... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Poder Mágico. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"eldritch_coil_fragment":{"desc":"Um fragmento do lendário anel Eldritch Coil; diz-se que o anel melhora Inteligência e Sabedoria. Se levado à pessoa certa, poderia ser restaurado..."},"human_effigy":{"desc":"Este talismã estranho exala uma poderosa magia negra. Ao toque, causa uma sensação perturbadora."},"rohna_brotherhood_trophy":{"desc":"Alguns membros da irmandade gostam de colecionar seus próprios cartazes de procurado, como um projeto de vaidade. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Impacto. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"brotherhood_lieutenant_ring":{"desc":"Carregado por membros de alta patente da Irmandade.","price":"372"},"encrypted_notebook":{"desc":"Este livro está fortemente codificado, protegendo as informações em seu interior. Um estudioso provavelmente conseguiria traduzi-lo com tempo suficiente, mas também vale uma boa prata — afinal, quem não gosta de mistérios?","price":"257"},"aloe_bandages":{"desc":"Embebidas em babosa, essas ataduras aliviam queimaduras e ajudam na cicatrização... só que não para você.","price":"154"},"arrow_quiver":{"desc":"Alguns arqueiros podem contar sobre aquela vez em que a mão foi buscar uma flecha e a aljava estava vazia. Outros não podem mais contar história nenhuma.","price":"77"},"hookmask_trophy":{"desc":"A insígnia identificadora de um bando de capangas liderado por um cabal nefasto de alquimistas exilados. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Poder de Cura. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"pirate_trophy":{"desc":"Todo marinheiro de Ravendawn sente pavor ao ver este símbolo em alto mar! Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Sabedoria e +1% de Força. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"bizarre_mask":{"desc":"Uma máscara criada com a intenção de intimidar e perturbar oponentes. (É super eficaz!)","price":"128"},"strange_potion":{"desc":"Preparadas pelos alquimistas Hookmask, essas poções muito valiosas raramente são vistas intactas."},"cave_spider_leg":{"desc":"Este apêndice quitinoso é adaptado a ambientes cavernosos... Espera, ainda está se mexendo?","price":"167"},"spider_fangs":{"desc":"Praticamente sem veneno, mas ainda afiadas o bastante para causar um ferimento feio."},"fox_trophy":{"desc":"Diga adeus aos pesadelos com este prático filtro dos sonhos! Exceto aqueles com raposas furiosas, claro... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Velocidade. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"igneous_ice_shard":{"desc":"Este fragmento, duro como diamante, transborda energia elemental. O poder da Praga Branca na palma da sua mão."},"ripper_fang":{"desc":"Uma presa monstruosa, capaz de rasgar armadura, carne e osso com igual facilidade."},"elemental_crystal":{"desc":"No lugar de um coração, algumas criaturas carregam um cristal potente como este."},"fox_fur":{"desc":"O pelo de raposa há muito adorna os ombros dos ricos e poderosos, e agora você pode oficialmente entrar para essas fileiras.","price":"257"},"dwarf_trophy":{"desc":"Agora você pode treinar batalhas contra esses guerreiros robustos! Ele parece meio alto demais, na verdade... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Defesa contra Armas. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"dwarven_coin":{"desc":"Desde que alguém se lembra, os anões cunham e usam essas moedas como moeda corrente por toda a terra."},"ancient_ingot":{"desc":"Um selo de pedra valioso, concedido apenas aos membros dos clãs anões mais proeminentes."},"complex_schematics":{"desc":"Informações valiosas sobre tecnologia exótica... desde que você consiga entender os diagramas.","price":"205"},"dwarven_beard":{"desc":"Um símbolo de linhagem e orgulho, que encapsula o espírito indomável do povo anão.","price":"128"},"deep_sea_bladder":{"desc":"As bexigas de animais marinhos das profundezas são muito valorizadas para uso como cantis de água e equipamento de flutuação.","price":"257"},"exotic_fin":{"desc":"Usada em várias receitas. O cheiro não é desagradável, mas pode ser percebido a longas distâncias."},"bat_wing":{"desc":"Escura e coriácea, esta asa certamente pertenceu a um morcego de tamanho considerável.","price":"154"},"fading_light_bulb":{"desc":"Necessária para construir várias peças de navio. Não acende mais, mas ainda tem utilidade."},"fish_mucus":{"desc":"Apesar de desagradável ao toque, quando exposto a ar seco e quente esse muco endurece, formando um selante básico que ajuda a conservar mercadorias. Muitos mercadores o usam em viagens longas.","price":"51"},"warhog_trophy":{"desc":"Tente não treinar com esse boneco de manhã, ou vai começar a desejar bacon. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Força e +1% de Vitalidade. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"bone_ring":{"desc":"Usado no focinho ou no braço para simbolizar todos os inimigos que um Warhog já abateu; dá pra imaginar de qual osso e de qual criatura ele veio originalmente.","price":"90"},"chewacabra_blood":{"desc":"Diz-se que o sangue de um Chewacabra carrega a magia armazenada de todas as criaturas de que já se alimentou; magos do sangue costumam experimentar com esse conhecimento em suas práticas profanas.","price":"308"},"chewacabra_tusk":{"desc":"Considerada uma peça de colecionador por alguns caçadores. Os Ghaz, porém, acreditam que ela traz azar.","price":"205"},"goblinhide_scroll":{"desc":"Warhogs detestam goblins e, para amedrontar o inimigo, os esfolam e usam esses pergaminhos como troféus."},"goblin_trophy":{"desc":"Um alvo perfeito para treinar suas habilidades de saque! Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Inteligência e +1% de Destreza. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"sageheart_fragment":{"desc":"Um fragmento do lendário anel Sageheart; diz-se que o anel melhora Sabedoria e Vitalidade. Se levado à pessoa certa, poderia ser restaurado..."},"sporewalker_trophy":{"desc":"O conteúdo desses frascos é desconhecido, e talvez seja melhor que continue assim... considerando a origem. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +6% de Mana Máxima. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"perfect_sporecap":{"desc":"Este chapéu de cogumelo é impecável e imaculado, muito valorizado por suas diversas aplicações místicas e cerimoniais.","price":"2957"},"cracked_soul_orb":{"desc":"Usado para energizar mechas goblin. Uma energia estranha irradia pelas rachaduras.","price":"1285"},"trunk_trophy":{"desc":"Ele só fica rosnando e tentando te morder. Felizmente, é do tamanho de um bocado. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Regeneração de Mana. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"enchanted_acorn":{"desc":"A semente mágica de uma árvore ancestral; quem sabe o que poderia brotar se você a plantasse no solo — melhor não arriscar.","price":"771"},"hardwood":{"desc":"Embora seja muito difícil de trabalhar, armas e ferramentas feitas dessa madeira semelhante a pedra são quase inquebráveis."},"hexing_eye":{"desc":"Quem encara por tempo demais logo sente dores de cabeça e náusea... em um duelo de olhares, o olho sempre vence.","price":"360"},"booty_stash":{"desc":"Saquear, pilhar e roubar são o ofício de um pirata. O conteúdo deste baú pode render um bom preço, desde que você não se importe com a origem.","price":"282"},"brass_telescope":{"desc":"Este grande telescópio é montado em navios maiores para permitir que a tripulação enxergue através das nuvens quando as estrelas ficam encobertas.","price":"514"},"infamous_doubloon":{"desc":"Por mais desorganizados que os piratas possam parecer, todos concordam em uma coisa: o valor do ouro e do sangue."},"platinum_compass":{"desc":"Isto já pertenceu a um marinheiro rico; agora vai servir para encher seus bolsos de prata.","price":"1800"},"foreign_alcohol":{"desc":"Usado em várias receitas. É transparente e o cheiro não é agressivo. Dá para ver pequenos grãos flutuando no líquido."},"chainwraith_trophy":{"desc":"O reflexo neste espelho parece ter vontade própria! Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Sabedoria e +1% de Força. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"netherweave_fragment":{"desc":"Um fragmento do lendário anel Netherweave; diz-se que o anel melhora Vitalidade e Destreza. Se levado à pessoa certa, poderia ser restaurado..."},"chainsunder_flail":{"desc":"As correntes que chacoalham de um espectro assombram os pesadelos de muita gente, mas o mangual preso à corrente é muito mais perigoso.","price":"540"},"ethereal_cloak":{"desc":"Uma capa assombrada, encharcada da energia e da tristeza dos mortos inquietos.","price":"347"},"ghastly_lamp":{"desc":"Esta lamparina sinistra não dá calor algum; pelo contrário, deixa quem a carrega se sentindo esgotado e vazio.","price":"128"},"dark_insight_fragment":{"desc":"Um fragmento do lendário anel Dark Insight; diz-se que o anel melhora Inteligência e Destreza. Se levado à pessoa certa, poderia ser restaurado..."},"gazer_trophy":{"desc":"Algumas pessoas têm gostos alternativos em decoração de interiores. E então tem você... Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Regeneração de Mana. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"underearth_gem":{"desc":"Gema opaca de valor incalculável; acredita-se que venha do misterioso domínio conhecido como Underearth."},"despair_inducing_gland":{"desc":"Esta glândula parece pulsar mesmo removida do corpo do Gazer; encará-la por tempo demais provoca uma onda de tristeza, e por um instante você acha que ela também está encarando você.","price":"334"},"eerie_bone_plate":{"desc":"Esta placa de osso é espessa e única, uma armadura natural feita para proteger o funcionamento interno da criatura de onde veio.","price":"102"},"frozen_meat":{"desc":"Este pedaço de carne está morno, mas rígido, como se estivesse congelado.","price":"797"},"monstrous_mane":{"desc":"Isto já pertenceu a uma fera verdadeiramente monstruosa."},"oversized_flea":{"desc":"A suculência deste inseto mostra que ele teve uma boa fonte de alimento durante toda a vida."},"winterwool":{"desc":"Pelo de excelente qualidade; confere ótimo isolamento e proteção a qualquer peça de roupa em que for costurado."},"amber_eye_gem":{"desc":"Stonelings costumam carregar várias gemas dentro do corpo, mas os olhos deles são sempre feitos de âmbar puro.","price":"514"},"exotic_fungus":{"desc":"Este cogumelo é incrivelmente resistente e adaptável, capaz de prosperar em uma grande variedade de ambientes, desde que possa contar com seu hospedeiro para transporte e proteção."},"demon_trophy":{"desc":"Se você se aproximar, consegue ouvir sussurros estranhos em uma língua incompreensível. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Impacto. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"voidmind_fragment":{"desc":"Um fragmento do lendário anel Voidmind; diz-se que o anel melhora Inteligência e Força. Se levado à pessoa certa, poderia ser restaurado..."},"demonic_essence":{"desc":"Este núcleo estável, repleto de energia sombria, contamina tudo que toca. A exposição prolongada à pele começa a queimar e apodrecer a vítima."},"cutting_edge_scrap":{"desc":"Fragmentos de metal afiados como lâminas. Manuseados com cuidado, podem ser forjados em armas mortais."},"demon_core":{"desc":"Um núcleo demoníaco é o que serve de coração para os demônios; é um item potente e magicamente sintonizado, mas segurá-lo por tempo demais não é recomendado."},"crow_mask":{"desc":"Usada com frequência pelas mais poderosas entre as Crowmaidens, esta máscara parece coberta de glifos feiticeiros."},"essence_of_darkness":{"desc":"Esta pedra abriga o próprio núcleo da sombra, uma manifestação concentrada da noite primordial.","price":"2571"},"direhorn_drake_trophy":{"desc":"Para alguns, um touro em disparada é uma visão aterrorizante; para você, é só um aperitivo. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +2% de Destreza e +1% de Vitalidade. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"galeforce_fragment":{"desc":"Um fragmento do lendário anel Galeforce; diz-se que o anel melhora Destreza e Força. Se levado à pessoa certa, poderia ser restaurado..."},"jackal_trophy":{"desc":"Apesar de quererem se distanciar de seu antigo mestre, o amor dos chacais pelo ouro é um sinal claro dessa conexão. Usar este troféu permite colocá-lo em sua casa e concede um bônus permanente de +4% de Defesa Mágica. Você também pode trocá-lo ou consumir Troféus adicionais para desbloquear suas versões Dourada e Encantada, ganhando Renome extra!"},"mindsurge_fragment":{"desc":"Um fragmento do lendário anel Mindsurge; diz-se que o anel melhora Vitalidade e Inteligência. Se levado à pessoa certa, poderia ser restaurado..."},"beastly_distillate":{"desc":"Um fluido potente destilado da essência de criaturas primordiais; encarna a ferocidade indomável e o poder inexplorado da natureza selvagem."},"draconic_hide":{"desc":"Transformar este material em peças de armadura maravilhosas não chega nem à metade da dificuldade de obtê-lo."},"draconic_wings":{"desc":"Se não coubessem em um humanoide, seria fácil acreditar que essas asas um dia pertenceram a um verdadeiro dragão.","price":"1285"},"fiery_essence":{"desc":"Este núcleo estável fervilha de energia natural ardente. Se prestar atenção, você até consegue ouvi-lo chiar!"},"golden_ruby_belt":{"desc":"Um cinto feito de adornos finos para exibir a riqueza de seu dono.","price":"192"},"red_horns":{"desc":"Apesar de menores que os chifres de muitas criaturas, estes ainda são incrivelmente afiados e quentes ao toque.","price":"154"}};
-  function itemIconUrl(itemId){ return URL_BASE + 'items/loot/' + itemId + '.png'; }
+  // 20/10/2026: itens de loot sem PNG próprio em items/loot/ usam a foto do
+  // item mais parecido (mesma família) em vez do SVG genérico.
+  const LOOT_ICON_ALIAS = { wolf_steak:'boar_steak', eldermight_fragment:'sageheart_fragment', the_corsairs_ambrosia:'foreign_alcohol' };
+  function itemIconUrl(itemId){ return URL_BASE + 'items/loot/' + (LOOT_ICON_ALIAS[itemId] || itemId) + '.png'; }
   // Ícone real de arma/armadura extraído do client Ravendawn (ver Elemental_assets/assets/items/equip/)
   // — `icon` vem do catálogo/servidor; itens antigos sem esse campo caem no SVG genérico via onerror.
   function equipIconUrl(icon){ return URL_BASE + 'items/equip/' + icon; }
@@ -3414,6 +3563,7 @@
   let myPvp = { title: null, titleExpiresAt: null, presets: [], activePresetIndex: 0, stats: { wins:0, losses:0, tournamentsPlayed:0, bestRoundReached:0 } };
   let pvpthPresetEditingSlot = null; // qual slot (0..2) o editor de preset está editando agora
   let pvpthPresetSqmChoice = 1;
+  let pvpthRegError = ''; // último motivo de falha da inscrição, mostrado na própria janela
 
   // MERCADO — catálogo (12 itens empilháveis: materiais + poções) e taxa de
   // venda vêm uma vez no 'welcome', igual outfitCatalog. O livro de ofertas
@@ -3537,7 +3687,7 @@
     let html = `<div class="tt-name">${item.name}</div>`;
     html += `<div class="rarity-${item.rarity}">${item.rarity}</div>`;
     if(info && info.desc) html += `<div>${escapeHtml(info.desc)}</div>`;
-    if(info && info.price) html += `<div class="tt-price">Preço base: ${info.price}</div>`;
+    html += `<div class="tt-price">🪙 Vende no NPC (Ferreiro Bran): ${npcSellPriceFor({rarity:item.rarity}).toLocaleString('pt-BR')} Gold</div>`;
     itemTooltipEl.innerHTML = html;
     itemTooltipEl.style.display = 'block';
     moveItemTooltip(evt);
@@ -4244,6 +4394,43 @@
     if(_recolorCacheOrder.length > 60){ delete _recolorCache[_recolorCacheOrder.shift()]; }
     return entry;
   }
+  /* Retrato da barra superior (20/10/2026): rosto do personagem ATUAL —
+     desenha o boneco inteiro (sem asas/aura) num canvas fora da tela com o
+     mesmo drawCharacterLayers do Inventário, acha a cabeça pelos pixels
+     opacos do topo e recorta um quadrado nela. Redesenha quando muda traje,
+     cores ou cabelo (assinatura) e mais algumas vezes logo depois, porque
+     os PNGs do traje chegam assíncronos. Chamado a cada snapshot. */
+  const tbFaceScratch = document.createElement('canvas'); tbFaceScratch.width = 120; tbFaceScratch.height = 170;
+  let tbFaceSig = '', tbFaceRetries = 0;
+  function updateTopBarFace(force){
+    const out = document.getElementById('tb-face-canvas');
+    if(!out || typeof SELECTED_CHARACTER === 'undefined') return;
+    const ch = SELECTED_CHARACTER || {};
+    const sig = [ch.gender, ch.hairId, ch.hairStyleId, cosmetics && cosmetics.outfit, JSON.stringify(cosmeticColors||{})].join('|');
+    if(sig !== tbFaceSig){ tbFaceSig = sig; tbFaceRetries = 6; }
+    if(!force && tbFaceRetries <= 0) return;
+    const sctx = tbFaceScratch.getContext('2d', { willReadFrequently: true });
+    sctx.clearRect(0, 0, tbFaceScratch.width, tbFaceScratch.height);
+    try{
+      drawCharacterLayers({ x: tbFaceScratch.width/2, y: 150 }, 0, ch.gender || 'male', ch.hairId || 1, cosmetics.outfit, null, null, '#d3ab54', sctx, ch.hairStyleId || 1, null, cosmeticColors);
+    }catch(e){ return; }
+    const W = tbFaceScratch.width, H = tbFaceScratch.height;
+    const data = sctx.getImageData(0, 0, W, H).data;
+    let top = -1;
+    for(let y = 0; y < H && top < 0; y++) for(let x = 0; x < W; x++) if(data[(y*W+x)*4+3] > 40){ top = y; break; }
+    if(top < 0) return; // sprite ainda carregando — tenta de novo (não gasta tentativa)
+    tbFaceRetries--;
+    const bodyH = 150 - top;
+    const side = Math.max(16, Math.round(bodyH * 0.5));
+    let sx = 0, n = 0;
+    for(let y = top; y < Math.min(H, top + side); y++) for(let x = 0; x < W; x++) if(data[(y*W+x)*4+3] > 40){ sx += x; n++; }
+    const cx = n ? sx / n : W/2;
+    const octx = out.getContext('2d');
+    octx.clearRect(0, 0, out.width, out.height);
+    octx.imageSmoothingEnabled = false;
+    octx.drawImage(tbFaceScratch, Math.round(cx - side/2), Math.max(0, top - Math.round(side*0.08)), side, side, 0, 0, out.width, out.height);
+  }
+  setInterval(()=> updateTopBarFace(), 1500);
   function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim, cosmeticColorsArg){
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
     // sempre; com ele, desenha em QUALQUER outro canvas (usado pelo retrato
@@ -6128,6 +6315,7 @@
     if(typeof msg.towerDowned !== 'undefined'){ towerDowned = msg.towerDowned || null; updateTowerDownedBanner(); }
     renderTowersIfOpen();
     if(msg.materials) materials = msg.materials;
+    if(msg.crystalResetAt) crystalResetAt = msg.crystalResetAt;
     if(msg.professions) professions = msg.professions;
     // Craft com tempo real: craftingJob vem null quando não tem nada em
     // andamento (ver serializeHuntSnapshot no server.js). Só re-renderiza o
@@ -6218,12 +6406,13 @@
     if(shouldRenderPanels){
       lastPanelRenderAt = nowForPanels;
       renderHotbar();
+      updateTopBarFace();
       renderSkillTreeIfOpen(); renderTowersIfOpen();
       renderTargetModeOptions();
       refreshTacticsUI();
       renderAttrs(); renderParty(); renderInventoryIfOpen(); renderWikiIfOpen(); renderAltar(); renderFriends(); renderShop(); renderFusionIfOpen();
       renderCoinShopIfOpen(); renderEnchantIfOpen(); renderProfessionsIfOpen(); updateRankPill();
-      renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen(); renderPvpTournamentIfOpen();
+      renderPetsIfOpen(); renderBattlePassIfOpen(); renderPartyDpsIfOpen(); renderPvpTournamentIfOpen(); storeHubRenderIfOpen();
       if(currentTrade) renderTrade();
       if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="treino"]').classList.contains('active')) renderTreinoTab();
       if(typeof renderCharacterModalIfOpen === 'function') renderCharacterModalIfOpen();
@@ -7014,6 +7203,8 @@
     if(msg.forType === 'guild:list' && msg.ok){ renderGuildListTab(msg.guilds); }
 
     if(['outfit:buy','mount:buy','wing:buy','aura:buy'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ Compra falhou: ${msg.reason}`);
+    if(msg.forType === 'outfit:buy' && msg.ok) logLoot('✅ Outfit comprado! Equipe na Loja ou na janela de Outfit.');
+    if(['outfit:buy','outfit:equip','shop:buyPremium','shop:buyElementalCoins','tower:buyKey'].includes(msg.forType)) storeHubRenderIfOpen();
     if(['outfit:equip','mount:equip','wing:equip','aura:equip','cosmetic:color'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
     if(['equip:item','equip:remove'].includes(msg.forType)){
       if(!msg.ok) logLoot(`⚠️ ${msg.reason}`);
@@ -7226,7 +7417,7 @@
       renderPetsIfOpen();
     }
     if(msg.forType === 'battlepass:claim'){
-      if(msg.ok) logLoot(`🎫 Recompensa do tier ${msg.reward ? '' : ''}resgatada!`);
+      if(msg.ok) logLoot(`🎫 Battle Pass: resgatou ${msg.reward ? formatBpReward(msg.reward) : 'recompensa'}!`);
       else {
         const reasonMap = { tier_nao_alcancado:'você ainda não chegou nesse tier.', ja_resgatado:'essa recompensa já foi resgatada.', apenas_premium:'essa recompensa é exclusiva da trilha Premium.', tier_invalido:'tier inválido.', trilha_invalida:'trilha inválida.' };
         logLoot(`⚠️ Não foi possível resgatar: ${reasonMap[msg.reason] || msg.reason}`);
@@ -7274,6 +7465,9 @@
       } else {
         const reasonMap = { inscricoes_fechadas:'as inscrições desta semana já fecharam.', ouro_insuficiente:`Ouro insuficiente (taxa: ${Math.round(msg.entryFee||0).toLocaleString('pt-BR')}).` };
         logLoot(`⚠️ Não foi possível se inscrever: ${reasonMap[msg.reason] || msg.reason}`);
+        // Mostra o motivo DENTRO da janela do Torneio também (antes só ia pro
+        // log de loot e parecia que o botão "não fazia nada").
+        pvpthRegError = `⚠️ ${reasonMap[msg.reason] || msg.reason}`;
       }
       renderPvpTournamentIfOpen();
     }
@@ -7284,6 +7478,7 @@
       } else {
         const reasonMap = { slot_invalido_0_a_2:'slot inválido.', distancia_ataque_deve_ser_1_a_4:'escolha uma Distância de Ataque de 1 a 4.' };
         logLoot(`⚠️ Não foi possível salvar o preset: ${reasonMap[msg.reason] || msg.reason}`);
+        const pm = document.getElementById('pvpthPresetMsg'); if(pm) pm.textContent = `⚠️ ${reasonMap[msg.reason] || msg.reason}`;
       }
       renderPvpTournamentIfOpen();
     }
@@ -8026,122 +8221,185 @@
   // (Cabeça/Corpo/Pernas/Pés) está com a paleta aberta.
   let coresPart = 'head';
   const CORES_PART_LABEL = { head:'Cabeça', body:'Corpo', legs:'Pernas', feet:'Pés' };
+  // Prévia ao vivo (coluna esquerda da janela de Outfit) -- mesmo desenhista
+  // do retrato do Inventário. outfitTryOn = traje que o jogador clicou mas
+  // ainda não comprou: aparece na prévia ("provador"); 2º clique compra.
+  let outfitTryOn = null;
+  function outfitPortraitArgs(){
+    return {
+      genero: SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male',
+      hairId: SELECTED_CHARACTER ? SELECTED_CHARACTER.hairId : 1,
+      hairStyleId: SELECTED_CHARACTER ? SELECTED_CHARACTER.hairStyleId : 1,
+    };
+  }
+  function drawOutfitOn(canvas, outfitId, withExtras){
+    if(!canvas) return;
+    const c2 = canvas.getContext('2d'); c2.clearRect(0,0,canvas.width,canvas.height);
+    const a = outfitPortraitArgs();
+    drawCharacterLayers({ x: canvas.width/2, y: 130 }, 0, a.genero, a.hairId, outfitId, withExtras ? cosmetics.wings : null, withExtras ? cosmetics.aura : null, '#d3ab54', c2, a.hairStyleId, null, cosmeticColors);
+  }
+  function drawOutfitPreview(){
+    const cv = document.getElementById('outfit-preview-canvas');
+    const showId = outfitTryOn || cosmetics.outfit;
+    drawOutfitOn(cv, showId, !outfitTryOn);
+    const def = outfitCatalog.find(o => o.id === showId);
+    document.getElementById('outfit-preview-name').textContent = PLAYER_NICK || '—';
+    document.getElementById('outfit-preview-sub').textContent = outfitTryOn ? `Provando: ${def ? def.name : ''}` : (def ? def.name : 'Traje Padrão');
+    document.getElementById('outfit-preview-coins').textContent = `💎 ${Math.round(elementalCoins||0).toLocaleString('pt-BR')} Coin`;
+  }
+  // Sprites carregam assíncronos (1ª vez): redesenha prévia e miniaturas
+  // umas vezes logo depois, até os PNGs chegarem.
+  function scheduleOutfitRedraws(){
+    [250, 800, 1800].forEach(ms => setTimeout(()=>{
+      const panel = document.getElementById('char-panel-outfit');
+      if(!panel || panel.style.display === 'none') return;
+      drawOutfitPreview();
+      document.querySelectorAll('#outfit-grid canvas[data-draw-outfit]').forEach(cv => drawOutfitOn(cv, cv.dataset.drawOutfit, false));
+    }, ms));
+  }
+  function outfitCardArt(o){
+    if(String(o.id).startsWith('rd_')) return `<img src="${URL_BASE}player/outfits_template/${o.id}_icon.png" onerror="this.replaceWith(document.createTextNode('🧍'))" />`;
+    return `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`;
+  }
   function renderCharOutfit(){
     const grid = document.getElementById('outfit-grid');
+    grid.classList.toggle('cores-mode', outfitSubTab === 'cores');
+    if(outfitSubTab !== 'outfits') outfitTryOn = null;
     if(outfitSubTab === 'outfits'){
-      grid.innerHTML = outfitCatalog.map(o=>{
+      // 20/10/2026: trajes pagos em Gold saíram da venda -- só aparecem pra
+      // quem já tem. Seções: "Seus trajes" (possuídos + grátis) e "Loja".
+      const isGoldPriced = o => o.cost > 0 && o.currency !== 'elementalCoin';
+      const mine = outfitCatalog.filter(o => ownedOutfits.includes(o.id) || (o.cost === 0 && !isGoldPriced(o)));
+      const shop = outfitCatalog.filter(o => !ownedOutfits.includes(o.id) && o.currency === 'elementalCoin');
+      const card = (o) => {
         const owned = ownedOutfits.includes(o.id);
         const equipped = cosmetics.outfit === o.id;
-        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-outfit="${o.id}">
-          <div class="oc-icon">${(o.fixedColor || String(o.id).startsWith('rd_')) ? `<img src="${URL_BASE}player/outfits_template/${o.id}_icon.png" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🧍';" />` : '🧍'}</div>
+        const trying = outfitTryOn === o.id;
+        let badge = '', price = '';
+        if(equipped){ badge = '<span class="oc-badge on">Vestido</span>'; price = 'Equipado'; }
+        else if(owned){ price = 'Clique p/ vestir'; }
+        else if(o.currency === 'elementalCoin'){ badge = `<span class="oc-badge coin">💎 ${o.cost.toLocaleString('pt-BR')}</span>`; price = trying ? '<b style="color:#8fd0ff">Clique de novo p/ comprar</b>' : 'Clique p/ provar'; }
+        else { price = 'Grátis — clique p/ pegar'; }
+        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}${trying?' equipped':''}" data-outfit="${o.id}">
+          ${badge}<div class="oc-art">${outfitCardArt(o)}</div>
           <div class="oc-name">${escapeHtml(o.name)}</div>
-          <div class="oc-price">${owned ? (equipped?'Equipado':'Adquirido — clique p/ vestir') : (o.cost>0?(o.currency==='elementalCoin'?`${o.cost.toLocaleString('pt-BR')} 💎 Coin`:`${o.cost.toLocaleString('pt-BR')} Gold`):'Grátis')}</div>
+          <div class="oc-price">${price}</div>
         </div>`;
-      }).join('');
-      grid.querySelectorAll('.outfit-card').forEach(card=>{
-        card.addEventListener('click', ()=>{
-          const id = card.dataset.outfit;
-          if(ownedOutfits.includes(id)) sendWS({ type:'outfit:equip', outfitId:id });
-          else sendWS({ type:'outfit:buy', outfitId:id });
+      };
+      grid.innerHTML = `<div class="outfit-section-title">Seus trajes</div>${mine.map(card).join('')}`
+        + (shop.length ? `<div class="outfit-section-title">Loja — Elemental Coin</div>${shop.map(card).join('')}` : '');
+      grid.querySelectorAll('.outfit-card').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const id = el.dataset.outfit;
+          const def = outfitCatalog.find(o => o.id === id);
+          if(ownedOutfits.includes(id)){ outfitTryOn = null; sendWS({ type:'outfit:equip', outfitId:id }); return; }
+          if(def && def.currency === 'elementalCoin' && outfitTryOn !== id){ outfitTryOn = id; renderCharOutfit(); return; }
+          outfitTryOn = null;
+          sendWS({ type:'outfit:buy', outfitId:id });
         });
       });
     } else if(outfitSubTab === 'mounts'){
-      const noneOwned = `<div class="outfit-card${!cosmetics.mount?' equipped':''}" data-mount="__none__"><div class="oc-icon">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.mount?'Equipada':'Clique p/ desmontar'}</div></div>`;
-      grid.innerHTML = noneOwned + mountCatalog.map(m=>{
-        const owned = ownedMounts.includes(m.id);
-        const equipped = cosmetics.mount === m.id;
-        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-mount="${m.id}">
-          <div class="oc-icon">🐎</div>
-          <div class="oc-name">${escapeHtml(m.name)}</div>
-          <div class="oc-price">${owned ? (equipped?'Equipada':'Adquirida — clique p/ montar') : `${m.cost.toLocaleString('pt-BR')} Gold`}</div>
-        </div>`;
-      }).join('');
-      grid.querySelectorAll('[data-mount]').forEach(card=>{
-        card.addEventListener('click', ()=>{
-          const id = card.dataset.mount;
-          if(id === '__none__') { sendWS({ type:'mount:equip', mountId:null }); return; }
-          if(ownedMounts.includes(id)) sendWS({ type:'mount:equip', mountId:id });
-          else sendWS({ type:'mount:buy', mountId:id });
+      // 20/10/2026: montarias retiradas -- aviso "Em breve" (o sistema
+      // continua: se MOUNT_CATALOG voltar a ter itens, a grade volta sozinha).
+      if(!mountCatalog.length){
+        grid.innerHTML = '<div class="outfit-soon"><b>EM BREVE</b>As montarias estão chegando. Fique de olho nas próximas atualizações!</div>';
+      } else {
+        const noneOwned = `<div class="outfit-card${!cosmetics.mount?' equipped':''}" data-mount="__none__"><div class="oc-art" style="font-size:28px">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.mount?'Equipada':'Clique p/ desmontar'}</div></div>`;
+        grid.innerHTML = noneOwned + mountCatalog.map(m=>{
+          const owned = ownedMounts.includes(m.id);
+          const equipped = cosmetics.mount === m.id;
+          return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-mount="${m.id}">
+            <div class="oc-art" style="font-size:28px">🐎</div>
+            <div class="oc-name">${escapeHtml(m.name)}</div>
+            <div class="oc-price">${owned ? (equipped?'Equipada':'Clique p/ montar') : `${m.cost.toLocaleString('pt-BR')} Gold`}</div>
+          </div>`;
+        }).join('');
+        grid.querySelectorAll('[data-mount]').forEach(el=>{
+          el.addEventListener('click', ()=>{
+            const id = el.dataset.mount;
+            if(id === '__none__') { sendWS({ type:'mount:equip', mountId:null }); return; }
+            if(ownedMounts.includes(id)) sendWS({ type:'mount:equip', mountId:id });
+            else sendWS({ type:'mount:buy', mountId:id });
+          });
         });
-      });
+      }
     } else if(outfitSubTab === 'wings'){
-      // Asas — cosmético "acima do Elmo" (paperdoll), renderiza atrás do
-      // corpo no mapa/retrato (ver SpriteManager.wingSprite + drawCharacterLayers).
-      const noneOwned = `<div class="outfit-card${!cosmetics.wings?' equipped':''}" data-wing="__none__"><div class="oc-icon">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.wings?'Equipadas':'Clique p/ remover'}</div></div>`;
-      grid.innerHTML = noneOwned + wingCatalog.map(w=>{
-        const owned = ownedWings.includes(w.id);
+      // Asas — cosmético "acima do Elmo", renderiza atrás do corpo. 20/10/2026:
+      // asas saíram da venda -- a aba mostra só as que o jogador já possui.
+      const mineW = wingCatalog.filter(w => ownedWings.includes(w.id));
+      const noneOwned = `<div class="outfit-card${!cosmetics.wings?' equipped':''}" data-wing="__none__"><div class="oc-art" style="font-size:28px">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.wings?'Equipadas':'Clique p/ remover'}</div></div>`;
+      grid.innerHTML = noneOwned + mineW.map(w=>{
         const equipped = cosmetics.wings === w.id;
-        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-wing="${w.id}">
-          <div class="oc-icon">🪽</div>
+        return `<div class="outfit-card owned${equipped?' equipped':''}" data-wing="${w.id}">
+          ${equipped?'<span class="oc-badge on">Vestidas</span>':''}
+          <div class="oc-art"><img src="${URL_BASE}wings/${w.id}.png" onerror="this.replaceWith(document.createTextNode('🪽'))" /></div>
           <div class="oc-name">${escapeHtml(w.name)}</div>
-          <div class="oc-price">${owned ? (equipped?'Equipadas':'Adquiridas — clique p/ vestir') : `${w.cost.toLocaleString('pt-BR')} Gold`}</div>
+          <div class="oc-price">${equipped?'Equipadas':'Clique p/ vestir'}</div>
         </div>`;
-      }).join('');
-      grid.querySelectorAll('[data-wing]').forEach(card=>{
-        card.addEventListener('click', ()=>{
-          const id = card.dataset.wing;
+      }).join('') + (mineW.length ? '' : '<div class="outfit-soon" style="padding:18px"><b style="font-size:12px">SEM ASAS</b>Nenhuma asa à venda no momento.</div>');
+      grid.querySelectorAll('[data-wing]').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const id = el.dataset.wing;
           if(id === '__none__') { sendWS({ type:'wing:equip', wingId:null }); return; }
-          if(ownedWings.includes(id)) sendWS({ type:'wing:equip', wingId:id });
-          else sendWS({ type:'wing:buy', wingId:id });
+          sendWS({ type:'wing:equip', wingId:id });
         });
       });
     } else if(outfitSubTab === 'auras'){
-      // Auras — cosmético ANIMADO (4 quadros em loop, ver AURA_CATALOG no
-      // servidor + AuraManager no cliente); envolve o personagem, desenhado
-      // por cima do corpo (ver drawCharacterLayers).
-      const noneOwned = `<div class="outfit-card${!cosmetics.aura?' equipped':''}" data-aura="__none__"><div class="oc-icon">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.aura?'Equipada':'Clique p/ remover'}</div></div>`;
+      // Auras — cosmético ANIMADO (frameCount quadros, ver AURA_CATALOG no
+      // servidor); envolve o personagem, desenhado por cima do corpo.
+      const noneOwned = `<div class="outfit-card${!cosmetics.aura?' equipped':''}" data-aura="__none__"><div class="oc-art" style="font-size:28px">🚫</div><div class="oc-name">Nenhuma</div><div class="oc-price">${!cosmetics.aura?'Equipada':'Clique p/ remover'}</div></div>`;
       grid.innerHTML = noneOwned + auraCatalog.map(a=>{
         const owned = ownedAuras.includes(a.id);
         const equipped = cosmetics.aura === a.id;
         return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-aura="${a.id}">
-          <div class="oc-icon"><img src="${URL_BASE}auras/${a.id}/f00.png" style="width:28px;height:28px;object-fit:contain;" /></div>
+          <div class="oc-art"><img src="${URL_BASE}auras/${a.id}/f00.png" /></div>
           <div class="oc-name">${escapeHtml(a.name)}</div>
-          <div class="oc-price">${owned ? (equipped?'Equipada':'Adquirida — clique p/ vestir') : `${a.cost.toLocaleString('pt-BR')} Gold`}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipada':'Clique p/ vestir') : `${a.cost.toLocaleString('pt-BR')} Gold`}</div>
         </div>`;
       }).join('');
-      grid.querySelectorAll('[data-aura]').forEach(card=>{
-        card.addEventListener('click', ()=>{
-          const id = card.dataset.aura;
+      grid.querySelectorAll('[data-aura]').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const id = el.dataset.aura;
           if(id === '__none__') { sendWS({ type:'aura:equip', auraId:null }); return; }
           if(ownedAuras.includes(id)) sendWS({ type:'aura:equip', auraId:id });
           else sendWS({ type:'aura:buy', auraId:id });
         });
       });
     } else {
-      // Cores — só faz sentido com um outfit RECOLORABLE equipado (ver
-      // OUTFIT_CATALOG[].recolorable, hoje só os 8 Arquétipos elementais).
+      // Cores — só com traje RECOLORABLE vestido (Arquétipos e trajes rd_* da loja).
       const equippedDef = outfitCatalog.find(o => o.id === cosmetics.outfit);
       if(!equippedDef || !equippedDef.recolorable){
-        grid.innerHTML = '<div class="cores-hint">Equipe um traje Arquétipo (aba Outfits) para escolher as cores dele. Os trajes clássicos já têm cor própria fixa na arte.</div>';
-        return;
-      }
-      grid.innerHTML = `
-        <div id="cores-parts">
-          ${['head','body','legs','feet'].map(p=>`<div class="cores-part-tab${coresPart===p?' active':''}" data-part="${p}">${CORES_PART_LABEL[p]}</div>`).join('')}
-        </div>
-        <div id="cores-swatches">
-          ${colorPalette.map((hex,idx)=>`<div class="cores-swatch${cosmeticColors[coresPart]===idx?' active':''}" data-idx="${idx}" style="background:${hex}" title="${hex}"></div>`).join('')}
-        </div>
-      `;
-      grid.querySelectorAll('.cores-part-tab').forEach(t=>{
-        t.addEventListener('click', ()=>{ coresPart = t.dataset.part; renderCharOutfit(); });
-      });
-      grid.querySelectorAll('.cores-swatch').forEach(sw=>{
-        sw.addEventListener('click', ()=>{
-          const idx = Number(sw.dataset.idx);
-          // aplica local IMEDIATO (sem esperar o ack do servidor) pra picker
-          // e retrato responderem na hora -- cosmeticColors é substituído de
-          // novo pelo valor real assim que o snapshot/ack confirmar (linha
-          // 'cosmeticColors = msg.cosmeticColors || cosmeticColors'), então
-          // uma rejeição do servidor (não deveria acontecer, mas por via das
-          // dúvidas) se autocorrige no próximo pacote.
-          cosmeticColors = Object.assign({}, cosmeticColors, { [coresPart]: idx });
-          sendWS({ type:'cosmetic:color', part: coresPart, colorIndex: idx });
-          renderCharOutfit();
-          renderInventory();
+        grid.innerHTML = '<div class="cores-hint">Vista um traje com cores personalizáveis (Arquétipos ou trajes da Loja de Elemental Coin) para escolher as cores dele.</div>';
+      } else {
+        grid.innerHTML = `
+          <div id="cores-wrap">
+            <div id="cores-parts">
+              ${['head','body','legs','feet'].map(p=>`<div class="cores-part-tab${coresPart===p?' active':''}" data-part="${p}">${CORES_PART_LABEL[p]}</div>`).join('')}
+            </div>
+            <div id="cores-swatches">
+              ${colorPalette.map((hex,idx)=>`<div class="cores-swatch${cosmeticColors[coresPart]===idx?' active':''}" data-idx="${idx}" style="background:${hex}" title="${hex}"></div>`).join('')}
+            </div>
+            <div class="cores-note">A prévia ao lado muda na hora. Cada traje usa as 4 cores nas partes da roupa dele.</div>
+          </div>`;
+        grid.querySelectorAll('.cores-part-tab').forEach(t=>{
+          t.addEventListener('click', ()=>{ coresPart = t.dataset.part; renderCharOutfit(); });
         });
-      });
+        grid.querySelectorAll('.cores-swatch').forEach(sw=>{
+          sw.addEventListener('click', ()=>{
+            const idx = Number(sw.dataset.idx);
+            // aplica local IMEDIATO (sem esperar o ack) -- o snapshot seguinte
+            // substitui pelo valor real do servidor.
+            cosmeticColors = Object.assign({}, cosmeticColors, { [coresPart]: idx });
+            sendWS({ type:'cosmetic:color', part: coresPart, colorIndex: idx });
+            renderCharOutfit();
+            renderInventory();
+          });
+        });
+      }
     }
+    grid.querySelectorAll('canvas[data-draw-outfit]').forEach(cv => drawOutfitOn(cv, cv.dataset.drawOutfit, false));
+    drawOutfitPreview();
+    scheduleOutfitRedraws();
   }
 
   /* =========================================================
@@ -8498,7 +8756,7 @@
   // entrada lá, vinda da wiki), então pareciam "sem preço" mesmo tendo.
   // Espelho fiel de NPC_FERREIRO_BRAN_PRICES (huntEngine.js) -- preço real
   // por raridade que o NPC Ferreiro Bran paga na Venda Rápida.
-  const NPC_FERREIRO_BRAN_PRICES = { comum: 2, incomum: 5, rara: 8, 'épica': 18, 'lendária': 40, 'mítica': 90 }; // 'mítica' 26/09/2026 -- preview aproximado (só usado pra MOSTRAR o preço antes de vender; o servidor sempre decide o valor real, ver huntEngine.js)
+  const NPC_FERREIRO_BRAN_PRICES = { comum: 2, incomum: 6, rara: 16, 'épica': 50, 'lendária': 160, 'mítica': 500 }; // 20/10/2026: estava dessincronizado (5/8/18/40/90) do servidor — agora igual a huntEngine.js; // 'mítica' 26/09/2026 -- preview aproximado (só usado pra MOSTRAR o preço antes de vender; o servidor sempre decide o valor real, ver huntEngine.js)
   function npcSellPriceFor(it){ return (NPC_FERREIRO_BRAN_PRICES[it && it.rarity] ?? 2) * (it && it.qty || 1); }
   // Molduras reais por raridade (assets/rarity-frames/, origem: projeto "Sentinel"
   // do usuário, mapeamento por raridade confirmado com ele) — sobrepostas ao
@@ -8612,16 +8870,25 @@
     const list = document.getElementById('wiki-item-list');
     const q = (document.getElementById('wiki-item-search').value||'').toLowerCase();
     const items = getWikiItemCatalog().filter(it=> !q || it.name.toLowerCase().includes(q));
+    // 20/10/2026: cada linha mostra o ícone REAL do item (mesmo resolvedor da
+    // Mochila/Armazém), a descrição e o valor que o NPC paga (preço real do
+    // servidor por raridade, NPC_FERREIRO_BRAN_PRICES).
     list.innerHTML = items.map(it=>{
       const color = RARITY_COLORS[it.rarity] || '#a99872';
       const monsterNames = Array.from(it.monsters).join(', ');
-      return `<div class="wiki-item-row">
-        <span class="wiki-rarity-dot" style="background:${color};"></span>
+      const info = ITEM_INFO[it.id];
+      const npc = npcSellPriceFor({ rarity: it.rarity });
+      return `<div class="wiki-item-row" style="border-color:${color}55;">
+        <span class="wiki-item-icon" style="border-color:${color};">${resolveItemIconHtml({ id: it.id, rarity: it.rarity })}</span>
         <div class="wiki-item-info">
-          <span class="wiki-item-name">${it.name}</span>
+          <span class="wiki-item-name" style="color:${color};">${it.name}</span>
+          ${info && info.desc ? `<span class="wiki-item-desc">${escapeHtml(info.desc)}</span>` : ''}
           <span class="wiki-item-source">Dropado por: ${monsterNames || '—'}</span>
         </div>
-        <span style="font-family:var(--font-mono);font-size:9px;color:${color};text-transform:capitalize;">${it.rarity}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
+          <span style="font-family:var(--font-mono);font-size:9px;color:${color};text-transform:capitalize;">${it.rarity}</span>
+          <span class="wiki-item-npc" title="Valor pago pelo NPC Ferreiro Bran (Venda Rápida)">🪙 ${npc.toLocaleString('pt-BR')} <small>NPC</small></span>
+        </div>
       </div>`;
     }).join('') || '<div class="italic-note">Nenhum item encontrado.</div>';
   }
@@ -9230,9 +9497,10 @@
         ${location==='city' ? `<span class="slot-mini-btn" data-trash-sell="${i}" title="Vender">🪙</span>` : ''}`;
       slot.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:i }));
       slot.addEventListener('mouseenter', ()=>{
-        const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+        const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
         const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
-        invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${infusionLine}${it.qty>1?` · x${it.qty}`:''}<span class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</span>`;
+        invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name||it.id}</b>${rarityLabel}${infusionLine}${it.qty>1?` · x${it.qty}`:''}<span class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</span>`;
+        invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
         invItemTooltip.style.display = 'block';
       });
       slot.addEventListener('mousemove', positionInvTooltip);
@@ -9278,11 +9546,12 @@
     // Mochila já mostrava (ver renderInventory).
     slot.addEventListener('mouseenter', ()=>{
       const stats = it.slot ? getItemTotalStatsClient(it) : {};
-      const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+      const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
       const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
       const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
       const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
-      invItemTooltip.innerHTML = `<b>${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
+      invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
+      invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
       invItemTooltip.style.display = 'block';
     });
     slot.addEventListener('mousemove', positionInvTooltip);
@@ -9478,7 +9747,7 @@
       // esqueleto visual do .skill-node-tip.
       slot.addEventListener('mouseenter', ()=>{
         const stats = it.slot ? getItemTotalStatsClient(it) : {};
-        const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+        const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
         const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
         const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
         const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
@@ -9495,7 +9764,8 @@
         // então itens craftados (sem entrada em ITEM_INFO, que só cobre
         // loot de monstro) pareciam não ter preço/opção de venda nenhuma.
         const priceLine = invTab==='mochila' ? `<span class="tt-price">Venda ao NPC: ${npcSellPriceFor(it)} ouro${it.qty>1?` (x${it.qty})`:''}</span>` : '';
-        invItemTooltip.innerHTML = `<b>${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}${healLine}${priceLine}`;
+        invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}${healLine}${priceLine}`;
+        invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
         invItemTooltip.style.display = 'block';
       });
       slot.addEventListener('mousemove', positionInvTooltip);
@@ -9644,11 +9914,12 @@
       const item = equipment[el.dataset.equip];
       if(!item) return; // slot vazio: mantém só o title nativo (nome do slot)
       const stats = getItemTotalStatsClient(item);
-      const rarityLabel = (item.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+      const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[item.rarity]||'#a99872'}">${(item.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
       const enchantLine = item.enchantLevel ? ` · +${item.enchantLevel}` : '';
       const infusionLine = item.infusionGrade ? ` · Grade ${item.infusionGrade}` : '';
       const descLine = item.description ? `<span class="hint" style="font-style:italic;">${item.description}</span>` : '';
-      invItemTooltip.innerHTML = `<b>${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats, item)}</span>`;
+      invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[item.rarity]||'var(--gold-bright)'}">${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats, item)}</span>`;
+      invItemTooltip.style.borderColor = RARITY_COLORS[(item||{}).rarity] || '';
       invItemTooltip.style.display = 'block';
     });
     el.addEventListener('mousemove', positionInvTooltip);
@@ -11291,8 +11562,7 @@
     document.getElementById('altar-evolve-btn').addEventListener('click', ()=> sendWS({ type:'altar:evolve' }));
     document.getElementById('altar-confirm-btn').addEventListener('click', ()=>{
       altarModal.classList.remove('open');
-      coinshopModal.classList.add('open');
-      renderCoinShop();
+      openStoreHub('premium');
     });
   }
 
@@ -11475,6 +11745,20 @@
     const extraSteps = Math.floor((qty-50)/ENCHANT_CRYSTAL_STEP_QTY_ABOVE_50);
     return t.unit + extraSteps*ENCHANT_CRYSTAL_STEP_GOLD_ABOVE_50;
   }
+  // Espelha enchantCrystalTotalCost do huntEngine.js: preço pelo TOTAL já
+  // comprado pelo jogador (materials.crystalsBought), não pelo tamanho do lote.
+  function enchantCrystalTotalCost(alreadyBought, n){
+    let total = 0;
+    for(let k = alreadyBought + 1; k <= alreadyBought + n; k++) total += enchantCrystalUnitPrice(k);
+    return total;
+  }
+  // VIP (isPremium) paga 20% a menos — espelho de enchantCrystalPriceFor (huntEngine.js).
+  function enchantCrystalPriceClient(n){
+    const base = enchantCrystalTotalCost(materials.crystalsBought||0, n);
+    return isPremium ? Math.round(base * 0.8) : base;
+  }
+  let crystalResetAt = 0; // próxima segunda 00:00 (Brasília) — contagem zera pra todos
+  let enchantCrystalQty = 1; // sobrevive aos redesenhos do painel (antes voltava pra 1 a cada snapshot)
   const ENCHANT_PROTECTOR_COST_GOLD = 900;
   const ENCHANT_WARD_COST_GOLD = 3500; // Selo Inquebrável — custo elevado, garante que o item não quebra na tentativa
   let enchantSelectedSlot = 'weapon';
@@ -11504,6 +11788,12 @@
   const INFUSION_BASE_STAT_PCT_PER_GRADE_CLIENT = 0.05;
   const INFUSION_VALUE_PCT_PER_GRADE_CLIENT = 0.10;
   function getInfusionBaseMultClient(item){ return 1 + ((item && item.infusionGrade) || 0) * INFUSION_BASE_STAT_PCT_PER_GRADE_CLIENT; }
+  function getInfusionScaledPrimaryClient(item){
+    const grade = (item && item.infusionGrade) || 0;
+    if(!item || !item.infusionStats || grade <= 0) return [];
+    const mult = 1 + grade * INFUSION_VALUE_PCT_PER_GRADE_CLIENT;
+    return (item.infusionStats.primary||[]).map(p=>({ key:p.stat, value: Math.round(p.base*mult*10)/10 }));
+  }
   function getInfusionScaledSecondaryClient(item){
     const grade = (item && item.infusionGrade) || 0;
     if(!item || !item.infusionStats || grade <= 0) return [];
@@ -11519,6 +11809,9 @@
     Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*enchantMult*infusionMult*10)/10);
     (item.bonusStats||[]).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
     getInfusionScaledSecondaryClient(item).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
+    // Atributos PRIMÁRIOS da Infusão (Might/Wisdom/...) -- o painel de
+    // Infusão já mostrava, mas o tooltip do item não (pedido 20/10/2026).
+    getInfusionScaledPrimaryClient(item).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
     return out;
   }
   // Pedido do usuário (26/09/2026): arma de Cajado (weaponType:'staff') é
@@ -11529,7 +11822,11 @@
   function formatStats(stats, item){
     const keys = Object.keys(stats);
     if(!keys.length) return '<span style="color:var(--ink-dim);">nenhum status</span>';
-    return keys.map(k=>`${k==='atk' ? attackLabelFor(item) : (STAT_LABEL[k]||k)}: <b>+${stats[k]}</b>`).join(' · ');
+    // Números "redondos" (20/10/2026): somar status base x Encantamento x
+    // Infusão em ponto flutuante gerava coisas como 37.900000000000006.
+    // Status em % mantém 1 casa (sem lixo de float); o resto vira inteiro.
+    const fmt = (k,v) => /Pct$/.test(k) ? String(Math.round(v*10)/10) : String(Math.round(v));
+    return keys.map(k=>`${k==='atk' ? attackLabelFor(item) : (STAT_LABEL[k]||PRIMARY_STAT_LABEL[k]||k)}: <b>+${fmt(k, stats[k])}</b>`).join(' · ');
   }
   // Tooltip rica reaproveitada em QUALQUER slot de equipamento (Mochila,
   // Armazém, Personagem, e agora também as abas de Refinamento/Infusão, que
@@ -11538,14 +11835,15 @@
   // item ganhou (base + Encantamento + Infusão), igual à Mochila).
   function equipTooltipHtml(it){
     const stats = it.slot ? getItemTotalStatsClient(it) : {};
-    const rarityLabel = (it.rarity||'comum').replace(/^./, c=>c.toUpperCase());
+    const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
     const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
     const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
     const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
-    return `<b>${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
+    return `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
   }
   function showEquipSlotTooltip(it){
     invItemTooltip.innerHTML = equipTooltipHtml(it);
+    invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
     invItemTooltip.style.display = 'block';
   }
   document.getElementById('btn-open-enchant').addEventListener('click', ()=>{ enchantModal.classList.toggle('open'); renderEnchant(); });
@@ -11660,10 +11958,10 @@
       ${canBreak ? `<div class="enchant-req-row"><span>⚠️ Risco</span><span class="missing">Falhar pode QUEBRAR o item (destruído) — use o Selo Inquebrável abaixo pra evitar</span></div>` : `<div class="enchant-req-row"><span>Risco</span><span>Falhar só volta 1 nível (sem quebrar)</span></div>`}
       <div class="enchant-req-row" style="align-items:center;"><span>Cristal de Refino (precisa de ${crystalsNeeded} pra +${nextLevel})</span><span class="${hasCrystal?'ok':'missing'}">${materials.enchantCrystal||0}</span></div>
       <div class="enchant-req-row" style="flex-direction:column;align-items:stretch;gap:6px;">
-        <span style="font-size:9px;color:var(--ink-dim);">Comprar cristais (preço sobe por lote): base ${ENCHANT_CRYSTAL_COST_GOLD}/un · 10x=${ENCHANT_CRYSTAL_BULK_TIERS[3].unit}/un · 20x=${ENCHANT_CRYSTAL_BULK_TIERS[2].unit}/un · 30x=${ENCHANT_CRYSTAL_BULK_TIERS[1].unit}/un · 50x=${ENCHANT_CRYSTAL_BULK_TIERS[0].unit}/un</span>
+        <span style="font-size:9px;color:var(--ink-dim);">O preço sobe conforme o total de cristais que você comprou NESTA SEMANA (já comprados: <b>${(materials.crystalsBought||0).toLocaleString('pt-BR')}</b> · próximo: <b>${enchantCrystalPriceClient(1).toLocaleString('pt-BR')}</b> Gold/un). Faixas: 1º–9º = ${ENCHANT_CRYSTAL_COST_GOLD} · 10º+ = ${ENCHANT_CRYSTAL_BULK_TIERS[3].unit} · 20º+ = ${ENCHANT_CRYSTAL_BULK_TIERS[2].unit} · 30º+ = ${ENCHANT_CRYSTAL_BULK_TIERS[1].unit} · 50º+ = ${ENCHANT_CRYSTAL_BULK_TIERS[0].unit} (+3000 a cada 10). ${isPremium ? '<b style="color:var(--ok);">VIP: −20% aplicado.</b>' : 'VIP paga 20% a menos.'} Zera para todos toda segunda 00h${crystalResetAt ? ` (${new Date(crystalResetAt).toLocaleDateString('pt-BR')})` : ''}.</span>
         <div style="display:flex;gap:4px;align-items:center;">
-          <input type="number" id="enchant-crystal-qty" class="trade-gold-input" min="1" max="999" value="1" style="width:56px;">
-          <button class="party-btn" id="enchant-buy-crystal" style="white-space:nowrap;">Comprar (<span id="enchant-crystal-total">${ENCHANT_CRYSTAL_COST_GOLD}</span> Gold)</button>
+          <input type="number" id="enchant-crystal-qty" class="trade-gold-input" min="1" max="999" value="${enchantCrystalQty}" style="width:56px;">
+          <button class="party-btn" id="enchant-buy-crystal" style="white-space:nowrap;">Comprar <span id="enchant-crystal-n">${enchantCrystalQty}</span> (<span id="enchant-crystal-total">${ENCHANT_CRYSTAL_COST_GOLD}</span> Gold)</button>
           ${[10,20,30,50].map(q=>`<button class="party-btn" data-crystal-preset="${q}" style="font-size:9px;padding:2px 6px;">${q}x</button>`).join('')}
         </div>
       </div>
@@ -11679,15 +11977,17 @@
       const crystalQtyInput = document.getElementById('enchant-crystal-qty');
       const crystalTotalEl = document.getElementById('enchant-crystal-total');
       const updateCrystalTotal = ()=>{
-        const q = Math.max(1, Math.min(999, Number(crystalQtyInput.value)||1));
-        crystalTotalEl.textContent = (enchantCrystalUnitPrice(q) * q).toLocaleString('pt-BR');
+        const q = Math.max(1, Math.min(999, Math.floor(Number(crystalQtyInput.value))||1));
+        enchantCrystalQty = q;
+        document.getElementById('enchant-crystal-n').textContent = q;
+        crystalTotalEl.textContent = enchantCrystalPriceClient(q).toLocaleString('pt-BR');
       };
       crystalQtyInput.addEventListener('input', updateCrystalTotal);
       updateCrystalTotal();
       document.querySelectorAll('[data-crystal-preset]').forEach(btn=>{
         btn.addEventListener('click', ()=>{ crystalQtyInput.value = btn.dataset.crystalPreset; updateCrystalTotal(); });
       });
-      document.getElementById('enchant-buy-crystal').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'crystal', qty: Math.max(1, Math.min(999, Number(crystalQtyInput.value)||1)) }));
+      document.getElementById('enchant-buy-crystal').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'crystal', qty: enchantCrystalQty }));
       document.getElementById('enchant-buy-protector').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'protector', qty:1 }));
       document.getElementById('enchant-buy-ward').addEventListener('click', ()=> sendWS({ type:'shop:buyEnchantMaterial', material:'ward', qty:1 }));
       document.getElementById('enchant-use-protector').addEventListener('change', e=>{ enchantUseProtector = e.target.checked; });
@@ -12656,22 +12956,21 @@
   const battlePassModal = document.getElementById('battlepass-modal');
   const BATTLE_PASS_XP_PER_TIER = 500;
   const BATTLE_PASS_MAX_TIER = 30;
-  const BATTLE_PASS_REWARDS = [];
-  (function buildBpRewardsClient(){
-    for(let t=1;t<=BATTLE_PASS_MAX_TIER;t++){
-      const free = (t%5===0) ? { type:'fragments', amount:5 } : { type:'gold', amount:200*t };
-      let premium;
-      if(t===10) premium = { type:'pet', petId:'pet_raposa_arcana' };
-      else if(t===20) premium = { type:'pet', petId:'pet_grifo_menor' };
-      else if(t===BATTLE_PASS_MAX_TIER) premium = { type:'pet', petId:'pet_dragao_ancestral' };
-      else premium = { type:'elementalCoins', amount:20+t*5 };
-      BATTLE_PASS_REWARDS.push({ tier:t, free, premium });
-    }
-  })();
+  // Espelho de huntEngine.BATTLE_PASS_FREE_SPEC / PREMIUM_SPEC (revisado em 20/10/2026).
+  const BATTLE_PASS_FREE_SPEC = [['gold',1000],['m:enchantCrystal',1],['gold',1500],['m:enchantProtector',1],['fragments',5],['gold',2500],['m:enchantCrystal',2],['gold',3000],['m:infusionShard',2],['fragments',10],['gold',4000],['m:enchantCrystal',3],['gold',5000],['m:enchantProtector',2],['elementalCoins',50],['gold',6000],['m:enchantCrystal',3],['m:infusionShard',3],['gold',8000],['fragments',15],['gold',9000],['m:enchantCrystal',4],['m:enchantProtector',3],['gold',10000],['elementalCoins',75],['m:infusionShard',4],['m:enchantCrystal',5],['gold',15000],['m:antiBreakWard',1],['fragments',25]];
+  const BATTLE_PASS_PREMIUM_SPEC = [['elementalCoins',30],['m:enchantCrystal',2],['gold',3000],['elementalCoins',40],['m:antiBreakWard',1],['m:enchantCrystal',3],['elementalCoins',50],['m:enchantProtector',3],['m:infusionShard',4],['pet','pet_raposa_arcana'],['elementalCoins',60],['m:enchantCrystal',5],['gold',10000],['m:antiBreakWard',1],['elementalCoins',100],['m:infusionShard',5],['m:enchantCrystal',6],['m:enchantProtector',5],['elementalCoins',80],['pet','pet_grifo_menor'],['gold',20000],['m:enchantCrystal',8],['m:antiBreakWard',2],['elementalCoins',100],['m:infusionShard',8],['m:enchantCrystal',10],['m:enchantProtector',8],['elementalCoins',150],['m:antiBreakWard',3],['pet','pet_dragao_ancestral']];
+  function bpRewardFromSpec([k, v]){
+    if(k==='pet') return { type:'pet', petId:v };
+    if(k.startsWith('m:')) return { type:'material', key:k.slice(2), amount:v };
+    return { type:k, amount:v };
+  }
+  const BATTLE_PASS_REWARDS = BATTLE_PASS_FREE_SPEC.map((f,i)=>({ tier:i+1, free:bpRewardFromSpec(f), premium:bpRewardFromSpec(BATTLE_PASS_PREMIUM_SPEC[i]) }));
+  const BP_MATERIAL_LABEL = { enchantCrystal:'💎 Cristal de Refino', enchantProtector:'🙏 Bênção do Ferreiro', antiBreakWard:'🛡️ Selo Inquebrável', infusionShard:'✴️ Frag. de Infusão' };
   function formatBpReward(reward){
-    if(reward.type==='gold') return `🪙 ${reward.amount} Gold`;
+    if(reward.type==='gold') return `🪙 ${reward.amount.toLocaleString('pt-BR')} Gold`;
+    if(reward.type==='material') return `${reward.amount}× ${BP_MATERIAL_LABEL[reward.key]||reward.key}`;
     if(reward.type==='fragments') return `💠 ${reward.amount} Fragmentos`;
-    if(reward.type==='elementalCoins') return `💎 ${reward.amount} Coin`;
+    if(reward.type==='elementalCoins') return `💎 ${reward.amount} Elemental Coin`;
     if(reward.type==='pet'){ const def = PETS_CATALOG.find(p=>p.id===reward.petId); return def ? `${def.icon} ${def.name}` : 'Pet'; }
     return '?';
   }
@@ -12880,14 +13179,15 @@
       infoEl.innerHTML = `✅ <b>Você está inscrito</b> neste Torneio Semanal.`;
       btn.style.display = 'inline-block'; btn.textContent = 'Inscrito'; btn.disabled = true; btn.classList.add('done');
     } else {
-      infoEl.innerHTML = `Inscrições abertas — taxa de <b>${Math.round(t.entryFee||0).toLocaleString('pt-BR')} Ouro</b> (vai para o OuroPool do torneio).`;
+      infoEl.innerHTML = `Inscrições abertas — taxa de <b>${Math.round(t.entryFee||0).toLocaleString('pt-BR')} Ouro</b> (vai para o OuroPool do torneio).`
+        + (pvpthRegError ? `<div style="color:#ff8a7a;margin-top:4px;">${pvpthRegError}</div>` : '');
       btn.style.display = 'inline-block'; btn.textContent = 'Inscrever-se'; btn.disabled = false; btn.classList.remove('done');
     }
     const presetsEl = document.getElementById('pvpthPresets');
     presetsEl.innerHTML = '';
     for(let i=0;i<3;i++) presetsEl.appendChild(pvpthRenderPresetCard(i));
   }
-  document.getElementById('pvpthRegBtn').addEventListener('click', ()=> sendWS({ type:'pvp:register' }));
+  document.getElementById('pvpthRegBtn').addEventListener('click', ()=>{ pvpthRegError = ''; sendWS({ type:'pvp:register' }); });
 
   // Editor de preset — reaproveita equipment/hotbar (globais já usados pela
   // Mochila/Hotbar) como snapshot na hora de salvar, exatamente como o
@@ -12898,6 +13198,7 @@
     document.getElementById('pvpthPresetName').value = preset ? preset.name : `Preset ${slotIndex+1}`;
     pvpthPresetSqmChoice = preset ? preset.sqmDistance : (sqmDistance || 1);
     document.querySelectorAll('#pvpthPresetSqmChoice button').forEach(b=> b.classList.toggle('active', Number(b.dataset.sqm)===pvpthPresetSqmChoice));
+    const pm = document.getElementById('pvpthPresetMsg'); if(pm) pm.textContent = '';
     document.getElementById('pvpthPresetOverlay').classList.add('open');
   }
   document.querySelectorAll('#pvpthPresetSqmChoice button').forEach(b=>{
@@ -13290,6 +13591,232 @@
     const hitUsername = hitTestRemotePlayer(clickX, clickY);
     if(hitUsername){ e.preventDefault(); showPlayerMenu(hitUsername, e.clientX, e.clientY); }
   });
+
+  /* =========================================================
+     LOJA CENTRAL (20/10/2026) — pedido do usuário: uma loja única igual à
+     "Gambit Store" do Huntera (abas no topo + categorias na lateral), pra
+     tirar ícones da barra superior. As categorias "nativas" (Destaques,
+     Outfits, Montarias, Premium, Elemental Coin, Itens) são desenhadas
+     aqui; as outras ENCAIXAM a janela antiga existente dentro do painel
+     direito (mesmo DOM e mesma lógica — renderShop/renderMarket/etc.
+     continuam funcionando sem mudança) e devolvem ela pro lugar original
+     quando troca de categoria ou fecha a Loja.
+     ========================================================= */
+  const storeHubModal = document.getElementById('storehub-modal');
+  const SH_ICON = URL_BASE + 'hud/menu/';
+  const SH_TABS = [
+    { id:'loja', label:'LOJA' },
+    { id:'npc', label:'NPC' },
+    { id:'pvp', label:'PVP' },
+    { id:'mercado', label:'MERCADO' },
+  ];
+  // dock: id da janela antiga + como abrir/renderizar ela
+  const SH_CATS = [
+    { id:'destaques', tab:'loja', name:'Destaques', icon:'⭐' },
+    { id:'outfits', tab:'loja', name:'Outfits', icon:'👘', count:()=> shCoinOutfits().length },
+    { id:'montarias', tab:'loja', name:'Montarias', icon:'🐎', count:()=> mountCatalog.length },
+    { id:'premium', tab:'loja', name:'Tempo de Premium', icon:'👑', count:()=> PREMIUM_PACKAGES.length },
+    { id:'coins', tab:'loja', name:'Elemental Coin', icon:'💎', count:()=> ELEMENTAL_COIN_PACKAGES.length },
+    { id:'itens', tab:'loja', name:'Itens', icon:'🗝️', count:()=> 1 },
+    { id:'pets', tab:'loja', name:'Pets', img:SH_ICON+'pets.png', dock:'pets-modal', open:()=>{ petsModal.classList.add('open'); renderPets(); } },
+    { id:'battlepass', tab:'loja', name:'Battle Pass', img:SH_ICON+'battlepass.png', dock:'battlepass-modal', open:()=>{ battlePassModal.classList.add('open'); renderBattlePass(); } },
+    { id:'ferreiro', tab:'npc', name:'Ferreiro Bran', img:SH_ICON+'shop.png', dock:'shop-modal', open:()=>{ shopModal.classList.add('open'); renderShop(); } },
+    { id:'bencaos', tab:'npc', name:'Bênçãos', icon:'🙏', dock:'blessings-modal', open:()=>{ blessingsModal.classList.add('open'); renderBlessings(); } },
+    { id:'torneio', tab:'pvp', name:'Torneio Semanal', icon:'🏆', dock:'pvp-tournament-modal', open:()=>{ pvpTournamentModal.classList.add('open'); sendWS({ type:'pvp:getState' }); renderPvpTournamentGrid(); } },
+    { id:'pvpshop', tab:'pvp', name:'Loja de PvP', icon:'🏪', dock:'pvp-shop-modal', open:()=>{ pvpShopModal.classList.add('open'); sendWS({ type:'pvp:shop:getState' }); renderPvpShop(); } },
+    { id:'mercado', tab:'mercado', name:'Mercado', icon:'📦', dock:'market-modal', open:()=>{ marketModal.classList.add('open'); sendWS({ type:'market:myOffers' }); if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId }); renderMarket(); } },
+  ];
+  let shTab = 'loja', shCat = 'destaques', shQuery = '', shConfirmId = null;
+  let shDocked = null; // { el, parent, next }
+  function shCoinOutfits(){ return outfitCatalog.filter(o => o.currency === 'elementalCoin' && o.cost > 0); }
+  function shUndock(){
+    if(!shDocked) return;
+    const { el, parent, next } = shDocked;
+    el.classList.remove('sh-docked', 'open');
+    if(next && next.parentNode === parent) parent.insertBefore(el, next); else parent.appendChild(el);
+    shDocked = null;
+    document.getElementById('sh-main').classList.remove('docking');
+  }
+  function shDock(cat){
+    const el = document.getElementById(cat.dock);
+    const main = document.getElementById('sh-main');
+    if(!el) return;
+    if(!shDocked || shDocked.el !== el){
+      shUndock();
+      shDocked = { el, parent: el.parentNode, next: el.nextSibling };
+      main.innerHTML = '';
+      main.classList.add('docking');
+      el.classList.add('sh-docked');
+      main.appendChild(el);
+    }
+    try{ cat.open(); }catch(e){ console.warn('[loja central] falha ao abrir', cat.id, e); }
+  }
+  function openStoreHub(catId){
+    const cat = SH_CATS.find(c => c.id === catId);
+    if(cat){ shTab = cat.tab; shCat = cat.id; }
+    shQuery = ''; document.getElementById('sh-search').value = '';
+    storeHubModal.classList.add('open');
+    renderStoreHub(true);
+  }
+  function storeHubRenderIfOpen(){ if(storeHubModal.classList.contains('open')) renderStoreHub(false); }
+  // Fechou a Loja (X, ESC, etc.): devolve a janela encaixada pro lugar dela.
+  new MutationObserver(()=>{ if(!storeHubModal.classList.contains('open')) shUndock(); })
+    .observe(storeHubModal, { attributes:true, attributeFilter:['class'] });
+
+  function shCard({ tag, feat, art, name, price, desc, btn, btnClass, btnDisabled, data }){
+    return `<div class="sh-card ${feat?'feat':''}">
+      ${tag ? `<span class="tag">${tag}</span>` : ''}
+      <div class="art">${art||''}</div>
+      <div class="nm">${name}</div>
+      ${price ? `<div class="pr">${price}</div>` : ''}
+      ${desc ? `<div class="ds">${desc}</div>` : ''}
+      ${btn ? `<button class="${btnClass||''}" ${data||''} ${btnDisabled?'disabled':''}>${btn}</button>` : ''}
+    </div>`;
+  }
+  function shOutfitCard(o, feat){
+    const owned = ownedOutfits.includes(o.id);
+    const equipped = cosmetics.outfit === o.id;
+    const confirming = shConfirmId === o.id;
+    const canPay = (elementalCoins||0) >= o.cost;
+    let btn, cls = '', dis = false;
+    if(equipped){ btn = '✓ Equipado'; cls = 'owned'; dis = true; }
+    else if(owned){ btn = 'Equipar'; cls = 'owned'; }
+    else if(confirming){ btn = `Confirmar ${o.cost} 💎`; cls = 'confirm'; }
+    else { btn = canPay ? 'Comprar' : 'Coin insuficiente'; dis = !canPay; }
+    return shCard({
+      tag: feat ? 'Destaque' : (owned ? 'Adquirido' : 'Outfit'), feat,
+      art: outfitCardArt(o), name: o.name,
+      price: owned ? '' : `${o.cost.toLocaleString('pt-BR')} <small>💎 Coin</small>`,
+      desc: o.recolorable ? 'Cores personalizáveis (cabeça, peito, calça, sapato)' : '',
+      btn, btnClass: cls, btnDisabled: dis, data: `data-sh-outfit="${o.id}"`,
+    });
+  }
+  function shBindOutfitButtons(main){
+    main.querySelectorAll('[data-sh-outfit]').forEach(b => b.addEventListener('click', ()=>{
+      const id = b.dataset.shOutfit;
+      if(ownedOutfits.includes(id)){ sendWS({ type:'outfit:equip', outfitId:id }); return; }
+      if(shConfirmId !== id){ shConfirmId = id; renderStoreHub(false); return; } // 1º clique pede confirmação
+      shConfirmId = null; sendWS({ type:'outfit:buy', outfitId:id });
+    }));
+    main.querySelectorAll('canvas[data-draw-outfit]').forEach(cv => drawOutfitOn(cv, cv.dataset.drawOutfit, false));
+  }
+  const SH_PREMIUM_ICON = `<img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_premium.png" onerror="this.replaceWith(document.createTextNode('👑'))">`;
+  const SH_COIN_ICON = `<img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/premium_store/icon_diamond.png" onerror="this.replaceWith(document.createTextNode('💎'))">`;
+  function shPremiumCards(){
+    return PREMIUM_PACKAGES.map((p,i)=> shCard({ tag: i===PREMIUM_PACKAGES.length-1 ? 'Melhor valor' : 'Premium', feat: i===PREMIUM_PACKAGES.length-1,
+      art: SH_PREMIUM_ICON, name: `Premium ${p.days} dias`, price: `R$ ${p.priceBRL.toFixed(2)}`,
+      desc: 'XP extra, venda mais rápida, trilha Premium do Battle Pass e −20% no Cristal de Refino',
+      btn: 'Comprar', data: `data-sh-premium="${p.id}"` })).join('');
+  }
+  function shCoinCards(){
+    const best = ELEMENTAL_COIN_PACKAGES.reduce((a,b)=> ((b.coins+b.bonusCoins)/b.priceBRL > (a.coins+a.bonusCoins)/a.priceBRL ? b : a));
+    return ELEMENTAL_COIN_PACKAGES.map(p=> shCard({ tag: p===best ? 'Mais coins por real' : (p.bonusCoins ? `+${p.bonusCoins} bônus` : 'Pacote'), feat: p===best,
+      art: SH_COIN_ICON, name: `${p.coins.toLocaleString('pt-BR')} Elemental Coin`, price: `R$ ${p.priceBRL.toFixed(2)}`,
+      desc: p.bonusCoins ? `Total: ${(p.coins+p.bonusCoins).toLocaleString('pt-BR')} 💎` : '', btn: 'Comprar', data: `data-sh-coin="${p.id}"` })).join('');
+  }
+  function shItemCards(){
+    return shCard({ tag:'Torres', art:'🗝️', name:'Chave da Torre', price:`${TOWER_KEY_PRICE_COIN} <small>💎 Coin</small>`, desc:'+1 tentativa de Escalada no dia', btn:'Comprar', btnDisabled:(elementalCoins||0) < TOWER_KEY_PRICE_COIN, data:'data-sh-towerkey="1"' });
+  }
+  function shBindCommon(main){
+    main.querySelectorAll('[data-sh-premium]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'shop:buyPremium', packageId: b.dataset.shPremium })));
+    main.querySelectorAll('[data-sh-coin]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'shop:buyElementalCoins', packageId: b.dataset.shCoin })));
+    main.querySelectorAll('[data-sh-towerkey]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'tower:buyKey', qty:1 })));
+    main.querySelectorAll('[data-sh-go]').forEach(b => b.addEventListener('click', ()=> openStoreHub(b.dataset.shGo)));
+    shBindOutfitButtons(main);
+  }
+  function shRenderNative(main){
+    const H = (t, s) => `<div class="sh-h1">${t}</div><div class="sh-sub">${s}</div>`;
+    if(shCat === 'destaques'){
+      const notOwned = shCoinOutfits().filter(o => !ownedOutfits.includes(o.id)).sort((a,b)=> b.cost - a.cost);
+      const top = notOwned.slice(0, 3);
+      main.innerHTML = H('Destaques', 'Os itens mais procurados da Loja Elemental.')
+        + `<div class="sh-section">Outfits</div><div class="sh-grid">${top.map((o,i)=> shOutfitCard(o, i===0)).join('') || '<div class="sh-sub">Você já tem todos os outfits! 🎉</div>'}</div>`
+        + `<div class="sh-section">Premium</div><div class="sh-grid">${shPremiumCards()}</div>`
+        + `<div class="sh-section">Mais da loja</div><div class="sh-grid">`
+        + shCard({ tag:'Sorteio', art:`<img src="${SH_ICON}pets.png">`, name:'Gacha de Pets', price:`${GACHA_COST_COIN} <small>💎 por giro</small>`, btn:'Ver Pets', data:'data-sh-go="pets"' })
+        + shCard({ tag:'Temporada', art:`<img src="${SH_ICON}battlepass.png">`, name:'Battle Pass', desc:'30 tiers · trilhas Free e Premium', btn:'Abrir', data:'data-sh-go="battlepass"' })
+        + shCard({ tag:'Em breve', art:'🐎', name:'Montarias', desc:'Chegando nas próximas atualizações', btn:'Em breve', btnDisabled:true })
+        + `</div>`;
+    } else if(shCat === 'outfits'){
+      const list = shCoinOutfits().slice().sort((a,b)=> (ownedOutfits.includes(a.id) - ownedOutfits.includes(b.id)) || a.cost - b.cost);
+      main.innerHTML = H('Outfits', 'Clique em Comprar e depois em Confirmar. As cores você ajusta na janela de Outfit.')
+        + `<div class="sh-grid">${list.map(o=> shOutfitCard(o,false)).join('')}</div>`;
+    } else if(shCat === 'montarias'){
+      main.innerHTML = H('Montarias', '') + `<div class="sh-soon"><b>EM BREVE</b>As montarias estão sendo preparadas e chegam numa próxima atualização.</div>`;
+    } else if(shCat === 'premium'){
+      const st = isPremium ? `<div class="sh-sub" style="color:var(--ok);">👑 Premium ativo${premiumExpiresAt ? ` — até ${new Date(premiumExpiresAt).toLocaleDateString('pt-BR')}` : ''}</div>` : '';
+      main.innerHTML = H('Tempo de Premium', 'Vantagens de VIP pelo período escolhido.') + st + `<div class="sh-grid">${shPremiumCards()}</div>`
+        + `<div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real; a compra credita na hora, sem cobrança.</div>`;
+    } else if(shCat === 'coins'){
+      main.innerHTML = H('Elemental Coin', 'Moeda da Loja Elemental: outfits, Premium, Chave da Torre, Gacha de Pets e Refino.') + `<div class="sh-grid">${shCoinCards()}</div>`
+        + `<div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real; a compra credita na hora, sem cobrança.</div>`;
+    } else if(shCat === 'itens'){
+      main.innerHTML = H('Itens', 'Consumíveis comprados com Elemental Coin.') + `<div class="sh-grid">${shItemCards()}</div>`;
+    }
+    shBindCommon(main);
+  }
+  function shRenderSearch(main){
+    const q = shQuery.toLowerCase();
+    const res = [];
+    shCoinOutfits().forEach(o => { if(o.name.toLowerCase().includes(q)) res.push({ name:o.name, where:'Loja › Outfits', go:'outfits' }); });
+    const shop = npcShops && npcShops[SHOP_NPC_ID];
+    (shop ? shop.items : []).forEach(it => { if(String(it.name).toLowerCase().includes(q)) res.push({ name:it.name, where:'NPC › Ferreiro Bran', go:'ferreiro' }); });
+    (pvpShopState.catalog||[]).forEach(d => { if(String(d.name||'').toLowerCase().includes(q)) res.push({ name:d.name, where:'PvP › Loja de PvP', go:'pvpshop' }); });
+    SH_CATS.forEach(c => { if(c.name.toLowerCase().includes(q)) res.push({ name:c.name, where:'Categoria', go:c.id }); });
+    main.innerHTML = `<div class="sh-h1">Busca</div><div class="sh-sub">${res.length} resultado(s) para “${escapeHtml(shQuery)}”</div>`
+      + (res.map(r => `<div class="sh-res" data-sh-go="${r.go}"><span>${escapeHtml(String(r.name))}</span><span class="w">${r.where}</span></div>`).join('') || '<div class="sh-sub">Nada encontrado.</div>');
+    main.querySelectorAll('[data-sh-go]').forEach(el => el.addEventListener('click', ()=> openStoreHub(el.dataset.shGo)));
+  }
+  function renderStoreHub(full){
+    if(!storeHubModal.classList.contains('open')) return;
+    document.getElementById('sh-cur-gold').textContent = '🪙 ' + Math.round((player.gold||0) + (player.bankGold||0)).toLocaleString('pt-BR');
+    document.getElementById('sh-cur-coin').textContent = '💎 ' + Math.round(elementalCoins||0).toLocaleString('pt-BR');
+    document.getElementById('sh-cur-pvp').textContent = '⚔️ ' + Math.round(pvpShopState.moedasPvP||0).toLocaleString('pt-BR');
+    const tabs = document.getElementById('sh-tabs');
+    tabs.innerHTML = SH_TABS.map(t => `<div class="sh-tab ${t.id===shTab?'active':''}" data-sh-tab="${t.id}">${t.label}</div>`).join('');
+    tabs.querySelectorAll('[data-sh-tab]').forEach(el => el.addEventListener('click', ()=>{
+      shTab = el.dataset.shTab; shQuery = ''; document.getElementById('sh-search').value = '';
+      shCat = SH_CATS.find(c => c.tab === shTab).id; renderStoreHub(true);
+    }));
+    const side = document.getElementById('sh-side');
+    side.innerHTML = SH_CATS.filter(c => c.tab === shTab).map(c => {
+      const n = c.count ? c.count() : null;
+      return `<div class="sh-cat ${c.id===shCat && !shQuery?'active':''}" data-sh-cat="${c.id}">
+        <span class="ico">${c.img ? `<img src="${c.img}" onerror="this.replaceWith(document.createTextNode('🛒'))">` : c.icon}</span>
+        <span>${c.name}</span>${n!=null ? `<span class="cnt">${n}</span>` : ''}</div>`;
+    }).join('');
+    side.querySelectorAll('[data-sh-cat]').forEach(el => el.addEventListener('click', ()=>{
+      shCat = el.dataset.shCat; shQuery = ''; document.getElementById('sh-search').value = ''; shConfirmId = null; renderStoreHub(true);
+    }));
+    const main = document.getElementById('sh-main');
+    if(shQuery){ shUndock(); shRenderSearch(main); return; }
+    const cat = SH_CATS.find(c => c.id === shCat);
+    if(cat && cat.dock){ if(full || !shDocked) shDock(cat); return; } // janela encaixada se atualiza sozinha
+    shUndock();
+    const keepScroll = main.scrollTop;
+    shRenderNative(main);
+    if(!full) main.scrollTop = keepScroll;
+  }
+  document.getElementById('sh-search').addEventListener('input', e=>{ shQuery = e.target.value.trim(); renderStoreHub(true); });
+
+  // Botões que antes abriam janelas soltas agora abrem a Loja Central na
+  // categoria certa (clonar o nó remove os listeners antigos).
+  function shRebind(id, catId){
+    const old = document.getElementById(id); if(!old) return;
+    const fresh = old.cloneNode(true); old.parentNode.replaceChild(fresh, old);
+    fresh.addEventListener('click', ()=>{
+      if(storeHubModal.classList.contains('open') && shCat === catId){ storeHubModal.classList.remove('open'); return; }
+      openStoreHub(catId);
+    });
+  }
+  shRebind('btn-open-shop', 'destaques');
+  shRebind('tb-coin-pill', 'coins');
+  shRebind('btn-open-market', 'mercado');
+  shRebind('btn-open-blessings', 'bencaos');
+  // Atalho de teclado/ícone antigo do Torneio: abre direto na aba PvP.
+  { const t = document.getElementById('btn-open-pvp-tournament'); if(t) shRebind('btn-open-pvp-tournament', 'torneio'); }
+  // Ícones que agora moram dentro da Loja saem da barra superior.
+  ['btn-open-pvp-shop','btn-open-pets','btn-open-battlepass','btn-open-pvp-tournament'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
 
 })();
 </script>
