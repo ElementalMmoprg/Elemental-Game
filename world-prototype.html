@@ -4355,7 +4355,11 @@
         // Atlas de Arquétipo (fullWalkFrames): não existe quadro de pose
         // extra depois do ciclo de andar (todas as colunas são passos de
         // andar mesmo) -- cai pro quadro parado de referência.
-        if(entry.fullWalkFrames) return entry.frame;
+        // 20/10/2026: devolve o quadro PARADO DA MESMA DIREÇÃO (all[0]) —
+        // antes devolvia entry.frame (o quadro de referência, de frente),
+        // que com o espelhamento da esquerda fazia o personagem "balançar"
+        // pro outro lado a cada golpe.
+        if(entry.fullWalkFrames) return all[0] || entry.frame;
         const poseIdx = Math.min(all.length-1, BODY_WALK_SAFE_FRAMES[dir] || 0);
         return all[poseIdx] || entry.frame;
       }
@@ -5304,6 +5308,15 @@
         // pra não nascer no mesmo pixel.
         if(fx.crit) spawnFloatingText(anchor, 'Crítico!', '#ffd23f', { yOffset: 16, big: true });
         if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
+        // Vira o personagem pro monstro que ele está atacando (igual Tibia/
+        // Huntera) — só quando está parado; andando, a direção é a do passo.
+        if(m && location === 'dungeon'){
+          const st = walkAnimStates.get('__player__');
+          if(st && Date.now() - st.lastMoveAt > WALK_ANIM_MOVE_GRACE_MS){
+            const dx = m.x - player.x, dy = m.y - player.y;
+            st.dir = Math.abs(dx) > 4 ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+          }
+        }
         // Nome da magia flutuando sobre o PRÓPRIO jogador (o conjurador), tipo
         // "está fazendo o encantamento" — só pra magia de ataque de verdade
         // (fx.spellName vem de castSpell/stats.name em huntEngine.js).
