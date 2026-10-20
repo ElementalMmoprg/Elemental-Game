@@ -112,9 +112,10 @@
   .tb-coin-icon{ filter:hue-rotate(190deg) saturate(3.2) brightness(1.08); }
   #tb-online{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); white-space:nowrap; }
   #tb-icons{ margin-left:auto; display:flex; gap:6px; }
-  .tb-icon{ width:34px; height:34px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
+  .tb-icon{ width:44px; height:44px; border-radius:7px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:21px; cursor:pointer; } /* 20/10/2026: era 34px — usuário achou pequeno */
+  .tb-icon.tb-hidden{ display:none !important; } /* Refinamento/Infusão/Fusão agora ficam dentro da Forja */
   .tb-icon:hover{ border-color:var(--gold-bright); box-shadow:0 0 10px rgba(240,211,138,.2); }
-  .tb-icon img{ width:21px; height:21px; object-fit:contain; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+  .tb-icon img{ width:28px; height:28px; object-fit:contain; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
   .menu-ico{ width:14px; height:14px; object-fit:contain; vertical-align:-2px; margin-right:2px; }
   #bag-shortcut img.menu-ico{ width:26px; height:26px; margin:0; vertical-align:middle; }
 
@@ -1265,6 +1266,20 @@
   /* janela antiga encaixada dentro da Loja Central */
   #sh-main > .win.sh-docked{ position:static !important; transform:none !important; inset:auto !important; width:100% !important; height:100% !important; max-width:none !important; max-height:none !important; min-height:0 !important; z-index:auto !important; background:none !important; box-shadow:none !important; padding-top:0 !important; border:none !important; }
   #sh-main.docking{ padding:0; overflow:hidden; }
+  /* FORJA (20/10/2026): Refinamento, Infusão e Fusão juntos num botão só */
+  #forge-hub-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:820px; max-width:96vw; height:640px; max-height:92vh; display:none; flex-direction:column; z-index:18; }
+  #forge-hub-modal.open{ display:flex; }
+  .fh-tabs{ display:flex; gap:6px; padding:8px 14px 0; border-bottom:1px solid rgba(191,161,95,.25); }
+  .fh-tab{ display:flex; align-items:center; gap:7px; padding:9px 18px; border:1px solid rgba(191,161,95,.25); border-bottom:none; border-radius:6px 6px 0 0; font-family:var(--font-display); font-size:12px; letter-spacing:.05em; color:var(--ink-dim); cursor:pointer; background:rgba(0,0,0,.2); }
+  .fh-tab img{ width:20px; height:20px; object-fit:contain; }
+  .fh-tab:hover{ color:var(--gold-bright); }
+  .fh-tab.active{ color:var(--gold-bright); background:rgba(240,211,138,.12); border-color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); }
+  #fh-main{ flex:1; min-height:0; overflow:auto; padding:6px 10px 10px; }
+  #fh-main > .win.fh-docked{ position:static !important; transform:none !important; inset:auto !important; width:100% !important; height:auto !important; min-height:100% !important; max-width:none !important; max-height:none !important; z-index:auto !important; background:none !important; box-shadow:none !important; padding-top:0 !important; border:none !important; display:block; }
+  #fh-main > .win.fh-docked#fusion-modal{ display:flex !important; }
+  #fh-main > .win.fh-docked #infusion-body, #fh-main > .win.fh-docked #enchant-body{ max-height:none !important; }
+  .win.fh-docked > .panel-title.win-drag, .win.fh-docked > .win-resize{ display:none !important; }
+  .win.fh-docked::before, .win.fh-docked::after{ display:none !important; }
   .win.sh-docked > .panel-title.win-drag, .win.sh-docked > .win-resize{ display:none !important; }
   #shop-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; display:none; z-index:16; }
   #shop-modal.open{ display:block; }
@@ -2432,13 +2447,14 @@
            usado em Infusão (🔮) e Wiki (📖) logo abaixo. -->
       <div class="tb-icon" id="btn-open-pvp-tournament" title="Central do Torneio PvP">🏆</div>
       <div class="tb-icon" id="btn-open-pvp-shop" title="Loja de PvP">🏪</div>
-      <div class="tb-icon" id="btn-open-enchant" title="Refinamento"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-infusion" title="Infusão (Tier + Grade)">🔮</div>
+      <div class="tb-icon" id="btn-open-forge" title="Forja (Refinamento, Infusão e Fusão)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
+      <div class="tb-icon tb-hidden" id="btn-open-enchant" title="Refinamento"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
+      <div class="tb-icon tb-hidden" id="btn-open-infusion" title="Infusão (Tier + Grade)">🔮</div>
       <!-- Fusão de Equipamentos — pedido do usuário (26/09/2026): funde N
            cópias do mesmo item + Gold + Cristal de Fusão pra subir a
            raridade, até chegar em Mítica. Sem asset próprio ainda, mesmo
            padrão de emoji já usado em Infusão/Wiki/Torneio acima. -->
-      <div class="tb-icon" id="btn-open-fusion" title="Fusão de Equipamentos">⚗️</div>
+      <div class="tb-icon tb-hidden" id="btn-open-fusion" title="Fusão de Equipamentos">⚗️</div>
       <div class="tb-icon" id="btn-open-pets" title="Pets"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/pets.png" alt=""></div>
       <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
       <div class="tb-icon" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
@@ -2778,6 +2794,12 @@
 
   <!-- ENCANTAMENTO — +1 a +10 em equipamento usando Cristal (obrigatório) +
        Bênção do Ferreiro (opcional, aumenta chance de sucesso), estilo Ragnarok. -->
+  <div id="forge-hub-modal" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ ⚒️ Forja<span class="rule"></span><span class="win-close-x" data-close-win="forge-hub-modal">✕</span></div>
+    <div class="fh-tabs" id="fh-tabs"></div>
+    <div id="fh-main"></div>
+    <div class="win-resize"></div>
+  </div>
   <div id="enchant-modal" class="glass ornate win">
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ ⚒️ Refinamento<span class="rule"></span><span class="win-close-x" data-close-win="enchant-modal">✕</span></div>
     <div style="padding:0 14px 14px;">
@@ -14397,6 +14419,51 @@
   // Fechou a Loja (X, ESC, etc.): devolve a janela encaixada pro lugar dela.
   new MutationObserver(()=>{ if(!storeHubModal.classList.contains('open')) shUndock(); })
     .observe(storeHubModal, { attributes:true, attributeFilter:['class'] });
+
+  /* ===== FORJA (20/10/2026) — Refinamento, Infusão e Fusão num botão só.
+     As 3 janelas continuam as mesmas; só são "encaixadas" dentro da Forja
+     (mesma técnica da Loja Central) e os 3 botões antigos saíram da barra. */
+  const forgeHubModal = document.getElementById('forge-hub-modal');
+  const FH_TABS = [
+    { id:'refino', name:'Refinamento', img:'https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png', dock:'enchant-modal', open:()=>{ enchantModal.classList.add('open'); renderEnchant(); } },
+    { id:'infusao', name:'Infusão', icon:'🔮', dock:'infusion-modal', open:()=>{ infusionModal.classList.add('open'); renderInfusion(); } },
+    { id:'fusao', name:'Fusão', icon:'⚗️', dock:'fusion-modal', open:()=>{ fusionModal.classList.add('open'); renderFusion(); } },
+  ];
+  let fhTab = 'refino', fhDocked = null;
+  function fhUndock(){
+    if(!fhDocked) return;
+    const { el, parent, next } = fhDocked;
+    el.classList.remove('fh-docked', 'open');
+    if(next && next.parentNode === parent) parent.insertBefore(el, next); else parent.appendChild(el);
+    fhDocked = null;
+  }
+  function renderForgeHub(){
+    const tabs = document.getElementById('fh-tabs');
+    tabs.innerHTML = FH_TABS.map(t=>`<div class="fh-tab${t.id===fhTab?' active':''}" data-fh-tab="${t.id}">${t.img?`<img src="${t.img}" alt="">`:`<span>${t.icon}</span>`}${t.name}</div>`).join('');
+    tabs.querySelectorAll('[data-fh-tab]').forEach(el=> el.addEventListener('click', ()=>{ fhTab = el.dataset.fhTab; renderForgeHub(); }));
+    const tab = FH_TABS.find(t=>t.id===fhTab) || FH_TABS[0];
+    const el = document.getElementById(tab.dock);
+    const main = document.getElementById('fh-main');
+    if(el && (!fhDocked || fhDocked.el !== el)){
+      fhUndock();
+      fhDocked = { el, parent: el.parentNode, next: el.nextSibling };
+      main.innerHTML = '';
+      el.classList.add('fh-docked');
+      main.appendChild(el);
+    }
+    try{ tab.open(); }catch(e){ console.warn('[forja] falha ao abrir', tab.id, e); }
+  }
+  function openForgeHub(tabId){
+    if(tabId) fhTab = tabId;
+    forgeHubModal.classList.add('open');
+    renderForgeHub();
+  }
+  document.getElementById('btn-open-forge').addEventListener('click', ()=>{
+    if(forgeHubModal.classList.contains('open')) forgeHubModal.classList.remove('open');
+    else openForgeHub();
+  });
+  new MutationObserver(()=>{ if(!forgeHubModal.classList.contains('open')) fhUndock(); })
+    .observe(forgeHubModal, { attributes:true, attributeFilter:['class'] });
 
   function shCard({ tag, feat, art, name, price, desc, btn, btnClass, btnDisabled, data, preview }){
     return `<div class="sh-card ${feat?'feat':''}"${preview ? ` data-sh-preview="${preview}"` : ''}>
