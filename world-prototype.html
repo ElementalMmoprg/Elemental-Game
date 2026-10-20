@@ -132,6 +132,9 @@
      verdade (perto/longe/direção certos). Moldura (border.png) e ícone de
      jogador (cross.png) são os assets reais da pasta minimap/ da Ravendawn. */
   #minimap-panel{ position:absolute; top:70px; right:16px; width:120px; display:flex; flex-direction:column; align-items:center; gap:4px; z-index:6; }
+  /* 20/10/2026: minimapa retirado do jogo a pedido do usuário. O HTML/JS ficam
+     (o radar só atualiza um elemento escondido), só não aparece mais na tela. */
+  #minimap-panel{ display:none !important; }
   #minimap-zone-label{ font-family:var(--font-mono); font-size:8px; color:var(--gold-bright); text-transform:uppercase; letter-spacing:.03em; text-align:center; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.8); }
   #minimap-circle{ position:relative; width:112px; height:112px; border-radius:50%; overflow:hidden; background:radial-gradient(circle, #241d12, #0b0805 82%); box-shadow:inset 0 0 14px rgba(0,0,0,.75); }
   #minimap-dots{ position:absolute; inset:0; }
