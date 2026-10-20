@@ -1076,6 +1076,8 @@
   .trade-side{ flex:1; border:1px solid var(--gold-deep); border-radius:6px; padding:10px; }
   .trade-side h4{ margin:0 0 8px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); text-transform:uppercase; }
   .trade-side.locked{ border-color:var(--ok); box-shadow:0 0 10px rgba(111,174,111,.2); }
+  .trade-gold-input.insufficient{ color:#ff5a4a !important; border-color:#ff5a4a !important; box-shadow:0 0 0 1px rgba(255,90,74,.4); }
+  .trade-gold-warn{ font-family:var(--font-mono); font-size:9.5px; color:#ff5a4a; margin:-4px 0 6px; min-height:0; }
   .trade-gold-input{ width:100%; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; font-family:var(--font-mono); font-size:11px; margin-bottom:8px; }
   .trade-items-list{ min-height:80px; max-height:140px; overflow-y:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
   .trade-item-row{ display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed rgba(191,161,95,.12); cursor:pointer; }
@@ -1727,6 +1729,10 @@
   #item-link-menu{ position:fixed; z-index:10000; display:none; background:linear-gradient(180deg,#221d16,#14110c); border:1px solid var(--gold); border-radius:6px; padding:4px; box-shadow:0 8px 24px rgba(0,0,0,.6); }
   #item-link-menu div{ padding:6px 12px; font-family:var(--font-mono); font-size:11px; color:var(--ink); cursor:pointer; border-radius:4px; white-space:nowrap; }
   #item-link-menu div:hover{ background:rgba(191,161,95,.18); color:var(--gold-bright); }
+  .craft-stat-picker{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; padding:6px; border:1px dashed rgba(191,161,95,.3); border-radius:5px; }
+  .craft-stat-chip{ padding:4px 8px; border-radius:12px; border:1px solid var(--gold-deep); font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); cursor:pointer; user-select:none; }
+  .craft-stat-chip.on{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(240,211,138,.14); }
+  .craft-stat-note{ width:100%; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
   #split-modal{ position:fixed; inset:0; z-index:10001; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.45); }
   #split-modal.open{ display:flex; }
   #split-modal .split-box{ width:300px; max-width:92vw; padding:14px 16px; }
@@ -2960,6 +2966,7 @@
       <div class="trade-side" id="trade-side-mine">
         <h4>Sua oferta</h4>
         <input type="number" min="0" class="trade-gold-input" id="trade-my-gold" placeholder="Ouro">
+        <div id="trade-gold-warn" class="trade-gold-warn"></div>
         <div class="trade-items-list" id="trade-my-items"></div>
       </div>
       <div class="trade-side" id="trade-side-theirs">
@@ -3533,6 +3540,21 @@
   let trash = [], trashCapacity = 40; // Lixeira de Itens (ver pushToTrash em huntEngine.js)
   let depot = [], depotCapacity = 200;
   let quickSellMarks = [];
+  let armorSetTable = {}; // bônus de conjunto por família (Pliant/Crescent/...), vem do servidor no welcome
+  // Linhas do conjunto pra tooltip de uma peça de armadura (2/3/4 peças)
+  function armorSetKeyClient(item){
+    if(!item || !['helmet','armor','legs','boots'].includes(item.slot)) return null;
+    const key = String(item.name||'').replace(/\s*\([^)]*\)\s*$/, '').trim().split(/\s+/)[0].toLowerCase();
+    return armorSetTable[key] ? key : null;
+  }
+  function armorSetTooltipHtml(item){
+    const key = armorSetKeyClient(item);
+    if(!key) return '';
+    const set = armorSetTable[key];
+    const have = ['helmet','armor','legs','boots'].filter(sl => armorSetKeyClient(equipment[sl]) === key).length;
+    const rows = [2,3,4].map(n=>`<div style="color:${have>=n?'#7ee08a':'var(--ink-dim)'}">${n} peças: ${escapeHtml(set.tiers[n]||'')}</div>`).join('');
+    return `<span class="hint" style="display:block;margin-top:4px;"><b style="color:var(--gold-bright)">Conjunto ${escapeHtml(set.label)} (${have}/4)</b>${rows}</span>`;
+  }
   let blessingsCount = 0, blessingProtectionPct = 0, nextBlessingCost = null;
   let equipment = { weapon:null, offhand:null, helmet:null, armor:null, boots:null, accessory1:null, accessory2:null, amulet:null, legs:null };
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
@@ -6804,7 +6826,7 @@
           // painel no futuro.
           npcShops = msg.npcShops || {};
           trainingDummies = msg.trainingDummies || [];
-          outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || []; wingCatalog = msg.wingCatalog || []; auraCatalog = msg.auraCatalog || []; ornamentCatalog = msg.ornamentCatalog || [];
+          outfitCatalog = msg.outfitCatalog || []; mountCatalog = msg.mountCatalog || []; wingCatalog = msg.wingCatalog || []; auraCatalog = msg.auraCatalog || []; ornamentCatalog = msg.ornamentCatalog || []; armorSetTable = msg.armorSetTable || armorSetTable;
           colorPalette = msg.colorPalette || []; bossCatalog = msg.bossCatalog || [];
           hairColors = msg.hairColors && msg.hairColors.length ? msg.hairColors : hairColors;
           marketCatalog = msg.marketCatalog || []; marketFeeRate = typeof msg.marketFeeRate === 'number' ? msg.marketFeeRate : marketFeeRate;
@@ -6836,6 +6858,14 @@
           refreshBankPopoverAmounts();
           break;
         case 'hunt:invite': showHuntInviteAcceptModal(msg); break;
+        case 'hunt:partyStarted': {
+          closeHuntPartyModal(); closeHuntInviteAcceptModal(); cancelAutoWalk();
+          const REASON_PT = { offline:'offline', sem_stamina:'sem stamina', ocupado:'ocupado na Torre', fora_da_cidade:'fora da Cidade' };
+          const sk = (msg.skipped||[]).map(x=>`${escapeHtml(x.nick)} (${REASON_PT[x.reason]||x.reason})`).join(', ');
+          logLoot(`🏹 <b>${escapeHtml(msg.from)}</b> iniciou a caçada em grupo: <b>${escapeHtml(msg.huntName||'')}</b>.${sk ? ` Ficaram de fora: ${sk}.` : ''}`);
+          if(document.getElementById('hunts-modal').classList.contains('open')) document.getElementById('hunts-modal').classList.remove('open');
+          break;
+        }
         case 'hunt:inviteProgress': showHuntPartyModal('convite', msg.partyId, msg.accepted, msg.total); break;
         case 'hunt:inviteCancelled':
           closeHuntPartyModal(); closeHuntInviteAcceptModal(); cancelAutoWalk();
@@ -7462,8 +7492,13 @@
       }
     }
     if(msg.forType === 'trade:request'){
-      if(msg.ok) logLoot('🤝 Pedido de troca enviado.'); else logLoot(`⚠️ Troca falhou: ${msg.reason}`);
+      if(msg.ok) logLoot('🤝 Pedido de troca enviado.'); else logLoot(`⚠️ Troca falhou: ${({jogador_ocupado:'esse jogador já está em outra troca.', jogador_offline:'jogador offline.', nao_pode_negociar_consigo_mesmo:'não dá pra trocar com você mesmo.'})[msg.reason] || msg.reason}`);
     }
+    if(msg.forType === 'trade:confirm' && !msg.ok){
+      logLoot(`⚠️ Troca cancelada: ${msg.reason==='ouro_insuficiente' ? 'alguém não tinha o ouro oferecido.' : (msg.reason==='jogador_offline' ? 'a outra pessoa saiu do jogo.' : msg.reason)}`);
+      closeTradeModal();
+    }
+    if(msg.forType === 'trade:update' && !msg.ok && msg.reason === 'ouro_insuficiente') logLoot(`⚠️ Você só tem ${Math.round(msg.have||0).toLocaleString('pt-BR')} de ouro na mão.`);
     if(msg.forType && msg.forType.startsWith('trade:') && msg.trade){ currentTrade = msg.trade; openTradeModal(); renderTrade(); }
     if(msg.forType === 'trade:confirm' && msg.executed) { logLoot('✅ Troca concluída!'); closeTradeModal(); }
 
@@ -8999,13 +9034,25 @@
   const tradeModal = document.getElementById('trade-modal');
   let tradePicks = { gold:0, items:[] };
   function openTradeModal(){ tradeModal.classList.add('open'); }
-  function closeTradeModal(){ tradeModal.classList.remove('open'); currentTrade = null; tradePicks = { gold:0, items:[] }; }
+  function closeTradeModal(){
+    tradeModal.classList.remove('open'); currentTrade = null; tradePicks = { gold:0, items:[] };
+    const gi = document.getElementById('trade-my-gold'); if(gi){ gi.value = ''; gi.classList.remove('insufficient'); }
+    const gw = document.getElementById('trade-gold-warn'); if(gw) gw.textContent = '';
+  }
   document.getElementById('trade-cancel-btn').addEventListener('click', ()=>{
     if(currentTrade) sendWS({ type:'trade:cancel', tradeId: currentTrade.id });
     closeTradeModal();
   });
   document.getElementById('trade-my-gold').addEventListener('input', e=>{
-    tradePicks.gold = Math.max(0, Number(e.target.value)||0);
+    const v = Math.max(0, Math.floor(Number(e.target.value)||0));
+    // 20/10/2026: ouro acima do que tem na mão fica em vermelho e não é enviado
+    const tooMuch = v > (player.gold||0);
+    e.target.classList.toggle('insufficient', tooMuch);
+    const warn = document.getElementById('trade-gold-warn');
+    if(warn) warn.textContent = tooMuch ? `Você só tem ${Math.round(player.gold||0).toLocaleString('pt-BR')} de ouro na mão.` : '';
+    document.getElementById('trade-lock-btn').disabled = tooMuch || !!(currentTrade && currentTrade.locked && currentTrade.locked[AUTH_USERNAME]);
+    if(tooMuch) return;
+    tradePicks.gold = v;
     sendTradeOfferUpdate();
   });
   document.getElementById('trade-lock-btn').addEventListener('click', ()=>{
@@ -9062,7 +9109,7 @@
     const lockedTheirs = !!(currentTrade.locked && currentTrade.locked[other]);
     document.getElementById('trade-side-mine').classList.toggle('locked', lockedMine);
     document.getElementById('trade-side-theirs').classList.toggle('locked', lockedTheirs);
-    document.getElementById('trade-lock-btn').disabled = lockedMine;
+    { const gi = document.getElementById('trade-my-gold'); document.getElementById('trade-lock-btn').disabled = lockedMine || (gi && gi.classList.contains('insufficient')); }
     document.getElementById('trade-confirm-btn').disabled = !(lockedMine && lockedTheirs);
     document.getElementById('trade-status-line').textContent = lockedMine && lockedTheirs
       ? 'Ambos travaram a oferta — clique em Confirmar pra concluir.'
@@ -10069,6 +10116,10 @@
     document.getElementById('inv-stat-magicdmg').textContent = `${(cs.magicDamagePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-physdmg').textContent = `${(cs.physicalDamagePct||0).toFixed(1)}%`;
     document.getElementById('inv-stat-setbonus').textContent = cs.setBonusLabel || 'Nenhum';
+    // passar o mouse no quadro do Bônus de Conjunto mostra o que cada conjunto vestido dá
+    { const chip = document.querySelector('.inv-set-chip');
+      if(chip){ const keys = Array.from(new Set(['helmet','armor','legs','boots'].map(sl=>armorSetKeyClient(equipment[sl])).filter(Boolean)));
+        chip.title = keys.length ? keys.map(k=>{ const st = armorSetTable[k]; const n = ['helmet','armor','legs','boots'].filter(sl=>armorSetKeyClient(equipment[sl])===k).length; return `Conjunto ${st.label} (${n}/4)\n` + [2,3,4].map(t=>`${n>=t?'✓':'·'} ${t} peças: ${st.tiers[t]}`).join('\n'); }).join('\n\n') : 'Vista 2, 3 ou 4 peças do mesmo conjunto (ex.: Pliant Helmet + Pliant Armor) pra ganhar bônus.'; } }
     // Atributos primários (Vitality/Might/Intelligence/Dexterity/Wisdom):
     // pontos distribuídos + bônus vindos dos itens (Infusão), igual ao que
     // aparece no tooltip dos equipamentos.
@@ -10181,7 +10232,7 @@
         // então itens craftados (sem entrada em ITEM_INFO, que só cobre
         // loot de monstro) pareciam não ter preço/opção de venda nenhuma.
         const priceLine = invTab==='mochila' ? `<span class="tt-price">Venda ao NPC: ${npcSellPriceFor(it)} ouro${it.qty>1?` (x${it.qty})`:''}</span>` : '';
-        invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}${healLine}${priceLine}`;
+        invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}${armorSetTooltipHtml(it)}${healLine}${priceLine}`;
         invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
         invItemTooltip.style.display = 'block';
       });
@@ -10345,7 +10396,7 @@
       const enchantLine = item.enchantLevel ? ` · +${item.enchantLevel}` : '';
       const infusionLine = item.infusionGrade ? ` · Grade ${item.infusionGrade}` : '';
       const descLine = item.description ? `<span class="hint" style="font-style:italic;">${item.description}</span>` : '';
-      invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[item.rarity]||'var(--gold-bright)'}">${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats, item)}</span>`;
+      invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[item.rarity]||'var(--gold-bright)'}">${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats, item)}</span>${armorSetTooltipHtml(item)}`;
       invItemTooltip.style.borderColor = RARITY_COLORS[(item||{}).rarity] || '';
       invItemTooltip.style.display = 'block';
     });
@@ -12199,13 +12250,35 @@
   // e Usar Selo Inquebrável não funcionam". Agora o valor vive aqui e o
   // template só reflete essas variáveis, sobrevivendo a qualquer re-render.
   let enchantUseProtector = false, enchantUseWard = false;
-  function computeBaseItemStatsClient(slot, rarity, powerTier){
-    const base = SLOT_BASE_STATS[slot]; if(!base) return {};
+  // Espelho de computeBaseItemStats (huntEngine.js): -60% (EQUIP_BASE_STAT_SCALE)
+  // e atributos escolhidos na Profissão (item.craftStats) — 20/10/2026.
+  const EQUIP_BASE_STAT_SCALE_CLIENT = 0.4;
+  const CRAFT_STAT_CHOICES_CLIENT = ['atk','def','critPct','magicPct'];
+  const CRAFT_STAT_LABEL_CLIENT = { atk:'Ataque', def:'Defesa', critPct:'Chance Crít.', magicPct:'Dano Mágico' };
+  const CRAFT_STAT_BASE_BY_SLOT_CLIENT = {
+    atk:      { weapon:8, offhand:3, helmet:3, armor:4, legs:3, boots:2, ring:2, amulet:3, gloves:3 },
+    def:      { weapon:2, offhand:3, helmet:5, armor:8, legs:5, boots:3, ring:2, amulet:2, gloves:2 },
+    critPct:  { weapon:2, offhand:1, helmet:1, armor:1, legs:1, boots:1, ring:2, amulet:1.5, gloves:2 },
+    magicPct: { weapon:4, offhand:2, helmet:2, armor:2, legs:2, boots:1.5, ring:3, amulet:3, gloves:2 },
+  };
+  function computeBaseItemStatsClient(slot, rarity, powerTier, statKeys){
+    let base = SLOT_BASE_STATS[slot]; if(!base) return {};
+    if(Array.isArray(statKeys) && statKeys.length){ base = {}; statKeys.forEach(k=>{ const v = CRAFT_STAT_BASE_BY_SLOT_CLIENT[k] && CRAFT_STAT_BASE_BY_SLOT_CLIENT[k][slot]; if(v) base[k] = v; }); }
     const mult = RARITY_STAT_MULT[rarity] || 1;
     const tierMult = POWER_TIER_MULT_CLIENT[(powerTier||1)-1] || 1;
     const out = {};
-    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*tierMult*10)/10);
+    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*tierMult*EQUIP_BASE_STAT_SCALE_CLIENT*10)/10);
     return out;
+  }
+  // Escolha de atributos por slot (lembrada enquanto o jogo está aberto)
+  const craftStatChoice = {};
+  let craftStatPickerOpen = null; // id da receita com o seletor aberto
+  function craftStatsFor(slot){
+    if(!craftStatChoice[slot]){
+      const def = Object.keys(SLOT_BASE_STATS[slot]||{}).filter(k=>CRAFT_STAT_CHOICES_CLIENT.includes(k)).slice(0,2);
+      craftStatChoice[slot] = def.length ? def : ['atk'];
+    }
+    return craftStatChoice[slot];
   }
   // Espelha getInfusionBaseMult/getInfusionScaledStats do huntEngine.js --
   // pedido do usuário: "a descrição do item após ganhar o bônus da infusão
@@ -12230,7 +12303,7 @@
   }
   function getItemTotalStatsClient(item){
     if(!item || !item.slot) return {};
-    const base = computeBaseItemStatsClient(item.slot, item.rarity, item.powerTier);
+    const base = computeBaseItemStatsClient(item.slot, item.rarity, item.powerTier, item.craftStats);
     const enchantMult = 1 + (item.enchantLevel||0)*0.08;
     const infusionMult = getInfusionBaseMultClient(item);
     const out = {};
@@ -12803,16 +12876,16 @@
   // Espelho de CRAFT_RARITY_TIERS/WEIGHTS_LOW/HIGH em huntEngine.js -- só
   // pra CALCULAR e MOSTRAR as % de chance na UI (transparência pro
   // jogador); o sorteio de verdade acontece no servidor.
-  const CRAFT_RARITY_TIERS_CLIENT = ['comum', 'incomum', 'rara', 'épica', 'lendária'];
-  const CRAFT_RARITY_SUFFIX_CLIENT = { comum:'common', incomum:'uncommon', rara:'rare', 'épica':'epic', 'lendária':'legendary' };
-  const CRAFT_RARITY_WEIGHTS_LOW_CLIENT = [55, 28, 12, 4, 1];
-  const CRAFT_RARITY_WEIGHTS_HIGH_CLIENT = [25, 30, 25, 13, 7];
+  const CRAFT_RARITY_TIERS_CLIENT = ['comum', 'incomum', 'rara', 'épica', 'lendária', 'mítica'];
+  const CRAFT_RARITY_SUFFIX_CLIENT = { comum:'common', incomum:'uncommon', rara:'rare', 'épica':'epic', 'lendária':'legendary', 'mítica':'mythic' };
+  const CRAFT_RARITY_WEIGHTS_LOW_CLIENT = [55, 28, 12, 4, 1, 0.2];
+  const CRAFT_RARITY_WEIGHTS_HIGH_CLIENT = [25, 30, 25, 13, 7, 1.5];
   // Espelho de CRAFT_CATALYST_RARITY_BONUS em huntEngine.js (task #128) --
   // só pra mostrar a prévia de % com o catalisador escolhido ANTES de
   // clicar "Criar"; quem decide de verdade continua sendo o servidor.
   const CRAFT_CATALYST_RARITY_BONUS_CLIENT = {
-    'épica': { 'épica': 2.5, 'lendária': 1.5 },
-    'lendária': { 'épica': 5, 'lendária': 3 },
+    'épica': { 'épica': 2.5, 'lendária': 1.5, 'mítica': 0.1 },
+    'lendária': { 'épica': 5, 'lendária': 3, 'mítica': 0.3 },
   };
   function craftRarityOddsClient(profLevel, catalystRarity){
     const t = Math.max(0, Math.min(1, ((profLevel || 1) - 1) / 99));
@@ -12821,6 +12894,7 @@
     if(bonus){
       weights[CRAFT_RARITY_TIERS_CLIENT.indexOf('épica')] += bonus['épica'];
       weights[CRAFT_RARITY_TIERS_CLIENT.indexOf('lendária')] += bonus['lendária'];
+      weights[CRAFT_RARITY_TIERS_CLIENT.indexOf('mítica')] += bonus['mítica'] || 0;
     }
     const total = weights.reduce((a, b) => a + b, 0);
     return CRAFT_RARITY_TIERS_CLIENT.map((tier, i) => ({ tier, pct: weights[i] / total * 100 }));
@@ -13112,8 +13186,10 @@
       // equipamento (computeBaseItemStatsClient), sem Encantamento/Infusão
       // (o item nasce nível 0 dos dois).
       const oddsLines = craftRarityOddsClient(prof.level, activeCatalystItem ? activeCatalystItem.rarity : null).map(o=>{
-        const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`];
-        const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier) : {};
+        const legItem = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_legendary`];
+        const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`]
+          || (o.tier === 'mítica' && legItem ? { ...legItem, name: (legItem.name||'').replace(/\s*\([^)]*\)\s*$/, '') + ' (Mítica)' } : null);
+        const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier, craftStatsFor(r.slot)) : {};
         const statPreview = Object.keys(stats).length ? `<div class="prec-stat-preview">${formatStats(stats, r)}</div>` : '';
         return `<div class="prec-row"><span style="color:${RARITY_COLORS[o.tier]||'var(--ink)'}">${item ? item.name : o.tier}</span><span>${o.pct.toFixed(1)}%</span></div>${statPreview}`;
       }).join('');
@@ -13138,7 +13214,9 @@
           ${prevTierLine}
           <div class="prec-row" style="opacity:.75;font-size:11px;margin-top:2px;">Raridade sorteada ao criar:</div>
           ${oddsLines}
-          <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" ${canCraft?'':'disabled'}>Criar</button>
+          ${r.slot ? `<button type="button" class="party-btn craft-stat-toggle" style="width:100%;margin-top:6px;" data-craft-stat-toggle="${r.id}">⚙️ Atributos: ${craftStatsFor(r.slot).map(k=>CRAFT_STAT_LABEL_CLIENT[k]).join(' + ')} ${craftStatPickerOpen===r.id?'▲':'▼'}</button>
+          ${craftStatPickerOpen===r.id ? `<div class="craft-stat-picker">${CRAFT_STAT_CHOICES_CLIENT.filter(k=>CRAFT_STAT_BASE_BY_SLOT_CLIENT[k][r.slot]).map(k=>`<span class="craft-stat-chip${craftStatsFor(r.slot).includes(k)?' on':''}" data-craft-stat="${k}" data-craft-slot="${r.slot}">${CRAFT_STAT_LABEL_CLIENT[k]}</span>`).join('')}<div class="craft-stat-note">Escolha até 2 atributos — o item nasce com eles.</div></div>` : ''}` : ''}
+          <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" data-craft-slot="${r.slot||''}" ${canCraft?'':'disabled'}>Criar</button>
         </div>`;
     }).join('') : `<div class="profession-empty-hint">Nenhum item encontrado${searchQ?` pra "${professionSearchEl.value}"`:''}${professionCategoryFilter!=='all'?` em ${CRAFT_CATEGORY_LABEL_CLIENT[professionCategoryFilter]||professionCategoryFilter}`:''}.</div>`;
     const refineMats = PROFESSION_MATERIALS_CLIENT[professionSelectedTab];
@@ -13167,7 +13245,20 @@
       renderProfessions(); // refaz as % de chance de cada receita com o novo catalisador
     });
     body.querySelectorAll('[data-craft-recipe]').forEach(btn=>{
-      btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe, catalystItemId: professionCatalystItemId || undefined }));
+      btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe, catalystItemId: professionCatalystItemId || undefined, stats: btn.dataset.craftSlot ? craftStatsFor(btn.dataset.craftSlot) : undefined }));
+    });
+    body.querySelectorAll('[data-craft-stat-toggle]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ craftStatPickerOpen = craftStatPickerOpen === btn.dataset.craftStatToggle ? null : btn.dataset.craftStatToggle; renderProfessions(); });
+    });
+    body.querySelectorAll('[data-craft-stat]').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const slot = chip.dataset.craftSlot, k = chip.dataset.craftStat;
+        let cur = craftStatsFor(slot).slice();
+        if(cur.includes(k)){ if(cur.length > 1) cur = cur.filter(x=>x!==k); }
+        else { cur.push(k); if(cur.length > 2) cur.shift(); }
+        craftStatChoice[slot] = cur;
+        renderProfessions();
+      });
     });
     const refineBtn = document.getElementById('btn-profession-refine');
     if(refineBtn) refineBtn.addEventListener('click', ()=> sendWS({ type:'profession:refine', profession: professionSelectedTab }));
