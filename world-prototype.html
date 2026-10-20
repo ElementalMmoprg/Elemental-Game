@@ -8033,7 +8033,7 @@
         const owned = ownedOutfits.includes(o.id);
         const equipped = cosmetics.outfit === o.id;
         return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-outfit="${o.id}">
-          <div class="oc-icon">${o.fixedColor ? `<img src="${URL_BASE}player/outfits_template/${o.id}_icon.png" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🧍';" />` : '🧍'}</div>
+          <div class="oc-icon">${(o.fixedColor || String(o.id).startsWith('rd_')) ? `<img src="${URL_BASE}player/outfits_template/${o.id}_icon.png" style="width:30px;height:30px;object-fit:contain;" onerror="this.parentElement.textContent='🧍';" />` : '🧍'}</div>
           <div class="oc-name">${escapeHtml(o.name)}</div>
           <div class="oc-price">${owned ? (equipped?'Equipado':'Adquirido — clique p/ vestir') : (o.cost>0?(o.currency==='elementalCoin'?`${o.cost.toLocaleString('pt-BR')} 💎 Coin`:`${o.cost.toLocaleString('pt-BR')} Gold`):'Grátis')}</div>
         </div>`;
