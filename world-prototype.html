@@ -4814,6 +4814,11 @@
   const TILE_STEP = 34; // tamanho de 1 tile do chão, em unidades de mundo
   const TILE_SCREEN_PX = 80; // tamanho FIXO do SQM na tela, em pixels (era 64; 20/10/2026 o usuário achou a câmera longe demais — +25% de zoom, sprites crescem junto via SPRITE_SCALE)
   const WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
+  // Movimento por tiles (20/10/2026): personagem/monstro ficam no CENTRO do
+  // tile no servidor, mas o sprite é desenhado com os PÉS nesse ponto — o
+  // piso genérico sobe 0,4 tile pra que os pés caiam perto da borda de baixo
+  // da casa (como no Tibia/Huntera) e o corpo fique "dentro" do quadrado.
+  const TILE_FOOT_OFFSET = TILE_STEP * 0.4;
   // Antes desta mudança, WORLD_SCALE era 1.55 e todo sprite/hitbox/offset de
   // personagem, monstro e cenário abaixo foi calibrado em cima desse valor
   // em pixels FIXOS (34x46 do corpo, 68x68 do monstro etc.) — SPRITE_SCALE
@@ -5656,9 +5661,16 @@
     // sempre — mesmo fallback de antes, nada quebra.
     const cityTilesDrawn = location==='city' && !isTowerArena && drawCityTiles(toScreen);
     if(!cityTilesDrawn){
+      // Grade presa em múltiplos de TILE_STEP (20/10/2026, movimento por
+      // tiles): o servidor põe jogador e monstros no CENTRO de cada tile
+      // (k*34), então o piso precisa estar alinhado nesses mesmos centros —
+      // antes a grade começava em minX "solto" e deslizava com a câmera.
+      minX = (isTowerArena ? Math.ceil : Math.floor)(minX/TILE_STEP)*TILE_STEP;
+      minY = (isTowerArena ? Math.ceil : Math.floor)(minY/TILE_STEP)*TILE_STEP;
+      const footOff = isTowerArena ? 0 : TILE_FOOT_OFFSET;
       for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
         for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
-          const s = toScreen(gx,gy);
+          const s = toScreen(gx,gy-footOff);
           const even = ((gx+gy)/TILE_STEP)%2===0;
           const fill = isTowerArena
             ? shadeHexColor(arenaColor, even?0.30:0.22)
@@ -5669,6 +5681,20 @@
             drawFloorSquare(s.x, s.y, fill);
           }
         }
+      }
+    }
+    // Quadrado vermelho no TILE do alvo atual (estilo Huntera/Tibia, 20/10/2026)
+    // — desenhado na camada do piso, por baixo do monstro, acompanhando o
+    // passo dele (m.x/m.y já vêm interpolados do servidor).
+    if(activeHunt.running && currentTargetMonsterId){
+      for(const p of activeHunt.lurePoints){
+        const tm = p.monsters.find(mm=>mm.id===currentTargetMonsterId);
+        if(!tm) continue;
+        const s = toScreen(tm.x, tm.y - (isTowerArena ? 0 : TILE_FOOT_OFFSET)), half = TILE_SCREEN_PX/2 - 2;
+        ctx.save(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,40,40,.95)';
+        ctx.strokeRect(s.x-half, s.y-half, half*2, half*2);
+        ctx.restore();
+        break;
       }
     }
     // Muralha da arena da Torre: desenhada como cenário 3D de verdade agora
