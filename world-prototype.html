@@ -1342,9 +1342,88 @@
   /* FUSÃO — mesma regra de posição/z-index/display de Encantamento/Infusão
      acima, aprendendo com o bug documentado ali (#infusion-modal ficou sem
      ela por um tempo e sumia "atrás" da UI). */
-  #fusion-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:520px; max-width:94vw; display:none; z-index:17; }
-  #fusion-modal.open{ display:block; }
-  #fusion-body{ max-height:64vh; overflow-y:auto; }
+  /* FUSÃO — 20/10/2026, layout e animação no estilo da Forja do Huntera:
+     lista de itens fundíveis à esquerda, par Sacrifício » Resultado à
+     direita, recursos necessários (precisa / tem) e animação de tela cheia. */
+  #fusion-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:780px; max-width:96vw; display:none; z-index:17; }
+  #fusion-modal.open{ display:flex; flex-direction:column; }
+  .fz-wrap{ display:flex; min-height:360px; border-top:1px solid rgba(191,161,95,.18); margin-top:8px; }
+  .fz-left{ width:230px; flex-shrink:0; border-right:1px solid rgba(191,161,95,.18); display:flex; flex-direction:column; }
+  .fz-left-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  .fz-count{ min-width:20px; padding:1px 6px; border:1px solid var(--gold-deep); border-radius:4px; text-align:center; color:var(--ink); }
+  #fz-list{ flex:1; overflow-y:auto; padding:0 8px; display:flex; flex-direction:column; gap:6px; scrollbar-width:thin; }
+  .fz-card{ display:flex; gap:9px; align-items:center; padding:8px; border-radius:6px; border:1px solid rgba(191,161,95,.22); background:rgba(0,0,0,.25); cursor:pointer; }
+  .fz-card:hover{ border-color:var(--gold); }
+  .fz-card.sel{ border-color:var(--gold-bright); background:rgba(240,211,138,.10); box-shadow:inset 0 0 0 1px rgba(240,211,138,.35); }
+  .fz-icon{ position:relative; width:38px; height:38px; flex-shrink:0; border-radius:6px; background:rgba(0,0,0,.45); border:1px solid var(--gold-deep); display:flex; align-items:center; justify-content:center; }
+  .fz-icon .item-icon{ width:30px !important; height:30px !important; }
+  .fz-icon .rarity-frame{ position:absolute; inset:-1px; width:calc(100% + 2px); height:calc(100% + 2px); pointer-events:none; }
+  .fz-card-name{ font-family:var(--font-display); font-size:11.5px; }
+  .fz-card-sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .fz-card-copies{ font-family:var(--font-mono); font-size:9.5px; color:#7fb6ff; }
+  .fz-left-foot{ padding:10px 12px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); line-height:1.5; border-top:1px solid rgba(191,161,95,.12); }
+  .fz-right{ flex:1; min-width:0; padding:10px 14px; display:flex; flex-direction:column; gap:10px; }
+  .fz-title{ font-family:var(--font-display); font-size:14px; color:var(--ink); }
+  .fz-desc{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin-top:-6px; }
+  .fz-box{ border:1px solid rgba(191,161,95,.22); border-radius:6px; background:rgba(0,0,0,.22); }
+  .fz-box-head{ padding:6px 10px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); border-bottom:1px solid rgba(191,161,95,.15); display:flex; justify-content:space-between; }
+  .fz-pair{ display:flex; align-items:center; justify-content:center; gap:34px; padding:12px; }
+  .fz-slot-col{ display:flex; flex-direction:column; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .fz-slot{ position:relative; width:58px; height:58px; border-radius:8px; border:1px dashed rgba(191,161,95,.4); background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; color:var(--ink-dim); font-size:20px; }
+  .fz-slot.filled{ border-style:solid; border-color:var(--gold-deep); }
+  .fz-slot .item-icon{ width:44px !important; height:44px !important; }
+  .fz-slot .rarity-frame{ position:absolute; inset:-1px; width:calc(100% + 2px); height:calc(100% + 2px); pointer-events:none; }
+  .fz-slot .fz-badge{ position:absolute; top:-6px; right:-6px; min-width:16px; padding:0 4px; border-radius:4px; font-family:var(--font-mono); font-size:9px; background:#c9a24b; color:#1a1208; font-weight:700; }
+  .fz-slot .fz-x{ position:absolute; bottom:1px; right:3px; font-family:var(--font-mono); font-size:10px; color:var(--ink); text-shadow:0 1px 2px #000; }
+  .fz-arrow{ font-size:22px; color:#7fb6ff; }
+  .fz-preview{ padding:8px 10px; border-top:1px solid rgba(191,161,95,.15); text-align:center; font-family:var(--font-mono); font-size:10px; color:#7fb6ff; }
+  .fz-res-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:8px; }
+  .fz-res{ display:flex; align-items:center; gap:8px; padding:7px 9px; border:1px solid rgba(191,161,95,.18); border-radius:5px; background:rgba(0,0,0,.25); font-family:var(--font-mono); }
+  .fz-res .lbl{ font-size:9.5px; color:var(--ink-dim); }
+  .fz-res b{ display:block; font-size:11.5px; }
+  .fz-res b.ok{ color:#7ee08a; } .fz-res b.missing{ color:#ff7a6a; }
+  .fz-note{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .fz-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto; padding-top:8px; border-top:1px solid rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .fz-fuse-btn{ min-width:120px; padding:9px 18px; border-radius:5px; border:1px solid var(--gold-bright); background:linear-gradient(180deg,#3a3020,#1f1910); color:var(--gold-bright); font-family:var(--font-display); font-size:12px; letter-spacing:.06em; cursor:pointer; }
+  .fz-fuse-btn:disabled{ opacity:.4; cursor:not-allowed; border-color:var(--gold-deep); color:var(--ink-dim); }
+  .fz-empty{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  .fz-empty .big{ font-size:30px; opacity:.6; }
+  .fz-res-bar{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:8px 10px 10px; border-top:1px solid rgba(191,161,95,.18); }
+  #fz-msg{ min-height:16px; padding:0 14px 8px; font-family:var(--font-mono); font-size:10.5px; }
+  /* animação de tela cheia */
+  #fz-anim{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 45%, rgba(34,26,60,.95), rgba(4,4,10,.98)); }
+  #fz-anim.open{ display:flex; }
+  #fz-anim .fza-close{ position:absolute; top:18px; right:22px; width:34px; height:34px; border-radius:6px; border:1px solid rgba(255,255,255,.25); color:#ddd; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }
+  .fza-box{ position:relative; width:520px; max-width:94vw; height:380px; display:flex; flex-direction:column; align-items:center; }
+  .fza-label{ font-family:var(--font-mono); font-size:10px; letter-spacing:.3em; color:#aaa; margin-top:6px; }
+  .fza-title{ font-family:var(--font-display); font-size:28px; color:#b98cff; text-shadow:0 0 18px rgba(185,140,255,.55); margin-top:4px; }
+  .fza-title.ok{ color:#8fe36a; text-shadow:0 0 18px rgba(143,227,106,.5); }
+  .fza-title.mythic{ color:#ff5a5a; text-shadow:0 0 22px rgba(255,90,90,.7); }
+  .fza-name{ font-family:var(--font-mono); font-size:11px; color:#bbb; }
+  .fza-ring{ position:absolute; top:62px; left:50%; width:300px; height:300px; margin-left:-150px; border-radius:50%; border:1px solid rgba(185,140,255,.35); box-shadow:0 0 40px rgba(120,90,200,.25) inset; }
+  .fza-ring::before, .fza-ring::after{ content:''; position:absolute; inset:18px; border-radius:50%; border:2px dashed rgba(185,140,255,.28); animation:fza-spin 3.2s linear infinite; }
+  .fza-ring::after{ inset:44px; border:1px solid rgba(185,140,255,.2); border-top-color:rgba(220,190,255,.9); animation-duration:1.4s; animation-direction:reverse; }
+  .fza-ring.ok{ border-color:rgba(143,227,106,.35); }
+  @keyframes fza-spin{ to{ transform:rotate(360deg); } }
+  .fza-item{ position:absolute; top:150px; width:96px; height:96px; display:flex; align-items:center; justify-content:center; filter:drop-shadow(0 0 14px rgba(200,170,255,.6)); }
+  .fza-item .item-icon{ width:84px !important; height:84px !important; image-rendering:pixelated; }
+  .fza-item .rarity-frame{ position:absolute; inset:0; width:100%; height:100%; }
+  .fza-item.left{ left:40px; animation:fza-left 1.7s ease-in forwards; }
+  .fza-item.right{ right:40px; animation:fza-right 1.7s ease-in forwards; }
+  @keyframes fza-left{ 0%{ transform:translateX(0) rotate(-35deg); } 25%{ transform:translateX(10px) rotate(-10deg); } 50%{ transform:translateX(-6px) rotate(-40deg); } 85%{ transform:translateX(120px) rotate(-20deg); opacity:1; } 100%{ transform:translateX(172px) rotate(0); opacity:0; } }
+  @keyframes fza-right{ 0%{ transform:translateX(0) rotate(35deg) scaleX(-1); } 25%{ transform:translateX(-10px) rotate(10deg) scaleX(-1); } 50%{ transform:translateX(6px) rotate(40deg) scaleX(-1); } 85%{ transform:translateX(-120px) rotate(20deg) scaleX(-1); opacity:1; } 100%{ transform:translateX(-172px) rotate(0) scaleX(-1); opacity:0; } }
+  .fza-item.center{ left:50%; margin-left:-48px; top:140px; animation:fza-pop .55s cubic-bezier(.2,1.6,.4,1) both; filter:drop-shadow(0 0 22px rgba(143,227,106,.7)); }
+  .fza-item.center.mythic{ filter:drop-shadow(0 0 26px rgba(255,80,80,.9)); }
+  @keyframes fza-pop{ 0%{ transform:scale(.2); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  .fza-flash{ position:absolute; top:62px; left:50%; width:300px; height:300px; margin-left:-150px; border-radius:50%; background:radial-gradient(circle, rgba(255,255,255,.9), rgba(255,255,255,0) 60%); animation:fza-flash .6s ease-out forwards; pointer-events:none; }
+  @keyframes fza-flash{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(1.3); } }
+  .fza-badge{ position:absolute; top:252px; padding:3px 18px; border:1px solid rgba(143,227,106,.5); background:rgba(0,0,0,.55); font-family:var(--font-mono); font-size:11px; color:#8fe36a; letter-spacing:.08em; }
+  .fza-text{ position:absolute; top:288px; font-family:var(--font-mono); font-size:12px; color:#ddd; text-align:center; }
+  .fza-sub{ position:absolute; top:310px; font-family:var(--font-mono); font-size:10.5px; color:#999; text-align:center; }
+  .fza-btn{ position:absolute; top:342px; padding:8px 40px; border-radius:4px; border:1px solid rgba(255,255,255,.25); background:rgba(30,30,45,.9); color:#eee; font-family:var(--font-display); font-size:12px; cursor:pointer; }
+  .fza-btn:hover{ border-color:#fff; }
+  @media (prefers-reduced-motion:reduce){ .fza-item.left, .fza-item.right, .fza-ring::before, .fza-ring::after{ animation:none; } }
+
   .enchant-slot-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
   .enchant-slot-tab{ padding:4px 8px; border:1px solid var(--gold-deep); border-radius:4px; font-family:var(--font-mono); font-size:9.5px; cursor:pointer; color:var(--ink-dim); }
   .enchant-slot-tab.active{ background:rgba(240,211,138,.15); color:var(--gold-bright); border-color:var(--gold-bright); }
@@ -2709,11 +2788,19 @@
        de loot/Forja. Ver renderFusion()/getFusionGroups(). -->
   <div id="fusion-modal" class="glass ornate win">
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ ⚗️ Fusão de Equipamentos<span class="rule"></span><span class="win-close-x" data-close-win="fusion-modal">✕</span></div>
-    <div style="padding:0 14px 14px;">
-      <div id="fusion-body"></div>
+    <div class="fz-wrap">
+      <div class="fz-left">
+        <div class="fz-left-head"><span>Seus itens fundíveis</span><span class="fz-count" id="fz-count">0</span></div>
+        <div id="fz-list"></div>
+        <div class="fz-left-foot">Só aparecem equipamentos com 2 ou mais cópias iguais na Mochila. Selecione um item pra ver a fusão.</div>
+      </div>
+      <div class="fz-right" id="fz-right"></div>
     </div>
+    <div id="fz-msg"></div>
+    <div class="fz-res-bar" id="fz-res-bar"></div>
     <div class="win-resize"></div>
   </div>
+  <div id="fz-anim"><span class="fza-close" id="fza-close">✕</span><div class="fza-box" id="fza-box"></div></div>
 
   <!-- Modal de detalhe de item Mítica — reaberto pelo link deixado no chat
        Sistema (pedido do usuário, 26/09/2026), ver openItemShowcaseModal(). -->
@@ -7559,6 +7646,8 @@
       else if(msg.reason === 'cristais_insuficientes') logLoot(`⚠️ Cristal de Fusão insuficiente (precisa de ${msg.need}, você tem ${msg.have}).`);
       else if(msg.reason === 'raridade_maxima') logLoot('⚠️ Esse item já está na raridade máxima (Mítica) — não dá pra fundir mais.');
       else if(msg.reason) logLoot(`⚠️ Fusão falhou: ${msg.reason}`);
+      if(fusionPending){ fusionPending.ack = msg; finishFusionAnim(); }
+      if(!msg.ok){ const fm = document.getElementById('fz-msg'); if(fm){ fm.style.color = '#ff7a6a'; fm.textContent = ({itens_insuficientes:`Faltam cópias (precisa ${msg.need}, tem ${msg.have}).`, ouro_insuficiente:'Gold insuficiente.', cristais_insuficientes:`Cristal de Fusão insuficiente (precisa ${msg.need}, tem ${msg.have}).`, raridade_maxima:'Esse item já é Mítico.'})[msg.reason] || ('Fusão falhou: ' + msg.reason); } }
       renderFusionIfOpen(); renderInventoryIfOpen();
     }
     if(msg.forType === 'friend:add'){
@@ -9825,6 +9914,9 @@
     span.innerHTML = MATERIAL_ICON_SVG;
     img.replaceWith(span);
   }
+  // usados em onerror="..." inline — precisam estar no escopo global
+  window.handleEquipIconError = (img)=>handleEquipIconError(img);
+  window.handleLootIconError = (img)=>handleLootIconError(img);
   function handleEquipIconError(img){
     const span = document.createElement('span');
     span.className = 'item-icon';
@@ -12941,39 +13033,107 @@
   }
   const fusionModal = document.getElementById('fusion-modal');
   function renderFusionIfOpen(){ if(fusionModal.classList.contains('open')) renderFusion(); }
+  // 20/10/2026 — tela no estilo da Forja do Huntera (lista à esquerda, par
+  // Sacrifício » Resultado, recursos "precisa / tem") + animação de tela cheia.
+  let fusionSelectedId = null;
+  let fusionPending = null; // { group, startedAt, ack } enquanto a animação roda
+  const FUSION_ANIM_MIN_MS = 1700;
+  function fzIcon(it, cls){ return `<span class="${cls||'fz-icon'}">${resolveItemIconHtml(it)}${rarityFrameHtml(it.rarity)}</span>`; }
   function renderFusion(){
-    const body = document.getElementById('fusion-body');
     const crystalQty = bagQty(FUSION_CRYSTAL_ITEM_ID_CLIENT);
-    const groups = getFusionGroups();
-    const header = `<div class="italic-note" style="margin-bottom:10px;">Funda cópias EXATAS do mesmo equipamento + Gold + Cristal de Fusão pra subir a raridade dele — o resultado nasce +0 Encantamento / Grade 0 Infusão (o progresso dos itens consumidos se perde). Cristal de Fusão à venda na Loja do Ferreiro Bran. Você tem <b style="color:var(--gold-bright);">${crystalQty}</b> Cristal(is) de Fusão.</div>`;
-    if(!groups.length){
-      body.innerHTML = header + `<div class="italic-note">Nenhum equipamento fundível na Mochila agora — precisa de pelo menos 2 cópias EXATAS de um mesmo item (Comum ou raridade acima, menos Mítica) pra começar.</div>`;
+    const goldHave = (player.gold||0) + (player.bankGold||0);
+    const groups = getFusionGroups().filter(g=>g.owned >= 2);
+    document.getElementById('fz-count').textContent = groups.length;
+    document.getElementById('fz-res-bar').innerHTML = `
+      <div class="fz-res"><span>🪙</span><div><span class="lbl">Gold</span><b>${Math.round(goldHave).toLocaleString('pt-BR')}</b></div></div>
+      <div class="fz-res"><span>💠</span><div><span class="lbl">Cristal de Fusão</span><b>${crystalQty.toLocaleString('pt-BR')}</b></div></div>
+      <div class="fz-res"><span>⚗️</span><div><span class="lbl">Itens fundíveis</span><b>${groups.length}</b></div></div>`;
+    if(fusionSelectedId && !groups.some(g=>g.item.id===fusionSelectedId)) fusionSelectedId = null;
+    if(!fusionSelectedId && groups.length) fusionSelectedId = groups[0].item.id;
+    const list = document.getElementById('fz-list');
+    list.innerHTML = groups.length ? groups.map(g=>{
+      const it = g.item, color = RARITY_COLORS[it.rarity] || '#a99872';
+      return `<div class="fz-card${it.id===fusionSelectedId?' sel':''}" data-fz-id="${it.id}">${fzIcon(it)}<div style="min-width:0;">
+        <div class="fz-card-name" style="color:${color};">${escapeHtml((it.name||it.id).replace(/\s*\([^)]*\)\s*$/,''))}</div>
+        <div class="fz-card-sub">${CRAFT_RARITY_LABEL_CAP_CLIENT[it.rarity]||it.rarity}</div>
+        <div class="fz-card-copies">${g.owned} cópias disponíveis</div></div></div>`;
+    }).join('') : '<div class="fz-note" style="padding:6px 4px;">Nenhum item com cópias iguais na Mochila.</div>';
+    list.querySelectorAll('[data-fz-id]').forEach(el=> el.addEventListener('click', ()=>{ fusionSelectedId = el.dataset.fzId; document.getElementById('fz-msg').textContent=''; renderFusion(); }));
+    const right = document.getElementById('fz-right');
+    const g = groups.find(x=>x.item.id===fusionSelectedId);
+    if(!g){
+      right.innerHTML = `<div class="fz-empty"><div class="big">⚒️</div><b style="color:var(--ink);font-family:var(--font-display);font-size:13px;">Nenhum item disponível para fusão</b>Você precisa de cópias iguais de um equipamento (Comum a Lendária) na Mochila.<br>Cristal de Fusão à venda na Loja do Ferreiro Bran.</div>
+        <div class="fz-foot"><span>Nenhum item disponível para fusão</span><button class="fz-fuse-btn" disabled>Fundir</button></div>`;
       return;
     }
-    body.innerHTML = header + groups.map(g=>{
-      const it = g.item;
-      const color = RARITY_COLORS[it.rarity] || '#a99872';
-      const targetColor = RARITY_COLORS[g.targetRarity] || '#a99872';
-      const enoughItems = g.owned >= g.recipe.qty;
-      const enoughGold = (player.gold + player.bankGold) >= g.recipe.gold;
-      const enoughCrystals = crystalQty >= g.recipe.crystals;
-      const canFuse = enoughItems && enoughGold && enoughCrystals;
-      return `<div class="fusion-row" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(191,161,95,.15);">
-        <div class="item-slot" style="width:40px;height:40px;flex-shrink:0;">${resolveItemIconHtml(it)}${rarityFrameHtml(it.rarity)}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:600;color:${color};">${escapeHtml(it.name||it.id)}</div>
-          <div class="hint" style="font-size:10px;">→ <b style="color:${targetColor};">${CRAFT_RARITY_LABEL_CAP_CLIENT[g.targetRarity]}</b>
-            &nbsp;·&nbsp;Itens: <span style="color:${enoughItems?'var(--ok)':'var(--danger)'};">${g.owned}/${g.recipe.qty}</span>
-            &nbsp;·&nbsp;Gold: <span style="color:${enoughGold?'var(--ok)':'var(--danger)'};">${g.recipe.gold.toLocaleString('pt-BR')}</span>
-            &nbsp;·&nbsp;Cristais: <span style="color:${enoughCrystals?'var(--ok)':'var(--danger)'};">${crystalQty}/${g.recipe.crystals}</span></div>
+    const it = g.item, from = it.rarity || 'comum', to = g.targetRarity;
+    const target = { ...it, rarity: to, enchantLevel: 0, infusionGrade: 0, bonusStats: [] };
+    const enoughItems = g.owned >= g.recipe.qty, enoughGold = goldHave >= g.recipe.gold, enoughCrystals = crystalQty >= g.recipe.crystals;
+    const canFuse = enoughItems && enoughGold && enoughCrystals && !fusionPending;
+    const statsNow = formatStats(getItemTotalStatsClient({ ...it, enchantLevel:0, infusionGrade:0, bonusStats:[] }), it);
+    const statsNext = formatStats(getItemTotalStatsClient(target), target);
+    const baseName = escapeHtml((it.name||it.id).replace(/\s*\([^)]*\)\s*$/,''));
+    const missing = !enoughItems ? `Faltam ${g.recipe.qty - g.owned} cópia(s)` : (!enoughGold ? 'Gold insuficiente' : (!enoughCrystals ? 'Cristal de Fusão insuficiente' : 'Pronto para fundir'));
+    right.innerHTML = `
+      <div class="fz-title">${baseName}: <span style="color:${RARITY_COLORS[from]}">${CRAFT_RARITY_LABEL_CAP_CLIENT[from]}</span> → <span style="color:${RARITY_COLORS[to]}">${CRAFT_RARITY_LABEL_CAP_CLIENT[to]}</span></div>
+      <div class="fz-desc">${g.recipe.qty} cópias iguais se fundem em 1 item da raridade seguinte.</div>
+      <div class="fz-box">
+        <div class="fz-box-head"><span>Itens para fusão</span></div>
+        <div class="fz-pair">
+          <div class="fz-slot-col">Sacrifício<span class="fz-slot filled">${resolveItemIconHtml(it)}${rarityFrameHtml(from)}<span class="fz-badge" style="${enoughItems?'':'background:#c0533f;color:#fff;'}">${g.owned}/${g.recipe.qty}</span><span class="fz-x">×${g.recipe.qty}</span></span>${baseName}</div>
+          <span class="fz-arrow">»</span>
+          <div class="fz-slot-col">Prévia do resultado<span class="fz-slot filled">${resolveItemIconHtml(target)}${rarityFrameHtml(to)}</span><span style="color:${RARITY_COLORS[to]}">${CRAFT_RARITY_LABEL_CAP_CLIENT[to]}</span></div>
         </div>
-        <button type="button" class="treino-inline-btn" data-fuse-item="${it.id}" ${canFuse?'':'disabled'} style="flex-shrink:0;">Fundir</button>
-      </div>`;
-    }).join('');
-    body.querySelectorAll('[data-fuse-item]').forEach(btn=>{
-      btn.addEventListener('click', ()=> sendWS({ type:'item:fuse', itemId: btn.dataset.fuseItem }));
-    });
+        <div class="fz-preview">${statsNow ? `${statsNow} <span style="color:var(--ink-dim)">→</span> ` : ''}<b style="color:${RARITY_COLORS[to]}">${statsNext || CRAFT_RARITY_LABEL_CAP_CLIENT[to]}</b></div>
+      </div>
+      <div class="fz-box">
+        <div class="fz-box-head"><span>Recursos necessários</span><span style="text-transform:none;letter-spacing:0;">Necessário / disponível</span></div>
+        <div class="fz-res-row">
+          <div class="fz-res"><span>🪙</span><div><span class="lbl">Gold</span><b class="${enoughGold?'ok':'missing'}">${g.recipe.gold.toLocaleString('pt-BR')} / ${Math.round(goldHave).toLocaleString('pt-BR')}</b></div></div>
+          <div class="fz-res"><span>💠</span><div><span class="lbl">Cristal de Fusão</span><b class="${enoughCrystals?'ok':'missing'}">${g.recipe.crystals} / ${crystalQty}</b></div></div>
+          <div class="fz-res"><span>⚔️</span><div><span class="lbl">Cópias</span><b class="${enoughItems?'ok':'missing'}">${g.recipe.qty} / ${g.owned}</b></div></div>
+        </div>
+      </div>
+      <div class="fz-note">A fusão sempre dá certo. O item novo nasce +0 e Grade 0 — refino e infusão das cópias consumidas se perdem. Os atributos escolhidos na Profissão são mantidos.</div>
+      <div class="fz-foot"><span>${missing}</span><button class="fz-fuse-btn" id="fz-fuse-btn" ${canFuse?'':'disabled'}>Fundir</button></div>`;
+    const btn = document.getElementById('fz-fuse-btn');
+    if(btn) btn.addEventListener('click', ()=> startFusionAnim(g));
   }
+  // ---- animação de tela cheia ----
+  const fzAnim = document.getElementById('fz-anim'), fzaBox = document.getElementById('fza-box');
+  function startFusionAnim(g){
+    fusionPending = { group: g, startedAt: Date.now(), ack: null };
+    document.getElementById('fz-msg').textContent = '';
+    const it = g.item;
+    fzaBox.innerHTML = `<div class="fza-label">FORJA</div><div class="fza-title">Fundindo itens...</div><div class="fza-name">${escapeHtml(it.name||it.id)}</div>
+      <div class="fza-ring"></div>
+      <div class="fza-item left">${resolveItemIconHtml(it)}</div><div class="fza-item right">${resolveItemIconHtml(it)}</div>
+      <div class="fza-text">A forja está concentrando energia.</div>`;
+    fzAnim.classList.add('open');
+    sendWS({ type:'item:fuse', itemId: it.id });
+    renderFusion();
+  }
+  function finishFusionAnim(){
+    const p = fusionPending; if(!p || !p.ack) return;
+    const wait = Math.max(0, FUSION_ANIM_MIN_MS - (Date.now() - p.startedAt));
+    setTimeout(()=>{
+      const msg = p.ack; fusionPending = null;
+      if(!msg.ok){ fzAnim.classList.remove('open'); renderFusionIfOpen(); return; }
+      const item = msg.item, to = msg.targetRarity, from = p.group.item.rarity;
+      const mythic = !!msg.isMythic;
+      fzaBox.innerHTML = `<div class="fza-label">FORJA</div><div class="fza-title ${mythic?'mythic':'ok'}">${mythic?'Fusão MÍTICA!':'Fusão bem-sucedida!'}</div><div class="fza-name">${escapeHtml((item.name||'').replace(/\s*\([^)]*\)\s*$/,''))}</div>
+        <div class="fza-ring ok"></div><div class="fza-flash"></div>
+        <div class="fza-item center${mythic?' mythic':''}">${resolveItemIconHtml(item)}${rarityFrameHtml(to)}</div>
+        <div class="fza-badge" style="color:${RARITY_COLORS[to]};border-color:${RARITY_COLORS[to]}88;">${CRAFT_RARITY_LABEL_CAP_CLIENT[from]} → ${CRAFT_RARITY_LABEL_CAP_CLIENT[to]}</div>
+        <div class="fza-text">Sucesso! Seu ${escapeHtml((item.name||'').replace(/\s*\([^)]*\)\s*$/,''))} agora é ${CRAFT_RARITY_LABEL_CAP_CLIENT[to]}.</div>
+        <div class="fza-sub">${msg.itemsSpent||p.group.recipe.qty} cópias foram consumidas${msg.wentToTrash?' · Mochila cheia: o item foi pra Lixeira':''}.</div>
+        <button class="fza-btn" id="fza-continue">Continuar</button>`;
+      document.getElementById('fza-continue').addEventListener('click', ()=>{ fzAnim.classList.remove('open'); renderFusionIfOpen(); });
+      fusionSelectedId = item.id;
+      renderFusionIfOpen();
+    }, wait);
+  }
+  document.getElementById('fza-close').addEventListener('click', ()=>{ if(fusionPending && !fusionPending.ack) return; fzAnim.classList.remove('open'); });
   document.getElementById('btn-open-fusion').addEventListener('click', ()=>{ fusionModal.classList.toggle('open'); renderFusion(); });
 
   let professionSelectedTab = 'forja';
