@@ -32,7 +32,7 @@ def render(cx,cy,pz,rw=40,rh=26,out='r.png',walkov=False):
                             s=spr(arr[q]); 
                             img.paste(s,(dx,dy),s)
     if walkov:
-        d=ImageDraw.Draw(img,'RGBA')
+        ov=Image.new('RGBA',img.size,(0,0,0,0)); d=ImageDraw.Draw(ov)
         for y in range(y0,y0+rh):
             for x in range(x0,x0+rw):
                 w=walk.get((x,y,pz))
@@ -40,7 +40,8 @@ def render(cx,cy,pz,rw=40,rh=26,out='r.png',walkov=False):
                 c=(0,255,0,50) if w else (255,0,0,60)
                 if (x,y,pz) in changes: c=(255,255,0,120)
                 d.rectangle([(x-x0)*32,(y-y0)*32,(x-x0)*32+31,(y-y0)*32+31],fill=c)
-    img.save(out); return img
+        img.alpha_composite(ov)
+    img.convert('RGB').save(out); return img
 if __name__=='__main__':
     render(5132,5092,6,48,30,'/tmp/claude-0/s/map/rc_temple.png')
     render(5132,5092,6,48,30,'/tmp/claude-0/s/map/rc_temple_walk.png',True)
