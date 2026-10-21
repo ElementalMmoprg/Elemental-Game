@@ -3658,12 +3658,19 @@
   // mundo — como esta constante precisa existir ANTES de TILE_STEP no
   // arquivo, o valor já vem calculado (tile - origem) * 34 em vez de
   // chamar uma função.
-  const CITY_TILE_ORIGIN = { minX:988, minY:1008 };
-  const TEMPLE_SPAWN_TILE = { x:1044, y:1051 };
-  const TELEPORT_TILE = { x:1044, y:1048 };
-  const CITY_POSITION = { x:(TEMPLE_SPAWN_TILE.x-CITY_TILE_ORIGIN.minX)*34, y:(TEMPLE_SPAWN_TILE.y-CITY_TILE_ORIGIN.minY)*34 };
-  const TELEPORT_WORLD_POS = { x:(TELEPORT_TILE.x-CITY_TILE_ORIGIN.minX)*34, y:(TELEPORT_TILE.y-CITY_TILE_ORIGIN.minY)*34 };
-  const player = { x:CITY_POSITION.x, y:CITY_POSITION.y, hp:320, hpMax:320, mp:140, mpMax:140, gold:0, bankGold:0, xp:0, level:1 };
+  // 21/10/2026: Cidade Principal agora é RAVENCREST, recorte real do mapa do
+  // Ravendawn (ver RC / assets/city/ravencrest). Origem = canto do recorte.
+  const CITY_TILE_ORIGIN = { minX:5015, minY:5010 };
+  const TEMPLE_SPAWN_TILE = { x:5132, y:5092 }; // centro do templo (rosa dos ventos), andar 6
+  const TELEPORT_TILE = { x:5132, y:5103 };     // praça na saída sul do templo
+  const CITY_MAIN_Z = 6;
+  // Em Ravencrest 1 tile do mapa = 17 unidades de mundo (metade do SQM de
+  // caçada): assim o personagem fica na proporção certa da arte do Ravendawn
+  // (outfit 64px sobre tiles de 32px ≈ 2 tiles). Servidor usa o mesmo valor.
+  const CITY_TILE_STEP = 17;
+  const CITY_POSITION = { x:(TEMPLE_SPAWN_TILE.x-CITY_TILE_ORIGIN.minX)*CITY_TILE_STEP, y:(TEMPLE_SPAWN_TILE.y-CITY_TILE_ORIGIN.minY)*CITY_TILE_STEP };
+  const TELEPORT_WORLD_POS = { x:(TELEPORT_TILE.x-CITY_TILE_ORIGIN.minX)*CITY_TILE_STEP, y:(TELEPORT_TILE.y-CITY_TILE_ORIGIN.minY)*CITY_TILE_STEP };
+  const player = { x:CITY_POSITION.x, y:CITY_POSITION.y, z:CITY_MAIN_Z, hp:320, hpMax:320, mp:140, mpMax:140, gold:0, bankGold:0, xp:0, level:1 };
   // Ver applyHuntSnapshot: na Cidade o cliente é dono de x/y (WASD/clique);
   // este flag marca se já aceitamos ao menos 1 posição do servidor (spawn).
   let wasdPositionSynced = false;
@@ -5216,18 +5223,10 @@
   let CITY_ATLAS_MANIFEST = null;
   let CITY_BLOCKED = null; // Set "tx,ty" dos tiles bloqueados (pilares do templo etc.)
   (function loadCityTiles(){
-    fetch(URL_BASE + 'city/city_elemental.json').then(r=>r.json()).then(data=>{
-      const map = new Map();
-      const blocked = new Set();
-      data.tiles.forEach(t=>{
-        const key = t.x+','+t.y;
-        map.set(key, t);
-        if(t.b) blocked.add(key);
-      });
-      CITY_TILES = map;
-      CITY_BLOCKED = blocked;
-      return fetch(URL_BASE + 'tilesets/tibia_tileset_atlas_manifest.json');
-    }).then(r=>r.json()).then(manifest=>{
+    // 21/10/2026: a cidade antiga (city_elemental.json) saiu — a Cidade
+    // Principal agora é Ravencrest (ver RC abaixo). Este atlas continua sendo
+    // carregado porque os mapas de caça e as Torres usam ele.
+    fetch(URL_BASE + 'tilesets/tibia_tileset_atlas_manifest.json').then(r=>r.json()).then(manifest=>{
       CITY_ATLAS_MANIFEST = manifest;
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -5235,7 +5234,7 @@
       img.src = URL_BASE + 'tilesets/tibia_tileset_atlas.png';
     }).catch(()=>{ /* offline/404: fica no cenário procedural de sempre */ });
   })();
-  function cityTileToWorld(tx, ty){ return { x:(tx-CITY_TILE_ORIGIN.minX)*TILE_STEP, y:(ty-CITY_TILE_ORIGIN.minY)*TILE_STEP }; }
+  function cityTileToWorld(tx, ty){ return { x:(tx-CITY_TILE_ORIGIN.minX)*CITY_TILE_STEP, y:(ty-CITY_TILE_ORIGIN.minY)*CITY_TILE_STEP }; }
   function cityRectFor(spriteId){
     if(!CITY_ATLAS_MANIFEST) return null;
     return CITY_ATLAS_MANIFEST[spriteId] || CITY_ATLAS_MANIFEST[spriteId+'_v0'] || null;
@@ -5244,14 +5243,166 @@
   // usado tanto pra colisão do WASD quanto pra detectar "jogador em cima do
   // teleporte". Arredonda pro tile mais próximo do grid do town.otbm.
   function cityTileAtWorld(wx, wy){
-    const tx = Math.round(wx/TILE_STEP) + CITY_TILE_ORIGIN.minX;
-    const ty = Math.round(wy/TILE_STEP) + CITY_TILE_ORIGIN.minY;
+    const tx = Math.round(wx/CITY_TILE_STEP) + CITY_TILE_ORIGIN.minX;
+    const ty = Math.round(wy/CITY_TILE_STEP) + CITY_TILE_ORIGIN.minY;
     return { tx, ty, key: tx+','+ty };
   }
   function isCityWorldPosBlocked(wx, wy){
+    if(RC.meta && RC.walk[player.z]){ const t = cityTileAtWorld(wx,wy); return !rcWalkable(t.tx, t.ty, player.z) && !RC.changes.has(t.tx+','+t.ty+','+player.z); }
     if(!CITY_BLOCKED) return false; // sem dados ainda: não bloqueia nada (fallback seguro)
     return CITY_BLOCKED.has(cityTileAtWorld(wx,wy).key);
   }
+  /* =========================================================
+     CIDADE PRINCIPAL REAL — Ravencrest (21/10/2026)
+     Recorte REAL do mapa do Ravendawn (rd_project 1098.otbm, x 5015-5205,
+     y 5010-5235, andares 2..14), com os sprites do próprio Tibia.dat/spr.
+     Arquivos em assets/city/ravencrest/: city.json (meta, escadas/buracos,
+     spawn/teleporte/bonecos), floor_<z>.json (tiles de cada andar + grade de
+     andável em bits) e atlas_0/1.png (5042 sprites 32x32 usados).
+     - Cada tile tem 3 camadas: g (chão + borda), o (objetos: paredes,
+       árvores, móveis — ordenados por profundidade junto com os
+       personagens) e t (itens "por cima", ex.: topo de porta).
+     - Andares: igual ao Tibia — o andar de baixo aparece deslocado
+       (+1 tile por andar em x/y) e o de cima só aparece se o jogador não
+       estiver debaixo de teto.
+     - Escadas/rampas/alçapões/escadas de mão: tabela meta.changes
+       ([x,y,z, x2,y2,z2]) gerada com as regras de floorchange do TFS.
+     ========================================================= */
+  const RC = { meta:null, floors:{}, walk:{}, pages:[], changes:new Map(), loading:{}, lastTileKey:null, snapChecked:false };
+  const RC_BASE = 'city/ravencrest/';
+  function rcLoadFloor(z){
+    if(RC.floors[z] || RC.loading[z]) return;
+    RC.loading[z] = true;
+    fetch(URL_BASE + RC_BASE + 'floor_' + z + '.json').then(r=>r.json()).then(j=>{
+      const map = new Map();
+      for(const t of j.tiles) map.set(t[0], t);
+      const bin = atob(j.walk); const bits = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) bits[i] = bin.charCodeAt(i);
+      RC.walk[z] = bits; RC.floors[z] = map;
+    }).catch(()=>{ RC.loading[z] = false; });
+  }
+  (function rcLoad(){
+    fetch(URL_BASE + RC_BASE + 'city.json').then(r=>r.json()).then(meta=>{
+      RC.meta = meta;
+      meta.changes.forEach(c=> RC.changes.set(c[0]+','+c[1]+','+c[2], { x:c[3], y:c[4], z:c[5] }));
+      meta.atlas.pages.forEach((p,i)=>{ const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = ()=>{ RC.pages[i] = img; }; img.src = URL_BASE + RC_BASE + p; });
+      // andar principal e os de cima primeiro (são os que aparecem na tela), depois o resto
+      const order = meta.floors.slice().sort((a,b)=> (a<=7?0:1)-(b<=7?0:1) || Math.abs(a-meta.mainZ)-Math.abs(b-meta.mainZ));
+      order.forEach(z=> rcLoadFloor(z));
+    }).catch(()=>{ /* offline: sem cidade real, cai no piso de fallback */ });
+  })();
+  function rcReady(){ return !!(RC.meta && RC.pages[0] && RC.floors[player.z != null ? player.z : CITY_MAIN_Z]); }
+  function rcWalkable(tx, ty, z){
+    const m = RC.meta; if(!m) return true;
+    const bits = RC.walk[z]; if(!bits) return false;
+    const x = tx - m.x0, y = ty - m.y0;
+    if(x < 0 || y < 0 || x >= m.w || y >= m.h) return false;
+    const i = y*m.w + x;
+    return !!(bits[i>>3] & (1 << (i&7)));
+  }
+  function rcSprite(idx, dx, dy, size){
+    const pg = RC.pages[idx >> 12]; if(!pg) return;
+    const j = idx & 4095;
+    ctx.drawImage(pg, (j & 63)*32, (j >> 6)*32, 32, 32, dx, dy, size, size);
+  }
+  function rcDrawArr(arr, tlx, tly, k, size){
+    for(let q=0; q<arr.length; q+=3) rcSprite(arr[q], Math.round(tlx + arr[q+1]*k), Math.round(tly + arr[q+2]*k), size);
+  }
+  // Andares visíveis a partir do andar do jogador (ver regra do Tibia acima).
+  function rcVisibleFloors(pz){
+    const m = RC.meta, below = [], above = [];
+    const bottom = pz <= 7 ? 7 : pz;
+    for(let z=bottom; z>pz; z--) if(RC.floors[z]) below.push(z);
+    const pt = cityTileAtWorld(player.x, player.y);
+    for(let zu=pz-1; zu>=0; zu--){
+      const F = RC.floors[zu]; if(!F) { if(m.floors.includes(zu)) break; else continue; }
+      const d = pz - zu, x = pt.tx + d - m.x0, y = pt.ty + d - m.y0;
+      // debaixo de teto (tile do andar de cima cobrindo a posição do jogador): esconde dali pra cima
+      if(F.has(y*m.w + x) || F.has(y*m.w + x - 1) || F.has((y-1)*m.w + x)) break;
+      above.push(zu);
+    }
+    return { below, above };
+  }
+  let rcObjectsThisFrame = null, rcUpperThisFrame = null;
+  function rcDrawCity(toScreen){
+    rcObjectsThisFrame = null; rcUpperThisFrame = null;
+    if(!rcReady()) return false;
+    const m = RC.meta, pz = player.z != null ? player.z : CITY_MAIN_Z;
+    const prevSmooth = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+    const TS = CITY_TILE_STEP, tilePx = TS*WORLD_SCALE, k = tilePx / 32, size = Math.ceil(tilePx) + 1, half = tilePx/2;
+    const tl = screenToWorld(0, 0), br = screenToWorld(viewW, viewH);
+    const vis = rcVisibleFloors(pz);
+    // desenha um andar inteiro (todas as camadas) — usado pros andares de baixo e de cima
+    const drawFloorAll = (z)=>{
+      const F = RC.floors[z]; if(!F) return;
+      const d = z - pz;
+      const tx0 = Math.floor(tl.x/TS) + m.x0 - d - 1, tx1 = Math.ceil(br.x/TS) + m.x0 - d + 3;
+      const ty0 = Math.floor(tl.y/TS) + m.y0 - d - 1, ty1 = Math.ceil(br.y/TS) + m.y0 - d + 3;
+      for(let ty=ty0; ty<=ty1; ty++){
+        if(ty < m.y0 || ty >= m.y0+m.h) continue;
+        for(let tx=tx0; tx<=tx1; tx++){
+          if(tx < m.x0 || tx >= m.x0+m.w) continue;
+          const t = F.get((ty-m.y0)*m.w + (tx-m.x0)); if(!t) continue;
+          const s = toScreen((tx-m.x0+d)*TS, (ty-m.y0+d)*TS);
+          const tlx = s.x - half, tly = s.y - half;
+          rcDrawArr(t[1], tlx, tly, k, size); rcDrawArr(t[2], tlx, tly, k, size); rcDrawArr(t[3], tlx, tly, k, size);
+        }
+      }
+    };
+    vis.below.forEach(drawFloorAll);
+    // andar do jogador: chão agora; objetos entram no drawList (profundidade com os personagens)
+    const F = RC.floors[pz];
+    const objs = [];
+    if(F){
+      const tx0 = Math.floor(tl.x/TS) + m.x0 - 1, tx1 = Math.ceil(br.x/TS) + m.x0 + 3;
+      const ty0 = Math.floor(tl.y/TS) + m.y0 - 1, ty1 = Math.ceil(br.y/TS) + m.y0 + 3;
+      for(let ty=ty0; ty<=ty1; ty++){
+        if(ty < m.y0 || ty >= m.y0+m.h) continue;
+        for(let tx=tx0; tx<=tx1; tx++){
+          if(tx < m.x0 || tx >= m.x0+m.w) continue;
+          const t = F.get((ty-m.y0)*m.w + (tx-m.x0)); if(!t) continue;
+          const wx = (tx-m.x0)*TS, wy = (ty-m.y0)*TS;
+          const s = toScreen(wx, wy);
+          rcDrawArr(t[1], s.x - half, s.y - half, k, size);
+          if(t[2].length) objs.push({ baseCart:{ x:wx, y:wy - 1 }, draw:()=>{ const s2 = toScreen(wx, wy); rcDrawArr(t[2], s2.x - half, s2.y - half, k, size); } });
+          if(t[3].length) objs.push({ baseCart:{ x:wx, y:wy + TS*0.5 }, draw:()=>{ const s2 = toScreen(wx, wy); rcDrawArr(t[3], s2.x - half, s2.y - half, k, size); } });
+        }
+      }
+    }
+    ctx.imageSmoothingEnabled = prevSmooth;
+    rcObjectsThisFrame = objs;
+    if(vis.above.length) rcUpperThisFrame = ()=>{
+      const ps = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+      vis.above.forEach(drawFloorAll);
+      ctx.imageSmoothingEnabled = ps;
+    };
+    return true;
+  }
+  // Depois de mover (WASD/clique): troca de andar ao pisar em escada/rampa/
+  // buraco/escada de mão, e corrige posição salva que caiu fora do mapa novo.
+  function rcAfterMove(){
+    if(location !== 'city' || !rcReady()) return;
+    const m = RC.meta;
+    if(player.z == null) player.z = m.mainZ;
+    const pt = cityTileAtWorld(player.x, player.y);
+    const key = pt.tx + ',' + pt.ty + ',' + player.z;
+    if(!RC.snapChecked){
+      RC.snapChecked = true;
+      if(!rcWalkable(pt.tx, pt.ty, player.z) && !RC.changes.has(key)) rcGoTo(m.spawn.x, m.spawn.y, m.spawn.z);
+      RC.lastTileKey = cityTileAtWorld(player.x, player.y).tx + ',' + cityTileAtWorld(player.x, player.y).ty + ',' + player.z;
+      return;
+    }
+    if(key === RC.lastTileKey) return;
+    RC.lastTileKey = key;
+    const ch = RC.changes.get(key);
+    if(ch){ rcLoadFloor(ch.z); rcGoTo(ch.x, ch.y, ch.z); cancelAutoWalk(); }
+  }
+  function rcGoTo(tx, ty, tz){
+    const w = cityTileToWorld(tx, ty);
+    player.x = w.x; player.y = w.y; player.z = tz;
+    RC.lastTileKey = tx + ',' + ty + ',' + tz;
+  }
+
   // ---- MAPA TEMÁTICO DA CAÇADA (20/10/2026, ver huntMaps.js no servidor) ----
   // O servidor gera o mapa (chão + decoração + bloqueio) de cada caçada e
   // manda 1x ('hunt:map'). Desenhamos com o mesmo atlas da Cidade.
@@ -6116,8 +6267,8 @@
     // eles (chão + decoração real do mapa) em vez do piso xadrez genérico.
     // Sem eles ainda (fetch em andamento ou falhou), cai no piso xadrez de
     // sempre — mesmo fallback de antes, nada quebra.
-    const cityTilesDrawn = location==='city' && !isTowerArena && drawCityTiles(toScreen);
-    if(cityTilesDrawn){
+    const cityTilesDrawn = location==='city' && !isTowerArena && (rcDrawCity(toScreen) || drawCityTiles(toScreen));
+    if(cityTilesDrawn && player.z === CITY_MAIN_Z){
       // portal animado no Teleporte (caçadas, Torres e Boss partem daqui)
       const fi = Math.floor(now()/60) % 20, sp = effectFrame('rd_2548', fi);
       if(sp.loaded){ const s = toScreen(TELEPORT_WORLD_POS.x, TELEPORT_WORLD_POS.y), box = TILE_SCREEN_PX*1.7; ctx.globalAlpha = .9; ctx.drawImage(sp.img, s.x-box/2, s.y-box/2, box, box); ctx.globalAlpha = 1; }
@@ -6179,6 +6330,7 @@
     }
 
     const drawList = [];
+    if(location==='city' && rcObjectsThisFrame) rcObjectsThisFrame.forEach(o=> drawList.push(o));
     // Com os tiles reais desenhados (pilares/tochas do templo já vêm deles,
     // ver drawCityTiles), o cenário procedural antigo (muro/prédio/fonte de
     // caixinha colorida) ficaria por cima do mapa de verdade sem fazer
@@ -6360,7 +6512,7 @@
     // — sprite completo agora, igual ao jogador local: 'positions' manda o
     // gender/hairId/outfit de cada um, então todo mundo é desenhado por camadas.
     remotePlayers.forEach((rp, uname)=>{
-      const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
+      const sameBucket = location==='city' ? (rp.location==='city' && (rp.z == null || rp.z === player.z)) : (party && party.members.includes(uname));
       if(!sameBucket) return;
       const isPartyMember = party && party.members.includes(uname);
       // companheiro de grupo OFFLINE (fechou a tela, mas a caçada dele continua
@@ -6414,6 +6566,7 @@
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     drawList.forEach(item=> item.draw());
+    if(location==='city' && rcUpperThisFrame) rcUpperThisFrame(); // andares de cima (telhados) por cima de tudo
 
     // Spell FX (Area Effects + Missiles, ver SpellFxManager acima) — desenha
     // por CIMA de todo mundo/chão que acabou de sair (pedido explícito do
@@ -6547,7 +6700,7 @@
      A posição resultante é enviada ao servidor pelo mesmo intervalo de
      400ms que já existia (connectToServer), então nada muda no protocolo.
      ========================================================= */
-  const WASD_SPEED_PX_S = 240;
+  const WASD_SPEED_PX_S = 115; // Ravencrest: 1 tile = 17 de mundo -> ~6-7 tiles/s, ritmo de Tibia
   const heldKeys = {};
   window.addEventListener('keydown', e=>{
     if(document.activeElement && document.activeElement.id === 'chat-input') return;
@@ -6577,33 +6730,51 @@
   // automático (até o teleporte, boneco de treino ou clique) agora segue um
   // caminho A* pelos tiles livres em vez de ir reto atravessando parede.
   function cityFindPath(fromW, toW){
-    if(location !== 'city' || !CITY_BLOCKED || !CITY_TILES) return null;
+    const useRC = !!(RC.meta && RC.walk[player.z]);
+    if(location !== 'city' || (!useRC && (!CITY_BLOCKED || !CITY_TILES))) return null;
     const a = cityTileAtWorld(fromW.x, fromW.y), b = cityTileAtWorld(toW.x, toW.y);
-    const free = (x,y)=> CITY_TILES.has(x+','+y) && !CITY_BLOCKED.has(x+','+y);
-    const goalBlocked = !free(b.tx, b.ty);
+    const free = useRC ? ((x,y)=> rcWalkable(x, y, player.z) && !RC.changes.has(x+','+y+','+player.z)) : ((x,y)=> CITY_TILES.has(x+','+y) && !CITY_BLOCKED.has(x+','+y));
+    const goalIsStair = useRC && RC.changes.has(b.tx+','+b.ty+','+player.z); // clicou numa escada: anda até ela e sobe/desce
+    const goalBlocked = !free(b.tx, b.ty) && !goalIsStair;
     const isGoal = (x,y)=> goalBlocked ? (Math.max(Math.abs(x-b.tx),Math.abs(y-b.ty))<=1) : (x===b.tx && y===b.ty);
     const key = (x,y)=> x+','+y, h = (x,y)=> Math.max(Math.abs(x-b.tx),Math.abs(y-b.ty));
-    const open = [[h(a.tx,a.ty),0,a.tx,a.ty]], g = new Map([[key(a.tx,a.ty),0]]), came = new Map();
+    // heap binário (Ravencrest é grande: caminhos de 100+ tiles)
+    const open = [], g = new Map([[key(a.tx,a.ty),0]]), came = new Map();
+    const hpush = (n)=>{ open.push(n); let i=open.length-1; while(i>0){ const pi=(i-1)>>1; if(open[pi][0]<=open[i][0]) break; [open[pi],open[i]]=[open[i],open[pi]]; i=pi; } };
+    const hpop = ()=>{ const top=open[0], last=open.pop(); if(open.length){ open[0]=last; let i=0; for(;;){ const l=2*i+1, r=l+1; let mm=i; if(l<open.length&&open[l][0]<open[mm][0]) mm=l; if(r<open.length&&open[r][0]<open[mm][0]) mm=r; if(mm===i) break; [open[mm],open[i]]=[open[i],open[mm]]; i=mm; } } return top; };
+    hpush([h(a.tx,a.ty),0,a.tx,a.ty]);
     let found = null, n = 0;
-    while(open.length && n++ < 6000){
-      let bi = 0; for(let i=1;i<open.length;i++) if(open[i][0]<open[bi][0]) bi=i;
-      const [,gc,x,y] = open.splice(bi,1)[0];
+    while(open.length && n++ < 40000){
+      const [,gc,x,y] = hpop();
+      if(gc > (g.get(key(x,y)) ?? Infinity)) continue;
       if(isGoal(x,y)){ found=[x,y]; break; }
       for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
         const nx=x+dx, ny=y+dy;
-        if(!free(nx,ny)) continue;
+        if(!free(nx,ny) && !(goalIsStair && nx===b.tx && ny===b.ty)) continue;
         if(dx && dy && (!free(x+dx,y) || !free(x,y+dy))) continue;
         const ng = gc + (dx&&dy?1.41:1), k = key(nx,ny);
-        if(ng < (g.has(k)?g.get(k):Infinity)){ g.set(k,ng); came.set(k,[x,y]); open.push([ng+h(nx,ny),ng,nx,ny]); }
+        if(ng < (g.has(k)?g.get(k):Infinity)){ g.set(k,ng); came.set(k,[x,y]); hpush([ng+h(nx,ny),ng,nx,ny]); }
       }
     }
     if(!found) return null;
     const path = []; let cur = found;
     while(cur && !(cur[0]===a.tx && cur[1]===a.ty)){ path.unshift(cityTileToWorld(cur[0],cur[1])); cur = came.get(key(cur[0],cur[1])); }
-    if(!goalBlocked) path[path.length-1] = { x: toW.x, y: toW.y };
+    if(!goalBlocked && !goalIsStair) path[path.length-1] = { x: toW.x, y: toW.y };
     return path;
   }
-  function startAutoWalkToPos(target, onArrive, opts){ autoWalk = { target, onArrive, interruptible: !!(opts && opts.interruptible), path: cityFindPath(player, target) }; }
+  function startAutoWalkToPos(target, onArrive, opts){
+    const interruptible = !!(opts && opts.interruptible);
+    const path = cityFindPath(player, target);
+    // Ravencrest: sem caminho (água, parede, outro andar) não anda reto
+    // atravessando tudo. Clique: ignora. Ida obrigatória (teleporte/boneco):
+    // leva direto pro andar principal no destino.
+    if(!path && RC.meta && location === 'city'){
+      if(interruptible) return;
+      player.z = CITY_MAIN_Z; player.x = target.x; player.y = target.y; RC.lastTileKey = null;
+      autoWalk = null; if(onArrive) onArrive(); return;
+    }
+    autoWalk = { target, onArrive, interruptible, path };
+  }
   function nearestTrainingDummy(){
     if(!trainingDummies.length) return null;
     let best = trainingDummies[0], bestD = Infinity;
@@ -6673,6 +6844,7 @@
     lastGold = player.gold; lastXp = player.xp; lastHp = player.hp;
     updateWasdMovement(dt);
     updateAutoWalk(dt);
+    rcAfterMove();
     spawnAuraParticles(dt);
     updateStatusLine();
     draw();
@@ -6975,6 +7147,8 @@
     const prevLocation = location;
     if(!wasdPositionSynced || msg.location !== prevLocation || msg.location !== 'city'){
       player.x = msg.x; player.y = msg.y;
+      player.z = (msg.cityZ != null) ? msg.cityZ : CITY_MAIN_Z;
+      if(typeof RC !== 'undefined'){ RC.snapChecked = false; RC.lastTileKey = null; }
     }
     wasdPositionSynced = true;
     // Se a caçada já começou de verdade (location virou 'dungeon') por
@@ -7378,7 +7552,7 @@
     // 'move' quando location !== 'city'.
     setInterval(()=>{
       if(ws.readyState !== WebSocket.OPEN) return;
-      ws.send(JSON.stringify({ type:'move', x:player.x, y:player.y }));
+      ws.send(JSON.stringify({ type:'move', x:player.x, y:player.y, z:player.z }));
     }, 400);
   }
 
@@ -14674,7 +14848,7 @@
     // mostra e o que os campos de convite/adicionar já esperam receber (ver
     // resolveOnlineUsername no servidor, que agora casa por nick primeiro).
     for(const [uname, rp] of remotePlayers){
-      const sameBucket = location==='city' ? rp.location==='city' : (party && party.members.includes(uname));
+      const sameBucket = location==='city' ? (rp.location==='city' && (rp.z == null || rp.z === player.z)) : (party && party.members.includes(uname));
       if(!sameBucket) continue;
       const s = worldToScreen(rp.x, rp.y);
       if(Math.hypot(clickX-s.x, clickY-(s.y-18*SPRITE_SCALE)) < 16*SPRITE_SCALE) return rp.nick || uname;
