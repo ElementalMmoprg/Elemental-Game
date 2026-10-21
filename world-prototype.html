@@ -460,8 +460,8 @@
   #hunts-right{ width:220px; border-left:1px solid rgba(191,161,95,.2); padding:12px; overflow-y:auto; flex-shrink:0; }
   .loot-item{ display:flex; align-items:center; gap:8px; padding:6px 4px; font-family:var(--font-mono); font-size:11px; border-bottom:1px dashed rgba(191,161,95,.15); } .loot-item-icon{ width:22px; height:22px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; } span.loot-item-icon{ display:flex; align-items:center; justify-content:center; } span.loot-item-icon svg{ width:100%; height:100%; display:block; }
   .loot-item input{ accent-color:var(--gold); }
-  .loot-item .rarity-comum{ color:var(--ink-dim); } .loot-item .rarity-incomum{ color:var(--ok); }
-  .loot-item .rarity-rara{ color:var(--mp-a); } .loot-item .rarity-épica{ color:#b98af0; } .loot-item .rarity-lendária{ color:var(--gold-bright); }
+  .rarity-comum{ color:#ffffff; } .rarity-incomum{ color:#3ecf4a; } .rarity-rara{ color:#3d8bff; } .rarity-épica{ color:#a855f7; } .rarity-lendária{ color:#f5b800; } .rarity-mítica{ color:#ff2b2b; }
+  
   .hd-monster-status{ font-family:var(--font-mono); font-size:9px; margin-top:4px; }
   .hd-monster-status.killed{ color:var(--ok); } .hd-monster-status.not-killed{ color:var(--ink-dim); }
   .resist-grid{ display:flex; flex-direction:column; gap:3px; margin-top:6px; text-align:left; }
@@ -833,11 +833,7 @@
   .analyzer-drop-row .value{ color:var(--gold-bright); font-size:10.5px; white-space:nowrap; }
   /* Cor por raridade -- as regras existentes (linha ~407) só valem dentro de
      .loot-item, então repetidas aqui escopadas pro drop-row (mesmas cores). */
-  .analyzer-drop-row .rarity-comum{ color:var(--ink-dim); }
-  .analyzer-drop-row .rarity-incomum{ color:var(--ok); }
-  .analyzer-drop-row .rarity-rara{ color:var(--mp-a); }
-  .analyzer-drop-row .rarity-épica{ color:#b98af0; }
-  .analyzer-drop-row .rarity-lendária{ color:var(--gold-bright); }
+  
   .analyzer-footnote{ margin-top:8px; padding-top:6px; border-top:1px dashed rgba(191,161,95,.15); font-size:9.5px; color:var(--ink-dim); line-height:1.4; }
 
   #attrs-panel{ top:60px; right:420px; width:230px; display:none; z-index:6; }
@@ -1677,6 +1673,48 @@
      usadas; o layout foi montado só com o que existe de verdade. */
   #market-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:620px; max-width:96vw; height:560px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
   #market-modal.open{ display:flex; }
+  /* LEILÃO (20/10/2026, estilo Huntera) */
+  #market-modal{ width:860px; height:600px; }
+  .auc-tabs{ display:flex; gap:6px; padding:8px 14px 6px; }
+  .auc-tab{ flex:1; text-align:center; padding:7px; border:1px solid var(--gold-deep); border-radius:6px; font-family:var(--font-display); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; background:rgba(0,0,0,.25); }
+  .auc-tab.active{ color:var(--gold-bright); border-color:var(--gold-bright); background:rgba(240,211,138,.12); }
+  .auc-wrap{ flex:1; display:flex; gap:10px; min-height:0; width:100%; }
+  .auc-left{ flex:1.35; display:flex; flex-direction:column; min-height:0; }
+  .auc-right{ flex:1; display:flex; flex-direction:column; min-height:0; border:1px solid rgba(191,161,95,.25); border-radius:8px; background:rgba(0,0,0,.25); padding:10px; }
+  .auc-filters{ display:flex; gap:6px; margin-bottom:6px; }
+  .auc-filters input, .auc-filters select, .auc-form input{ background:rgba(0,0,0,.45); border:1px solid var(--gold-deep); border-radius:5px; color:var(--ink); font-family:var(--font-mono); font-size:10.5px; padding:5px 7px; }
+  .auc-filters input{ flex:1; }
+  .auc-list{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:3px; padding-right:2px; }
+  .auc-row{ display:grid; grid-template-columns:36px 1fr 46px 92px; align-items:center; gap:8px; padding:4px 6px; border:1px solid rgba(191,161,95,.12); border-radius:6px; background:rgba(0,0,0,.28); cursor:pointer; font-family:var(--font-mono); font-size:10.5px; }
+  .auc-row:hover{ border-color:var(--gold-deep); background:rgba(240,211,138,.06); }
+  .auc-row.sel{ border-color:var(--gold-bright); background:rgba(240,211,138,.12); }
+  .auc-row .ic{ width:34px; height:34px; position:relative; display:flex; align-items:center; justify-content:center; }
+  .auc-row .ic .rarity-frame{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .auc-row .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .auc-row .nm small{ display:block; color:var(--ink-dim); font-size:9px; }
+  .auc-row .q{ text-align:center; color:var(--ink-dim); }
+  .auc-row .pr{ text-align:right; color:var(--gold-bright); }
+  .auc-head{ display:grid; grid-template-columns:36px 1fr 46px 92px; gap:8px; padding:0 6px 4px; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); text-transform:uppercase; }
+  .auc-detail-ic{ width:64px; height:64px; position:relative; display:flex; align-items:center; justify-content:center; margin:0 auto 6px; }
+  .auc-detail-ic .rarity-frame{ position:absolute; inset:0; width:100%; height:100%; }
+  .auc-detail-ic img.item-icon, .auc-detail-ic .item-icon{ width:44px !important; height:44px !important; }
+  .auc-detail-nm{ text-align:center; font-family:var(--font-display); font-size:14px; margin-bottom:2px; }
+  .auc-detail-sub{ text-align:center; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin-bottom:8px; }
+  .auc-detail-stats{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink); background:rgba(0,0,0,.3); border-radius:6px; padding:7px 9px; margin-bottom:8px; line-height:1.55; }
+  .auc-detail-stats .hint{ display:block; }
+  .auc-line{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); margin:3px 0; }
+  .auc-line b{ color:var(--gold-bright); }
+  .auc-line b.bad{ color:#ff5a5a; }
+  .auc-buy{ margin-top:auto; width:100%; padding:10px; border-radius:7px; border:1px solid #6fbf5a; background:linear-gradient(180deg,#3d7a2e,#26511c); color:#eaffdf; font-family:var(--font-display); font-size:13px; letter-spacing:.05em; cursor:pointer; }
+  .auc-buy:disabled{ filter:grayscale(.8) brightness(.7); cursor:not-allowed; }
+  .auc-buy.sell{ border-color:var(--gold-bright); background:linear-gradient(180deg,#8a6a2a,#5a4318); color:#fff3d6; }
+  .auc-qty{ display:flex; align-items:center; gap:6px; justify-content:center; margin:6px 0; }
+  .auc-qty button{ width:26px; height:26px; border-radius:5px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.4); color:var(--gold-bright); cursor:pointer; }
+  .auc-qty input{ width:70px; text-align:center; }
+  .auc-form label{ display:block; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin:6px 0 3px; }
+  .auc-form input{ width:100%; box-sizing:border-box; }
+  .auc-empty{ text-align:center; color:var(--ink-dim); font-family:var(--font-mono); font-size:10.5px; padding:20px 6px; }
+  .auc-cancel{ font-family:var(--font-mono); font-size:9.5px; padding:4px 8px; border:1px solid var(--danger); border-radius:5px; background:rgba(0,0,0,.3); color:var(--danger); cursor:pointer; }
   #market-body{ flex:1; display:flex; gap:10px; padding:0 14px 14px; min-height:0; }
   #market-item-list{
     width:170px; flex-shrink:0; overflow-y:auto; border-radius:6px; padding:6px;
@@ -2457,7 +2495,7 @@
       <div class="tb-icon tb-hidden" id="btn-open-fusion" title="Fusão de Equipamentos">⚗️</div>
       <div class="tb-icon" id="btn-open-pets" title="Pets"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/pets.png" alt=""></div>
       <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
+      <div class="tb-icon tb-hidden" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
       <div class="tb-icon" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/analyzer.png" alt=""></div>
       <div class="tb-icon" id="btn-open-wiki" title="Wiki (itens e bestiário)">📖</div>
       <!-- Item 11 da lista de tarefas (2026-09-20): antes eram 2 ícones soltos
@@ -2515,6 +2553,7 @@
     <div class="analyzer-tabs win-drag">
       <div class="analyzer-tab active" data-atab="geral">Geral</div>
       <div class="analyzer-tab" data-atab="suprimentos">Suprimentos</div>
+      <div class="analyzer-tab" data-atab="dps">Dano / DPS</div>
       <span class="analyzer-reset-btn" id="analyzer-reset-btn" title="Reiniciar contadores da sessão">⟳</span>
       <span class="win-close-x" style="margin-left:auto;align-self:center;" data-close-win="analyzer-panel">✕</span>
     </div>
@@ -2776,19 +2815,9 @@
        Troca direta). "Mercado completo (compra e venda)" escolhido pelo
        usuário — ver huntEngine.js seção MERCADO pro desenho completo. -->
   <div id="market-modal" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 📦 Mercado<span class="rule"></span><span class="win-close-x" data-close-win="market-modal">✕</span></div>
-    <div id="market-body">
-      <div id="market-item-list"></div>
-      <div id="market-right">
-        <div class="market-right-header"><span id="market-selected-name">Selecione um item</span><span id="market-my-gold"></span></div>
-        <div class="market-tabs">
-          <div class="market-tab active" data-market-tab="book">Livro de Ofertas</div>
-          <div class="market-tab" data-market-tab="my">Minhas Ofertas</div>
-        </div>
-        <div id="market-offer-list"></div>
-        <div id="market-form-wrap"></div>
-      </div>
-    </div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🔨 Leilão<span class="rule"></span><span class="win-close-x" data-close-win="market-modal">✕</span></div>
+    <div class="auc-tabs" id="auc-tabs"></div>
+    <div id="market-body"></div>
     <div class="win-resize"></div>
   </div>
 
@@ -3721,6 +3750,7 @@
   let rankTop = [], rankMyPosition = null; // preenchidos sob demanda por 'rank:get' (ver renderRank)
   let pets = { owned:[], active:null, pityCounter:0 };
   let battlePass = { xp:0, tier:0, claimedFree:[], claimedPremium:[] };
+  let myDps = null; // Analisador de DPS (solo/grupo) -- ver myDps em serializeHuntSnapshot
   let partyDps = null; // [{username, nick, total, dps, shareEnabled}] — só existe em grupo, ver serializeHuntSnapshot
   let dpsActiveTab = 'total'; // 'total' | 'dps' — alternado pelas setas ‹ › do painel
   let friends = []; // [{username, online}]
@@ -3888,16 +3918,16 @@
       if(!it) return m;
       const idx = chatLinkStore.push(it) - 1;
       if(chatLinkStore.length > 400) chatLinkStore[chatLinkStore.length - 401] = null;
-      const color = RARITY_COLORS[it.rarity] || '#a99872';
+      const color = RARITY_COLORS[it.rarity] || '#ffffff';
       return `<span class="chat-item-link" data-chat-link="${idx}" style="color:${color}">[${escapeHtml(it.name || it.id || 'Item')}${it.enchantLevel ? ' +' + it.enchantLevel : ''}]</span>`;
     });
   }
   function itemLinkTooltipHtml(it){
     if(it.slot && !it.catalogOnly) return equipTooltipHtml(it);
-    const color = RARITY_COLORS[it.rarity] || '#a99872';
+    const color = RARITY_COLORS[it.rarity] || '#ffffff';
     const info = ITEM_INFO[it.id];
     const desc = it.description || (info && info.desc) || '';
-    return `<b style="color:${color}">${escapeHtml(it.name || it.id || 'Item')}</b><span class="tt-rarity" style="color:${color}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>${it.qty>1?` · x${it.qty}`:''}${desc ? `<span class="hint" style="font-style:italic;">${escapeHtml(desc)}</span>` : ''}${it.catalogOnly && it.slot ? '<span class="hint">Item da Wiki/Loja — os status variam por raridade</span>' : ''}`;
+    return `<b style="color:${color}">${escapeHtml(it.name || it.id || 'Item')}</b><span class="tt-rarity" style="color:${color}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>${it.qty>1?` · x${it.qty}`:''}${desc ? `<span class="hint" style="font-style:italic;color:${color};">${escapeHtml(desc)}</span>` : ''}${it.catalogOnly && it.slot ? '<span class="hint">Item da Wiki/Loja — os status variam por raridade</span>' : ''}`;
   }
   chatMsgEl.addEventListener('mouseover', e=>{
     const a = e.target.closest('[data-chat-link]'); if(!a) return;
@@ -5222,6 +5252,47 @@
     if(!CITY_BLOCKED) return false; // sem dados ainda: não bloqueia nada (fallback seguro)
     return CITY_BLOCKED.has(cityTileAtWorld(wx,wy).key);
   }
+  // ---- MAPA TEMÁTICO DA CAÇADA (20/10/2026, ver huntMaps.js no servidor) ----
+  // O servidor gera o mapa (chão + decoração + bloqueio) de cada caçada e
+  // manda 1x ('hunt:map'). Desenhamos com o mesmo atlas da Cidade.
+  const HUNT_MAPS = {};
+  let huntMapDecorThisFrame = null;
+  let huntMapRequestedAt = 0, huntMapRequestedId = null;
+  function currentHuntMap(){
+    if(!activeHunt.running || activeHunt.isTower || !activeHunt.huntId) return null;
+    const m = HUNT_MAPS[activeHunt.huntId];
+    if(!m && (huntMapRequestedId !== activeHunt.huntId || Date.now() - huntMapRequestedAt > 5000)){
+      huntMapRequestedId = activeHunt.huntId; huntMapRequestedAt = Date.now();
+      sendWS({ type:'hunt:getMap' });
+    }
+    return m || null;
+  }
+  function drawAtlasSpriteAtTile(spriteId, sx, sy){
+    const r = cityRectFor(spriteId);
+    if(!r) return;
+    const half = TILE_SCREEN_PX/2;
+    const dw = r.w * (TILE_SCREEN_PX/32), dh = r.h * (TILE_SCREEN_PX/32);
+    ctx.drawImage(CITY_ATLAS_IMG, r.x, r.y, r.w, r.h, sx-half-(dw-TILE_SCREEN_PX), sy-half-(dh-TILE_SCREEN_PX), dw, dh);
+  }
+  // Desenha o chão visível; devolve a lista de decorações visíveis (pra
+  // entrar no drawList com ordenação por profundidade junto dos personagens).
+  function drawHuntMapGround(map, toScreen, footOff){
+    if(!map || !CITY_ATLAS_IMG || !CITY_ATLAS_MANIFEST) return null;
+    const margin = 3;
+    const tl = screenToWorld(0, 0), br = screenToWorld(viewW, viewH);
+    const tx0 = Math.max(map.x0, Math.floor(tl.x/TILE_STEP) - margin), tx1 = Math.min(map.x0+map.w-1, Math.ceil(br.x/TILE_STEP) + margin);
+    const ty0 = Math.max(map.y0, Math.floor(tl.y/TILE_STEP) - margin), ty1 = Math.min(map.y0+map.h-1, Math.ceil(br.y/TILE_STEP) + margin + 2);
+    const decor = [];
+    for(let ty=ty0; ty<=ty1; ty++){
+      for(let tx=tx0; tx<=tx1; tx++){
+        const i = (ty-map.y0)*map.w + (tx-map.x0);
+        const s = toScreen(tx*TILE_STEP, ty*TILE_STEP - footOff);
+        drawAtlasSpriteAtTile(map.ground[i], s.x, s.y);
+        if(map.decor[i]) decor.push({ id: map.decor[i], tx, ty, solid: map.block[i] === '1' });
+      }
+    }
+    return decor;
+  }
   function drawCityTiles(toScreen){
     if(!CITY_TILES || !CITY_ATLAS_IMG || !CITY_ATLAS_MANIFEST) return false;
     // TILE_SCREEN_PX (= TILE_STEP*WORLD_SCALE) no lugar do TILE_STEP cru —
@@ -5608,6 +5679,11 @@
   }
   function processCombatFx(fxList){
     if(!Array.isArray(fxList) || !fxList.length) return;
+    // Magia de área (20/10/2026): o servidor manda 1 'spellHit' por monstro
+    // atingido. Antes cada um soltava nome da magia + anel + efeito — o nome
+    // empilhava N vezes e não havia o "estouro" da área. Agora: nome/anel/
+    // estouro grande 1x por conjuração, e só um impacto menor em cada alvo.
+    const aoeSeen = new Set();
     fxList.forEach(fx=>{
       if(fx.t === 'playerHit' || fx.t === 'spellHit'){
         const m = findMonsterById(fx.monsterId);
@@ -5632,18 +5708,26 @@
         // Nome da magia flutuando sobre o PRÓPRIO jogador (o conjurador), tipo
         // "está fazendo o encantamento" — só pra magia de ataque de verdade
         // (fx.spellName vem de castSpell/stats.name em huntEngine.js).
-        if(isMagic && fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
+        const aoeKey = (isMagic && fx.aoe) ? (fx.spellName||'') + '|' + (fx.archetypeId||'') : null;
+        const firstOfCast = !aoeKey || !aoeSeen.has(aoeKey);
+        if(aoeKey) aoeSeen.add(aoeKey);
+        if(firstOfCast && isMagic && fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         // pulso saindo do jogador em direção ao golpe — dá o feedback visual
         // de "usei uma habilidade/ataquei" que estava faltando por completo.
-        spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
+        if(firstOfCast) spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
         castPoseUntil = now() + CAST_POSE_MS;
+        if(aoeKey && firstOfCast && fx.archetypeId){
+          // estouro grande no centro da área (em volta do conjurador, igual o servidor calcula a área)
+          SpellFxManager.spawnAreaEffect(fx.archetypeId, 'aoe', player.x, player.y, fx.element, 4.5);
+        }
         // Spell FX de verdade (ver SpellFxManager acima) — só pra magia com
         // archetypeId (ataque corpo-a-corpo puro, fx.t==='playerHit', não
         // manda archetypeId, então não entra aqui). fx.ranged (magia com
         // range>1, ver castSpell) decide projétil-até-o-alvo vs. estouro
         // direto no tile do monstro (magia de contato/curta distância).
         if(isMagic && fx.archetypeId && m){
-          if(fx.ranged) SpellFxManager.spawnMissile(fx.archetypeId, 'attack', player.x, player.y, m.x, m.y, fx.element);
+          if(aoeKey) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'attack', m.x, m.y, fx.element, 1.1); // impacto menor em cada alvo da área
+          else if(fx.ranged) SpellFxManager.spawnMissile(fx.archetypeId, 'attack', player.x, player.y, m.x, m.y, fx.element);
           else SpellFxManager.spawnAreaEffect(fx.archetypeId, 'attack', m.x, m.y, fx.element);
         }
       } else if(fx.t === 'monsterHit'){
@@ -5740,15 +5824,20 @@
   // effectKey/missileKey são só NOME DE CONVENÇÃO — não precisam existir
   // ainda (ver fallback acima). `null` em heal/defense/missileKey = esse
   // arquétipo não tem magia desse tipo (ou não é à distância).
+  // 20/10/2026 (revisão das animações): efeitos ANIMADOS de verdade (10-20
+  // quadros) extraídos do pacote rd_project (effects/rd_<id>/fNN.png).
+  // `cell` = tamanho do quadro em px (escala do desenho), `aoe` = estouro
+  // grande desenhado UMA vez no centro da magia de área.
+  const RDFX = (id, frames, cell, frameMs) => ({ effectKey: 'rd_'+id, frames, cell, frameMs: frameMs || 55 });
   const SPELL_VISUALS = {
-    warfare:    { color: '#e0563c', attack: { effectKey: 'warfare_attack',    missileKey: null,           frames: 2, frameMs: 110 }, heal: null, defense: { effectKey: 'warfare_defense',    frames: 2, frameMs: 130 } },
-    holy:       { color: '#ffe27a', attack: { effectKey: 'holy_attack',       missileKey: 'holy_bolt',     frames: 2, frameMs: 120 }, heal: { effectKey: 'holy_heal', frames: 2, frameMs: 140 }, defense: { effectKey: 'holy_defense',       frames: 2, frameMs: 120 } },
-    protection: { color: '#8fd0ff', attack: { effectKey: 'protection_attack', missileKey: null,           frames: 2, frameMs: 120 }, heal: null, defense: { effectKey: 'protection_defense', frames: 2, frameMs: 130 } },
-    archery:    { color: '#c9d97a', attack: { effectKey: 'archery_attack',    missileKey: 'arrow',         frames: 1, frameMs: 60 }, heal: null, defense: null },
-    wizardry:   { color: '#a37bff', attack: { effectKey: 'wizardry_attack',   missileKey: 'arcane_bolt',   frames: 2, frameMs: 110 }, heal: null, defense: { effectKey: 'wizardry_defense',   frames: 2, frameMs: 130 } },
-    shadow:     { color: '#8a5ac9', attack: { effectKey: 'shadow_attack',     missileKey: 'shadow_bolt',   frames: 2, frameMs: 115 }, heal: null, defense: null },
-    spiritual:  { color: '#7ee08a', attack: { effectKey: 'spiritual_attack',  missileKey: 'nature_bolt',   frames: 2, frameMs: 120 }, heal: { effectKey: 'spiritual_heal', frames: 2, frameMs: 140 }, defense: null },
-    witchcraft: { color: '#b96fd6', attack: { effectKey: 'witchcraft_attack', missileKey: 'curse_bolt',    frames: 2, frameMs: 125 }, heal: null, defense: null },
+    warfare:    { color: '#e0563c', attack: { ...RDFX(2554,10,96), missileKey: null },            aoe: RDFX(2553,11,288,60), heal: null, defense: RDFX(2544,10,96,60) },
+    holy:       { color: '#ffe27a', attack: { ...RDFX(2550,15,128,45), missileKey: 'holy_bolt' }, aoe: RDFX(2550,15,128,50), heal: RDFX(2544,10,96,60), defense: { effectKey: 'holy_defense', frames: 2, frameMs: 120 } },
+    protection: { color: '#8fd0ff', attack: { ...RDFX(2551,12,96), missileKey: null },            aoe: RDFX(2551,12,96,55), heal: null, defense: RDFX(2548,20,96,45) },
+    archery:    { color: '#c9d97a', attack: { ...RDFX(2551,12,96,45), missileKey: 'arrow' },      aoe: RDFX(2553,11,288,60), heal: null, defense: null },
+    wizardry:   { color: '#a37bff', attack: { ...RDFX(2549,7,192,70), missileKey: 'arcane_bolt' }, aoe: RDFX(2549,7,192,80), heal: null, defense: RDFX(2548,20,96,45) },
+    shadow:     { color: '#8a5ac9', attack: { ...RDFX(2546,16,160,40), missileKey: 'shadow_bolt' }, aoe: RDFX(2546,16,160,45), heal: null, defense: null },
+    spiritual:  { color: '#7ee08a', attack: { ...RDFX(2542,10,160), missileKey: 'nature_bolt' }, aoe: RDFX(2542,10,160,60), heal: RDFX(2545,18,128,45), defense: null },
+    witchcraft: { color: '#b96fd6', attack: { ...RDFX(2547,16,192,40), missileKey: 'curse_bolt' }, aoe: RDFX(2547,16,192,45), heal: null, defense: null },
   };
   // `element` real (COMBAT_FIREDAMAGE etc., extraído do Lua — ver `element`
   // em pushCombatFx/castSpell no huntEngine.js) só AFINA a cor do fallback
@@ -5759,6 +5848,9 @@
     COMBAT_EARTHDAMAGE: '#8a6a3d', COMBAT_HOLYDAMAGE: '#ffe27a', COMBAT_DEATHDAMAGE: '#8a5ac9',
     COMBAT_PHYSICALDAMAGE: '#f2f2f2',
   };
+  // Pré-carrega todos os quadros (senão a 1ª conjuração de cada magia não
+  // aparece — os PNGs ainda estavam baixando).
+  setTimeout(()=>{ try{ Object.values(SPELL_VISUALS).forEach(v=>['attack','aoe','heal','defense'].forEach(k=>{ const e=v[k]; if(e && e.effectKey) for(let i=0;i<(e.frames||1);i++) effectFrame(e.effectKey,i); if(e && e.missileKey) missileImg(e.missileKey); })); }catch(_){} }, 1500);
   function spellVisualFor(archetypeId, kind){ const v = SPELL_VISUALS[archetypeId]; return (v && v[kind]) || null; }
   function spellFallbackColor(archetypeId, element){ return (element && ELEMENT_FALLBACK_COLOR[element]) || (SPELL_VISUALS[archetypeId] || {}).color || '#8fd0ff'; }
 
@@ -5766,8 +5858,8 @@
      (x,y) — do monstro OU do jogador, dependendo de quem foi afetado (ver
      spawnAreaEffect abaixo, que resolve a âncora antes de criar). ---- */
   class SpellAreaEffect {
-    constructor(effectKey, color, worldX, worldY, frames, frameMs){
-      this.effectKey = effectKey; this.color = color;
+    constructor(effectKey, color, worldX, worldY, frames, frameMs, boxPx){
+      this.effectKey = effectKey; this.color = color; this.boxPx = boxPx || 0;
       this.x = worldX; this.y = worldY;
       this.frames = Math.max(1, frames || 1); this.frameMs = frameMs || 80;
       this.bornAt = now();
@@ -5781,7 +5873,7 @@
         const frameIdx = Math.min(this.frames - 1, Math.floor(this.elapsed / this.frameMs));
         const sp = effectFrame(this.effectKey, frameIdx);
         if(sp.loaded){
-          const box = 46 * SPRITE_SCALE;
+          const box = this.boxPx || 46 * SPRITE_SCALE;
           ctx.drawImage(sp.img, s.x - box/2, anchorY - box/2, box, box);
           return;
         }
@@ -5846,10 +5938,13 @@
   // encapsuladas aqui.
   const SpellFxManager = {
     areaEffects: [], missiles: [],
-    spawnAreaEffect(archetypeId, kind, worldX, worldY, element){
+    spawnAreaEffect(archetypeId, kind, worldX, worldY, element, boxTiles){
       const v = spellVisualFor(archetypeId, kind);
       const color = spellFallbackColor(archetypeId, element);
-      this.areaEffects.push(new SpellAreaEffect(v && v.effectKey, color, worldX, worldY, v ? v.frames : 6, v ? v.frameMs : 80));
+      // tamanho: efeitos animados novos escalam pelo quadro (96px ≈ 1,5 SQM);
+      // boxTiles força um tamanho (estouro da magia de área)
+      const box = boxTiles ? boxTiles * TILE_SCREEN_PX : (v && v.cell ? Math.min(2.4, v.cell / 64) * TILE_SCREEN_PX : 0);
+      this.areaEffects.push(new SpellAreaEffect(v && v.effectKey, color, worldX, worldY, v ? v.frames : 6, v ? v.frameMs : 80, box));
     },
     spawnMissile(archetypeId, kind, fromX, fromY, toX, toY, element){
       const v = spellVisualFor(archetypeId, kind);
@@ -6022,6 +6117,12 @@
     // Sem eles ainda (fetch em andamento ou falhou), cai no piso xadrez de
     // sempre — mesmo fallback de antes, nada quebra.
     const cityTilesDrawn = location==='city' && !isTowerArena && drawCityTiles(toScreen);
+    if(cityTilesDrawn){
+      // portal animado no Teleporte (caçadas, Torres e Boss partem daqui)
+      const fi = Math.floor(now()/60) % 20, sp = effectFrame('rd_2548', fi);
+      if(sp.loaded){ const s = toScreen(TELEPORT_WORLD_POS.x, TELEPORT_WORLD_POS.y), box = TILE_SCREEN_PX*1.7; ctx.globalAlpha = .9; ctx.drawImage(sp.img, s.x-box/2, s.y-box/2, box, box); ctx.globalAlpha = 1; }
+    }
+    huntMapDecorThisFrame = null;
     if(!cityTilesDrawn){
       // Grade presa em múltiplos de TILE_STEP (20/10/2026, movimento por
       // tiles): o servidor põe jogador e monstros no CENTRO de cada tile
@@ -6030,7 +6131,9 @@
       minX = (isTowerArena ? Math.ceil : Math.floor)(minX/TILE_STEP)*TILE_STEP;
       minY = (isTowerArena ? Math.ceil : Math.floor)(minY/TILE_STEP)*TILE_STEP;
       const footOff = isTowerArena ? 0 : TILE_FOOT_OFFSET;
-      for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
+      const hmap = (location==='dungeon' && !isTowerArena) ? currentHuntMap() : null;
+      huntMapDecorThisFrame = hmap ? drawHuntMapGround(hmap, toScreen, footOff) : null;
+      if(!huntMapDecorThisFrame) for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
         for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
           const s = toScreen(gx,gy-footOff);
           const even = ((gx+gy)/TILE_STEP)%2===0;
@@ -6066,7 +6169,7 @@
     // estiver mais perto, igual a imagem de referência do usuário
     // (26/09/2026). Nada a desenhar aqui na camada de piso.
 
-    if(activeHunt.running && activeHunt.lurePoints.length){
+    if(activeHunt.running && activeHunt.lurePoints.length && !huntMapDecorThisFrame){ // com mapa temático a trilha já aparece no chão
       const pts = activeHunt.lurePoints;
       ctx.strokeStyle = 'rgba(191,161,95,.35)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
       ctx.beginPath();
@@ -6080,7 +6183,14 @@
     // ver drawCityTiles), o cenário procedural antigo (muro/prédio/fonte de
     // caixinha colorida) ficaria por cima do mapa de verdade sem fazer
     // sentido — só entra quando ainda não há tiles reais carregados.
-    const scenery = isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower, towerThemeReady ? towerTheme.wall : null) : (location==='city' ? (cityTilesDrawn ? [] : SCENERY_CITY) : SCENERY_DUNGEON);
+    if(huntMapDecorThisFrame){
+      const footOffD = TILE_FOOT_OFFSET;
+      huntMapDecorThisFrame.forEach(d=> drawList.push({
+        baseCart:{ x:d.tx*TILE_STEP, y:d.ty*TILE_STEP + (d.solid ? 1 : -TILE_STEP*0.6) },
+        draw:()=>{ const s = toScreen(d.tx*TILE_STEP, d.ty*TILE_STEP - footOffD); drawAtlasSpriteAtTile(d.id, s.x, s.y); }
+      }));
+    }
+    const scenery = huntMapDecorThisFrame ? [] : isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower, towerThemeReady ? towerTheme.wall : null) : (location==='city' ? (cityTilesDrawn ? [] : SCENERY_CITY) : SCENERY_DUNGEON);
     scenery.forEach(s=> drawList.push({
       baseCart:{x:s.x,y:s.y},
       draw:()=>{
@@ -6458,12 +6568,42 @@
   let autoWalk = null; // { target:{x,y}, onArrive }
   const AUTO_WALK_ARRIVE_PX = 6;
   // target opcional — sem ele, anda pro teleporte azul (uso mais comum: início de caçada)
-  function startAutoWalkToTeleport(onArrive){ autoWalk = { target: TELEPORT_WORLD_POS, onArrive }; }
+  function startAutoWalkToTeleport(onArrive){ startAutoWalkToPos(TELEPORT_WORLD_POS, onArrive); }
   // opts.interruptible: true pro "andar até onde cliquei" (WASD cancela na
   // hora, ver updateWasdMovement) -- o uso original (andar sozinho até o
   // teleporte azul no início da caçada) continua NÃO interruptível, porque
   // ali o jogo precisa garantir que o personagem realmente chegue lá.
-  function startAutoWalkToPos(target, onArrive, opts){ autoWalk = { target, onArrive, interruptible: !!(opts && opts.interruptible) }; }
+  // 20/10/2026: a Cidade nova tem paredes (templo, casas, cercas) — o andar
+  // automático (até o teleporte, boneco de treino ou clique) agora segue um
+  // caminho A* pelos tiles livres em vez de ir reto atravessando parede.
+  function cityFindPath(fromW, toW){
+    if(location !== 'city' || !CITY_BLOCKED || !CITY_TILES) return null;
+    const a = cityTileAtWorld(fromW.x, fromW.y), b = cityTileAtWorld(toW.x, toW.y);
+    const free = (x,y)=> CITY_TILES.has(x+','+y) && !CITY_BLOCKED.has(x+','+y);
+    const goalBlocked = !free(b.tx, b.ty);
+    const isGoal = (x,y)=> goalBlocked ? (Math.max(Math.abs(x-b.tx),Math.abs(y-b.ty))<=1) : (x===b.tx && y===b.ty);
+    const key = (x,y)=> x+','+y, h = (x,y)=> Math.max(Math.abs(x-b.tx),Math.abs(y-b.ty));
+    const open = [[h(a.tx,a.ty),0,a.tx,a.ty]], g = new Map([[key(a.tx,a.ty),0]]), came = new Map();
+    let found = null, n = 0;
+    while(open.length && n++ < 6000){
+      let bi = 0; for(let i=1;i<open.length;i++) if(open[i][0]<open[bi][0]) bi=i;
+      const [,gc,x,y] = open.splice(bi,1)[0];
+      if(isGoal(x,y)){ found=[x,y]; break; }
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
+        const nx=x+dx, ny=y+dy;
+        if(!free(nx,ny)) continue;
+        if(dx && dy && (!free(x+dx,y) || !free(x,y+dy))) continue;
+        const ng = gc + (dx&&dy?1.41:1), k = key(nx,ny);
+        if(ng < (g.has(k)?g.get(k):Infinity)){ g.set(k,ng); came.set(k,[x,y]); open.push([ng+h(nx,ny),ng,nx,ny]); }
+      }
+    }
+    if(!found) return null;
+    const path = []; let cur = found;
+    while(cur && !(cur[0]===a.tx && cur[1]===a.ty)){ path.unshift(cityTileToWorld(cur[0],cur[1])); cur = came.get(key(cur[0],cur[1])); }
+    if(!goalBlocked) path[path.length-1] = { x: toW.x, y: toW.y };
+    return path;
+  }
+  function startAutoWalkToPos(target, onArrive, opts){ autoWalk = { target, onArrive, interruptible: !!(opts && opts.interruptible), path: cityFindPath(player, target) }; }
   function nearestTrainingDummy(){
     if(!trainingDummies.length) return null;
     let best = trainingDummies[0], bestD = Infinity;
@@ -6473,6 +6613,17 @@
   function cancelAutoWalk(){ autoWalk = null; }
   function updateAutoWalk(dt){
     if(!autoWalk) return;
+    if(autoWalk.path && !autoWalk.path.length){ const cb0 = autoWalk.onArrive; autoWalk = null; if(cb0) cb0(); return; }
+    if(autoWalk.path && autoWalk.path.length){
+      const wp = autoWalk.path[0];
+      const wx = wp.x - player.x, wy = wp.y - player.y, wd = Math.hypot(wx, wy);
+      const stepLen = WASD_SPEED_PX_S * dt;
+      if(wd <= Math.max(3, stepLen)){ player.x = wp.x; player.y = wp.y; autoWalk.path.shift(); if(autoWalk.path.length) return; }
+      else { player.x += (wx/wd) * stepLen; player.y += (wy/wd) * stepLen; return; }
+      // fim do caminho: se o alvo é um tile bloqueado (boneco), já chegou
+      const cb = autoWalk.onArrive; autoWalk = null; if(cb) cb();
+      return;
+    }
     const dx = autoWalk.target.x - player.x, dy = autoWalk.target.y - player.y;
     const dist = Math.hypot(dx, dy);
     if(dist <= AUTO_WALK_ARRIVE_PX){
@@ -6926,6 +7077,7 @@
     if(typeof msg.rankScore === 'number') rankScore = msg.rankScore;
     if(msg.pets) pets = msg.pets;
     if(msg.battlePass) battlePass = msg.battlePass;
+    myDps = msg.myDps || null;
     partyDps = msg.partyDps || null; // null (não em grupo) tem que sobrescrever, por isso sem "if"
     // hotbar: só os slots 'spell' vêm do servidor (autoritativo/validado); slots
     // de item/poção continuam só configuração local (ver POTIONS/potionAutoUse).
@@ -7056,6 +7208,7 @@
           msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
           break;
         case 'hunt:state': applyHuntSnapshot(msg); break;
+        case 'hunt:map': if(msg.map){ HUNT_MAPS[msg.map.id] = msg.map; } break;
         case 'hunt:ack': handleAck(msg); break;
         case 'party:invite': showPartyInviteToast(msg); break;
         case 'party:declined': logLoot(`👥 <b>${escapeHtml(msg.by)}</b> recusou o convite pro grupo.`); break;
@@ -7107,16 +7260,14 @@
         case 'market:bookChanged':
           // alguém mais casou/criou/cancelou uma oferta do item que eu tô olhando agora --
           // repede o livro na hora pra minha tela ficar ao vivo mesmo sem eu ter feito nada.
-          if(msg.itemId === marketSelectedItemId && document.getElementById('market-modal').classList.contains('open')) {
-            sendWS({ type:'market:list', itemId: marketSelectedItemId });
-          }
+          if(document.getElementById('market-modal').classList.contains('open')) sendWS({ type:'market:list' });
           break;
         case 'market:filled':
           // uma oferta MINHA que já estava no livro foi preenchida (total ou
           // parcialmente) por outro jogador enquanto eu tava online.
-          if(msg.entry.kind === 'gold') logLoot(`📦🪙 Sua oferta no Mercado foi preenchida: +${Math.round(msg.entry.amount).toLocaleString('pt-BR')} Gold.`);
+          if(msg.entry.kind === 'gold') logLoot(`🔨🪙 ${msg.entry.itemName ? `Vendido no Leilão: ${msg.entry.qty||1}x ${escapeHtml(msg.entry.itemName)} — ` : 'Sua oferta no Leilão foi preenchida: '}+${Math.round(msg.entry.amount).toLocaleString('pt-BR')} Gold.`);
           else logLoot(`📦 Sua oferta no Mercado foi preenchida: +${msg.entry.qty}x ${(marketCatalog.find(m=>m.id===msg.entry.itemId)||{}).name || msg.entry.itemId}.`);
-          if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
+          sendWS({ type:'market:list' });
           sendWS({ type:'market:myOffers' });
           break;
         case 'market:offlineResult': {
@@ -7760,7 +7911,7 @@
     if(msg.forType === 'item:fuse'){
       if(msg.ok){
         if(msg.success === false) logLoot(`⚗️ A fusão falhou (${msg.chance}%). As cópias foram mantidas — próxima tentativa: ${msg.nextChance}%.`);
-        else logLoot(`⚗️ Fusão concluída: <b style="color:${RARITY_COLORS[msg.targetRarity]||'#a99872'};">${escapeHtml(msg.item.name)}</b> (${CRAFT_RARITY_LABEL_CAP_CLIENT[msg.targetRarity]||msg.targetRarity})${msg.isMythic?' — 🔺 MÍTICA!':''}${msg.wentToTrash?' (Mochila cheia — foi pra Lixeira)':''}`);
+        else logLoot(`⚗️ Fusão concluída: <b style="color:${RARITY_COLORS[msg.targetRarity]||'#ffffff'};">${escapeHtml(msg.item.name)}</b> (${CRAFT_RARITY_LABEL_CAP_CLIENT[msg.targetRarity]||msg.targetRarity})${msg.isMythic?' — 🔺 MÍTICA!':''}${msg.wentToTrash?' (Mochila cheia — foi pra Lixeira)':''}`);
       } else if(msg.reason === 'itens_insuficientes') logLoot(`⚠️ Fusão precisa de ${msg.need} cópias iguais desse item (você tem ${msg.have}).`);
       else if(msg.reason === 'ouro_insuficiente') logLoot(`⚠️ Ouro insuficiente pra Fusão (precisa de ${(msg.cost||0).toLocaleString('pt-BR')}).`);
       else if(msg.reason === 'cristais_insuficientes') logLoot(`⚠️ Cristal de Fusão insuficiente (precisa de ${msg.need}, você tem ${msg.have}).`);
@@ -7917,6 +8068,16 @@
       if(msg.ok) marketBookCache = msg.offers || [];
       renderMarketIfOpen();
     }
+    if(msg.forType === 'market:buyOffer'){
+      if(msg.ok){ logLoot(`🔨 Comprou ${msg.qty}x <b>${escapeHtml(msg.itemName||'item')}</b> no Leilão por ${Math.round(msg.total).toLocaleString('pt-BR')} Gold.`); aucBuyQty = 1; }
+      else logLoot(`⚠️ Não foi possível comprar: ${({ ouro_insuficiente:'ouro insuficiente.', oferta_indisponivel:'esse anúncio já foi vendido ou cancelado.', oferta_propria:'esse anúncio é seu.', apenas_na_cidade_principal:'o Leilão só funciona na Cidade Principal.' })[msg.reason] || msg.reason}`);
+      aucRequest(); renderInventoryIfOpen();
+    }
+    if(msg.forType === 'market:listItem'){
+      if(msg.ok){ logLoot('🔨 Item anunciado no Leilão.'); aucSellIdx = null; aucSellPrice = 0; aucSellQty = 1; }
+      else logLoot(`⚠️ Não foi possível anunciar: ${({ preco_invalido:'defina um preço válido.', quantidade_invalida:'quantidade inválida.', limite_de_ofertas_atingido:'limite de 10 anúncios ativos.', item_bloqueado:'item bloqueado.', item_invalido:'item inválido.', apenas_na_cidade_principal:'o Leilão só funciona na Cidade Principal.' })[msg.reason] || msg.reason}`);
+      aucRequest(); renderInventoryIfOpen();
+    }
     if(msg.forType === 'market:myOffers'){
       if(msg.ok) marketMyOffersCache = msg.offers || [];
       renderMarketIfOpen();
@@ -7930,14 +8091,14 @@
         const reasonMap = { tipo_invalido:'tipo de oferta inválido.', item_invalido:'item inválido.', quantidade_invalida:'quantidade inválida.', preco_invalido:'preço inválido.', limite_de_ofertas_atingido:'limite de 10 ofertas abertas atingido.', item_insuficiente:'você não tem essa quantidade do item na Mochila.', ouro_insuficiente:'ouro insuficiente.', apenas_na_cidade_principal:'o Mercado só funciona na Cidade Principal.' };
         logLoot(`⚠️ Não foi possível criar a oferta: ${reasonMap[msg.reason] || msg.reason}`);
       }
-      if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
+      sendWS({ type:'market:list' });
       sendWS({ type:'market:myOffers' });
       renderInventoryIfOpen();
     }
     if(msg.forType === 'market:cancelOffer'){
       if(msg.ok) logLoot('📦 Oferta cancelada — item/ouro devolvido.');
       else logLoot(`⚠️ Não foi possível cancelar: ${msg.reason}`);
-      if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
+      sendWS({ type:'market:list' });
       sendWS({ type:'market:myOffers' });
       renderInventoryIfOpen();
     }
@@ -8117,7 +8278,7 @@
     const ring = document.getElementById('crc-icon-ring');
     const nameEl = document.getElementById('crc-name');
     const subEl = document.getElementById('crc-sub');
-    const color = RARITY_COLORS[c.rarity] || '#a99872';
+    const color = RARITY_COLORS[c.rarity] || '#ffffff';
     ring.style.setProperty('--rc', color);
     ring.innerHTML = c.icon
       ? `<img src="${equipIconUrl(c.icon)}" onerror="this.style.display='none';" />`
@@ -8559,7 +8720,7 @@
   function lootRowIconHtml(item, def, idx){
     const gemIconUrl = GEM_ICON_URL[item.id];
     if(gemIconUrl) return `<img class="loot-item-icon" src="${gemIconUrl}" alt="">`;
-    const rarityColor = RARITY_COLORS[item.rarity] || '#a99872';
+    const rarityColor = RARITY_COLORS[item.rarity] || '#ffffff';
     const rawMatHtml = rawMaterialIconHtml(item.id, rarityColor);
     if(rawMatHtml) return rawMatHtml.replace('class="item-icon"', 'class="item-icon loot-item-icon"');
     const fallbackUrl = lootIconFallback(def, idx);
@@ -9379,7 +9540,8 @@
   // abaixo e o mesmo comentário em huntEngine.js) -- só a COR/MOLDURA visual
   // entra aqui agora; nenhuma tabela de loot/craft/preço foi mexida, então
   // nenhum item chega nessa raridade ainda (decisão de design em aberto).
-  const RARITY_COLORS = { comum:'#a99872', incomum:'#6fae6f', rara:'#7fc6ff', 'épica':'#b98af0', 'lendária':'#f0d38a', 'mítica':'#ff2b2b' };
+  // 20/10/2026 (pedido do usuário): comum = branco, incomum = verde, raro = azul, épico = roxo, lendário = dourado, mítico = vermelho.
+  const RARITY_COLORS = { comum:'#ffffff', incomum:'#3ecf4a', rara:'#3d8bff', 'épica':'#a855f7', 'lendária':'#f5b800', 'mítica':'#ff2b2b' };
   // Item 122 da lista de tarefas (21/09/2026): "itens craftados não aparece
   // o preço e não da a opção de vender eles no npc" -- na verdade a Venda
   // Rápida já aceita QUALQUER item da Mochila (inclusive equipamento
@@ -9397,11 +9559,11 @@
   // visual da moldura de Grade da Infusão (ver infusionOverlayHtml), só que
   // aqui a arte já vem com a cor própria (não precisa de máscara/tingimento).
   const RARITY_FRAME_URL = {
-    comum: URL_BASE + 'rarity-frames/rarity_frame_comum.png',
-    incomum: URL_BASE + 'rarity-frames/rarity_frame_incomum.png',
-    rara: URL_BASE + 'rarity-frames/rarity_frame_rara.png',
-    'épica': URL_BASE + 'rarity-frames/rarity_frame_epica.png',
-    'lendária': URL_BASE + 'rarity-frames/rarity_frame_lendaria.png',
+    comum: URL_BASE + 'rarity-frames/rarity_frame_comum.png?v=2',
+    incomum: URL_BASE + 'rarity-frames/rarity_frame_incomum.png?v=2',
+    rara: URL_BASE + 'rarity-frames/rarity_frame_rara.png?v=2',
+    'épica': URL_BASE + 'rarity-frames/rarity_frame_epica.png?v=2',
+    'lendária': URL_BASE + 'rarity-frames/rarity_frame_lendaria.png?v=2',
     'mítica': URL_BASE + 'rarity-frames/rarity_frame_mitica.png',
   };
   function rarityFrameHtml(rarity){
@@ -9515,7 +9677,7 @@
     // Mochila/Armazém), a descrição e o valor que o NPC paga (preço real do
     // servidor por raridade, NPC_FERREIRO_BRAN_PRICES).
     list.innerHTML = items.map(it=>{
-      const color = RARITY_COLORS[it.rarity] || '#a99872';
+      const color = RARITY_COLORS[it.rarity] || '#ffffff';
       const monsterNames = Array.from(it.monsters).join(', ');
       const info = ITEM_INFO[it.id];
       const npc = npcSellPriceFor({ rarity: it.rarity });
@@ -9760,7 +9922,7 @@
       </div>`;
     }).join('');
     const lootHtml = Object.keys(lootByRarity).map(r=>{
-      const color = RARITY_COLORS[r] || '#a99872';
+      const color = RARITY_COLORS[r] || '#ffffff';
       return `<div style="margin-bottom:6px;"><b style="color:${color};text-transform:capitalize;font-size:10px;">${r}</b><div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);">${lootByRarity[r].map(it=>it.name).join(', ')}</div></div>`;
     }).join('');
     const isTracked = bestiaryTracked.includes(m.name);
@@ -10030,7 +10192,7 @@
   function handleLootIconError(img){
     const span = document.createElement('span');
     span.className = 'item-icon';
-    span.style.color = img.dataset.rarityColor || '#a99872';
+    span.style.color = img.dataset.rarityColor || '#ffffff';
     span.innerHTML = MATERIAL_ICON_SVG;
     img.replaceWith(span);
   }
@@ -10040,7 +10202,7 @@
   function handleEquipIconError(img){
     const span = document.createElement('span');
     span.className = 'item-icon';
-    span.style.color = img.dataset.rarityColor || '#a99872';
+    span.style.color = img.dataset.rarityColor || '#ffffff';
     span.innerHTML = ITEM_TYPE_ICON_SVG[img.dataset.fallbackSlot] || MATERIAL_ICON_SVG;
     img.replaceWith(span);
   }
@@ -10098,7 +10260,7 @@
   // Armazém/Lixeira mesmo já tendo a foto certa na Mochila.
   function resolveItemIconHtml(it){
     const gemIconUrl = GEM_ICON_URL[it.id];
-    const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+    const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
     if(gemIconUrl) return `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`;
     const rawMatHtml = rawMaterialIconHtml(it.id, rarityColor);
     if(rawMatHtml) return rawMatHtml;
@@ -10130,7 +10292,7 @@
     // e o MESMO grid (#inv-items-grid) já usado pela Bolsa/Mochila.
     trash.forEach((it,i)=>{
       const slot = document.createElement('div'); slot.className = 'item-slot'; markLinkable(slot, it);
-      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+      const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
       slot.style.borderColor = rarityColor;
       slot.style.cursor = 'pointer';
       slot.title = 'Recuperar pra Mochila (precisa de espaço livre)';
@@ -10143,7 +10305,7 @@
         ${location==='city' ? `<span class="slot-mini-btn" data-trash-sell="${i}" title="Vender">🪙</span>` : ''}`;
       slot.addEventListener('click', ()=> sendWS({ type:'trash:recover', trashIndex:i }));
       slot.addEventListener('mouseenter', ()=>{
-        const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
+        const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#ffffff'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
         const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
         invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name||it.id}</b>${rarityLabel}${infusionLine}${it.qty>1?` · x${it.qty}`:''}<span class="hint">expira em ${fmtTrashRemaining(it.expiresAt)}</span>`;
         invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
@@ -10171,7 +10333,7 @@
     // mesma classe .item-slot (visual igual Bolsa/Mochila), só troca a ação
     // do clique (guardar vs. recuperar).
     const slot = document.createElement('div'); slot.className = 'item-slot'; markLinkable(slot, it);
-    const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+    const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
     slot.style.borderColor = rarityColor;
     slot.style.cursor = 'pointer';
     slot.title = actionLabel;
@@ -10192,10 +10354,10 @@
     // Mochila já mostrava (ver renderInventory).
     slot.addEventListener('mouseenter', ()=>{
       const stats = it.slot ? getItemTotalStatsClient(it) : {};
-      const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
+      const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#ffffff'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
       const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
       const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
-      const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
+      const descLine = it.description ? `<span class="hint" style="font-style:italic;color:${RARITY_COLORS[it.rarity]||'#ffffff'};">${it.description}</span>` : '';
       invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
       invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
       invItemTooltip.style.display = 'block';
@@ -10265,7 +10427,7 @@
       el.classList.toggle('filled', !!item);
       el.title = item ? item.name : el.querySelector('.slot-tag').textContent;
       const iconSpan = el.querySelector('.slot-icon');
-      iconSpan.style.color = item ? (RARITY_COLORS[item.rarity]||'#a99872') : '';
+      iconSpan.style.color = item ? (RARITY_COLORS[item.rarity]||'#ffffff') : '';
       if(item && item.icon){
         // dataset.itemType = tipo REAL do item equipado (ex.: 'gloves' pode
         // estar guardado tanto em accessory1 quanto accessory2) -- usado só
@@ -10393,7 +10555,7 @@
     items.forEach((it,i)=>{
       const slot = document.createElement('div'); slot.className = 'item-slot'; markLinkable(slot, it);
       const gemIconUrl = GEM_ICON_URL[it.id];
-      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+      const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
       slot.style.borderColor = rarityColor;
       // Loot comum da Mochila (Boar Steak, Tower Shard etc., sem "slot" de
       // equipar) agora usa a foto real do item (mesma pasta usada em
@@ -10427,10 +10589,10 @@
       // esqueleto visual do .skill-node-tip.
       slot.addEventListener('mouseenter', ()=>{
         const stats = it.slot ? getItemTotalStatsClient(it) : {};
-        const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
+        const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#ffffff'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
         const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
         const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
-        const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
+        const descLine = it.description ? `<span class="hint" style="font-style:italic;color:${RARITY_COLORS[it.rarity]||'#ffffff'};">${it.description}</span>` : '';
         // poção (Bolsa): cura% real igual o Auto-Uso usa (POTION_CATALOG no
         // servidor) — antes o tooltip da Bolsa não mostrava NENHUM status.
         // 2026-09-20: além do %, mostra o valor REAL (arredondado em cima do
@@ -10470,7 +10632,7 @@
   // servidor) pra não precisar clicar item por item.
   function renderQuickSellRow(it){
     const marked = quickSellMarks.includes(it.id);
-    const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+    const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
     const row = document.createElement('div');
     row.className = 'quicksell-row' + (marked?' marked':'');
     // Item 122 (21/09/2026): preço por item (e total do stack) visível em
@@ -10604,10 +10766,10 @@
       const item = equipment[el.dataset.equip];
       if(!item) return; // slot vazio: mantém só o title nativo (nome do slot)
       const stats = getItemTotalStatsClient(item);
-      const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[item.rarity]||'#a99872'}">${(item.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
+      const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[item.rarity]||'#ffffff'}">${(item.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
       const enchantLine = item.enchantLevel ? ` · +${item.enchantLevel}` : '';
       const infusionLine = item.infusionGrade ? ` · Grade ${item.infusionGrade}` : '';
-      const descLine = item.description ? `<span class="hint" style="font-style:italic;">${item.description}</span>` : '';
+      const descLine = item.description ? `<span class="hint" style="font-style:italic;color:${RARITY_COLORS[item.rarity]||'#ffffff'};">${item.description}</span>` : '';
       invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[item.rarity]||'var(--gold-bright)'}">${item.name || item.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}<span class="hint">${formatStats(stats, item)}</span>${armorSetTooltipHtml(item)}`;
       invItemTooltip.style.borderColor = RARITY_COLORS[(item||{}).rarity] || '';
       invItemTooltip.style.display = 'block';
@@ -11370,6 +11532,15 @@
     if(!analyzerPanel.classList.contains('open')) return;
     const body = document.getElementById('analyzer-body');
     const activeTab = document.querySelector('.analyzer-tab.active').dataset.atab;
+    // Re-render a cada 1s não pode jogar a rolagem pro topo (20/10/2026):
+    // guarda o scroll do corpo e de cada lista e devolve depois do innerHTML.
+    const _scrollKeep = [body.scrollTop, ...Array.from(body.querySelectorAll('.analyzer-drops-list')).map(el=>el.scrollTop)];
+    try { return renderAnalyzerInner(body, activeTab); } finally {
+      body.scrollTop = _scrollKeep[0];
+      Array.from(body.querySelectorAll('.analyzer-drops-list')).forEach((el,i)=>{ if(_scrollKeep[i+1]!=null) el.scrollTop = _scrollKeep[i+1]; });
+    }
+  }
+  function renderAnalyzerInner(body, activeTab){
     const elapsedH = Math.max(0.0003, (now()-session.startedAt)/1000/3600);
     if(activeTab==='geral'){
       // Ganhos DA SESSAO (desde que o baseline foi capturado), nao vitalicios —
@@ -11457,10 +11628,57 @@
         try { localStorage.setItem(LS_ANALYZER_USE_MARKET, analyzerUseMarketPrice ? '1' : '0'); } catch(err){}
         renderAnalyzer();
       });
+    } else if(activeTab==='dps'){
+      body.innerHTML = analyzerDpsHtml();
+      body.querySelectorAll('[data-dps-tab]').forEach(b=>b.addEventListener('click', ()=>{ dpsActiveTab = b.dataset.dpsTab; renderAnalyzer(); }));
+      const cb = body.querySelector('#an-dps-share');
+      if(cb) cb.addEventListener('change', e=> sendWS({ type:'party:setShareDps', share: e.target.checked }));
     } else {
       // Suprimentos (aba Combate removida a pedido do usuário, 20/10/2026)
       body.innerHTML = `<div class="analyzer-drops-list">${analyzerSuppliesRowsHtml()}</div>`;
     }
+  }
+  // Aba "Dano / DPS" do Analisador (20/10/2026): o próprio dano detalhado
+  // (vale solo) + o ranking do grupo (o antigo painel "Party DPS Results",
+  // agora aqui dentro) quando estiver em party.
+  function analyzerDpsHtml(){
+    const fmt = n => Math.round(n||0).toLocaleString('pt-BR');
+    const d = myDps;
+    if(!d) return `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);padding:8px;">Entre numa caçada pra medir seu dano.</div>`;
+    const critPct = d.hits ? Math.round(d.crits / d.hits * 100) : 0;
+    const srcMax = Math.max(1, ...(d.bySource||[]).map(x=>x.total));
+    let html = `
+      <div class="analyzer-stat-grid">
+        <div class="analyzer-stat-box"><span class="lbl">Dano total</span><span class="val">${fmt(d.total)}</span></div>
+        <div class="analyzer-stat-box"><span class="lbl">DPS médio</span><span class="val">${fmt(d.dps)}</span></div>
+        <div class="analyzer-stat-box"><span class="lbl">Maior golpe</span><span class="val">${fmt(d.maxHit)}</span></div>
+        <div class="analyzer-stat-box"><span class="lbl">Golpes / Críticos</span><span class="val">${fmt(d.hits)} / ${critPct}%</span></div>
+      </div>
+      <div class="analyzer-drops-title">Dano por fonte</div>
+      <div class="analyzer-drops-list">${(d.bySource||[]).length ? d.bySource.map((x,i)=>`
+        <div class="dps-row"><span class="dps-name">${escapeHtml(x.name)}</span>
+          <div class="dps-bar-track"><div class="dps-bar-fill" style="width:${Math.max(2,Math.round(x.total/srcMax*100))}%;background:${DPS_BAR_COLORS[i%DPS_BAR_COLORS.length]};"></div></div>
+          <span class="dps-value">${fmt(x.total)} (${d.total?Math.round(x.total/d.total*100):0}%)</span></div>`).join('')
+        : `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Nenhum golpe ainda.</div>`}</div>`;
+    if(partyDps && partyDps.length){
+      const visible = partyDps.filter(p => p.shareEnabled || p.username===AUTH_USERNAME);
+      const sorted = [...visible].sort((a,b)=> b[dpsActiveTab] - a[dpsActiveTab]);
+      const max = Math.max(1, ...sorted.map(p=>p[dpsActiveTab]));
+      const mine = partyDps.find(p=>p.username===AUTH_USERNAME);
+      html += `
+        <div class="analyzer-drops-title" style="display:flex;align-items:center;gap:8px;">Grupo
+          <span style="margin-left:auto;display:flex;gap:4px;">
+            <button class="dps-close-btn" data-dps-tab="total" style="padding:2px 8px;${dpsActiveTab==='total'?'border-color:var(--gold-bright);color:var(--gold-bright);':''}">Total</button>
+            <button class="dps-close-btn" data-dps-tab="dps" style="padding:2px 8px;${dpsActiveTab==='dps'?'border-color:var(--gold-bright);color:var(--gold-bright);':''}">DPS</button>
+          </span></div>
+        <div class="analyzer-drops-list">${sorted.map((p,i)=>`
+          <div class="dps-row"><span class="dps-name${p.username===AUTH_USERNAME?' me':''}">${escapeHtml(p.nick)}</span>
+            <div class="dps-bar-track"><div class="dps-bar-fill" style="width:${Math.max(2,Math.round(p[dpsActiveTab]/max*100))}%;background:${DPS_BAR_COLORS[i%DPS_BAR_COLORS.length]};"></div></div>
+            <span class="dps-value">${fmt(p[dpsActiveTab])}</span></div>`).join('')}</div>
+        <label class="analyzer-checkbox-row"><input type="checkbox" id="an-dps-share" ${(!mine || mine.shareEnabled)?'checked':''}> Compartilhar meu DPS com o grupo</label>`;
+    }
+    html += `<div class="analyzer-footnote">O medidor zera ao iniciar uma caçada ou no ⟳ do Analisador. ALT+D abre esta aba.</div>`;
+    return html;
   }
   // Linhas de suprimentos gastos (poções etc.) com o ícone real do item —
   // usado na aba Geral ("Gastos da sessão") e na aba Suprimentos.
@@ -12142,7 +12360,12 @@
       </div>`;
     }).join('');
     body.querySelectorAll('button[data-tower]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{ lastTowerEnterMode = btn.dataset.mode; sendWS({ type:'tower:enter', towerId:btn.dataset.tower, mode:btn.dataset.mode }); });
+      btn.addEventListener('click', ()=>{
+        lastTowerEnterMode = btn.dataset.mode;
+        const go = ()=> sendWS({ type:'tower:enter', towerId:btn.dataset.tower, mode:btn.dataset.mode });
+        // 20/10/2026: a Torre (e o Boss dela) também parte do Teleporte da Cidade
+        if(location === 'city' && Math.hypot(player.x-TELEPORT_WORLD_POS.x, player.y-TELEPORT_WORLD_POS.y) > 40) startAutoWalkToTeleport(go); else go();
+      });
     });
     body.querySelectorAll('button[data-boss-tower]').forEach(btn=>{
       btn.addEventListener('click', ()=> sendWS({ type:'tower:challengeBoss', towerId:btn.dataset.bossTower, floor:parseInt(btn.dataset.bossFloor,10) }));
@@ -12296,7 +12519,7 @@
     if(!shop){ list.innerHTML = `<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Carregando catálogo...</div>`; return; }
     document.getElementById('shop-npc-name').textContent = shop.npcName;
     list.innerHTML = shop.items.map(it=>{
-      const rarityColor = RARITY_COLORS[it.rarity] || '#a99872';
+      const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
       const iconHtml = it.icon
         ? `<img src="${equipIconUrl(it.icon)}" data-rarity-color="${rarityColor}" data-fallback-slot="${it.slot||''}" onerror="handleEquipIconError(this)" />`
         : `<span style="color:${rarityColor};font-size:16px;">${it.kind==='gold' ? '🪙' : it.kind==='pouch' ? POTION_ICON_SVG : (ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG)}</span>`;
@@ -12415,7 +12638,7 @@
   const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', legs:'Calças', accessory1:'Acessório 1', accessory2:'Acessório 2', amulet:'Colar' };
   const RARITY_STAT_MULT = { comum:1, incomum:1.4, rara:2, 'épica':3, 'lendária':4.5, 'mítica':7 }; // 'mítica' 26/09/2026, espelha huntEngine.js — ver comentário lá
   const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, legs:{def:5}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3}, gloves:{atk:3,critPct:2} };
-  const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %' };
+  const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %', vitality:'Vitalidade', dexterity:'Destreza', speedPct:'Velocidade %', dodgePct:'Esquiva %' };
   const ENCHANT_MAX_LEVEL = 10;
   const ENCHANT_SUCCESS_CHANCE = { 1:1.0, 2:.95, 3:.9, 4:.8, 5:.7, 6:.6, 7:.5, 8:.4, 9:.3, 10:.2 };
   const ENCHANT_BREAK_FROM_LEVEL = 7;
@@ -12465,13 +12688,17 @@
   // Espelho de computeBaseItemStats (huntEngine.js): -60% (EQUIP_BASE_STAT_SCALE)
   // e atributos escolhidos na Profissão (item.craftStats) — 20/10/2026.
   const EQUIP_BASE_STAT_SCALE_CLIENT = 0.4;
-  const CRAFT_STAT_CHOICES_CLIENT = ['atk','def','critPct','magicPct'];
-  const CRAFT_STAT_LABEL_CLIENT = { atk:'Ataque', def:'Defesa', critPct:'Chance Crít.', magicPct:'Dano Mágico' };
+  const CRAFT_STAT_CHOICES_CLIENT = ['atk','def','critPct','magicPct','vitality','dexterity','speedPct','dodgePct'];
+  const CRAFT_STAT_LABEL_CLIENT = { atk:'Ataque', def:'Defesa', critPct:'Chance Crít.', magicPct:'Dano Mágico', vitality:'Vitalidade', dexterity:'Destreza', speedPct:'Velocidade', dodgePct:'Esquiva' };
   const CRAFT_STAT_BASE_BY_SLOT_CLIENT = {
     atk:      { weapon:8, offhand:3, helmet:3, armor:4, legs:3, boots:2, ring:2, amulet:3, gloves:3 },
     def:      { weapon:2, offhand:3, helmet:5, armor:8, legs:5, boots:3, ring:2, amulet:2, gloves:2 },
     critPct:  { weapon:2, offhand:1, helmet:1, armor:1, legs:1, boots:1, ring:2, amulet:1.5, gloves:2 },
     magicPct: { weapon:4, offhand:2, helmet:2, armor:2, legs:2, boots:1.5, ring:3, amulet:3, gloves:2 },
+    vitality: { weapon:4, offhand:6, helmet:8, armor:12, legs:8, boots:6, ring:4, amulet:6, gloves:5 },
+    dexterity:{ weapon:6, offhand:4, helmet:4, armor:4, legs:4, boots:5, ring:5, amulet:5, gloves:6 },
+    speedPct: { weapon:1, offhand:1, helmet:1, armor:1, legs:2, boots:4, ring:1, amulet:1, gloves:1 },
+    dodgePct: { helmet:1.5, armor:2.5, legs:2, boots:2 },
   };
   function computeBaseItemStatsClient(slot, rarity, powerTier, statKeys){
     let base = SLOT_BASE_STATS[slot]; if(!base) return {};
@@ -12548,10 +12775,10 @@
   // item ganhou (base + Encantamento + Infusão), igual à Mochila).
   function equipTooltipHtml(it){
     const stats = it.slot ? getItemTotalStatsClient(it) : {};
-    const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#a99872'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
+    const rarityLabel = `<span class="tt-rarity" style="color:${RARITY_COLORS[it.rarity]||'#ffffff'}">${(it.rarity||'comum').replace(/^./, c=>c.toUpperCase())}</span>`;
     const enchantLine = it.enchantLevel ? ` · +${it.enchantLevel}` : '';
     const infusionLine = it.infusionGrade ? ` · Grade ${it.infusionGrade}` : '';
-    const descLine = it.description ? `<span class="hint" style="font-style:italic;">${it.description}</span>` : '';
+    const descLine = it.description ? `<span class="hint" style="font-style:italic;color:${RARITY_COLORS[it.rarity]||'#ffffff'};">${it.description}</span>` : '';
     return `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name||it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}`;
   }
   function showEquipSlotTooltip(it){
@@ -12611,8 +12838,8 @@
       const placeholderSlot = (s==='accessory1'||s==='accessory2') ? 'ring' : s;
       const lvl = it && it.enchantLevel;
       const iconHtml = (it && it.icon)
-        ? `<img class="item-icon" style="width:26px;height:26px;object-fit:contain;" src="${equipIconUrl(it.icon)}" data-rarity-color="${RARITY_COLORS[it.rarity]||'#a99872'}" data-fallback-slot="${it.slot||placeholderSlot}" onerror="handleEquipIconError(this)" />`
-        : (it ? `<span class="item-icon" style="color:${RARITY_COLORS[it.rarity]||'#a99872'};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>` : equipSlotPlaceholderHtml(placeholderSlot));
+        ? `<img class="item-icon" style="width:26px;height:26px;object-fit:contain;" src="${equipIconUrl(it.icon)}" data-rarity-color="${RARITY_COLORS[it.rarity]||'#ffffff'}" data-fallback-slot="${it.slot||placeholderSlot}" onerror="handleEquipIconError(this)" />`
+        : (it ? `<span class="item-icon" style="color:${RARITY_COLORS[it.rarity]||'#ffffff'};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>` : equipSlotPlaceholderHtml(placeholderSlot));
       const title = it ? '' : `${label} (vazio)`;
       return `<div class="equip-slot${it?' filled':''}${s===enchantSelectedSlot?' active':''}" data-enchant-slot="${s}" title="${title}">`
         + `<span class="slot-icon">${iconHtml}</span>`
@@ -12656,8 +12883,8 @@
       <div class="infusion-preview">
         <div class="infusion-preview-icon">
           ${item.icon
-            ? `<img class="item-icon" data-rarity-color="${RARITY_COLORS[item.rarity]||'#a99872'}" data-fallback-slot="${item.slot||''}" src="${equipIconUrl(item.icon)}" onerror="handleEquipIconError(this)" />`
-            : `<span class="item-icon" style="color:${RARITY_COLORS[item.rarity]||'#a99872'};display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${ITEM_TYPE_ICON_SVG[item.slot] || MATERIAL_ICON_SVG}</span>`}
+            ? `<img class="item-icon" data-rarity-color="${RARITY_COLORS[item.rarity]||'#ffffff'}" data-fallback-slot="${item.slot||''}" src="${equipIconUrl(item.icon)}" onerror="handleEquipIconError(this)" />`
+            : `<span class="item-icon" style="color:${RARITY_COLORS[item.rarity]||'#ffffff'};display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${ITEM_TYPE_ICON_SVG[item.slot] || MATERIAL_ICON_SVG}</span>`}
           ${level>0 ? `<span class="grade-frame" style="background:var(--gold-deep);"></span><span class="grade-badge-big">+${level}</span>` : ''}
         </div>
         <div class="infusion-preview-info">
@@ -12777,8 +13004,8 @@
       const label = ENCHANT_SLOT_LABEL[s];
       const placeholderSlot = (s==='accessory1'||s==='accessory2') ? 'ring' : s;
       const iconHtml = (it && it.icon)
-        ? `<img class="item-icon" style="width:26px;height:26px;object-fit:contain;" src="${equipIconUrl(it.icon)}" data-rarity-color="${RARITY_COLORS[it.rarity]||'#a99872'}" data-fallback-slot="${it.slot||placeholderSlot}" onerror="handleEquipIconError(this)" />`
-        : (it ? `<span class="item-icon" style="color:${RARITY_COLORS[it.rarity]||'#a99872'};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>` : equipSlotPlaceholderHtml(placeholderSlot));
+        ? `<img class="item-icon" style="width:26px;height:26px;object-fit:contain;" src="${equipIconUrl(it.icon)}" data-rarity-color="${RARITY_COLORS[it.rarity]||'#ffffff'}" data-fallback-slot="${it.slot||placeholderSlot}" onerror="handleEquipIconError(this)" />`
+        : (it ? `<span class="item-icon" style="color:${RARITY_COLORS[it.rarity]||'#ffffff'};">${ITEM_TYPE_ICON_SVG[it.slot] || MATERIAL_ICON_SVG}</span>` : equipSlotPlaceholderHtml(placeholderSlot));
       const title = it ? '' : `${label} (vazio)`;
       return `<div class="equip-slot${it?' filled':''}${s===infusionSelectedSlot?' active':''}" data-infusion-slot="${s}" title="${title}">`
         + `<span class="slot-icon">${iconHtml}</span>`
@@ -12821,8 +13048,8 @@
       <div class="infusion-preview">
         <div class="infusion-preview-icon">
           ${item.icon
-            ? `<img class="item-icon" data-rarity-color="${RARITY_COLORS[item.rarity]||'#a99872'}" data-fallback-slot="${item.slot||''}" src="${equipIconUrl(item.icon)}" onerror="handleEquipIconError(this)" />`
-            : `<span class="item-icon" style="color:${RARITY_COLORS[item.rarity]||'#a99872'};display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${ITEM_TYPE_ICON_SVG[item.slot] || MATERIAL_ICON_SVG}</span>`}
+            ? `<img class="item-icon" data-rarity-color="${RARITY_COLORS[item.rarity]||'#ffffff'}" data-fallback-slot="${item.slot||''}" src="${equipIconUrl(item.icon)}" onerror="handleEquipIconError(this)" />`
+            : `<span class="item-icon" style="color:${RARITY_COLORS[item.rarity]||'#ffffff'};display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${ITEM_TYPE_ICON_SVG[item.slot] || MATERIAL_ICON_SVG}</span>`}
           ${grade>0 ? `<span class="grade-frame" style="background:${gradeBandColor(grade)};"></span><span class="grade-badge-big">G${grade}</span>` : ''}
         </div>
         <div class="infusion-preview-info">
@@ -13179,7 +13406,7 @@
     if(!fusionSelectedId && groups.length) fusionSelectedId = groups[0].item.id;
     const list = document.getElementById('fz-list');
     list.innerHTML = groups.length ? groups.map(g=>{
-      const it = g.item, color = RARITY_COLORS[it.rarity] || '#a99872';
+      const it = g.item, color = RARITY_COLORS[it.rarity] || '#ffffff';
       return `<div class="fz-card${it.id===fusionSelectedId?' sel':''}" data-fz-id="${it.id}">${fzIcon(it)}<div style="min-width:0;">
         <div class="fz-card-name" style="color:${color};">${escapeHtml((it.name||it.id).replace(/\s*\([^)]*\)\s*$/,''))}</div>
         <div class="fz-card-sub">${CRAFT_RARITY_LABEL_CAP_CLIENT[it.rarity]||it.rarity}</div>
@@ -13588,132 +13815,182 @@
      ========================================================= */
   const marketModal = document.getElementById('market-modal');
   const MARKET_MATERIAL_IDS = ['minerio_ferro','barra_aco','madeira_bruta','madeira_nobre','fio_de_la','seda_encantada'];
+  // ---- LEILÃO (20/10/2026, estilo Huntera): a lista mostra TODOS os itens à
+  // venda; clicou no item -> vê os detalhes -> "Comprar" compra na hora, sem
+  // ordem de compra. Vender = escolher um item da Mochila e o preço.
+  let aucTab = 'comprar', aucSelId = null, aucBuyQty = 1, aucQuery = '', aucCat = 'all', aucRarity = 'all', aucSort = 'price';
+  let aucSellIdx = null, aucSellPrice = 0, aucSellQty = 1;
+  const AUC_RARITIES = ['comum','incomum','rara','épica','lendária','mítica'];
+  function aucRequest(){ sendWS({ type:'market:list' }); sendWS({ type:'market:myOffers' }); }
   document.getElementById('btn-open-market').addEventListener('click', ()=>{
     marketModal.classList.toggle('open');
-    if(marketModal.classList.contains('open')){
-      sendWS({ type:'market:myOffers' });
-      if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId });
-      renderMarket();
-    }
+    if(marketModal.classList.contains('open')){ aucRequest(); renderMarket(); }
   });
   function renderMarketIfOpen(){ if(marketModal.classList.contains('open')) renderMarket(); }
-  function selectMarketItem(itemId){
-    marketSelectedItemId = itemId;
-    marketQtyDraft = 1; marketPriceDraft = 1;
-    sendWS({ type:'market:list', itemId });
-    renderMarket();
+  function selectMarketItem(){ aucRequest(); renderMarket(); } // compat
+  function aucIconHtml(o){
+    const it = o.item || { id:o.itemId, rarity:o.rarity, name:o.itemName };
+    return `${resolveItemIconHtml({ ...it, rarity:o.rarity })}${rarityFrameHtml(o.rarity)}`;
   }
-  function marketPickRow(offer){
-    // clicar numa oferta que já tá no livro pré-preenche o formulário com a
-    // AÇÃO COMPLEMENTAR (clicar numa venda pré-monta uma compra que casa com
-    // ela na hora, e vice-versa) -- atalho de "comprar/vender a preço de mercado".
-    marketOfferTypeDraft = offer.type === 'sell' ? 'buy' : 'sell';
-    marketQtyDraft = offer.qty;
-    marketPriceDraft = offer.pricePerUnit;
-    renderMarket();
+  function aucFmt(n){ return Math.round(n||0).toLocaleString('pt-BR'); }
+  function aucFilteredOffers(){
+    let list = (marketBookCache||[]).filter(o=>o.type==='sell' && o.qty>0);
+    if(aucQuery) list = list.filter(o=>String(o.itemName||'').toLowerCase().includes(aucQuery));
+    if(aucCat==='equip') list = list.filter(o=>o.isEquip);
+    else if(aucCat==='mat') list = list.filter(o=>!o.isEquip && !/health|mana/.test(o.itemId));
+    else if(aucCat==='pot') list = list.filter(o=>/health|mana/.test(o.itemId));
+    if(aucRarity!=='all') list = list.filter(o=>o.rarity===aucRarity);
+    if(aucSort==='price') list.sort((a,b)=>a.pricePerUnit-b.pricePerUnit);
+    else if(aucSort==='price_desc') list.sort((a,b)=>b.pricePerUnit-a.pricePerUnit);
+    else list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    return list;
   }
   function renderMarket(){
     if(!marketModal.classList.contains('open')) return;
-    // --- lista de itens (esquerda) ---
-    const materiais = marketCatalog.filter(it=>MARKET_MATERIAL_IDS.includes(it.id));
-    const pocoes = marketCatalog.filter(it=>!MARKET_MATERIAL_IDS.includes(it.id));
-    const rowHtml = it => `<div class="market-item-row ${it.id===marketSelectedItemId?'selected':''}" data-market-item="${it.id}"><span>${it.name}</span><span class="miq">${bagQty(it.id)}x</span></div>`;
-    document.getElementById('market-item-list').innerHTML =
-      `<div class="market-category-header">Materiais</div>${materiais.map(rowHtml).join('')}` +
-      `<div class="market-category-header">Poções</div>${pocoes.map(rowHtml).join('')}`;
-    document.getElementById('market-item-list').querySelectorAll('[data-market-item]').forEach(row=>{
-      row.addEventListener('click', ()=> selectMarketItem(row.dataset.marketItem));
-    });
-    // --- cabeçalho + abas (direita) ---
-    const selectedDef = marketCatalog.find(it=>it.id===marketSelectedItemId);
-    document.getElementById('market-selected-name').textContent = selectedDef ? selectedDef.name : 'Selecione um item à esquerda';
-    document.getElementById('market-my-gold').innerHTML = `<img src="${RAVENDAWN_UI_BASE}gold.png" style="width:13px;height:auto;vertical-align:-2px;object-fit:contain;margin-right:2px;" onerror="this.style.display='none'"/>${Math.round(player.gold).toLocaleString('pt-BR')}`;
-    document.querySelectorAll('.market-tab').forEach(tab=> tab.classList.toggle('active', tab.dataset.marketTab === marketViewTab));
-    // --- lista de ofertas ---
-    const listEl = document.getElementById('market-offer-list');
-    if(marketViewTab === 'my'){
-      if(!marketMyOffersCache.length){
-        listEl.innerHTML = `<div class="market-empty">Você não tem nenhuma oferta aberta no Mercado.</div>`;
-      } else {
-        listEl.innerHTML = marketMyOffersCache.map(o=>`
-          <div class="market-offer-row mine">
-            <span class="market-type-badge ${o.type}"></span>
-            <span>${o.itemName} — ${o.qty}x</span>
-            <span>${o.pricePerUnit.toLocaleString('pt-BR')}/un</span>
-            <span class="mo-total">${(o.qty*o.pricePerUnit).toLocaleString('pt-BR')}</span>
-            <button class="market-my-offers-cancel" data-cancel-offer="${o.id}">Cancelar</button>
-          </div>`).join('');
-        listEl.querySelectorAll('[data-cancel-offer]').forEach(btn=> btn.addEventListener('click', ()=> sendWS({ type:'market:cancelOffer', offerId: btn.dataset.cancelOffer })));
-      }
-    } else if(!marketSelectedItemId){
-      listEl.innerHTML = `<div class="market-empty">Escolha um item à esquerda pra ver o livro de ofertas.</div>`;
-    } else {
-      const sells = marketBookCache.filter(o=>o.type==='sell').sort((a,b)=>a.pricePerUnit-b.pricePerUnit);
-      const buys = marketBookCache.filter(o=>o.type==='buy').sort((a,b)=>b.pricePerUnit-a.pricePerUnit);
-      const rowOf = o => `
-        <div class="market-offer-row ${o.ownerName===PLAYER_NICK?'mine':''}" data-offer-id="${o.id}">
-          <span class="market-type-badge ${o.type}"></span>
-          <span>${escapeHtml(o.ownerName)}</span>
-          <span>${o.qty}x</span>
-          <span>${o.pricePerUnit.toLocaleString('pt-BR')}/un</span>
-          <span class="mo-total">${(o.qty*o.pricePerUnit).toLocaleString('pt-BR')}</span>
-        </div>`;
-      listEl.innerHTML =
-        `<div class="market-category-header">À venda (clique pra comprar)</div>` +
-        (sells.length ? sells.map(rowOf).join('') : `<div class="market-empty">Ninguém vendendo ainda.</div>`) +
-        `<div class="market-category-header">Comprando (clique pra vender)</div>` +
-        (buys.length ? buys.map(rowOf).join('') : `<div class="market-empty">Ninguém comprando ainda.</div>`);
-      listEl.querySelectorAll('[data-offer-id]').forEach(row=>{
-        row.addEventListener('click', ()=>{
-          const offer = marketBookCache.find(o=>o.id===row.dataset.offerId);
-          if(offer) marketPickRow(offer);
-        });
-      });
-    }
-    // --- formulário de criar oferta ---
-    const formWrap = document.getElementById('market-form-wrap');
-    if(marketViewTab !== 'book' || !marketSelectedItemId){ formWrap.innerHTML = ''; return; }
-    const have = bagQty(marketSelectedItemId);
-    const total = Math.max(0, Math.floor(marketQtyDraft)) * Math.max(0, Math.floor(marketPriceDraft));
-    const canSubmit = marketQtyDraft > 0 && marketPriceDraft > 0 && (marketOfferTypeDraft === 'buy' ? total <= player.gold + (player.bankGold||0) : have >= marketQtyDraft);
-    formWrap.innerHTML = `
-      <div class="market-divider"></div>
-      <div class="market-form">
-        <div class="market-form-row">
-          <div class="market-type-toggle">
-            <div class="market-type-btn ${marketOfferTypeDraft==='sell'?'active':''}" data-market-type="sell"><span class="market-type-badge sell"></span>Vender</div>
-            <div class="market-type-btn ${marketOfferTypeDraft==='buy'?'active':''}" data-market-type="buy"><span class="market-type-badge buy"></span>Comprar</div>
+    const tabs = document.getElementById('auc-tabs');
+    const myCount = (marketMyOffersCache||[]).length;
+    tabs.innerHTML = [['comprar','🛒 Comprar'],['vender','💰 Vender'],['minhas',`📋 Minhas ofertas (${myCount})`]]
+      .map(([id,l])=>`<div class="auc-tab ${aucTab===id?'active':''}" data-auc-tab="${id}">${l}</div>`).join('');
+    tabs.querySelectorAll('[data-auc-tab]').forEach(t=> t.addEventListener('click', ()=>{ aucTab = t.dataset.aucTab; renderMarket(); }));
+    const body = document.getElementById('market-body');
+    const gold = (player.gold||0) + (player.bankGold||0);
+    const keepScroll = body.querySelector('.auc-list') ? body.querySelector('.auc-list').scrollTop : 0;
+    const focusedId = document.activeElement && document.activeElement.id;
+    if(aucTab==='comprar'){
+      const list = aucFilteredOffers();
+      const sel = list.find(o=>o.id===aucSelId) || null;
+      body.innerHTML = `<div class="auc-wrap">
+        <div class="auc-left">
+          <div class="auc-filters">
+            <input id="auc-q" placeholder="Buscar item..." value="${escapeHtml(aucQuery)}">
+            <select id="auc-cat"><option value="all">Todos</option><option value="equip">Equipamentos</option><option value="mat">Materiais/Loot</option><option value="pot">Poções</option></select>
+            <select id="auc-rar"><option value="all">Raridade</option>${AUC_RARITIES.map(r=>`<option value="${r}">${r[0].toUpperCase()+r.slice(1)}</option>`).join('')}</select>
+            <select id="auc-sort"><option value="price">Menor preço</option><option value="price_desc">Maior preço</option><option value="new">Mais recentes</option></select>
           </div>
-          <span style="margin-left:auto;">Você tem: <b style="color:var(--gold-bright);">${have}x</b></span>
+          <div class="auc-head"><span></span><span>Item / Vendedor</span><span style="text-align:center">Qtd</span><span style="text-align:right">Preço (un)</span></div>
+          <div class="auc-list">${list.length ? list.map(o=>`
+            <div class="auc-row ${o.id===aucSelId?'sel':''}" data-auc-offer="${o.id}">
+              <span class="ic">${aucIconHtml(o)}</span>
+              <span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${escapeHtml(o.itemName)}${o.item&&o.item.enchantLevel?` +${o.item.enchantLevel}`:''}<small>${escapeHtml(o.ownerName||'')}</small></span>
+              <span class="q">${o.qty}</span>
+              <span class="pr">${aucFmt(o.pricePerUnit)} 🪙</span>
+            </div>`).join('') : `<div class="auc-empty">Nenhum item à venda${aucQuery?` com "${escapeHtml(aucQuery)}"`:''}.</div>`}</div>
         </div>
-        <div class="market-form-row">
-          <span>Quantidade</span>
-          <button class="market-amount-btn minus" id="market-qty-minus"></button>
-          <input class="market-qty-input" id="market-qty-input" type="number" min="1" max="9999" value="${marketQtyDraft}">
-          <button class="market-amount-btn plus" id="market-qty-plus"></button>
-          <span style="margin-left:12px;">Preço/un</span>
-          <input class="market-price-input" id="market-price-input" type="number" min="1" max="1000000" value="${marketPriceDraft}">
+        <div class="auc-right">${sel ? (()=>{
+          const mine = sel.ownerName === PLAYER_NICK;
+          const q = sel.isEquip ? 1 : Math.max(1, Math.min(sel.qty, aucBuyQty));
+          const total = q * sel.pricePerUnit;
+          const can = !mine && total <= gold && inCityForShop();
+          const info = (typeof ITEM_INFO !== 'undefined') ? ITEM_INFO[sel.itemId] : null;
+          const stats = sel.item && sel.item.slot ? equipTooltipHtml(sel.item) : (info && info.desc ? `<span class="hint" style="color:${RARITY_COLORS[sel.rarity]};font-style:italic;">${escapeHtml(info.desc)}</span>` : '');
+          return `
+          <div class="auc-detail-ic">${aucIconHtml(sel)}</div>
+          <div class="auc-detail-nm" style="color:${RARITY_COLORS[sel.rarity]||'#fff'}">${escapeHtml(sel.itemName)}</div>
+          <div class="auc-detail-sub">${(sel.rarity||'comum').replace(/^./,c=>c.toUpperCase())} · vendido por <b>${escapeHtml(sel.ownerName||'')}</b></div>
+          ${stats ? `<div class="auc-detail-stats">${stats}</div>` : ''}
+          <div class="auc-line"><span>Preço por unidade</span><b>${aucFmt(sel.pricePerUnit)} 🪙</b></div>
+          <div class="auc-line"><span>Disponível</span><b>${sel.qty}</b></div>
+          ${sel.isEquip ? '' : `<div class="auc-qty"><button id="auc-qm">−</button><input id="auc-qty" type="number" min="1" max="${sel.qty}" value="${q}"><button id="auc-qp">+</button><button id="auc-qmax" style="width:auto;padding:0 8px;">Máx</button></div>`}
+          <div class="auc-line"><span>Total</span><b class="${total>gold?'bad':''}">${aucFmt(total)} 🪙</b></div>
+          <div class="auc-line"><span>Seu ouro (mão + banco)</span><b>${aucFmt(gold)} 🪙</b></div>
+          <button class="auc-buy" id="auc-buy" ${can?'':'disabled'}>${mine ? 'Este anúncio é seu' : (!inCityForShop() ? 'Só na Cidade Principal' : (total>gold ? 'Ouro insuficiente' : `Comprar por ${aucFmt(total)} 🪙`))}</button>`;
+        })() : `<div class="auc-empty">Clique num item da lista pra ver os detalhes e comprar.</div>`}</div>
+      </div>`;
+      const qEl = body.querySelector('#auc-q');
+      qEl.addEventListener('input', e=>{ aucQuery = e.target.value.trim().toLowerCase(); renderMarket(); });
+      body.querySelector('#auc-cat').value = aucCat; body.querySelector('#auc-rar').value = aucRarity; body.querySelector('#auc-sort').value = aucSort;
+      body.querySelector('#auc-cat').addEventListener('change', e=>{ aucCat = e.target.value; renderMarket(); });
+      body.querySelector('#auc-rar').addEventListener('change', e=>{ aucRarity = e.target.value; renderMarket(); });
+      body.querySelector('#auc-sort').addEventListener('change', e=>{ aucSort = e.target.value; renderMarket(); });
+      body.querySelectorAll('[data-auc-offer]').forEach(r=> r.addEventListener('click', ()=>{ aucSelId = r.dataset.aucOffer; aucBuyQty = 1; renderMarket(); }));
+      if(sel){
+        const setQ = v=>{ aucBuyQty = Math.max(1, Math.min(sel.qty, v|0)); renderMarket(); };
+        const qm = body.querySelector('#auc-qm'); if(qm) qm.addEventListener('click', ()=> setQ(aucBuyQty-1));
+        const qp = body.querySelector('#auc-qp'); if(qp) qp.addEventListener('click', ()=> setQ(aucBuyQty+1));
+        const qx = body.querySelector('#auc-qmax'); if(qx) qx.addEventListener('click', ()=> setQ(Math.max(1, Math.min(sel.qty, Math.floor(gold / sel.pricePerUnit)))));
+        // sem re-render no 'change': ele dispara no blur, ANTES do clique no
+        // Comprar terminar, e o botão era trocado no meio do clique.
+        const qi = body.querySelector('#auc-qty'); if(qi) qi.addEventListener('input', e=>{ aucBuyQty = Math.max(1, Math.min(sel.qty, parseInt(e.target.value)||1)); });
+        const bb = body.querySelector('#auc-buy'); if(bb) bb.addEventListener('click', ()=>{ if(qi) aucBuyQty = Math.max(1, Math.min(sel.qty, parseInt(qi.value)||1)); bb.disabled = true; sendWS({ type:'market:buyOffer', offerId: sel.id, qty: sel.isEquip ? 1 : Math.max(1, Math.min(sel.qty, aucBuyQty)) }); });
+      }
+      if(focusedId==='auc-q'){ qEl.focus(); qEl.setSelectionRange(qEl.value.length, qEl.value.length); }
+    } else if(aucTab==='vender'){
+      const items = bag.map((it,idx)=>({ it, idx })).filter(x=>x.it && !x.it.locked);
+      const selx = items.find(x=>x.idx===aucSellIdx) || null;
+      body.innerHTML = `<div class="auc-wrap">
+        <div class="auc-left">
+          <div class="auc-head"><span></span><span>Itens da sua Mochila</span><span style="text-align:center">Qtd</span><span style="text-align:right">NPC paga</span></div>
+          <div class="auc-list">${items.length ? items.map(({it,idx})=>`
+            <div class="auc-row ${idx===aucSellIdx?'sel':''}" data-auc-sell="${idx}">
+              <span class="ic">${resolveItemIconHtml(it)}${rarityFrameHtml(it.rarity||'comum')}</span>
+              <span class="nm" style="color:${RARITY_COLORS[it.rarity]||'#fff'}">${escapeHtml(it.name||it.id)}${it.enchantLevel?` +${it.enchantLevel}`:''}<small>${it.slot?'Equipamento':'Item'}</small></span>
+              <span class="q">${it.qty||1}</span>
+              <span class="pr" style="color:var(--ink-dim)">${aucFmt(npcSellPriceFor({ ...it, qty:1 }))} 🪙</span>
+            </div>`).join('') : `<div class="auc-empty">Sua Mochila está vazia.</div>`}</div>
         </div>
-        <div class="market-total-line">Total: <b>${total.toLocaleString('pt-BR')} Gold</b>${marketOfferTypeDraft==='sell' ? ` (taxa de ${Math.round(marketFeeRate*100)}% já é descontada na venda)` : ''}</div>
-        <button id="market-submit-btn" ${canSubmit?'':'disabled'}>${marketOfferTypeDraft==='sell'?'Criar Oferta de Venda':'Criar Oferta de Compra'}</button>
-        <div class="market-fee-note">Casamento automático: se já existir oferta compatível no livro, sua oferta casa na hora ao preço de quem já estava esperando.</div>
-      </div>
-    `;
-    formWrap.querySelectorAll('[data-market-type]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{ marketOfferTypeDraft = btn.dataset.marketType; renderMarket(); });
-    });
-    document.getElementById('market-qty-minus').addEventListener('click', ()=>{ marketQtyDraft = Math.max(1, (marketQtyDraft||1)-1); renderMarket(); });
-    document.getElementById('market-qty-plus').addEventListener('click', ()=>{ marketQtyDraft = Math.min(9999, (marketQtyDraft||1)+1); renderMarket(); });
-    document.getElementById('market-qty-input').addEventListener('change', e=>{ marketQtyDraft = Math.max(1, Math.min(9999, parseInt(e.target.value)||1)); renderMarket(); });
-    document.getElementById('market-price-input').addEventListener('change', e=>{ marketPriceDraft = Math.max(1, Math.min(1000000, parseInt(e.target.value)||1)); renderMarket(); });
-    const submitBtn = document.getElementById('market-submit-btn');
-    if(submitBtn) submitBtn.addEventListener('click', ()=>{
-      sendWS({ type:'market:createOffer', offerType: marketOfferTypeDraft, itemId: marketSelectedItemId, qty: marketQtyDraft, pricePerUnit: marketPriceDraft });
-    });
+        <div class="auc-right">${selx ? (()=>{
+          const it = selx.it, maxQ = it.slot ? 1 : (it.qty||1);
+          const q = Math.max(1, Math.min(maxQ, aucSellQty));
+          const price = Math.max(0, aucSellPrice|0);
+          const gross = q * price, fee = Math.floor(gross * marketFeeRate);
+          const can = price > 0 && inCityForShop();
+          return `
+          <div class="auc-detail-ic">${resolveItemIconHtml(it)}${rarityFrameHtml(it.rarity||'comum')}</div>
+          <div class="auc-detail-nm" style="color:${RARITY_COLORS[it.rarity]||'#fff'}">${escapeHtml(it.name||it.id)}</div>
+          ${it.slot ? `<div class="auc-detail-stats">${equipTooltipHtml(it)}</div>` : ''}
+          <div class="auc-form">
+            ${it.slot ? '' : `<label>Quantidade (você tem ${maxQ})</label><input id="auc-sq" type="number" min="1" max="${maxQ}" value="${q}">`}
+            <label>Preço por unidade (ouro)</label><input id="auc-sp" type="number" min="1" max="1000000" value="${price||''}" placeholder="ex.: ${aucFmt(npcSellPriceFor({ ...it, qty:1 })*3)}">
+          </div>
+          <div class="auc-line"><span>Total do anúncio</span><b id="auc-gross">${aucFmt(gross)} 🪙</b></div>
+          <div class="auc-line"><span>Taxa do Leilão (${Math.round(marketFeeRate*100)}%)</span><b id="auc-fee">-${aucFmt(fee)} 🪙</b></div>
+          <div class="auc-line"><span>Você recebe ao vender</span><b id="auc-net">${aucFmt(gross-fee)} 🪙</b></div>
+          <button class="auc-buy sell" id="auc-list" ${can?'':'disabled'}>${!inCityForShop() ? 'Só na Cidade Principal' : (price>0 ? 'Anunciar no Leilão' : 'Defina o preço')}</button>`;
+        })() : `<div class="auc-empty">Escolha um item da Mochila pra anunciar.<br><br>O item sai da Mochila e fica no Leilão até alguém comprar ou você cancelar (em "Minhas ofertas").</div>`}</div>
+      </div>`;
+      body.querySelectorAll('[data-auc-sell]').forEach(r=> r.addEventListener('click', ()=>{ aucSellIdx = Number(r.dataset.aucSell); aucSellQty = 1; aucSellPrice = 0; renderMarket(); }));
+      // Totais atualizados no lugar (sem re-render): o 'change' dispara no
+      // blur, bem quando o jogador clica em Anunciar, e trocava o botão no
+      // meio do clique (o anúncio não saía).
+      const sq = body.querySelector('#auc-sq');
+      const sp = body.querySelector('#auc-sp');
+      const updSell = ()=>{
+        const it = bag[aucSellIdx]; if(!it) return;
+        const maxQ = it.slot ? 1 : (it.qty||1);
+        if(sq) aucSellQty = Math.max(1, Math.min(maxQ, parseInt(sq.value)||1));
+        if(sp) aucSellPrice = Math.max(0, parseInt(sp.value)||0);
+        const q = it.slot ? 1 : aucSellQty, gross = q*aucSellPrice, fee = Math.floor(gross*marketFeeRate);
+        const g = body.querySelector('#auc-gross'), f = body.querySelector('#auc-fee'), n = body.querySelector('#auc-net');
+        if(g) g.textContent = aucFmt(gross)+' 🪙'; if(f) f.textContent = '-'+aucFmt(fee)+' 🪙'; if(n) n.textContent = aucFmt(gross-fee)+' 🪙';
+        const b = body.querySelector('#auc-list'); if(b && inCityForShop()){ b.disabled = !(aucSellPrice>0); b.textContent = aucSellPrice>0 ? 'Anunciar no Leilão' : 'Defina o preço'; }
+      };
+      if(sq) sq.addEventListener('input', updSell);
+      if(sp) sp.addEventListener('input', updSell);
+      const lb = body.querySelector('#auc-list'); if(lb) lb.addEventListener('click', ()=>{
+        const it = bag[aucSellIdx]; if(!it) return;
+        const sv = body.querySelector('#auc-sp'); if(sv) aucSellPrice = parseInt(sv.value)||aucSellPrice;
+        const sqv = body.querySelector('#auc-sq'); if(sqv) aucSellQty = parseInt(sqv.value)||aucSellQty;
+        lb.disabled = true;
+        sendWS({ type:'market:listItem', bagIndex: aucSellIdx, qty: it.slot ? 1 : Math.max(1, Math.min(it.qty||1, aucSellQty)), pricePerUnit: aucSellPrice });
+      });
+      if(focusedId==='auc-sp' && sp){ sp.focus(); }
+    } else {
+      const list = marketMyOffersCache || [];
+      body.innerHTML = `<div class="auc-wrap"><div class="auc-left" style="flex:1">
+        <div class="auc-head" style="grid-template-columns:36px 1fr 46px 92px 80px;"><span></span><span>Seus anúncios</span><span style="text-align:center">Qtd</span><span style="text-align:right">Preço (un)</span><span></span></div>
+        <div class="auc-list">${list.length ? list.map(o=>`
+          <div class="auc-row" style="grid-template-columns:36px 1fr 46px 92px 80px;cursor:default;">
+            <span class="ic">${aucIconHtml(o)}</span>
+            <span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${escapeHtml(o.itemName)}<small>${o.type==='buy'?'Ordem de compra (antiga)':'À venda'}</small></span>
+            <span class="q">${o.qty}</span>
+            <span class="pr">${aucFmt(o.pricePerUnit)} 🪙</span>
+            <span style="text-align:right"><button class="auc-cancel" data-auc-cancel="${o.id}">Cancelar</button></span>
+          </div>`).join('') : `<div class="auc-empty">Você não tem nenhum anúncio no Leilão.</div>`}</div>
+      </div></div>`;
+      body.querySelectorAll('[data-auc-cancel]').forEach(b=> b.addEventListener('click', ()=> sendWS({ type:'market:cancelOffer', offerId: b.dataset.aucCancel })));
+    }
+    const nl = body.querySelector('.auc-list'); if(nl) nl.scrollTop = keepScroll;
   }
-  document.querySelectorAll('.market-tab').forEach(tab=>{
-    tab.addEventListener('click', ()=>{ marketViewTab = tab.dataset.marketTab; renderMarket(); });
-  });
 
   /* =========================================================
      PETS + GACHA — catálogo espelhado de huntEngine.PETS_CATALOG só
@@ -14153,8 +14430,13 @@
       const tag = document.activeElement && document.activeElement.tagName;
       if(tag==='INPUT' || tag==='TEXTAREA') return;
       e.preventDefault();
-      partydpsModal.classList.toggle('open');
-      renderPartyDps();
+      // 20/10/2026: o Party DPS agora vive na aba "Dano / DPS" do Analisador
+      const tab = document.querySelector('.analyzer-tab[data-atab="dps"]');
+      const isOnDps = analyzerPanel.classList.contains('open') && tab.classList.contains('active');
+      if(isOnDps){ analyzerPanel.classList.remove('open'); return; }
+      analyzerPanel.classList.add('open');
+      document.querySelectorAll('.analyzer-tab').forEach(x=>x.classList.remove('active')); tab.classList.add('active');
+      renderAnalyzer();
     }
   });
   function renderPartyDpsIfOpen(){ if(partydpsModal.classList.contains('open')) renderPartyDps(); }
@@ -14448,7 +14730,7 @@
     { id:'destaques', tab:'loja', name:'Destaques', icon:'⭐' },
     { id:'outfits', tab:'loja', name:'Outfits', icon:'👘', count:()=> shCoinOutfits().length },
     { id:'ornamentos', tab:'loja', name:'Ornamentos', icon:'🏵️', count:()=> ornamentCatalog.length },
-    { id:'asas', tab:'loja', name:'Asas', icon:'🪽', count:()=> wingCatalog.filter(x=>x.forSale).length },
+    { id:'asas', tab:'loja', name:'Asas', icon:'🪽', count:()=> wingCatalog.length },
     { id:'auras', tab:'loja', name:'Auras', icon:'✨', count:()=> auraCatalog.length },
     { id:'montarias', tab:'loja', name:'Montarias', icon:'🐎', count:()=> mountCatalog.length },
     { id:'premium', tab:'loja', name:'Tempo de Premium', icon:'👑', count:()=> PREMIUM_PACKAGES.length },
@@ -14460,7 +14742,7 @@
     { id:'bencaos', tab:'npc', name:'Bênçãos', icon:'🙏', dock:'blessings-modal', open:()=>{ blessingsModal.classList.add('open'); renderBlessings(); } },
     { id:'torneio', tab:'pvp', name:'Torneio Semanal', icon:'🏆', dock:'pvp-tournament-modal', open:()=>{ pvpTournamentModal.classList.add('open'); sendWS({ type:'pvp:getState' }); renderPvpTournamentGrid(); } },
     { id:'pvpshop', tab:'pvp', name:'Loja de PvP', icon:'🏪', dock:'pvp-shop-modal', open:()=>{ pvpShopModal.classList.add('open'); sendWS({ type:'pvp:shop:getState' }); renderPvpShop(); } },
-    { id:'mercado', tab:'mercado', name:'Mercado', icon:'📦', dock:'market-modal', open:()=>{ marketModal.classList.add('open'); sendWS({ type:'market:myOffers' }); if(marketSelectedItemId) sendWS({ type:'market:list', itemId: marketSelectedItemId }); renderMarket(); } },
+    { id:'mercado', tab:'mercado', name:'Leilão', icon:'🔨', dock:'market-modal', open:()=>{ marketModal.classList.add('open'); aucRequest(); renderMarket(); } },
   ];
   let shTab = 'loja', shCat = 'destaques', shQuery = '', shConfirmId = null;
   let shDocked = null; // { el, parent, next }
@@ -14717,14 +14999,15 @@
       }));
     } else if(shCat === 'asas' || shCat === 'auras'){
       const isW = shCat === 'asas';
-      const list = (isW ? wingCatalog.filter(x=>x.forSale) : auraCatalog);
+      // todas as asas (as de Gold antigas também — tinham sumido por causa do filtro forSale)
+      const list = (isW ? wingCatalog.slice().sort((a,b)=> (a.currency==='elementalCoin') - (b.currency==='elementalCoin') || a.cost - b.cost) : auraCatalog);
       const owned = isW ? ownedWings : ownedAuras, eqId = isW ? cosmetics.wings : cosmetics.aura;
       const icon = (x)=> String(x.id).startsWith('ex_') ? `${URL_BASE}exodus/${isW?'wings':'auras'}/${x.id}_icon.png` : (isW ? `${URL_BASE}wings/${x.id}.png` : `${URL_BASE}auras/${x.id}/f00.png`);
       main.innerHTML = H(isW ? 'Asas' : 'Auras', 'Aparecem junto do seu personagem com qualquer traje. Clique em Comprar e depois em Confirmar.')
         + `<div class="sh-grid">${list.map(x=>{
           const has = owned.includes(x.id), eq = eqId === x.id, conf = shConfirmId === 'ca:'+x.id;
-          const coin = x.currency === 'elementalCoin', can = coin ? (elementalCoins||0) >= x.cost : true;
-          let btn = eq ? 'Remover' : has ? 'Equipar' : conf ? `Confirmar ${x.cost} ${coin?'💎':'🪙'}` : (can ? 'Comprar' : 'Coin insuficiente');
+          const coin = x.currency === 'elementalCoin', can = coin ? (elementalCoins||0) >= x.cost : (player.gold||0) >= x.cost;
+          let btn = eq ? 'Remover' : has ? 'Equipar' : conf ? `Confirmar ${x.cost} ${coin?'💎':'🪙'}` : (can ? 'Comprar' : (coin ? 'Coin insuficiente' : 'Gold insuficiente'));
           return shCard({ tag: eq ? 'Equipado' : has ? 'Adquirido' : (isW ? 'Asas' : 'Aura'), feat: eq,
             art: `<img src="${icon(x)}" onerror="this.replaceWith(document.createTextNode('${isW?'🪽':'✨'}'))">`,
             name: x.name, price: has ? '' : `${x.cost.toLocaleString('pt-BR')} <small>${coin?'💎 Coin':'Gold'}</small>`,
@@ -14764,8 +15047,18 @@
       + (res.map(r => `<div class="sh-res" data-sh-go="${r.go}"><span>${escapeHtml(String(r.name))}</span><span class="w">${r.where}</span></div>`).join('') || '<div class="sh-sub">Nada encontrado.</div>');
     main.querySelectorAll('[data-sh-go]').forEach(el => el.addEventListener('click', ()=> openStoreHub(el.dataset.shGo)));
   }
+  let shLastSig = '';
   function renderStoreHub(full){
     if(!storeHubModal.classList.contains('open')) return;
+    // 20/10/2026: o snapshot chega a 30Hz e redesenhava a Loja inteira toda
+    // vez — os cartões eram trocados embaixo do mouse, então a prévia (hover)
+    // nunca abria e cliques às vezes se perdiam. Agora só redesenha quando
+    // algo que aparece na Loja mudou de verdade.
+    const sig = JSON.stringify([shTab, shCat, shQuery, shConfirmId, Math.round(player.gold||0), Math.round(player.bankGold||0), Math.round(elementalCoins||0),
+      pvpShopState.moedasPvP||0, cosmetics, ownedOutfits, ownedWings, ownedAuras, ownedOrnaments, isPremium,
+      outfitCatalog.length, wingCatalog.length, auraCatalog.length, ornamentCatalog.length]);
+    if(!full && sig === shLastSig) return;
+    shLastSig = sig;
     document.getElementById('sh-cur-gold').textContent = '🪙 ' + Math.round((player.gold||0) + (player.bankGold||0)).toLocaleString('pt-BR');
     document.getElementById('sh-cur-coin').textContent = '💎 ' + Math.round(elementalCoins||0).toLocaleString('pt-BR');
     document.getElementById('sh-cur-pvp').textContent = '⚔️ ' + Math.round(pvpShopState.moedasPvP||0).toLocaleString('pt-BR');
