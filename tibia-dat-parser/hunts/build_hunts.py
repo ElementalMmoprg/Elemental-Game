@@ -152,16 +152,32 @@ for hid,cfg in sel.items():
     if len(cand)<40: cand=[k for k,v in opn.items() if v>=33 and k[2] in okz]
     if len(cand)<20: cand=[k for k,v in opn.items() if v>=24]
     first=min(cand,key=lambda k:(k[2]!=zmain, abs(k[0]-cx)+abs(k[1]-cy)))
+    # 21/10/2026: pontos de spawn/lure espalhados pela área inteira (antes eram
+    # só 6 e sobrava muito chão sem monstro). Amostragem do ponto mais longe
+    # até ficarem a no máximo ~SPACING passos uns dos outros.
+    SPACING=15; MAXP=30; MINP=10
     lures=[first]; Dl=[bfs(first)]
-    while len(lures)<6:
+    while len(lures)<MAXP:
         nxt=max(cand,key=lambda k:min(D.get(k,0) for D in Dl))
+        far=min(D.get(nxt,0) for D in Dl)
+        if len(lures)>=MINP and far<SPACING: break
         lures.append(nxt); Dl.append(bfs(nxt))
-    # ordem do circuito (menor volta)
-    best_ord=None
-    for perm in itertools.permutations(range(1,6)):
-        o=(0,)+perm; L=sum(Dl[o[i]][lures[o[(i+1)%6]]] for i in range(6))
-        if best_ord is None or L<best_ord[0]: best_ord=(L,o)
-    lures=[lures[i] for i in best_ord[1]]
+    n=len(lures)
+    M=[[Dl[i].get(lures[j],10**6) for j in range(n)] for i in range(n)]
+    # circuito: vizinho mais próximo + 2-opt (volta curta passando por todos)
+    order=[0]; left=set(range(1,n))
+    while left:
+        c=order[-1]; nx=min(left,key=lambda j:M[c][j]); order.append(nx); left.remove(nx)
+    def tour_len(o): return sum(M[o[i]][o[(i+1)%n]] for i in range(n))
+    improved=True
+    while improved:
+        improved=False
+        for i in range(1,n-1):
+            for j in range(i+1,n):
+                o2=order[:i]+order[i:j+1][::-1]+order[j+1:]
+                if tour_len(o2)<tour_len(order): order=o2; improved=True
+    best_ord=(tour_len(order),order)
+    lures=[lures[i] for i in order]
     # entrada: ~5 tiles do 1º lure, no mesmo andar
     D0=bfs(lures[0])
     ent=min([k for k in D0 if k[2]==lures[0][2] and k not in changes], key=lambda k:(abs(D0[k]-5), -openness(k)))

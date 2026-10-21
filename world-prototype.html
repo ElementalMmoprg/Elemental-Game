@@ -294,6 +294,9 @@
   #hunts-center .meta{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); margin-bottom:14px; }
   #hunts-center .meta b{ color:var(--ink); }
   .diff-picker{ display:flex; gap:8px; margin:10px 0 16px; }
+  .diff-btn.infernal{ border-color:#8a2a1a !important; background:linear-gradient(180deg,#3a0f08,#1f0704) !important; }
+  .diff-btn.infernal .name{ color:#ff6a3c; text-shadow:0 0 6px rgba(255,80,30,.6); }
+  .diff-btn.infernal.active{ box-shadow:0 0 0 1px #ff5a3c, 0 0 12px rgba(255,70,30,.5) !important; }
   .diff-btn{ flex:1; padding:10px 6px; text-align:center; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); cursor:pointer; }
   .diff-btn .name{ font-family:var(--font-display); font-size:11.5px; letter-spacing:.05em; color:var(--ink-dim); }
   .diff-btn .sub{ font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); margin-top:3px; }
@@ -3613,11 +3616,16 @@
     const flavor = (huntDef && HUNT_RESIST_FLAVOR[huntDef.id]) || { physicalResistPct:0, magicResistPct:0 };
     return { hp, powerTier:tier, tierLabel:tierInfo.label, physicalResistPct:flavor.physicalResistPct, magicResistPct:flavor.magicResistPct };
   }
+  // 21/10/2026: Fácil/Normal/Difícil (chaves antigas mantidas) + Infernal,
+  // que só existe nas caçadas de INFERNAL_HUNT_IDS (espelho do servidor).
   const DIFFICULTIES = {
-    cauteloso: { label:'Cauteloso', monstersPerLure:2,  xpBonus:0,    lootBonus:0    },
-    ousado:    { label:'Ousado',    monstersPerLure:5,  xpBonus:0.20, lootBonus:0.20 },
-    agressivo: { label:'Agressivo', monstersPerLure:8,  xpBonus:0.50, lootBonus:0.50 },
+    cauteloso: { label:'Fácil',    monstersPerLure:2,  xpBonus:0,    lootBonus:0    },
+    ousado:    { label:'Normal',   monstersPerLure:5,  xpBonus:0.20, lootBonus:0.20 },
+    agressivo: { label:'Difícil',  monstersPerLure:8,  xpBonus:0.50, lootBonus:0.50 },
+    infernal:  { label:'Infernal', monstersPerLure:13, xpBonus:1.00, lootBonus:1.00, infernalOnly:true },
   };
+  const INFERNAL_HUNT_IDS = ['meadow','trail','boar','cave','coldstone','dwarf','brotherhood','trunk','chainwraith','gazer','blademaster_djinn_blizzard_beast','astor','draconic'];
+  const huntHasInfernal = (h)=> !!h && INFERNAL_HUNT_IDS.includes(h.id);
   // Barra tática compacta: ícone + título via atributo (tooltip), sem
   // texto grande — é isso que mantém a barra fininha ao lado da hotbar.
   const POSTURES = [
@@ -4290,9 +4298,20 @@
           const frames = [];
           for(let cIdx=0; cIdx<cols; cIdx++){
             const x0 = Math.round(cIdx*cellW), x1 = Math.round((cIdx+1)*cellW);
-            frames.push(cropCell(x0, rowIdx*cell, x1));
+            const fr = cropCell(x0, rowIdx*cell, x1);
+            fr.cellX = x0; fr.cellY = rowIdx*cell; // origem da célula: posição do recorte relativa ao pé do Tibia (fixa)
+            frames.push(fr);
           }
           out[name] = frames;
+        });
+        // 21/10/2026: quadro "parado" de cada direção = o mais estreito do
+        // ciclo (pernas juntas). Antes, parado mostrava o 1º quadro do andar,
+        // que em vários trajes é meio-passo (ex.: "parece sem a perna direita").
+        out.idle = {};
+        dirNames.forEach(name=>{
+          let bi = 0, bw = Infinity;
+          (out[name]||[]).forEach((f,i)=>{ if(f.sw < bw - 1){ bw = f.sw; bi = i; } });
+          out.idle[name] = bi;
         });
         return out;
       }catch(e){ return null; }
@@ -4716,6 +4735,8 @@
       // andar puro, ver load() acima) -- só o atlas antigo de corpo/armadura
       // (que mistura pose/ação na mesma linha) precisa do teto de
       // BODY_WALK_SAFE_FRAMES.
+      if(frameIdx < 0 && entry.fullWalkFrames && entry.dirFrames.idle && entry.dirFrames.idle[dir] != null) return all[entry.dirFrames.idle[dir]] || all[0];
+      if(frameIdx < 0) frameIdx = 0;
       const cap = entry.fullWalkFrames ? all.length : Math.max(1, Math.min(all.length, BODY_WALK_SAFE_FRAMES[dir] || all.length));
       const idx = ((Math.floor(Number(frameIdx)||0) % cap) + cap) % cap;
       return all[idx] || entry.frame;
@@ -4736,7 +4757,17 @@
       const scale = Math.min(maxW/ref.sw, maxH/ref.sh);
       const f = getBodyDirFrame(entry, dir, frameIdx, usePose) || ref;
       const dw = f.sw*scale, dh = f.sh*scale;
-      const dx = cx - dw/2, dy = bottomY - dh;
+      let dx = cx - dw/2, dy = bottomY - dh;
+      // 21/10/2026: atlas em grade (trajes): posiciona cada quadro pela
+      // posição dele DENTRO da célula, relativa ao quadro de referência — o
+      // pé fica no mesmo ponto em todos os quadros/direções. Antes cada
+      // recorte era centralizado sozinho e o personagem "pulava" (pior no
+      // andar pra baixo, com arma/brilho mudando o recorte a cada passo).
+      if(f.cellX != null && ref.cellX != null){
+        const refCx = (ref.sx - ref.cellX) + ref.sw/2, refBottom = (ref.sy - ref.cellY) + ref.sh;
+        dx = cx + ((f.sx - f.cellX) - refCx)*scale;
+        dy = bottomY + ((f.sy - f.cellY) - refBottom)*scale;
+      }
       targetCtx.drawImage(entry.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
       // topY NÃO é o topo do quadro atualmente desenhado (dy) — é o topo do
       // quadro DE REFERÊNCIA (parado), na mesma lógica de "escala fixa" do
@@ -4869,7 +4900,7 @@
     // grade -- gerados juntos pelo mesmo script) -- drawBodyDirFrame/
     // drawFrameContainFit desenham um canvas exatamente como desenhariam
     // uma <img>, ctx.drawImage aceita os dois.
-    const entry = { loaded:true, img:bc, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames };
+    const entry = { loaded:true, img:bc, frame:baseEntry.frame, dirFrames:baseEntry.dirFrames, fullWalkFrames: baseEntry.fullWalkFrames };
     _recolorCache[key] = entry;
     _recolorCacheOrder.push(key);
     if(_recolorCacheOrder.length > 60){ delete _recolorCache[_recolorCacheOrder.shift()]; }
@@ -5032,9 +5063,11 @@
     // recorte (ver drawFrameContainFit/drawBodyDirFrame), então não distorce.
     let bodyDraw;
     if(archetypeArmor){
+      const oScale = (outfitDef && outfitDef.scale) || 1; // ex.: Druidesa Mística um pouco maior
+      const fIdx = (walkAnim && walkAnim.idle && !drawWalkAnim.pose) ? -1 : drawWalkAnim && drawWalkAnim.frameIdx;
       bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 48*scl, 64*scl, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 48*scl, 64*scl);
+        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, fIdx, s.x, feetY, 48*scl*oScale, 64*scl*oScale, drawWalkAnim.pose)
+        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 48*scl*oScale, 64*scl*oScale);
     } else {
       const body = SpriteManager.bodySprite(genero);
       bodyDraw = drawWalkAnim
@@ -6300,6 +6333,7 @@
       // frente" toda vez que para de andar.
       st.frameIdx = 0; st.clock = 0;
     }
+    st.idle = !moving;
     st.sx = sx; st.sy = sy; st.lastTs = tsNow;
     return st;
   }
@@ -6639,7 +6673,7 @@
       });
     }
 
-    const breathe = Math.sin(now()/1000*1.6)*1.4;
+    const breathe = 0; // 21/10/2026: pedido do usuário — sem movimento de respiração nos personagens
 
     // outros jogadores conectados (Hub multiplayer na Cidade / companheiros de grupo na Dungeon)
     // — sprite completo agora, igual ao jogador local: 'positions' manda o
@@ -7150,7 +7184,7 @@
     }
     else {
       const p = activeHunt.lurePoints[activeHunt.currentIndex];
-      el.innerHTML = `<b>${activeHunt.huntName}</b> · ${activeHunt.difficulty}<br>Lure ${activeHunt.currentIndex+1}/${activeHunt.lurePoints.length} · ${p?p.monsters.length:0} vivos<br>${econ}<br>${lootLog[0]||''}`;
+      el.innerHTML = `<b>${activeHunt.huntName}</b> · ${(DIFFICULTIES[activeHunt.difficulty]||{}).label||activeHunt.difficulty}<br>Ponto ${activeHunt.currentIndex+1}/${activeHunt.lurePoints.length} · ${activeHunt.lurePoints.reduce((a,q)=>a+q.monsters.length,0)} vivos<br>${econ}<br>${lootLog[0]||''}`;
     }
     updateDispatchPopover();
   }
@@ -8994,7 +9028,7 @@
     const disabledForFollower = isNonLeaderMember();
     center.innerHTML = `
       <h2>${selectedHunt.name}</h2>
-      <div class="meta">Nível recomendado: <b>${selectedHunt.level}</b> · Recorde: <b>${selectedHunt.record}</b></div>
+      <div class="meta">Nível recomendado: <b>${selectedHunt.level}</b> · Recorde: <b>${selectedHunt.record}</b>${huntHasInfernal(selectedHunt)?' · <b style="color:#ff5a3c">🔥 Infernal disponível</b>':''}</div>
       <div class="panel-title">Dificuldade<span class="rule"></span></div>
       <div class="diff-picker" id="diff-picker"></div>
       <div class="hunt-center-actions">
@@ -9014,10 +9048,12 @@
       sendWS({ type:'matchmaking:join', huntId:selectedHunt.id, difficulty:selectedDifficulty });
     });
     const diffPicker = document.getElementById('diff-picker');
+    if(DIFFICULTIES[selectedDifficulty] && DIFFICULTIES[selectedDifficulty].infernalOnly && !huntHasInfernal(selectedHunt)) selectedDifficulty = 'agressivo';
     Object.keys(DIFFICULTIES).forEach(key=>{
       const d = DIFFICULTIES[key];
+      if(d.infernalOnly && !huntHasInfernal(selectedHunt)) return; // Infernal só nas caçadas escolhidas
       const btn = document.createElement('div');
-      btn.className = 'diff-btn' + (key===selectedDifficulty?' active':'');
+      btn.className = 'diff-btn' + (key===selectedDifficulty?' active':'') + (d.infernalOnly?' infernal':'');
       btn.innerHTML = `<div class="name">${d.label}</div><div class="sub">${d.monstersPerLure}/lure · +${Math.round(d.xpBonus*100)}%</div>`;
       btn.addEventListener('click', ()=>{ selectedDifficulty = key; renderHuntCenter(); });
       diffPicker.appendChild(btn);
