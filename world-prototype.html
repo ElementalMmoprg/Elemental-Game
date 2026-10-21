@@ -7585,6 +7585,7 @@
       switch(msg.type){
         case 'system': logChat('sistema', escapeHtml(msg.text)); break;
         case 'welcome':
+          setTimeout(()=>{ try{ syncPotionAutoUse(); }catch(_){} }, 300); // poção automática = só as que estão na barra
           // Pedido do usuário: tirar esse anúncio do chat Sistema -- ficava
           // logando "Jogadores no mundo: fulano, ciclano..." toda vez que
           // QUALQUER jogador conectava (o próprio, no seu welcome), o que não
@@ -11491,6 +11492,23 @@
       });
       localStorage.setItem(LS_HOTBAR_ITEMS, JSON.stringify(out));
     }catch(e){}
+    syncPotionAutoUse();
+  }
+  // 21/10/2026 (bug: "curando com a Lesser sem ela estar na barra"): o
+  // servidor só bebe poção que ESTÁ num slot da barra. Manda pro servidor,
+  // por tipo (vida/mana), a poção do 1º slot daquele tipo — ou desliga o tipo
+  // se nenhum slot tem poção dele. Roda ao conectar e a cada mudança na barra.
+  function syncPotionAutoUse(){
+    const cfg = {};
+    ['health','mana'].forEach(kind=>{
+      const slot = hotbar.find(sl=> sl.kind==='item' && (POTIONS.find(p=>p.id===sl.id)||{}).kind===kind);
+      if(!slot){ cfg[kind] = { enabled:false }; return; }
+      const pot = POTIONS.find(p=>p.id===slot.id);
+      const c = slot.condition || {};
+      const th = (c.type==='hpBelow' || c.type==='manaBelow') && c.threshold ? c.threshold : 50;
+      cfg[kind] = { enabled:true, thresholdPercent: th, potionId: pot.id };
+    });
+    try{ sendWS({ type:'hunt:configure', potionAutoUse: cfg }); }catch(_){}
   }
   loadLocalHotbarItems();
 
@@ -11820,6 +11838,7 @@
       // fechamos o ciclo visual otimisticamente.
       sendWS({ type:'hotbar:set', index:configuringSlotIndex, kind:'spell', spellId:el.dataset.assignSpell });
       slot.kind='spell'; slot.id=el.dataset.assignSpell; renderActionBody(); renderHotbar();
+      syncPotionAutoUse(); // se o slot tinha poção, ela saiu da barra
     }));
     body.querySelectorAll('[data-assign-item]').forEach(el=> el.addEventListener('click', ()=>{
       slot.kind='item'; slot.id=el.dataset.assignItem; renderActionBody(); renderHotbar();
