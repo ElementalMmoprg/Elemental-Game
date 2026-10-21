@@ -6501,6 +6501,8 @@
         const isCurrent = i===activeHunt.currentIndex;
         const waitingCooldown = !p.isPortal && p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
         drawList.push({ baseCart:{x:p.x,y:p.y}, draw:()=>{
+          // 21/10/2026: círculo do ponto de lure não aparece pro jogador nas caçadas (só Torre/portal)
+          if(!p.isPortal && !activeHunt.isTower) return;
           if(!p.isPortal && !huntSameFloorAsPlayer(p.x)) return; // ponto em outro andar
           const s = toScreen(p.x,p.y);
           if(p.isPortal){
@@ -6762,6 +6764,7 @@
 
     if(activeHunt.running){
       activeHunt.lurePoints.forEach((p,i)=>{
+        if(!p.isPortal && !activeHunt.isTower) return; // sem "Lure N" nas caçadas
         if(!p.isPortal && !huntSameFloorAsPlayer(p.x)) return; // ponto em outro andar
         const s = toScreen(p.x,p.y);
         if(p.isPortal){
