@@ -5165,8 +5165,19 @@
   // (o "zoom", em unidades de tela por unidade de mundo) é derivado dele +
   // TILE_STEP, então nunca fica descolado do tile de verdade.
   const TILE_STEP = 34; // tamanho de 1 tile do chão, em unidades de mundo
-  const TILE_SCREEN_PX = 80; // tamanho FIXO do SQM na tela, em pixels (era 64; 20/10/2026 o usuário achou a câmera longe demais — +25% de zoom, sprites crescem junto via SPRITE_SCALE)
-  const WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
+  // 21/10/2026: TILE_SCREEN_PX/WORLD_SCALE viraram `let` — nas caçadas com
+  // MAPA REAL do Ravendawn o SQM cai pra 40px (mesma escala da Ravencrest:
+  // 17 de mundo x 2,35), pra arte do mapa ficar na proporção certa com o
+  // personagem (outfit ~2 tiles, igual Tibia). Ver applyHuntZoom em draw().
+  // SPRITE_SCALE continua FIXO (calculado com o SQM base de 80px).
+  const TILE_SCREEN_PX_BASE = 80;
+  let TILE_SCREEN_PX = TILE_SCREEN_PX_BASE; // tamanho do SQM na tela, em pixels (era 64; 20/10/2026 o usuário achou a câmera longe demais — +25% de zoom, sprites crescem junto via SPRITE_SCALE)
+  let WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
+  function applyHuntZoom(){
+    const m = (location==='dungeon' && activeHunt && activeHunt.running && !activeHunt.isTower) ? HUNT_MAPS[activeHunt.huntId] : null;
+    const px = (m && m.real) ? 40 : TILE_SCREEN_PX_BASE;
+    if(px !== TILE_SCREEN_PX){ TILE_SCREEN_PX = px; WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP; }
+  }
   // Movimento por tiles (20/10/2026): personagem/monstro ficam no CENTRO do
   // tile no servidor, mas o sprite é desenhado com os PÉS nesse ponto — o
   // piso genérico sobe 0,4 tile pra que os pés caiam perto da borda de baixo
@@ -5178,7 +5189,7 @@
   // é o fator que mantém esses elementos na MESMA proporção visual de antes
   // em relação ao tile, agora que o tile ficou maior (senão os sprites
   // ficariam pequenos demais perto de um SQM de 64px).
-  const SPRITE_SCALE = WORLD_SCALE / 1.55;
+  const SPRITE_SCALE = (TILE_SCREEN_PX_BASE / TILE_STEP) / 1.55;
   // Escala pura, sem deslocamento de câmera — serve tanto pra montar
   // worldToScreen (que soma o offset) quanto pra qualquer lugar que precise
   // de uma função monotônica e estável da posição de mundo SEM o
@@ -5417,6 +5428,7 @@
   // manda 1x ('hunt:map'). Desenhamos com o mesmo atlas da Cidade.
   const HUNT_MAPS = {};
   let huntMapDecorThisFrame = null;
+  let huntRealThisFrame = null; // { objs, upper } do mapa real da caçada neste frame
   let huntMapRequestedAt = 0, huntMapRequestedId = null;
   function currentHuntMap(){
     if(!activeHunt.running || activeHunt.isTower || !activeHunt.huntId) return null;
@@ -5426,6 +5438,106 @@
       sendWS({ type:'hunt:getMap' });
     }
     return m || null;
+  }
+  /* ---- MAPA REAL DA CAÇADA (21/10/2026) ----
+     Recorte do mapa do Ravendawn (ver huntMaps.js no servidor e
+     assets/hunts/<id>/). O servidor manda só a "forma" (map.real, faixas por
+     andar); os tiles vêm do repo de assets e são desenhados igual à
+     Ravencrest (mesmo esquema g/o/t, andar de baixo deslocado, de cima só
+     se não houver teto). No motor cada andar é uma faixa lado a lado:
+     tx = x - x0 + faixa*stride + base.  */
+  // atlas POR caçada (assets/hunts/<id>/atlas_N.png, lista em meta.atlas.pages)
+  const HUNT_REAL = { data:{} };
+  function huntRealLoad(map){
+    const id = map.id;
+    if(HUNT_REAL.data[id]) return HUNT_REAL.data[id];
+    const D = HUNT_REAL.data[id] = { meta:null, floors:{}, pages:[] };
+    const base = URL_BASE + 'hunts/' + id + '/';
+    fetch(base + 'meta.json').then(r=>r.json()).then(meta=>{
+      D.meta = meta;
+      (meta.atlas ? meta.atlas.pages : []).forEach((p,i)=>{ const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = ()=>{ D.pages[i] = img; }; img.src = base + p; });
+      // andar principal primeiro (é o que aparece na entrada)
+      const order = meta.floors.slice().sort((a,b)=> Math.abs(a-meta.mainZ) - Math.abs(b-meta.mainZ));
+      order.forEach(z=> fetch(base + 'floor_' + z + '.json').then(r=>r.json()).then(j=>{
+        const mp = new Map(); for(const t of j.tiles) mp.set(t[0], t); D.floors[z] = mp;
+      }).catch(()=>{}));
+    }).catch(()=>{ delete HUNT_REAL.data[id]; });
+    return D;
+  }
+  // faixa/andar de uma posição de mundo da caçada (null se o mapa não é real)
+  function huntRealBand(map, wx){ return Math.floor((Math.round(wx/TILE_STEP) - map.base) / map.stride); }
+  function huntRealZ(map, wx){ const b = huntRealBand(map, wx); return map.floors[Math.max(0, Math.min(map.floors.length-1, b))]; }
+  function huntSameFloorAsPlayer(wx){
+    const m = (location==='dungeon' && activeHunt.running && !activeHunt.isTower) ? HUNT_MAPS[activeHunt.huntId] : null;
+    if(!m || !m.real) return true;
+    return huntRealBand(m, wx) === huntRealBand(m, player.x);
+  }
+  let huntRealPagesNow = null; // páginas do atlas da caçada sendo desenhada
+  function huntRealSprite(idx, dx, dy, size){
+    const pg = huntRealPagesNow && huntRealPagesNow[idx >> 12]; if(!pg) return;
+    const j = idx & 4095;
+    ctx.drawImage(pg, (j & 63)*32, (j >> 6)*32, 32, 32, dx, dy, size, size);
+  }
+  function huntRealDrawArr(arr, tlx, tly, k, size){
+    for(let q=0; q<arr.length; q+=3) huntRealSprite(arr[q], Math.round(tlx + arr[q+1]*k), Math.round(tly + arr[q+2]*k), size);
+  }
+  // Desenha o mapa real: devolve { objs, upper } (objs entram no drawList; upper = telhados por cima)
+  function drawHuntRealMap(map, toScreen, footOff){
+    const D = huntRealLoad(map);
+    const meta = D.meta;
+    if(!meta || !D.pages[0]) return null;
+    huntRealPagesNow = D.pages;
+    const pb = huntRealBand(map, player.x), pz = map.floors[Math.max(0, Math.min(map.floors.length-1, pb))];
+    if(!D.floors[pz]) return null;
+    const TS = TILE_STEP, tilePx = TS*WORLD_SCALE, k = tilePx/32, size = Math.ceil(tilePx)+1, half = tilePx/2;
+    const prevSmooth = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+    const tl = screenToWorld(0, 0), br = screenToWorld(viewW, viewH);
+    // tile real (X,Y) do andar z -> mundo, visto do andar do jogador (pz)
+    const bandOff = pb*map.stride + map.base;
+    const toW = (X, Y, z)=> ({ x:(X - map.x0 + bandOff + (z - pz))*TS, y:(Y - map.y0 + map.base + (z - pz))*TS });
+    // janela de tiles reais visíveis
+    const rx0 = Math.floor(tl.x/TS) - bandOff + map.x0 - 2, rx1 = Math.ceil(br.x/TS) - bandOff + map.x0 + 3;
+    const ry0 = Math.floor(tl.y/TS) - map.base + map.y0 - 2, ry1 = Math.ceil(br.y/TS) - map.base + map.y0 + 4;
+    const drawFloorAll = (z)=>{
+      const F = D.floors[z]; if(!F) return;
+      const d = z - pz;
+      for(let Y=ry0-d; Y<=ry1-d; Y++){
+        if(Y < meta.y0 || Y >= meta.y0+meta.h) continue;
+        for(let X=rx0-d; X<=rx1-d; X++){
+          if(X < meta.x0 || X >= meta.x0+meta.w) continue;
+          const t = F.get((Y-meta.y0)*meta.w + (X-meta.x0)); if(!t) continue;
+          const w = toW(X, Y, z), s = toScreen(w.x, w.y - footOff);
+          huntRealDrawArr(t[1], s.x-half, s.y-half, k, size); huntRealDrawArr(t[2], s.x-half, s.y-half, k, size); huntRealDrawArr(t[3], s.x-half, s.y-half, k, size);
+        }
+      }
+    };
+    // andares de baixo (até o 7 na superfície, ou só o de baixo no subsolo)
+    const bottom = pz <= 7 ? 7 : Math.min(15, pz+1);
+    for(let z=bottom; z>pz; z--) drawFloorAll(z);
+    // andar do jogador: chão agora; objetos no drawList
+    const F = D.floors[pz], objs = [];
+    for(let Y=ry0; Y<=ry1; Y++){
+      if(Y < meta.y0 || Y >= meta.y0+meta.h) continue;
+      for(let X=rx0; X<=rx1; X++){
+        if(X < meta.x0 || X >= meta.x0+meta.w) continue;
+        const t = F.get((Y-meta.y0)*meta.w + (X-meta.x0)); if(!t) continue;
+        const w = toW(X, Y, pz), s = toScreen(w.x, w.y - footOff);
+        huntRealDrawArr(t[1], s.x-half, s.y-half, k, size);
+        if(t[2].length) objs.push({ baseCart:{ x:w.x, y:w.y - 1 }, draw:()=>{ const s2 = toScreen(w.x, w.y - footOff); huntRealDrawArr(t[2], s2.x-half, s2.y-half, k, size); } });
+        if(t[3].length) objs.push({ baseCart:{ x:w.x, y:w.y + TS*0.5 }, draw:()=>{ const s2 = toScreen(w.x, w.y - footOff); huntRealDrawArr(t[3], s2.x-half, s2.y-half, k, size); } });
+      }
+    }
+    // andares de cima: só se nada cobre o jogador (regra do Tibia)
+    const above = [];
+    const PX = Math.round(player.x/TS) - bandOff + map.x0, PY = Math.round(player.y/TS) - map.base + map.y0;
+    for(let zu=pz-1; zu>=0; zu--){
+      const Fu = D.floors[zu]; if(!Fu){ if(meta.floors.includes(zu)) break; else continue; }
+      const dd = pz - zu, x = PX + dd - meta.x0, y = PY + dd - meta.y0;
+      if(Fu.has(y*meta.w + x) || Fu.has(y*meta.w + x - 1) || Fu.has((y-1)*meta.w + x)) break;
+      above.push(zu);
+    }
+    ctx.imageSmoothingEnabled = prevSmooth;
+    return { objs, upper: above.length ? ()=>{ const ps = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; above.forEach(drawFloorAll); ctx.imageSmoothingEnabled = ps; } : null };
   }
   function drawAtlasSpriteAtTile(spriteId, sx, sy){
     const r = cityRectFor(spriteId);
@@ -6230,6 +6342,7 @@
   }
 
   function draw(){
+    applyHuntZoom();
     ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
     ctx.fillRect(0,0,viewW,viewH);
     const toScreen = worldToScreen;
@@ -6292,7 +6405,13 @@
       minY = (isTowerArena ? Math.ceil : Math.floor)(minY/TILE_STEP)*TILE_STEP;
       const footOff = isTowerArena ? 0 : TILE_FOOT_OFFSET;
       const hmap = (location==='dungeon' && !isTowerArena) ? currentHuntMap() : null;
-      huntMapDecorThisFrame = hmap ? drawHuntMapGround(hmap, toScreen, footOff) : null;
+      huntRealThisFrame = null;
+      if(hmap && hmap.real){
+        huntRealThisFrame = drawHuntRealMap(hmap, toScreen, footOff);
+        // carregando (ou sem tiles): fundo escuro liso, sem grade nem decoração procedural
+        huntMapDecorThisFrame = [];
+        if(!huntRealThisFrame){ ctx.fillStyle = '#0d0b08'; ctx.fillRect(0, 0, viewW, viewH); }
+      } else huntMapDecorThisFrame = hmap ? drawHuntMapGround(hmap, toScreen, footOff) : null;
       if(!huntMapDecorThisFrame) for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
         for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
           const s = toScreen(gx,gy-footOff);
@@ -6340,6 +6459,7 @@
 
     const drawList = [];
     if(location==='city' && rcObjectsThisFrame) rcObjectsThisFrame.forEach(o=> drawList.push(o));
+    if(location==='dungeon' && huntRealThisFrame) huntRealThisFrame.objs.forEach(o=> drawList.push(o));
     // Com os tiles reais desenhados (pilares/tochas do templo já vêm deles,
     // ver drawCityTiles), o cenário procedural antigo (muro/prédio/fonte de
     // caixinha colorida) ficaria por cima do mapa de verdade sem fazer
@@ -6381,6 +6501,7 @@
         const isCurrent = i===activeHunt.currentIndex;
         const waitingCooldown = !p.isPortal && p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
         drawList.push({ baseCart:{x:p.x,y:p.y}, draw:()=>{
+          if(!p.isPortal && !huntSameFloorAsPlayer(p.x)) return; // ponto em outro andar
           const s = toScreen(p.x,p.y);
           if(p.isPortal){
             // Portal físico da Torre (Escalada) — anel roxo/azul pulsante,
@@ -6405,6 +6526,7 @@
           }
         }});
         p.monsters.forEach(m=>{
+          if(!huntSameFloorAsPlayer(m.x)) return; // mapa real: monstro de outro andar não aparece
           // Fase de "respiração" própria por monstro (fixada uma vez no
           // objeto — server-side ele persiste enquanto o monstro está vivo),
           // pra não ficarem todos boiando em sincronia perfeita como
@@ -6523,6 +6645,7 @@
     remotePlayers.forEach((rp, uname)=>{
       const sameBucket = location==='city' ? (rp.location==='city' && (rp.z == null || rp.z === player.z)) : (party && party.members.includes(uname));
       if(!sameBucket) return;
+      if(location!=='city' && !huntSameFloorAsPlayer(rp.x)) return; // caçada com andares: só quem está no mesmo andar
       const isPartyMember = party && party.members.includes(uname);
       // companheiro de grupo OFFLINE (fechou a tela, mas a caçada dele continua
       // rodando no servidor — ver broadcastPositions) continua sendo desenhado
@@ -6576,6 +6699,7 @@
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     drawList.forEach(item=> item.draw());
     if(location==='city' && rcUpperThisFrame) rcUpperThisFrame(); // andares de cima (telhados) por cima de tudo
+    if(location==='dungeon' && huntRealThisFrame && huntRealThisFrame.upper) huntRealThisFrame.upper();
 
     // Spell FX (Area Effects + Missiles, ver SpellFxManager acima) — desenha
     // por CIMA de todo mundo/chão que acabou de sair (pedido explícito do
@@ -6638,6 +6762,7 @@
 
     if(activeHunt.running){
       activeHunt.lurePoints.forEach((p,i)=>{
+        if(!p.isPortal && !huntSameFloorAsPlayer(p.x)) return; // ponto em outro andar
         const s = toScreen(p.x,p.y);
         if(p.isPortal){
           ctx.font = 'bold 10px "JetBrains Mono"'; ctx.fillStyle='#d8c4ff'; ctx.textAlign='center';
