@@ -182,6 +182,12 @@
 </div>
 
 <div id="loading-view">Carregando personagens...</div>
+<!-- Aviso de queda/manutenção (22/10/2026, igual Huntera) -->
+<div id="server-banner" style="display:none;position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:50;width:min(640px,calc(100vw - 32px));padding:12px 16px;border:1px solid #8a6d2f;border-radius:8px;background:rgba(23,19,31,.96);font-family:inherit;box-shadow:0 8px 24px rgba(0,0,0,.5);">
+  <div id="sb-msg" style="color:#f0c27a;font-size:14px;margin-bottom:4px;"></div>
+  <div id="sb-eta" style="color:#ddd;font-size:12.5px;"></div>
+  <div style="color:#aaa;font-size:12px;margin-top:4px;">Não precisa ficar tentando — esta tela avisa assim que o jogo voltar.</div>
+</div>
 
 <!-- TEM PERSONAGEM: carrossel de slots + painel de status, estilo Ragnarok -->
 <div id="char-select-view" class="glass" style="display:none;">
@@ -816,8 +822,35 @@
   /* =========================================================
      CARREGA OS PERSONAGENS DA CONTA
      ========================================================= */
+  /* QUEDA / MANUTENÇÃO (22/10/2026): consulta /api/status; enquanto o servidor
+     estiver fora ou em manutenção, mostra o aviso, trava o Conectar e fica
+     conferindo a cada 5s — quando volta, libera sozinho. */
+  let serverDown = false, charactersLoaded = false;
+  async function checkServerStatus(){
+    let info = null, offline = false;
+    try{ const r = await fetch(API_BASE + '/api/status', { cache:'no-store' }); const j = await r.json(); info = j.maintenance; }
+    catch(e){ offline = true; }
+    const banner = document.getElementById('server-banner');
+    const wasDown = serverDown;
+    serverDown = offline || !!info;
+    if(serverDown){
+      document.getElementById('sb-msg').textContent = info ? info.message : 'Server save / servidor fora do ar. Tente de novo mais tarde.';
+      document.getElementById('sb-eta').textContent = info && info.etaAt ? `Previsão de volta por volta das ${new Date(info.etaAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}.` : 'Reconectando automaticamente...';
+      banner.style.display = 'block';
+    } else if(wasDown){
+      document.getElementById('sb-msg').textContent = '✅ O servidor voltou! Pode entrar.';
+      document.getElementById('sb-eta').textContent = '';
+      setTimeout(()=>{ if(!serverDown) banner.style.display = 'none'; }, 4000);
+      if(!charactersLoaded) loadCharacters();
+    }
+    const cb = document.getElementById('connect-btn'); if(cb && charactersLoaded) cb.disabled = serverDown;
+  }
+  setInterval(checkServerStatus, 5000); checkServerStatus();
   async function loadCharacters(){
-    const data = await api('/api/characters');
+    let data;
+    try{ data = await api('/api/characters'); }
+    catch(e){ serverDown = true; checkServerStatus(); return; } // servidor fora: o aviso cuida e tenta de novo
+    charactersLoaded = true;
     document.getElementById('loading-view').style.display = 'none';
     if(!data.ok || !data.characters || data.characters.length === 0){
       document.getElementById('char-create-view').style.display = 'block';
@@ -904,7 +937,7 @@
     renderSlots();
     renderStatus(characters[selectedIdx]);
 
-    document.getElementById('connect-btn').disabled = false;
+    document.getElementById('connect-btn').disabled = serverDown;
     document.getElementById('connect-btn').addEventListener('click', ()=>{
       localStorage.setItem(LS_CHARACTER, JSON.stringify(characters[selectedIdx]));
       window.location.href = 'world-prototype.html';
