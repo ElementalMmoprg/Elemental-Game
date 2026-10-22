@@ -280,6 +280,8 @@
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, ...(opts.headers||{}) },
     });
     let data; try{ data = await res.json(); }catch(e){ data = { ok:false, error:'resposta_invalida' }; }
+    // 22/10/2026: o login agora expira (7 dias) — sessão vencida volta pro login em vez de cair na tela de criar personagem
+    if(res.status === 401){ localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = 'index.html'; return new Promise(()=>{}); }
     return data;
   }
 

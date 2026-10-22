@@ -7416,6 +7416,7 @@
      WEBSOCKET — conexão real com o servidor (multiplayer/motor de jogo)
      ========================================================= */
   const netState = { ws:null, connected:false };
+  let lastHuntSnap = null; // snapshot completo acumulado (o servidor manda só o que mudou)
   function sendWS(obj){
     try{ tutorialOnSend(obj); }catch(_){}
     if(netState.ws && netState.ws.readyState === WebSocket.OPEN) netState.ws.send(JSON.stringify(obj));
@@ -7714,7 +7715,8 @@
       statusEl.textContent = `● online — ${AUTH_USERNAME}`;
       ws.send(JSON.stringify({ type:'join', token:AUTH_TOKEN, x:player.x, y:player.y, characterId: SELECTED_CHARACTER && SELECTED_CHARACTER.id, nick:PLAYER_NICK }));
     });
-    ws.addEventListener('close', ()=>{ netState.connected = false; statusEl.textContent = '● offline (reconectando em breve)'; setTimeout(connectToServer, 3000); });
+    ws.addEventListener('close', ()=>{ netState.connected = false; if(netState.stopReconnect) return; statusEl.textContent = '● offline (reconectando em breve)'; setTimeout(connectToServer, 3000); });
+    lastHuntSnap = null; // conexão nova: o 1º snapshot do servidor vem completo
     ws.addEventListener('error', ()=>{ statusEl.textContent = '● erro de conexão'; });
 
     ws.addEventListener('message', ev=>{
@@ -7754,7 +7756,10 @@
           remotePlayers.clear();
           msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
           break;
-        case 'hunt:state': applyHuntSnapshot(msg); break;
+        case 'hunt:state': { // 22/10/2026: o servidor só manda o que MUDOU — junta com o último snapshot completo
+          lastHuntSnap = Object.assign(lastHuntSnap || {}, msg); delete lastHuntSnap.light;
+          applyHuntSnapshot(lastHuntSnap); break;
+        }
         case 'hunt:map': if(msg.map){ HUNT_MAPS[msg.map.id] = msg.map; } break;
         case 'hunt:ack': handleAck(msg); break;
         case 'party:invite': showPartyInviteToast(msg); break;
@@ -7922,7 +7927,11 @@
           if (meuIdPlacement && msg.characterId === meuIdPlacement) logLoot(`🎖️ Você recebeu o título "${msg.titleLabel}" — +${msg.coins} Moedas PvP!`);
           break;
         }
-        case 'error': logLoot(`⚠️ ${msg.error}`); break;
+        case 'error':
+          // 22/10/2026 (auditoria): login vencido / personagem que não é desta conta
+          if(msg.error === 'token_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = 'index.html'; break; }
+          if(msg.error === 'personagem_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_CHARACTER); window.location.href = 'character-select.html'; break; }
+          logLoot(`⚠️ ${msg.error}`); break;
       }
     });
 
@@ -15028,6 +15037,7 @@
      ========================================================= */
   const pvpTournamentModal = document.getElementById('pvp-tournament-modal');
   document.getElementById('btn-open-pvp-tournament').addEventListener('click', ()=>{
+    if(typeof shDocked !== 'undefined' && shDocked && shDocked.el === pvpTournamentModal){ storeHubModal.classList.remove('open'); shUndock(); } // estava encaixado na Loja: solta antes de abrir sozinho
     pvpTournamentModal.classList.toggle('open');
     if(pvpTournamentModal.classList.contains('open')) sendWS({ type:'pvp:getState' });
   });
@@ -15970,9 +15980,9 @@
   shRebind('btn-open-market', 'mercado');
   shRebind('btn-open-blessings', 'bencaos');
   // Atalho de teclado/ícone antigo do Torneio: abre direto na aba PvP.
-  { const t = document.getElementById('btn-open-pvp-tournament'); if(t) shRebind('btn-open-pvp-tournament', 'torneio'); }
+  // (22/10/2026: o ícone 🏆 do Torneio voltou pra barra principal e abre a Central do Torneio direto — continua também na aba PvP da Loja)
   // Ícones que agora moram dentro da Loja saem da barra superior.
-  ['btn-open-pvp-shop','btn-open-pets','btn-open-battlepass','btn-open-pvp-tournament'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+  ['btn-open-pvp-shop','btn-open-pets','btn-open-battlepass'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
 
   /* =========================================================
      INÍCIO GUIADO (22/10/2026, roteiro do usuário) — ensina fazendo.
@@ -16098,6 +16108,7 @@
     #tut-card .tut-step{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim, #aaa); letter-spacing:.06em; text-transform:uppercase; }
     #tut-card .tut-title{ font-weight:700; color:var(--gold-bright, #ffd76a); font-size:14px; margin:2px 0 6px; }
     #tut-card .tut-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap; }
+    #tut-card{ pointer-events:none; } #tut-card button{ pointer-events:auto; } /* o card nunca bloqueia clique no jogo por baixo dele — só os botões dele recebem clique */
     #tut-card button{ font-family:var(--font-mono); font-size:10px; padding:5px 9px; border-radius:4px; border:1px solid var(--gold-deep, #8a6d2f); background:rgba(0,0,0,.35); color:var(--ink-dim, #ccc); cursor:pointer; }
     #tut-card button.primary{ color:var(--gold-bright, #ffd76a); border-color:var(--gold-bright, #ffd76a); }
     #tut-card.min .tut-body, #tut-card.min .tut-actions{ display:none; }
