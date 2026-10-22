@@ -3949,6 +3949,7 @@
     visualTheme:null,
   };
   const remotePlayers = new Map(); // username -> {x,y,location}
+  let serverOnlineCount = null, cityInstanceNo = null; // ver 'positions' (cidade instanciada)
 
   const lootLog = [];
   function logLoot(text){ lootLog.unshift(text); if(lootLog.length > 6) lootLog.pop(); }
@@ -5342,7 +5343,7 @@
   let TILE_SCREEN_PX = TILE_SCREEN_PX_BASE; // tamanho do SQM na tela, em pixels (era 64; 20/10/2026 o usuário achou a câmera longe demais — +25% de zoom, sprites crescem junto via SPRITE_SCALE)
   let WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP;
   function applyHuntZoom(){
-    const m = (location==='dungeon' && activeHunt && activeHunt.running && !activeHunt.isTower) ? HUNT_MAPS[activeHunt.huntId] : null;
+    const m = (location==='dungeon' && activeHunt && activeHunt.running && huntMapKey()) ? HUNT_MAPS[huntMapKey()] : null;
     const px = (m && m.real) ? 40 : TILE_SCREEN_PX_BASE;
     if(px !== TILE_SCREEN_PX){ TILE_SCREEN_PX = px; WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP; }
   }
@@ -5375,7 +5376,10 @@
   // player.x/player.y (atualizada pelo servidor e, de forma otimista, pelo
   // clique de movimento/WASD) no meio do canvas.
   function getCameraOffset(){
-    const p = worldToScreenRaw(player.x, player.y);
+    // Arena da Torre/Sala do Chefe (22/10/2026): durante a prévia na zona
+    // segura a câmera mostra o personagem E o chefe (ponto do meio).
+    const pv = towerPreviewFocus();
+    const p = worldToScreenRaw(pv ? pv.x : player.x, pv ? pv.y : player.y);
     return { x: viewW/2 - p.x, y: viewH/2 - p.y + 40 };
   }
   const SCENERY_DUNGEON = [ {type:'pilastra',x:300,y:120,h:70}, {type:'pilastra',x:600,y:180,h:70}, {type:'pilastra',x:420,y:420,h:70}, {type:'rocha',x:480,y:250,h:22}, {type:'rocha',x:200,y:340,h:18} ];
@@ -5598,11 +5602,27 @@
   let huntMapDecorThisFrame = null;
   let huntRealThisFrame = null; // { objs, upper } do mapa real da caçada neste frame
   let huntMapRequestedAt = 0, huntMapRequestedId = null;
+  // Torre no mapa real (22/10/2026): o recorte vem em activeHunt.mapId; a
+  // arena quadrada antiga só existe quando a Torre NÃO tem mapa real.
+  function huntMapKey(){ return activeHunt.mapId || (activeHunt.isTower ? null : activeHunt.huntId); }
+  function isLegacyTowerArena(){ return !!(activeHunt.running && activeHunt.isTower && !activeHunt.mapId); }
+  function towerPreviewFocus(){
+    if(!activeHunt || !activeHunt.running || !activeHunt.mapId || !(activeHunt.previewEndLocal > Date.now())) return null;
+    let boss = null;
+    (activeHunt.lurePoints||[]).forEach(p=> (p.monsters||[]).forEach(m=>{ if(m.isBoss && m.hp>0 && m.x!=null) boss = m; }));
+    if(!boss) return null;
+    // câmera vai do personagem até o chefe, segura nele e volta (prévia da zona segura)
+    const now = Date.now(), t0 = activeHunt.previewStartLocal || now, t1 = activeHunt.previewEndLocal;
+    const ease = v => { v = Math.max(0, Math.min(1, v)); return v*v*(3-2*v); };
+    const w = Math.min(ease((now - t0 - 300) / 900), ease((t1 - now - 200) / 900));
+    return { x: player.x + (boss.x - player.x)*w, y: player.y + (boss.y - player.y)*w };
+  }
   function currentHuntMap(){
-    if(!activeHunt.running || activeHunt.isTower || !activeHunt.huntId) return null;
-    const m = HUNT_MAPS[activeHunt.huntId];
-    if(!m && (huntMapRequestedId !== activeHunt.huntId || Date.now() - huntMapRequestedAt > 5000)){
-      huntMapRequestedId = activeHunt.huntId; huntMapRequestedAt = Date.now();
+    const key = huntMapKey();
+    if(!activeHunt.running || !key) return null;
+    const m = HUNT_MAPS[key];
+    if(!m && (huntMapRequestedId !== key || Date.now() - huntMapRequestedAt > 5000)){
+      huntMapRequestedId = key; huntMapRequestedAt = Date.now();
       sendWS({ type:'hunt:getMap' });
     }
     return m || null;
@@ -5636,7 +5656,7 @@
   function huntRealBand(map, wx){ return Math.floor((Math.round(wx/TILE_STEP) - map.base) / map.stride); }
   function huntRealZ(map, wx){ const b = huntRealBand(map, wx); return map.floors[Math.max(0, Math.min(map.floors.length-1, b))]; }
   function huntSameFloorAsPlayer(wx){
-    const m = (location==='dungeon' && activeHunt.running && !activeHunt.isTower) ? HUNT_MAPS[activeHunt.huntId] : null;
+    const m = (location==='dungeon' && activeHunt.running && huntMapKey()) ? HUNT_MAPS[huntMapKey()] : null;
     if(!m || !m.real) return true;
     return huntRealBand(m, wx) === huntRealBand(m, player.x);
   }
@@ -6520,7 +6540,7 @@
     // jogador) — piso e pilares tingidos pela cor do elemento em vez do chão
     // genérico de Dungeon, e o quadrado é justamente esse laço de piso preso
     // a um raio fixo em volta do único lurePoint da arena.
-    const isTowerArena = activeHunt.running && activeHunt.isTower;
+    const isTowerArena = isLegacyTowerArena();
     const arenaTower = isTowerArena ? TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId) : null;
     const arenaColor = arenaTower ? arenaTower.color : '#bfa15f';
     // Visual Dinâmico por Elemento (pedido do usuário, 26/09/2026): tema real
@@ -6671,7 +6691,7 @@
         const waitingCooldown = !p.isPortal && p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
         drawList.push({ baseCart:{x:p.x,y:p.y}, draw:()=>{
           // 21/10/2026: círculo do ponto de lure não aparece pro jogador nas caçadas (só Torre/portal)
-          if(!p.isPortal && !activeHunt.isTower) return;
+          if(!p.isPortal && !isLegacyTowerArena()) return;
           if(!p.isPortal && !huntSameFloorAsPlayer(p.x)) return; // ponto em outro andar
           const s = toScreen(p.x,p.y);
           if(p.isPortal){
@@ -6933,7 +6953,7 @@
 
     if(activeHunt.running){
       activeHunt.lurePoints.forEach((p,i)=>{
-        if(!p.isPortal && !activeHunt.isTower) return; // sem "Lure N" nas caçadas
+        if(!p.isPortal && !isLegacyTowerArena()) return; // sem "Lure N" nas caçadas (nem na Torre de mapa real)
         if(!p.isPortal && !huntSameFloorAsPlayer(p.x)) return; // ponto em outro andar
         const s = toScreen(p.x,p.y);
         if(p.isPortal){
@@ -6949,6 +6969,16 @@
           ctx.fillText(`respawn ${remain}s`, s.x, s.y+16);
         }
       });
+      // Arena do chefe (Torre/Sala do Chefe): aviso da zona segura durante a prévia
+      if(activeHunt.mapId && activeHunt.previewEndLocal > Date.now()){
+        const left = Math.ceil((activeHunt.previewEndLocal - Date.now())/1000);
+        const txt = `🛡️ Zona segura — o chefe não entra aqui · duelo em ${left}s`;
+        ctx.font = 'bold 15px "Inter", sans-serif'; ctx.textAlign='center';
+        const w = ctx.measureText(txt).width + 36, x = viewW/2, y = 92;
+        ctx.fillStyle = 'rgba(12,16,24,0.82)'; ctx.fillRect(x - w/2, y - 22, w, 34);
+        ctx.strokeStyle = 'rgba(120,220,160,0.75)'; ctx.lineWidth = 1.5; ctx.strokeRect(x - w/2 + .5, y - 21.5, w - 1, 33);
+        ctx.fillStyle = '#bff5d2'; ctx.fillText(txt, x, y);
+      }
     }
 
     requestAnimationFrame(loop);
@@ -7303,8 +7333,8 @@
     document.getElementById('tb-gold').textContent = Math.round(player.gold).toLocaleString('pt-BR');
     document.getElementById('tb-elementalcoins').textContent = Math.round(elementalCoins).toLocaleString('pt-BR');
     { // conta só quem está realmente conectado — companheiros offline visíveis no grupo (ver 'positions'/broadcastPositions) não entram nessa contagem
-      const onlineCount = [...remotePlayers.values()].filter(rp=>!rp.offline).length + 1;
-      document.getElementById('tb-online').textContent = `${onlineCount} jogador${onlineCount===1?'':'es'} online`;
+      const onlineCount = serverOnlineCount != null ? serverOnlineCount : [...remotePlayers.values()].filter(rp=>!rp.offline).length + 1;
+      document.getElementById('tb-online').textContent = `${onlineCount} jogador${onlineCount===1?'':'es'} online` + (location==='city' && cityInstanceNo ? ` · Cidade ${cityInstanceNo}` : '');
     }
     document.getElementById('matchmaking-pill').style.display = matchmakingActive ? 'flex' : 'none';
     document.getElementById('training-pill').style.display = trainingActive ? 'flex' : 'none';
@@ -7315,7 +7345,8 @@
     else if(activeHunt.isTower && activeHunt.towerMode==='boss'){
       const p = activeHunt.lurePoints[0];
       const tower = TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId);
-      el.innerHTML = `<b>🗼 ${tower?tower.name:'Torre'}</b> · Escalada — andar ${activeHunt.climbFloor}/100<br>${p?p.monsters.length:0} vivo(s)<br>${econ}<br>${lootLog[0]||''}`;
+      const vivos = activeHunt.mapId ? activeHunt.lurePoints.reduce((a,q)=>a+q.monsters.filter(m=>m.hp>0).length,0) : (p?p.monsters.length:0);
+      el.innerHTML = `<b>🗼 ${tower?tower.name:'Torre'}</b> · Escalada — andar ${activeHunt.climbFloor}/100<br>${vivos} vivo(s)<br>${econ}<br>${lootLog[0]||''}`;
     }
     else {
       const p = activeHunt.lurePoints[activeHunt.currentIndex];
@@ -7694,7 +7725,13 @@
       activeHunt.climbNextFloor = msg.hunt.climbNextFloor;
       activeHunt.climbNextFloorIsBoss = !!msg.hunt.climbNextFloorIsBoss;
       activeHunt.visualTheme = msg.hunt.visualTheme || null;
+      activeHunt.mapId = msg.hunt.mapId || null;
+      if(msg.hunt.previewLeftMs > 0){
+        if(!(activeHunt.previewEndLocal > Date.now())) activeHunt.previewStartLocal = Date.now();
+        activeHunt.previewEndLocal = Date.now() + msg.hunt.previewLeftMs;
+      } else activeHunt.previewEndLocal = 0;
     } else {
+      activeHunt.mapId = null; activeHunt.previewEndLocal = 0;
       activeHunt.running = false; activeHunt.lurePoints = [];
       activeHunt.isTower = false; activeHunt.towerId = null; activeHunt.towerMode = null; activeHunt.climbFloor = null;
       activeHunt.climbCountdownUntil = 0; activeHunt.climbNextFloor = null; activeHunt.climbNextFloorIsBoss = false;
@@ -7829,6 +7866,9 @@
         case 'positions':
           remotePlayers.clear();
           msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
+          // 22/10/2026: cidade instanciada (até 100 por instância) — o servidor
+          // só manda quem está na MESMA instância + a PT; o total vem à parte.
+          serverOnlineCount = msg.online != null ? msg.online : null; cityInstanceNo = msg.cityInstance || null;
           break;
         case 'hunt:state': { // 22/10/2026: o servidor só manda o que MUDOU — junta com o último snapshot completo
           lastHuntSnap = Object.assign(lastHuntSnap || {}, msg); delete lastHuntSnap.light;
