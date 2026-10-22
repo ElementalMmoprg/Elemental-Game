@@ -12498,7 +12498,7 @@
     { key:'magia', label:'Magia' }, { key:'defesa', label:'Defesa' }, { key:'esquiva', label:'Esquiva' },
     { key:'critico', label:'Crítico' }, { key:'sword', label:'Sword' }, { key:'axe', label:'Axe' },
     { key:'club', label:'Club' }, { key:'distance', label:'Distance' },
-    { key:'dagger', label:'Adaga' }, { key:'staff', label:'Cajado' },
+    { key:'dagger', label:'Adaga' }, // (Cajado saiu 22/10/2026 — escala por Magia)
   ];
   // Espelha huntEngine.getTrainingCap: 50 base, +10 por estrela (Bronze/Prata/Ouro), +50 fixo no Diamante.
   function getTrainingCap(){ const s = prestige.bronzeStars+prestige.silverStars+prestige.goldStars; return 50 + s*10 + (prestige.diamondRank?50:0); }
@@ -13431,7 +13431,13 @@
   const ENCHANT_SLOT_LABEL = { weapon:'Arma', offhand:'Mão Secundária', helmet:'Elmo', armor:'Armadura', boots:'Botas', legs:'Calças', accessory1:'Acessório 1', accessory2:'Acessório 2', amulet:'Colar' };
   const RARITY_STAT_MULT = { comum:1, incomum:1.4, rara:2, 'épica':3, 'lendária':4.5, 'mítica':7 }; // 'mítica' 26/09/2026, espelha huntEngine.js — ver comentário lá
   const SLOT_BASE_STATS = { weapon:{atk:8}, offhand:{def:3,critPct:1}, helmet:{def:5}, armor:{def:8}, boots:{def:3}, legs:{def:5}, ring:{critPct:2,magicPct:3}, amulet:{atk:3,magicPct:3}, gloves:{atk:3,critPct:2} };
-  const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %', vitality:'Vitalidade', dexterity:'Destreza', speedPct:'Velocidade %', dodgePct:'Esquiva %' };
+  const STAT_LABEL = { atk:'Ataque', def:'Defesa', critPct:'Crítico %', magicPct:'Dano Mágico %', vitality:'Vitalidade', dexterity:'Destreza', speedPct:'Velocidade %', dodgePct:'Esquiva %',
+    // Profissão v2 (22/10/2026)
+    might:'Might', intelligence:'Inteligência', wisdom:'Wisdom', magicLevel:'Magic Level', atkSpeedPct:'Vel. de Ataque %', critDmgPct:'Dano Crítico %', bagSlots:'Slots na Mochila',
+    sk_sword:'Sword', sk_axe:'Axe', sk_club:'Club', sk_distance:'Distância', sk_dagger:'Adaga',
+    dmg_fogo:'Dano de Fogo %', dmg_agua:'Dano de Água %', dmg_terra:'Dano de Terra %', dmg_ar:'Dano de Ar %', dmg_luz:'Dano de Luz %', dmg_trevas:'Dano de Trevas %',
+    res_fogo:'Defesa Fogo %', res_agua:'Defesa Água %', res_terra:'Defesa Terra %', res_ar:'Defesa Ar %', res_luz:'Defesa Luz %', res_trevas:'Defesa Trevas %',
+    hpFlat:'Vida', mpFlat:'Mana', lifeLeechPct:'Roubo de Vida %', manaLeechPct:'Roubo de Mana %' };
   const ENCHANT_MAX_LEVEL = 10;
   const ENCHANT_SUCCESS_CHANCE = { 1:1.0, 2:.95, 3:.9, 4:.8, 5:.7, 6:.6, 7:.5, 8:.4, 9:.3, 10:.2 };
   const ENCHANT_BREAK_FROM_LEVEL = 7;
@@ -13481,8 +13487,39 @@
   // Espelho de computeBaseItemStats (huntEngine.js): -60% (EQUIP_BASE_STAT_SCALE)
   // e atributos escolhidos na Profissão (item.craftStats) — 20/10/2026.
   const EQUIP_BASE_STAT_SCALE_CLIENT = 0.4;
-  const CRAFT_STAT_CHOICES_CLIENT = ['atk','def','critPct','magicPct','vitality','dexterity','speedPct','dodgePct'];
-  const CRAFT_STAT_LABEL_CLIENT = { atk:'Ataque', def:'Defesa', critPct:'Chance Crít.', magicPct:'Dano Mágico', vitality:'Vitalidade', dexterity:'Destreza', speedPct:'Velocidade', dodgePct:'Esquiva' };
+  // PROFISSÃO v2 (22/10/2026) — espelha CRAFT_STAT_POOLS/CRAFT_FIXED_* do huntEngine.js
+  const CRAFT_ELEMENTS_CLIENT = ['fogo','agua','terra','ar','luz','trevas'];
+  const CRAFT_SLOT_GROUP_CLIENT = { weapon:'weapon', armor:'defense', legs:'defense', helmet:'defense', offhand:'defense', boots:'defense', ring:'accessory', amulet:'accessory', gloves:'accessory' };
+  const CRAFT_PRIMARY_CLIENT = ['vitality','might','intelligence','dexterity','wisdom'];
+  const CRAFT_STAT_POOLS_CLIENT = {
+    defense: ['def', ...CRAFT_PRIMARY_CLIENT, 'speedPct', ...CRAFT_ELEMENTS_CLIENT.map(e=>'res_'+e), 'dodgePct', 'bagSlots'],
+    weapon: ['magicLevel','atk','critPct','speedPct','atkSpeedPct','sk_sword','sk_axe','sk_club','sk_distance','sk_dagger', ...CRAFT_PRIMARY_CLIENT, 'critDmgPct', ...CRAFT_ELEMENTS_CLIENT.map(e=>'dmg_'+e)],
+  };
+  CRAFT_STAT_POOLS_CLIENT.accessory = Array.from(new Set([...CRAFT_STAT_POOLS_CLIENT.weapon, ...CRAFT_STAT_POOLS_CLIENT.defense]));
+  const CRAFT_FIXED_RANGES_CLIENT = {
+    hpFlat: [[0,100],[20,100],[50,150],[80,150],[100,200]], mpFlat: [[0,100],[20,100],[50,150],[80,150],[100,200]],
+    lifeLeechPct: [[0,10],[2,10],[5,15],[8,15],[15,20]], manaLeechPct: [[0,10],[2,10],[5,15],[8,15],[15,20]],
+    bagSlots: [[1,10],[5,10],[10,15],[15,20],[20,30]],
+  };
+  const CRAFT_FIXED_OPTIONS_CLIENT = { defense:['hpFlat','mpFlat'], weapon:['lifeLeechPct','manaLeechPct'], accessory:['bagSlots','lifeLeechPct','manaLeechPct','hpFlat','mpFlat'] };
+  const CRAFT_FIXED_LABEL_CLIENT = { hpFlat:'Vida', mpFlat:'Mana', lifeLeechPct:'Roubo de Vida', manaLeechPct:'Roubo de Mana', bagSlots:'Slots na Mochila' };
+  const CRAFT_RARITY_ORDER_CLIENT = ['comum','incomum','rara','épica','lendária','mítica'];
+  function craftFixedBand(key, tier, rarity){ // faixa do atributo fixo pra essa raridade (igual rollFixedStatValue)
+    const r = CRAFT_FIXED_RANGES_CLIENT[key]; if(!r) return null;
+    const [lo,hi] = r[Math.max(0,Math.min(4,(tier||1)-1))];
+    const i = Math.max(0, CRAFT_RARITY_ORDER_CLIENT.indexOf(rarity)), n = CRAFT_RARITY_ORDER_CLIENT.length;
+    const dec = /Leech/.test(key) ? 1 : 0, f = v => (Math.round(v*Math.pow(10,dec))/Math.pow(10,dec));
+    return [f(lo + (hi-lo)*i/n), f(lo + (hi-lo)*(i+1)/n)];
+  }
+  const craftFixedChoice = {}; // grupo -> chave escolhida
+  function craftFixedFor(slot){ const g = CRAFT_SLOT_GROUP_CLIENT[slot]; const opts = CRAFT_FIXED_OPTIONS_CLIENT[g]||[]; if(!opts.includes(craftFixedChoice[g])) craftFixedChoice[g] = opts[0]; return craftFixedChoice[g]; }
+  function craftPoolFor(slot){ return (CRAFT_STAT_POOLS_CLIENT[CRAFT_SLOT_GROUP_CLIENT[slot]]||[]).filter(k=> CRAFT_STAT_BASE_BY_SLOT_CLIENT[k] && CRAFT_STAT_BASE_BY_SLOT_CLIENT[k][slot]); }
+  const CRAFT_STAT_CHOICES_CLIENT = CRAFT_STAT_POOLS_CLIENT.accessory;
+  const CRAFT_STAT_LABEL_CLIENT = { atk:'Ataque', def:'Defesa', critPct:'Chance Crít.', magicPct:'Dano Mágico', vitality:'Vitalidade', dexterity:'Destreza', speedPct:'Velocidade', dodgePct:'Esquiva',
+    might:'Might', intelligence:'Inteligência', wisdom:'Wisdom', magicLevel:'Magic Level', atkSpeedPct:'Vel. Ataque', critDmgPct:'Dano Crít.', bagSlots:'Slots Mochila',
+    sk_sword:'Sword', sk_axe:'Axe', sk_club:'Club', sk_distance:'Distância', sk_dagger:'Adaga',
+    dmg_fogo:'Dano Fogo', dmg_agua:'Dano Água', dmg_terra:'Dano Terra', dmg_ar:'Dano Ar', dmg_luz:'Dano Luz', dmg_trevas:'Dano Trevas',
+    res_fogo:'Def. Fogo', res_agua:'Def. Água', res_terra:'Def. Terra', res_ar:'Def. Ar', res_luz:'Def. Luz', res_trevas:'Def. Trevas' };
   const CRAFT_STAT_BASE_BY_SLOT_CLIENT = {
     atk:      { weapon:8, offhand:3, helmet:3, armor:4, legs:3, boots:2, ring:2, amulet:3, gloves:3 },
     def:      { weapon:2, offhand:3, helmet:5, armor:8, legs:5, boots:3, ring:2, amulet:2, gloves:2 },
@@ -13491,15 +13528,27 @@
     vitality: { weapon:4, offhand:6, helmet:8, armor:12, legs:8, boots:6, ring:4, amulet:6, gloves:5 },
     dexterity:{ weapon:6, offhand:4, helmet:4, armor:4, legs:4, boots:5, ring:5, amulet:5, gloves:6 },
     speedPct: { weapon:1, offhand:1, helmet:1, armor:1, legs:2, boots:4, ring:1, amulet:1, gloves:1 },
-    dodgePct: { helmet:1.5, armor:2.5, legs:2, boots:2 },
+    dodgePct: { helmet:1.5, armor:2.5, legs:2, boots:2, offhand:1.5, ring:1, amulet:1, gloves:1 },
+    might:        { weapon:6, offhand:4, helmet:4, armor:4, legs:4, boots:4, ring:5, amulet:5, gloves:6 },
+    intelligence: { weapon:6, offhand:4, helmet:4, armor:4, legs:4, boots:4, ring:5, amulet:5, gloves:6 },
+    wisdom:       { weapon:6, offhand:4, helmet:4, armor:4, legs:4, boots:4, ring:5, amulet:5, gloves:6 },
+    magicLevel:   { weapon:2.5, ring:1.5, amulet:1.5, gloves:1 },
+    atkSpeedPct:  { weapon:2, ring:1, amulet:1, gloves:1.5 },
+    critDmgPct:   { weapon:4, ring:3, amulet:3, gloves:3 },
+    bagSlots:     { offhand:2, helmet:2, armor:2, legs:2, boots:2, ring:2, amulet:2, gloves:2 },
   };
+  ['sword','axe','club','distance','dagger'].forEach(k=>{ CRAFT_STAT_BASE_BY_SLOT_CLIENT['sk_'+k] = { weapon:2.5, ring:1.5, amulet:1.5, gloves:1.5 }; });
+  CRAFT_ELEMENTS_CLIENT.forEach(e=>{
+    CRAFT_STAT_BASE_BY_SLOT_CLIENT['dmg_'+e] = { weapon:3, ring:2, amulet:2, gloves:2 };
+    CRAFT_STAT_BASE_BY_SLOT_CLIENT['res_'+e] = { armor:3, legs:2.5, helmet:2, boots:2, offhand:2.5, ring:1.5, amulet:1.5, gloves:1.5 };
+  });
   function computeBaseItemStatsClient(slot, rarity, powerTier, statKeys){
     let base = SLOT_BASE_STATS[slot]; if(!base) return {};
     if(Array.isArray(statKeys) && statKeys.length){ base = {}; statKeys.forEach(k=>{ const v = CRAFT_STAT_BASE_BY_SLOT_CLIENT[k] && CRAFT_STAT_BASE_BY_SLOT_CLIENT[k][slot]; if(v) base[k] = v; }); }
     const mult = RARITY_STAT_MULT[rarity] || 1;
     const tierMult = POWER_TIER_MULT_CLIENT[(powerTier||1)-1] || 1;
     const out = {};
-    Object.keys(base).forEach(k=> out[k] = Math.round(base[k]*mult*tierMult*EQUIP_BASE_STAT_SCALE_CLIENT*10)/10);
+    Object.keys(base).forEach(k=>{ const v = base[k]*mult*tierMult*EQUIP_BASE_STAT_SCALE_CLIENT; out[k] = k==='bagSlots' ? Math.max(1, Math.round(v)) : Math.round(v*10)/10; });
     return out;
   }
   // Escolha de atributos por slot (lembrada enquanto o jogo está aberto)
@@ -13507,8 +13556,9 @@
   let craftStatPickerOpen = null; // id da receita com o seletor aberto
   function craftStatsFor(slot){
     if(!craftStatChoice[slot]){
-      const def = Object.keys(SLOT_BASE_STATS[slot]||{}).filter(k=>CRAFT_STAT_CHOICES_CLIENT.includes(k)).slice(0,2);
-      craftStatChoice[slot] = def.length ? def : ['atk'];
+      const pool = craftPoolFor(slot);
+      const def = Object.keys(SLOT_BASE_STATS[slot]||{}).filter(k=>pool.includes(k)).slice(0,2);
+      craftStatChoice[slot] = def.length ? def : pool.slice(0,1);
     }
     return craftStatChoice[slot];
   }
@@ -13545,6 +13595,7 @@
     // Atributos PRIMÁRIOS da Infusão (Might/Wisdom/...) -- o painel de
     // Infusão já mostrava, mas o tooltip do item não (pedido 20/10/2026).
     getInfusionScaledPrimaryClient(item).forEach(b=> out[b.key] = (out[b.key]||0) + b.value);
+    if(item.fixedStat && item.fixedStat.key) out[item.fixedStat.key] = (out[item.fixedStat.key]||0) + (Number(item.fixedStat.value)||0); // atributo fixo da Profissão
     return out;
   }
   // Pedido do usuário (26/09/2026): arma de Cajado (weaponType:'staff') é
@@ -13558,8 +13609,9 @@
     // Números "redondos" (20/10/2026): somar status base x Encantamento x
     // Infusão em ponto flutuante gerava coisas como 37.900000000000006.
     // Status em % mantém 1 casa (sem lixo de float); o resto vira inteiro.
-    const fmt = (k,v) => /Pct$/.test(k) ? String(Math.round(v*10)/10) : String(Math.round(v));
-    return keys.map(k=>`${k==='atk' ? attackLabelFor(item) : (STAT_LABEL[k]||PRIMARY_STAT_LABEL[k]||k)}: <b>+${fmt(k, stats[k])}</b>`).join(' · ');
+    const fmt = (k,v) => (/Pct$/.test(k) || /^(dmg|res)_/.test(k)) ? String(Math.round(v*10)/10) : String(Math.round(v));
+    const fixedKey = item && item.fixedStat && item.fixedStat.key;
+    return keys.map(k=>`${k===fixedKey?'🔒 ':''}${k==='atk' ? attackLabelFor(item) : (STAT_LABEL[k]||PRIMARY_STAT_LABEL[k]||k)}: <b>+${fmt(k, stats[k])}</b>`).join(' · ');
   }
   // Tooltip rica reaproveitada em QUALQUER slot de equipamento (Mochila,
   // Armazém, Personagem, e agora também as abas de Refinamento/Infusão, que
@@ -14524,7 +14576,9 @@
         const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`]
           || (o.tier === 'mítica' && legItem ? { ...legItem, name: (legItem.name||'').replace(/\s*\([^)]*\)\s*$/, '') + ' (Mítica)' } : null);
         const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier, craftStatsFor(r.slot)) : {};
-        const statPreview = Object.keys(stats).length ? `<div class="prec-stat-preview">${formatStats(stats, r)}</div>` : '';
+        const fk = r.slot ? craftFixedFor(r.slot) : null, band = fk ? craftFixedBand(fk, r.powerTier, o.tier) : null;
+        const fixedTxt = band ? ` · 🔒 ${CRAFT_FIXED_LABEL_CLIENT[fk]}: <b>${band[0]}–${band[1]}${/Leech/.test(fk)?'%':''}</b>` : '';
+        const statPreview = (Object.keys(stats).length || fixedTxt) ? `<div class="prec-stat-preview">${Object.keys(stats).length ? formatStats(stats, r) : ''}${fixedTxt}</div>` : '';
         return `<div class="prec-row"><span style="color:${RARITY_COLORS[o.tier]||'var(--ink)'}">${item ? item.name : o.tier}</span><span>${o.pct.toFixed(1)}%</span></div>${statPreview}`;
       }).join('');
       // Foto+descrição do item nomeado (a arte/descrição são as mesmas nos 5
@@ -14548,8 +14602,10 @@
           ${prevTierLine}
           <div class="prec-row" style="opacity:.75;font-size:11px;margin-top:2px;">Raridade sorteada ao criar:</div>
           ${oddsLines}
-          ${r.slot ? `<button type="button" class="party-btn craft-stat-toggle" style="width:100%;margin-top:6px;" data-craft-stat-toggle="${r.id}">⚙️ Atributos: ${craftStatsFor(r.slot).map(k=>CRAFT_STAT_LABEL_CLIENT[k]).join(' + ')} ${craftStatPickerOpen===r.id?'▲':'▼'}</button>
-          ${craftStatPickerOpen===r.id ? `<div class="craft-stat-picker">${CRAFT_STAT_CHOICES_CLIENT.filter(k=>CRAFT_STAT_BASE_BY_SLOT_CLIENT[k][r.slot]).map(k=>`<span class="craft-stat-chip${craftStatsFor(r.slot).includes(k)?' on':''}" data-craft-stat="${k}" data-craft-slot="${r.slot}">${CRAFT_STAT_LABEL_CLIENT[k]}</span>`).join('')}<div class="craft-stat-note">Escolha até 2 atributos — o item nasce com eles.</div></div>` : ''}` : ''}
+          ${r.slot ? `<button type="button" class="party-btn craft-stat-toggle" style="width:100%;margin-top:6px;" data-craft-stat-toggle="${r.id}">⚙️ Atributos: ${craftStatsFor(r.slot).map(k=>CRAFT_STAT_LABEL_CLIENT[k]||k).join(' + ')} · 🔒 ${CRAFT_FIXED_LABEL_CLIENT[craftFixedFor(r.slot)]||''} ${craftStatPickerOpen===r.id?'▲':'▼'}</button>
+          ${craftStatPickerOpen===r.id ? `<div class="craft-stat-picker">${craftPoolFor(r.slot).map(k=>`<span class="craft-stat-chip${craftStatsFor(r.slot).includes(k)?' on':''}" data-craft-stat="${k}" data-craft-slot="${r.slot}">${CRAFT_STAT_LABEL_CLIENT[k]||k}</span>`).join('')}<div class="craft-stat-note">Escolha até 2 atributos — o item nasce com eles.</div>
+            <div class="craft-stat-note" style="margin-top:8px;color:var(--gold-bright);">🔒 Atributo fixo (escolha 1) — o valor sai da faixa abaixo, conforme a raridade sorteada:</div>
+            ${(CRAFT_FIXED_OPTIONS_CLIENT[CRAFT_SLOT_GROUP_CLIENT[r.slot]]||[]).map(k=>{ const rg = CRAFT_FIXED_RANGES_CLIENT[k][Math.max(0,Math.min(4,(r.powerTier||1)-1))]; return `<span class="craft-stat-chip${craftFixedFor(r.slot)===k?' on':''}" data-craft-fixed="${k}" data-craft-slot="${r.slot}">${CRAFT_FIXED_LABEL_CLIENT[k]} ${rg[0]}–${rg[1]}${/Leech/.test(k)?'%':''}</span>`; }).join('')}</div>` : ''}` : ''}
           <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" data-craft-slot="${r.slot||''}" ${canCraft?'':'disabled'}>Criar</button>
         </div>`;
     }).join('') : `<div class="profession-empty-hint">Nenhum item encontrado${searchQ?` pra "${professionSearchEl.value}"`:''}${professionCategoryFilter!=='all'?` em ${CRAFT_CATEGORY_LABEL_CLIENT[professionCategoryFilter]||professionCategoryFilter}`:''}.</div>`;
@@ -14579,10 +14635,13 @@
       renderProfessions(); // refaz as % de chance de cada receita com o novo catalisador
     });
     body.querySelectorAll('[data-craft-recipe]').forEach(btn=>{
-      btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe, catalystItemId: professionCatalystItemId || undefined, stats: btn.dataset.craftSlot ? craftStatsFor(btn.dataset.craftSlot) : undefined }));
+      btn.addEventListener('click', ()=> sendWS({ type:'profession:craft', profession: professionSelectedTab, recipeId: btn.dataset.craftRecipe, catalystItemId: professionCatalystItemId || undefined, stats: btn.dataset.craftSlot ? craftStatsFor(btn.dataset.craftSlot) : undefined, fixed: btn.dataset.craftSlot ? craftFixedFor(btn.dataset.craftSlot) : undefined }));
     });
     body.querySelectorAll('[data-craft-stat-toggle]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ craftStatPickerOpen = craftStatPickerOpen === btn.dataset.craftStatToggle ? null : btn.dataset.craftStatToggle; renderProfessions(); });
+    });
+    body.querySelectorAll('[data-craft-fixed]').forEach(chip=>{
+      chip.addEventListener('click', ()=>{ craftFixedChoice[CRAFT_SLOT_GROUP_CLIENT[chip.dataset.craftSlot]] = chip.dataset.craftFixed; renderProfessions(); });
     });
     body.querySelectorAll('[data-craft-stat]').forEach(chip=>{
       chip.addEventListener('click', ()=>{
