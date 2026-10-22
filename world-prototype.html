@@ -456,7 +456,12 @@
   #hd-header{ display:flex; align-items:center; border-bottom:1px solid var(--gold-deep); padding:12px 18px; flex-shrink:0; }
   #hd-header h2{ font-family:var(--font-display); font-size:16px; color:var(--gold-bright); margin:0; letter-spacing:.03em; }
   #hd-close{ margin-left:auto; padding:6px 12px; color:var(--danger); cursor:pointer; font-family:var(--font-mono); font-size:11px; }
-  #hd-body{ flex:1; overflow-y:auto; padding:16px 20px; }
+  #hd-body{ flex:1; overflow:hidden; padding:14px 16px; display:flex; gap:14px; }
+  #hd-left{ flex:1; min-width:0; overflow-y:auto; }
+  #hd-loot-list{ width:350px; flex-shrink:0; border-left:1px solid rgba(191,161,95,.2); padding-left:14px; display:flex; flex-direction:column; min-height:0; }
+  #hd-loot-list .lr-list{ overflow-y:auto; flex:1; }
+  #hd-footer{ display:flex; justify-content:flex-end; padding:8px 14px; border-top:1px solid var(--gold-deep); flex-shrink:0; }
+  @media (max-width:640px){ #hd-body{ flex-direction:column; overflow-y:auto; } #hd-loot-list{ width:auto; border-left:none; padding-left:0; } }
   #hd-record{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); background:rgba(191,161,95,.08); border:1px solid rgba(191,161,95,.2); border-radius:6px; padding:8px 12px; margin-bottom:16px; }
   #hd-record b{ color:var(--gold-bright); }
   .hd-monster-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px; margin-bottom:20px; }
@@ -468,9 +473,68 @@
   .hd-monster-weak.show{ display:block; }
   .hd-monster-weak .elem-chip{ display:inline-block; background:rgba(191,161,95,.15); border:1px solid var(--gold-deep); border-radius:4px; padding:1px 6px; margin:2px; color:var(--gold-bright); }
 
-  #hunts-right{ width:220px; border-left:1px solid rgba(191,161,95,.2); padding:12px; overflow-y:auto; flex-shrink:0; }
+  #hunts-right{ width:330px; border-left:1px solid rgba(191,161,95,.2); padding:12px; overflow-y:auto; flex-shrink:0; }
   .loot-item{ display:flex; align-items:center; gap:8px; padding:6px 4px; font-family:var(--font-mono); font-size:11px; border-bottom:1px dashed rgba(191,161,95,.15); } .loot-item-icon{ width:22px; height:22px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; } span.loot-item-icon{ display:flex; align-items:center; justify-content:center; } span.loot-item-icon svg{ width:100%; height:100%; display:block; }
   .loot-item input{ accent-color:var(--gold); }
+  /* Lista de loot estilo Huntera (PEGAR / DESPACHAR) */
+  .lr-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .lr-title{ font-family:var(--font-display); font-size:12px; letter-spacing:.05em; color:var(--gold-bright); }
+  .lr-chips{ display:flex; gap:4px; }
+  .lr-chip{ font-family:var(--font-mono); font-size:9px; padding:3px 8px; border-radius:10px; border:1px solid var(--gold-deep); color:var(--ink-dim); cursor:pointer; }
+  .lr-chip.on{ background:rgba(191,161,95,.22); color:var(--gold-bright); border-color:var(--gold); }
+  .lr-cols{ display:grid; grid-template-columns:1fr 44px 104px; font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; color:var(--ink-dim); text-align:center; margin:2px 0 4px; }
+  .lr-row{ display:grid; grid-template-columns:30px 1fr 44px 104px; align-items:center; gap:6px; padding:7px 8px; margin-bottom:6px; border-radius:6px; border:1px solid rgba(191,161,95,.18); background:rgba(0,0,0,.28); transition:opacity .15s; }
+  .lr-row.off{ opacity:.45; }
+  .lr-row .lr-ic{ display:flex; align-items:center; justify-content:center; width:30px; height:30px; }
+  .lr-row .lr-ic img, .lr-row .lr-ic .loot-item-icon{ width:26px; height:26px; }
+  .lr-row .lr-nm{ min-width:0; font-family:var(--font-mono); font-size:11px; line-height:1.15; }
+  .lr-row .lr-nm > span{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lr-row .lr-nm small{ display:block; font-size:9px; color:var(--ink-dim); }
+  .lr-row .lr-pick{ justify-self:center; width:16px; height:16px; accent-color:#5b8cff; cursor:pointer; }
+  .lr-row .lr-dest{ width:104px; font-family:var(--font-mono); font-size:10px; padding:4px 4px; border-radius:4px; border:1px solid var(--gold-deep); background:#15121c; color:var(--ink); cursor:pointer; }
+  #hunts-right .lr-row{ grid-template-columns:26px 1fr 28px 108px; padding:6px; gap:5px; }
+  #hunts-right .lr-cols{ grid-template-columns:1fr 28px 108px; }
+  #hunts-right .lr-row .lr-dest{ width:108px; font-size:9.5px; }
+  /* Despachar Loot (cidade) */
+  .dl-intro{ font-size:11.5px; color:var(--ink-dim); margin-bottom:10px; line-height:1.4; }
+  .dl-list{ max-height:52vh; overflow-y:auto; }
+  .dl-row{ display:grid; grid-template-columns:34px 1fr auto auto; align-items:center; gap:10px; padding:8px 10px; margin-bottom:6px; border-radius:6px; border:1px solid rgba(191,161,95,.18); background:rgba(0,0,0,.28); cursor:pointer; user-select:none; }
+  .dl-row:hover{ border-color:rgba(191,161,95,.45); }
+  .dl-row.marked{ border-color:#5b8cff; background:rgba(91,140,255,.12); }
+  .dl-row .dl-ic{ position:relative; width:32px; height:32px; display:flex; align-items:center; justify-content:center; }
+  .dl-row .dl-ic .item-icon{ width:28px !important; height:28px !important; display:flex; align-items:center; justify-content:center; }
+  .dl-row .dl-ic .item-icon svg{ width:100%; height:100%; }
+  .dl-row .dl-q{ position:absolute; left:-4px; bottom:-3px; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); }
+  .dl-row .dl-nm{ min-width:0; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-dim); }
+  .dl-row.marked .dl-nm{ color:var(--ink); font-weight:700; }
+  .dl-row .dl-nm small{ display:block; font-weight:400; font-size:9.5px; color:var(--ink-dim); }
+  .dl-row .dl-tot{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); white-space:nowrap; }
+  .dl-row.marked .dl-tot{ color:var(--gold-bright); }
+  .dl-seg{ display:flex; border:1px solid var(--gold-deep); border-radius:5px; overflow:hidden; }
+  .dl-seg button{ font-family:var(--font-mono); font-size:10px; padding:5px 9px; border:none; border-right:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .dl-seg button:last-child{ border-right:none; }
+  .dl-seg button.on{ background:#3d5fb8; color:#fff; }
+  .dl-seg button:disabled{ opacity:.35; cursor:not-allowed; }
+  .dl-foot{ display:flex; align-items:center; gap:10px; margin-top:10px; border-top:1px solid rgba(191,161,95,.2); padding-top:10px; }
+  .dl-foot .dl-count{ flex:1; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  .dl-foot .dl-count::before{ content:'●'; color:var(--gold-bright); margin-right:5px; }
+  .dl-foot button{ padding:8px 14px; }
+  @media (max-width:520px){ .dl-row{ grid-template-columns:34px 1fr; } .dl-row .dl-tot, .dl-row .dl-seg{ grid-column:2; justify-self:start; } }
+  /* Botão "Despachar Loot" da cidade: apagado sem nada marcado; com algo
+     marcado ganha a aura animada nas cores dos elementos (igual ao da Loja). */
+  #btn-open-quicksell{ position:relative; overflow:hidden; isolation:isolate; transition:opacity .2s, filter .2s; }
+  #btn-open-quicksell:not(.hot){ opacity:.55; filter:grayscale(.6); }
+  #btn-open-quicksell.hot{ color:#fff; border-color:transparent; background:transparent; animation:shopGlow 6s linear infinite; }
+  #btn-open-quicksell.hot::before{ content:''; position:absolute; z-index:-2; left:50%; top:50%; width:260%; aspect-ratio:1; transform:translate(-50%,-50%);
+    background:conic-gradient(from 0deg, #ff4b2b, #ff9f1c, #ffe14d, #5ee06b, #3fd9ff, #3a6bff, #b45cff, #ff4b2b); animation:shopSpin 3.2s linear infinite; }
+  #btn-open-quicksell.hot::after{ content:''; position:absolute; z-index:-1; inset:2px; border-radius:5px; background:linear-gradient(180deg,#2a2335,#141018); }
+  @media (prefers-reduced-motion: reduce){ #btn-open-quicksell.hot, #btn-open-quicksell.hot::before{ animation:none; } }
+  .loot-sell-btn{ margin-left:auto; flex-shrink:0; font-family:var(--font-mono); font-size:9.5px; padding:3px 7px; border-radius:4px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; white-space:nowrap; }
+  .loot-sell-btn:hover{ border-color:var(--gold-bright); }
+  .loot-sell-btn.on{ border-color:#7ee08a; color:#7ee08a; background:rgba(126,224,138,.14); }
+  .loot-sell-head{ display:flex; gap:6px; margin:4px 0 6px; }
+  .loot-sell-head button{ flex:1; font-family:var(--font-mono); font-size:9.5px; padding:4px 6px; border-radius:4px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .loot-sell-head button:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
   .rarity-comum{ color:#ffffff; } .rarity-incomum{ color:#3ecf4a; } .rarity-rara{ color:#3d8bff; } .rarity-épica{ color:#a855f7; } .rarity-lendária{ color:#f5b800; } .rarity-mítica{ color:#ff2b2b; }
   
   .hd-monster-status{ font-family:var(--font-mono); font-size:9px; margin-top:4px; }
@@ -1807,7 +1871,17 @@
   /* ============ PETS + GACHA ============ */
   #pets-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:440px; max-width:94vw; height:520px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:17; }
   #pets-modal.open{ display:flex; }
-  #quicksell-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:94vw; display:none; z-index:17; }
+  #quicksell-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:540px; max-width:94vw; display:none; z-index:17; }
+  .qs-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(54px, 1fr)); gap:6px; max-height:46vh; overflow-y:auto; padding:2px; }
+  .qs-tile{ position:relative; height:54px; border:2px solid var(--gold-deep); border-radius:6px; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; }
+  .qs-tile:hover{ filter:brightness(1.25); }
+  .qs-tile .item-icon{ width:30px !important; height:30px !important; display:flex; align-items:center; justify-content:center; object-fit:contain; }
+  .qs-tile .item-icon svg{ width:100%; height:100%; display:block; }
+  .qs-tile .qs-qty{ position:absolute; right:3px; top:1px; font-family:var(--font-mono); font-size:9px; color:#fff; text-shadow:0 0 2px #000; }
+  .qs-tile .qs-price{ position:absolute; left:0; right:0; bottom:1px; text-align:center; font-family:var(--font-mono); font-size:8.5px; color:var(--gold-bright); text-shadow:0 0 2px #000; }
+  .qs-tile .qs-mark{ display:none; position:absolute; left:3px; top:1px; font-size:12px; font-weight:700; color:#7ee08a; text-shadow:0 0 3px #000; }
+  .qs-tile.marked{ background:rgba(126,224,138,.18); }
+  .qs-tile.marked .qs-mark{ display:block; }
   #quicksell-modal.open{ display:block; }
   /* Item 6 da lista de tarefas (20/09/2026): lista com muitos itens ficava
      impossível de gerenciar -- max-height+scroll evita o modal virar uma
@@ -2916,17 +2990,14 @@
   <!-- VENDA RÁPIDA — marca itens da Mochila e vende todos de uma vez, ouro
        direto na mão (não no Banco), só na Cidade Principal. -->
   <div id="quicksell-modal" class="glass ornate win">
-    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 🪙 Venda Rápida<span class="rule"></span><span class="win-close-x" data-close-win="quicksell-modal">✕</span></div>
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ 📦 Despachar Loot<span class="rule"></span><span class="win-close-x" data-close-win="quicksell-modal">✕</span></div>
     <div style="padding:0 14px 14px;">
-      <div class="italic-note" style="margin-bottom:8px;">Marque os itens da Mochila que quer vender — a marca fica salva até você vender ou desmarcar.</div>
-      <div id="quicksell-bulk-row" style="display:flex;gap:8px;margin-bottom:10px;">
-        <button type="button" class="treino-inline-btn" id="quicksell-mark-all-btn" style="flex:1;padding:7px 10px;font-size:10.5px;">☑ Marcar Todos</button>
-        <button type="button" class="treino-inline-btn" id="quicksell-unmark-all-btn" style="flex:1;padding:7px 10px;font-size:10.5px;">☐ Desmarcar Todos</button>
-      </div>
-      <div id="quicksell-list"></div>
-      <div id="quicksell-footer" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;border-top:1px dashed rgba(191,161,95,.2);padding-top:10px;">
-        <span id="quicksell-summary" class="hint">Nada marcado.</span>
-        <button type="button" class="treino-inline-btn" id="quicksell-confirm-btn">Vender</button>
+      <div class="dl-intro">Tudo o que está na sua mochila. Clique em um item para marcar ou desmarcar, e escolha à direita para onde ele vai. Só os marcados são despachados, e as marcas ficam salvas para a próxima.</div>
+      <div id="quicksell-list" class="dl-list"></div>
+      <div class="dl-foot">
+        <span id="quicksell-summary" class="dl-count">Nada marcado</span>
+        <button type="button" class="treino-inline-btn" id="quicksell-cancel-btn">Cancelar</button>
+        <button type="button" class="treino-inline-btn" id="quicksell-confirm-btn">Despachar</button>
       </div>
     </div>
     <div class="win-resize"></div>
@@ -3036,8 +3107,7 @@
   <!-- INVENTÁRIO DIVIDIDO: combate + cosméticos acima do Elmo + Bolsa/Mochila -->
   <div id="inventory-modal" class="glass ornate win">
     <div id="inv-tabs" class="win-drag">
-      <div class="inv-tab active" data-invtab="bolsa">Bolsa</div>
-      <div class="inv-tab" data-invtab="mochila">Mochila</div>
+      <div class="inv-tab active" data-invtab="mochila">Mochila</div>
       <div class="inv-tab" data-invtab="lixeira">Lixeira de Itens</div>
       <div class="inv-tab" data-invtab="armazem">Armazém</div>
       <div id="inv-close">✕ Fechar</div>
@@ -3220,7 +3290,7 @@
     <div id="hotbar-wrap">
       <div id="city-services-bar">
         <div class="service-plate-btn" id="btn-open-depot" title="Armazém (Depot)">Depot</div>
-        <div class="service-plate-btn" id="btn-open-quicksell" title="Venda Rápida">Venda Rápida</div>
+        <div class="service-plate-btn" id="btn-open-quicksell" title="Despachar Loot — vende ou guarda no Depot o que estiver marcado">Despachar Loot</div>
         <div class="service-plate-btn" id="btn-open-blessings" title="Bênçãos">Bênçãos</div>
         <div class="service-plate-btn" id="btn-open-professions" title="Profissões (Forja/Carpintaria/Tecelagem)">Profissões</div>
         <div class="service-plate-btn" id="btn-open-market" title="Mercado (compra e venda entre jogadores)">Mercado</div>
@@ -3284,12 +3354,14 @@
       <div id="hd-close">✕ Fechar</div>
     </div>
     <div id="hd-body">
-      <div id="hd-record"></div>
-      <div class="panel-title">Bestiário — fraquezas elementais<span class="rule"></span></div>
-      <div class="hd-monster-grid" id="hd-monster-grid"></div>
-      <div class="panel-title">Loot possível<span class="rule"></span></div>
+      <div id="hd-left">
+        <div id="hd-record"></div>
+        <div class="panel-title">Bestiário — fraquezas elementais<span class="rule"></span></div>
+        <div class="hd-monster-grid" id="hd-monster-grid"></div>
+      </div>
       <div id="hd-loot-list"></div>
     </div>
+    <div id="hd-footer"><button type="button" class="treino-inline-btn" id="hd-close-btn">Fechar</button></div>
   </div>
   <div id="item-tooltip"></div>
 
@@ -3743,6 +3815,10 @@
   let cosmetics = { outfit:'padrao', mount:null, aura:null, wings:null };
   let party = null; // { id, leaderUsername, members:[...] }
   let partyAutoAccept = false; // "Entrar e aceitar tudo" (21/10/2026)
+  let depotMarks = [], lootSkip = []; // Despachar Loot: destino Depot + coluna PEGAR (22/10/2026)
+  let craftGold = 0; // Ouro de Criação (Caixa do Aventureiro): vinculado, só paga receitas
+  let trainingBoost = null; // Kit de Treino Veloz ativo { mult, until }
+  let tutorialState = null; // Início guiado (22/10/2026): { step, done, startLevel } vindo do snapshot
   let towerBosses = []; // aba Bosses (21/10/2026): [{towerId,towerName,floor,bossName,freeToday,keys}]
   let lastBossesSig = null;
   let rateio = null; // projecao ao vivo do Rateio de custo em grupo (ver getRateioSnapshot no servidor) -- null = desligado/sem grupo
@@ -3974,6 +4050,7 @@
   document.body.appendChild(itemLinkMenu);
   let itemLinkMenuItem = null;
   let itemLinkMenuStack = null; // { container, index, item } quando dá pra dividir
+  let itemLinkMenuBox = null;   // { container:'bag', index, item } quando é uma Caixa (botão direito > Abrir)
   document.addEventListener('contextmenu', e=>{
     let el = e.target;
     while(el && el !== document.body && !linkableItems.has(el)) el = el.parentElement;
@@ -3982,7 +4059,8 @@
     itemLinkMenuItem = linkableItems.get(el);
     const sInfo = stackInfoByEl.get(el);
     itemLinkMenuStack = (sInfo && !sInfo.item.slot && (sInfo.item.qty||1) > 1) ? sInfo : null;
-    itemLinkMenu.innerHTML = '<div data-act="link">🔗 Linkar no chat</div>' + (itemLinkMenuStack ? '<div data-act="split">✂️ Dividir quantidade</div>' : '');
+    itemLinkMenuBox = (sInfo && sInfo.container === 'bag' && (sInfo.item.kind === 'box' || sInfo.item.kind === 'trainboost')) ? sInfo : null;
+    itemLinkMenu.innerHTML = (itemLinkMenuBox ? (itemLinkMenuBox.item.kind === 'trainboost' ? '<div data-act="open">⚡ Ativar</div>' : '<div data-act="open">📦 Abrir</div>') : '') + '<div data-act="link">🔗 Linkar no chat</div>' + (itemLinkMenuStack ? '<div data-act="split">✂️ Dividir quantidade</div>' : '');
     itemLinkMenu.style.display = 'block';
     itemLinkMenu.style.left = Math.min(e.clientX, window.innerWidth - 170) + 'px';
     itemLinkMenu.style.top = Math.min(e.clientY, window.innerHeight - 50) + 'px';
@@ -3997,11 +4075,14 @@
       chatInputEl.value = (v && !/\s$/.test(v) ? v + ' ' : v) + label + ' ';
       chatInputEl.focus();
     }
+    if(e.target.closest('#item-link-menu [data-act="open"]') && itemLinkMenuBox){
+      sendWS({ type:'bag:openBox', bagIndex: itemLinkMenuBox.index });
+    }
     if(e.target.closest('#item-link-menu [data-act="split"]') && itemLinkMenuStack){
       const st = itemLinkMenuStack, q = st.item.qty || 1;
       openSplitModal(st.item, q - 1, 'Quantas unidades separar numa casa nova?', n=> sendWS({ type:'stack:split', container: st.container, index: st.index, qty: n, toIndex: st.index + 1 }));
     }
-    itemLinkMenu.style.display = 'none'; itemLinkMenuItem = null; itemLinkMenuStack = null;
+    itemLinkMenu.style.display = 'none'; itemLinkMenuItem = null; itemLinkMenuStack = null; itemLinkMenuBox = null;
   });
   /* DIVIDIR PILHAS (20/10/2026) — arrastar um item empilhável pra outra casa
      (Mochila/Bolsa/Armazém) pergunta quantas unidades mover; botão direito >
@@ -7336,6 +7417,7 @@
      ========================================================= */
   const netState = { ws:null, connected:false };
   function sendWS(obj){
+    try{ tutorialOnSend(obj); }catch(_){}
     if(netState.ws && netState.ws.readyState === WebSocket.OPEN) netState.ws.send(JSON.stringify(obj));
   }
 
@@ -7453,7 +7535,8 @@
     bag = msg.bag; bagCapacity = msg.bagCapacity;
     trash = msg.trash || trash; trashCapacity = msg.trashCapacity || trashCapacity;
     depot = msg.depot || depot; depotCapacity = msg.depotCapacity || depotCapacity;
-    quickSellMarks = msg.quickSellMarks || quickSellMarks;
+    if(Date.now() > qsLocalUntil){ quickSellMarks = msg.quickSellMarks || quickSellMarks; depotMarks = msg.depotMarks || depotMarks; lootSkip = msg.lootSkip || lootSkip; } // (ver qsApplyLocal)
+    renderQuickSellIfChanged(); updateDispatchBtnGlow();
     blessingsCount = msg.blessingsCount || 0; blessingProtectionPct = msg.blessingProtectionPct || 0; nextBlessingCost = (msg.nextBlessingCost != null) ? msg.nextBlessingCost : null;
     // invSlotFrame não é mais usado no cliente (ver item 1 da lista de
     // tarefas, 20/09/2026 -- visual do slot padronizado, sem seletor).
@@ -7507,6 +7590,8 @@
     if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
     if(msg.towerClimb) towerClimb = msg.towerClimb;
+    if(msg.tutorial) tutorialState = msg.tutorial;
+    craftGold = msg.craftGold || 0; trainingBoost = msg.trainingBoost || null;
     if(msg.towerBosses){ towerBosses = msg.towerBosses; if(document.getElementById('hunts-modal').classList.contains('open') && document.querySelector('.hunts-tab[data-tab="bosses"]').classList.contains('active')) renderBossesTab(); }
     if(typeof msg.towerDowned !== 'undefined'){ towerDowned = msg.towerDowned || null; updateTowerDownedBanner(); }
     renderTowersIfOpen();
@@ -8191,6 +8276,34 @@
     return null;
   }
   function handleAck(msg){
+    if(msg.forType === 'bag:openBox'){
+      if(msg.ok && msg.activated){
+        const b = msg.boost || {};
+        partySimpleToast(`⚡ ${escapeHtml(msg.boxName||'Kit')} ativado! Treino ${b.mult}x mais rápido até ${new Date(b.until).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}.`);
+        logLoot(`⚡ ${msg.boxName} ativado (treino ${b.mult}x).`);
+      } else if(msg.ok){
+        const parts = [];
+        if(msg.gold) parts.push(`<b>${msg.gold.toLocaleString('pt-BR')} ouro</b>`);
+        if(msg.craftGold) parts.push(`<b>${msg.craftGold.toLocaleString('pt-BR')} de Ouro de Criação</b>`);
+        (msg.items||[]).forEach(x=> parts.push(`<b>${x.qty}x ${escapeHtml(x.name)}</b>`));
+        partySimpleToast(`🎁 ${escapeHtml(msg.boxName||'Caixa')} aberta! Você recebeu ${parts.join(', ')}. 🔒 Tudo vinculado ao seu personagem.`);
+        logLoot(`🎁 ${msg.boxName||'Caixa'} aberta: ${parts.map(p=>p.replace(/<[^>]+>/g,'')).join(', ')}.`);
+      } else if(msg.reason === 'outro_impulso_ativo') logLoot(`⚠️ Já tem um Kit de Treino Veloz ${msg.mult}x ativo — espere acabar pra ativar um de outro multiplicador (do mesmo multiplicador, o tempo soma).`);
+      else logLoot(`⚠️ Não deu pra abrir: ${msg.reason}`);
+    }
+    if(msg.forType === 'shop:buyTrainingBoost'){
+      if(msg.ok) partySimpleToast(`⚡ ${escapeHtml(msg.name)} comprado! Está na sua Mochila — ative com 2 cliques quando for treinar.`);
+      else logLoot(`⚠️ Não deu pra comprar: ${msg.reason === 'moedas_insuficientes' ? 'Elemental Coin insuficiente' : msg.reason === 'mochila_cheia' ? 'Mochila cheia' : msg.reason}`);
+    }
+    if((msg.forType === 'shop:quickSell' || msg.forType === 'loot:dispatchCity') && msg.ok) tutorialFlags.sold = true;
+    if(msg.forType === 'loot:dispatchCity'){
+      if(msg.ok){
+        const parts = []; if(msg.sold) parts.push(`${msg.sold} vendido(s) por ${msg.gold.toLocaleString('pt-BR')} gp`); if(msg.depot) parts.push(`${msg.depot} pro Depot`);
+        logLoot(`📦 Despachado: ${parts.join(' · ')}.${msg.depotFull ? ` ⚠️ ${msg.depotFull} não couberam no Depot.` : ''}`);
+        partySimpleToast(`📦 Despachado: ${parts.join(' · ')}.`);
+      } else logLoot(`⚠️ ${({ precisa_estar_na_cidade:'Despachar Loot só funciona na Cidade.', nada_marcado:'nada marcado pra despachar.', armazem_cheio:'Depot cheio — nada coube.' })[msg.reason] || msg.reason}`);
+      renderQuickSellIfOpen(); renderInventoryIfOpen();
+    }
     if(msg.forType === 'hunt:start'){
       if(msg.ok){
         // solo: personagem anda sozinho até o teleporte azul; ao chegar,
@@ -8967,7 +9080,8 @@
     else if(activeHunt && activeHunt.running) rate = TRAINING_RATE_HUNT_PER_SEC_CLIENT;
     if(rate <= 0) return trainingBank;
     const elapsedSec = Math.max(0, (Date.now() - trainingBankSnapshotAt) / 1000);
-    return trainingBank + (rate / getTrainingRateMultiplierClient()) * elapsedSec;
+    const boostMult = (trainingActive && trainingActive.mode === 'online' && trainingBoost && trainingBoost.until > Date.now()) ? trainingBoost.mult : 1;
+    return trainingBank + (rate / getTrainingRateMultiplierClient()) * boostMult * elapsedSec;
   }
   function stopTreinoBarInterval(){ if(treinoBarInterval){ clearInterval(treinoBarInterval); treinoBarInterval = null; } }
   function isTreinoTabVisible(){
@@ -8984,8 +9098,12 @@
 
   function renderTreinoTab(){
     const kitEl = document.getElementById('treino-kit-status');
+    const tBoost = trainingBoost && trainingBoost.until > Date.now() ? trainingBoost : null;
+    const timedKit = (bag||[]).filter(it=> it && String(it.id||'').startsWith('kit_treino') && it.expiresAt && it.expiresAt > Date.now()).sort((a,b)=> b.expiresAt - a.expiresAt)[0];
+    const permKit = (bag||[]).some(it=> it && it.id === 'kit_treino' && !it.expiresAt);
+    const boostLine = tBoost ? `<div class="ok-line">⚡ Kit de Treino Veloz <b>${tBoost.mult}x</b> ativo — ${fmtTimeLeft(tBoost.until - Date.now())} restantes.</div>` : `<div class="missing-line" style="opacity:.8">⚡ Treine 2x ou 3x mais rápido com o Kit de Treino Veloz (Loja › Kit de Treino Veloz).</div>`;
     if(hasTrainingKit){
-      kitEl.innerHTML = `<div class="ok-line">✅ Você tem o Kit de Treino na mochila.</div>`;
+      kitEl.innerHTML = (permKit ? `<div class="ok-line">✅ Você tem o Kit de Treino na mochila.</div>` : timedKit ? `<div class="ok-line">✅ ${escapeHtml(timedKit.name)} — expira em ${fmtTimeLeft(timedKit.expiresAt - Date.now())}.</div>` : '') + boostLine;
     } else {
       kitEl.innerHTML = `<div class="missing-line">❌ Sem Kit de Treino — sem ele não dá pra treinar no boneco.</div><button class="treino-inline-btn" id="treino-buy-kit-btn">Comprar Kit de Treino (300 Gold)</button>`;
       document.getElementById('treino-buy-kit-btn').addEventListener('click', ()=> sendWS({ type:'npc:buy', npcId:'ferreiro_bran', itemId:'kit_treino', qty:1 }));
@@ -9239,18 +9357,56 @@
     const fallbackUrl = lootIconFallback(def, idx);
     return `<img class="loot-item-icon" src="${itemIconUrl(item.id)}" alt="" onerror="${fallbackUrl ? `this.onerror=function(){this.style.display='none'};this.src='${fallbackUrl}'` : `this.style.display='none'`}">`;
   }
+  /* LISTA DE LOOT ESTILO HUNTERA (22/10/2026): cada loot possível tem
+     PEGAR (o personagem pega ou deixa no chão — state.lootSkip no servidor)
+     e DESPACHAR (Não despachar / Vender / Depot / Guild-em breve) — a mesma
+     regra que o Robô de Venda (caçada/torre) e o Despachar Loot (cidade) usam. */
+  let qsLocalUntil = 0; // depois de mudar algo no cliente, ignora o snapshot por um instante (senão "pisca" de volta)
+  function qsTouch(){ qsLocalUntil = Date.now() + 1500; }
+  function qsApplyLocal(marks){ quickSellMarks = marks; qsTouch(); }
+  let lootValueMode = 'rarity'; // 'rarity' | 'npc' (chips "Raridade | Valor NPC")
+  function lootDest(id){ return depotMarks.includes(id) ? 'depot' : quickSellMarks.includes(id) ? 'sell' : 'none'; }
+  function setLootDestLocal(ids, dest){
+    ids.forEach(id=>{ quickSellMarks = quickSellMarks.filter(x=>x!==id); depotMarks = depotMarks.filter(x=>x!==id); if(dest==='sell') quickSellMarks.push(id); if(dest==='depot') depotMarks.push(id); });
+    qsTouch(); sendWS({ type:'loot:setDispatch', ids, dest });
+    renderQuickSellIfOpen(); updateDispatchBtnGlow();
+  }
+  function setLootPickLocal(ids, pick){
+    ids.forEach(id=>{ lootSkip = lootSkip.filter(x=>x!==id); if(!pick) lootSkip.push(id); });
+    qsTouch(); sendWS({ type:'loot:setPickup', ids, pick });
+  }
+  const RARITY_LABEL_PT = { comum:'Comum', incomum:'Incomum', rara:'Semi-raro', epica:'Raro', lendaria:'Lendário', mitica:'Mítico' };
+  function lootRuleHeadHtml(){
+    return `<div class="lr-head"><span class="lr-title">Loot possível</span><span class="lr-chips"><span class="lr-chip ${lootValueMode==='rarity'?'on':''}" data-lr-mode="rarity">Raridade</span><span class="lr-chip ${lootValueMode==='npc'?'on':''}" data-lr-mode="npc">Valor NPC</span></span></div>
+      <div class="lr-cols"><span></span><span>PEGAR</span><span>DESPACHAR</span></div>`;
+  }
+  function buildLootRuleList(root, loot, huntDef, rerender){
+    root.innerHTML = lootRuleHeadHtml();
+    root.querySelectorAll('[data-lr-mode]').forEach(c=> c.addEventListener('click', ()=>{ lootValueMode = c.dataset.lrMode; rerender(); }));
+    const list = document.createElement('div'); list.className = 'lr-list';
+    (loot||[]).forEach((item, idx)=>{
+      const pick = !lootSkip.includes(item.id), dest = lootDest(item.id);
+      const row = document.createElement('div');
+      row.className = 'lr-row' + (pick ? '' : ' off');
+      const sub = lootValueMode === 'npc' ? `${npcSellPriceFor({ ...item, qty:1 })} gp` : (RARITY_LABEL_PT[item.rarity] || item.rarity || '');
+      row.innerHTML = `<span class="lr-ic">${lootRowIconHtml(item, huntDef, idx)}</span>
+        <span class="lr-nm"><span class="rarity-${item.rarity}">${escapeHtml(item.name)}</span><small>${sub}</small></span>
+        <input type="checkbox" class="lr-pick" ${pick?'checked':''} title="Pegar este loot">
+        <select class="lr-dest" title="O que o despacho faz com este item">
+          <option value="none" ${dest==='none'?'selected':''}>Não despachar</option>
+          <option value="sell" ${dest==='sell'?'selected':''}>Vender</option>
+          <option value="depot" ${dest==='depot'?'selected':''}>Depot</option>
+        </select>`;
+      row.querySelector('.lr-pick').addEventListener('change', e=>{ setLootPickLocal([item.id], e.target.checked); row.classList.toggle('off', !e.target.checked); });
+      row.querySelector('.lr-dest').addEventListener('change', e=> setLootDestLocal([item.id], e.target.value));
+      attachItemTooltip(row.querySelector('.lr-ic'), item);
+      list.appendChild(row);
+    });
+    root.appendChild(list);
+  }
   function renderHuntLoot(){
     const right = document.getElementById('hunts-right');
-    right.innerHTML = `<div class="panel-title">Loot possível<span class="rule"></span></div>`;
-    selectedHunt.possibleLoot.forEach((item,idx)=>{
-      const row = document.createElement('label');
-      row.className = 'loot-item';
-      const iconHtml = lootRowIconHtml(item, selectedHunt, idx);
-      row.innerHTML = `${iconHtml}<input type="checkbox" data-item="${item.id}" ${lootFilter[item.id]?'checked':''}><span class="rarity-${item.rarity}">${item.name}</span>`;
-      row.querySelector('input').addEventListener('change', e=>{ lootFilter[item.id] = e.target.checked; });
-      attachItemTooltip(row, item);
-      right.appendChild(row);
-    });
+    buildLootRuleList(right, selectedHunt.possibleLoot, selectedHunt, renderHuntLoot);
   }
 
   /* =========================================================
@@ -9377,17 +9533,14 @@
       if(!dispatchToastEl){ dispatchToastEl = document.createElement('div'); dispatchToastEl.className = 'toast glass'; stack.appendChild(dispatchToastEl); }
       const clock = fmtDuration(p.inMs);
       let txt;
-      if(p.trigger === 'capacity') txt = p.count ? `🎒 Mochila cheia — despachando em ${clock} para abrir espaço. Pular mantém o loot e volta para a cidade.` : `🎒 Mochila cheia — despachando em ${clock}, mas nada está marcado. Marque o que quer mandar na Venda Rápida.`;
-      else txt = p.count ? `📦 Despachando em ${clock} — marque mais alguma coisa que queira mandar, ou deixe ir como está.` : `📦 Despachando em ${clock} — nada está marcado, então nada vai. Marque o que quer mandar na Venda Rápida.`;
+      if(p.trigger === 'timer' && p.count) txt = `📦 Robô de Venda em ${clock}: ${p.count} ${p.count === 1 ? 'item' : 'itens'} marcado(s)${p.gold ? ` ≈ ${Math.round(p.gold).toLocaleString('pt-BR')} gp (vai pro banco)` : ''}${p.depot ? ` · ${p.depot} pro Depot` : ''}.`;
+      else if(p.trigger === 'capacity') txt = p.count ? `🎒 Mochila cheia — despachando em ${clock} para abrir espaço. Pular mantém o loot e volta para a cidade.` : `🎒 Mochila cheia — despachando em ${clock}, mas nada está marcado. Marque em Caçadas › Loot possível (DESPACHAR) ou no Despachar Loot.`;
+      else txt = p.count ? `📦 Despachando em ${clock} — marque mais alguma coisa que queira mandar, ou deixe ir como está.` : `📦 Despachando em ${clock} — nada está marcado, então nada vai. Marque em Caçadas › Loot possível (DESPACHAR) ou no Despachar Loot.`;
       const key = p.trigger + '|' + p.count + '|' + p.gold;
       if(dispatchToastEl.dataset.key !== key){
         dispatchToastEl.dataset.key = key;
         dispatchToastEl.innerHTML = `<span class="dispatch-txt"></span>`;
-        if(p.count){
-          const now = document.createElement('button'); now.textContent = `Mandar agora por ${Math.round(p.gold).toLocaleString('pt-BR')} gp`;
-          now.addEventListener('click', ()=> sendWS({ type:'dispatch:now' }));
-          dispatchToastEl.appendChild(now);
-        }
+        // 22/10/2026: sem "Mandar agora" — o robô só vende quando o tempo de espera zera.
         const skip = document.createElement('button'); skip.className = 'decline'; skip.textContent = 'Pular esta';
         skip.addEventListener('click', ()=> sendWS({ type:'dispatch:skip' }));
         dispatchToastEl.appendChild(skip);
@@ -9400,7 +9553,7 @@
     const last = d && d.last;
     if(last && last.at > dispatchLastAt){
       if(dispatchLastAt && Date.now() - last.at < 15000){
-        const t = `📦 Despacho — vendeu ${last.count} ${last.count === 1 ? 'item' : 'itens'} por ${Math.round(last.gold).toLocaleString('pt-BR')} de gold (foi pro banco).`;
+        const t = `📦 Robô de Venda — ${last.sold != null ? [last.sold ? `vendeu ${last.sold} por ${Math.round(last.gold).toLocaleString('pt-BR')} gp (foi pro banco)` : '', last.depot ? `${last.depot} pro Depot` : ''].filter(Boolean).join(' · ') : `vendeu ${last.count} por ${Math.round(last.gold).toLocaleString('pt-BR')} gp (foi pro banco)`}.`;
         logLoot(t); partySimpleToast(t);
       }
       dispatchLastAt = last.at;
@@ -10091,7 +10244,7 @@
     document.getElementById('trade-their-items').innerHTML = (theirOffer.items||[]).map(it=>`<div class="trade-item-row"><span>${it.name||it.id}</span><span>${it.qty||1}x</span></div>`).join('') || '<div style="opacity:.5">vazio</div>';
 
     const myItemsList = document.getElementById('trade-my-items');
-    const allMine = [...pouch.map(it=>({...it, source:'pouch'})), ...bag.map(it=>({...it, source:'bag'}))];
+    const allMine = [...pouch.map(it=>({...it, source:'pouch'})), ...bag.map(it=>({...it, source:'bag'}))].filter(it=> !it.bound); // vinculado ao personagem não entra em troca
     myItemsList.innerHTML = allMine.map(it=>{
       const picked = tradePicks.items.find(p=>p.id===it.id && p.source===it.source);
       return `<div class="trade-item-row ${picked?'picked':''}" data-pick-id="${it.id}" data-pick-source="${it.source}"><span>${it.name||it.id}</span><span>${it.qty||1}x</span></div>`;
@@ -10120,7 +10273,7 @@
      ATALHO DA MOCHILA — Inventário Dividido
      ========================================================= */
   const inventoryModal = document.getElementById('inventory-modal');
-  let invTab = 'bolsa';
+  let invTab = 'mochila'; // 22/10/2026: a Bolsa saiu do jogo — Mochila é a aba padrão
   // Item 5 da lista de tarefas (20/09/2026): arrastar um equipamento pro
   // boneco parecia simplesmente "não funcionar" -- causa real era que
   // renderInventoryIfOpen() reconstrói #inv-items-grid do zero até 4x/seg
@@ -10889,6 +11042,8 @@
   // isso itens de loot (sem .slot, sem .icon) apareciam sem foto real no
   // Armazém/Lixeira mesmo já tendo a foto certa na Mochila.
   function resolveItemIconHtml(it){
+    if(it.kind === 'box') return `<span class="item-icon" style="font-size:22px;line-height:1;">🎁</span>`;
+    if(it.kind === 'trainboost') return `<span class="item-icon" style="font-size:20px;line-height:1;">⚡</span>`;
     const gemIconUrl = GEM_ICON_URL[it.id];
     const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
     if(gemIconUrl) return `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`;
@@ -11035,6 +11190,7 @@
     attachDepotZone(depotHeader, 'depot');
     depot.forEach((it,i)=>{ const sl = buildDepotSlot(it, ()=> sendWS({ type:'depot:retrieve', depotIndex:i }), 'Recuperar pra Mochila (ou arraste pra Mochila)', { dataKey:'text/depot-index', value:i }); attachStackDnD(sl, 'depot', i, it); grid.appendChild(sl); });
   }
+  function fmtTimeLeft(ms){ const m = Math.max(0, Math.ceil(ms/60000)); const h = Math.floor(m/60); return h ? `${h}h ${String(m%60).padStart(2,'0')}min` : `${m}min`; }
   function renderInventory(){
     // Item 5 da lista de tarefas (20/09/2026): não reconstrói NADA enquanto
     // um item estiver sendo arrastado -- ver comentário em
@@ -11192,7 +11348,13 @@
       // "Detalhes da Caçada"); se o arquivo não existir, handleLootIconError
       // troca pelo SVG genérico de material.
       const rawMatHtml = rawMaterialIconHtml(it.id, rarityColor);
-      const iconHtml = gemIconUrl
+      const iconHtml = it.kind === 'box'
+        ? `<span class="item-icon" style="font-size:24px;line-height:1;">🎁</span>`
+        : it.kind === 'trainboost'
+        ? `<span class="item-icon" style="font-size:22px;line-height:1;">⚡</span>`
+        : (it.id && String(it.id).startsWith('kit_treino') && it.expiresAt)
+        ? `<span class="item-icon" style="font-size:22px;line-height:1;">🎯</span>`
+        : gemIconUrl
         ? `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`
         : rawMatHtml
           ? rawMatHtml
@@ -11206,6 +11368,11 @@
       // material de loot comum (Pó de Osso etc.) e a Bolsa não arrastam.
       // arrastar pra outra casa (dividir/reordenar) — e equipamento pro boneco
       attachStackDnD(slot, invTab === 'bolsa' ? 'pouch' : 'bag', i, it);
+      if(invTab==='mochila' && (it.kind === 'box' || it.kind === 'trainboost')){
+        // Caixa (Kit inicial): 2 cliques abre -- ou botão direito > Abrir
+        slot.style.cursor = 'pointer'; slot.dataset.tutBox = '1';
+        slot.addEventListener('dblclick', ()=> sendWS({ type:'bag:openBox', bagIndex: i }));
+      }
       if(invTab==='mochila' && it.slot){
         // Clique equipa direto (sem precisar arrastar) -- simétrico ao clique
         // que já desequipava no slot do paperdoll (equip:remove); antes só
@@ -11236,7 +11403,9 @@
         // então itens craftados (sem entrada em ITEM_INFO, que só cobre
         // loot de monstro) pareciam não ter preço/opção de venda nenhuma.
         const priceLine = invTab==='mochila' ? `<span class="tt-price">Venda ao NPC: ${npcSellPriceFor(it)} ouro${it.qty>1?` (x${it.qty})`:''}</span>` : '';
-        invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}${armorSetTooltipHtml(it)}${healLine}${priceLine}`;
+        const boundLine = it.bound ? `<span class="hint" style="color:#ffb35c;">🔒 Vinculado ao personagem — não pode ser trocado nem vendido no Leilão</span>` : '';
+        const expLine = it.expiresAt ? `<span class="hint" style="color:#ffb35c;">⏳ ${it.expiresAt > Date.now() ? 'Expira em ' + fmtTimeLeft(it.expiresAt - Date.now()) : 'Expirado'}</span>` : '';
+        invItemTooltip.innerHTML = `<b style="color:${RARITY_COLORS[it.rarity]||'var(--gold-bright)'}">${it.name || it.id}</b>${rarityLabel}${enchantLine}${infusionLine}${it.qty>1?` · x${it.qty}`:''}${descLine}${boundLine}${expLine}${it.slot?`<span class="hint">${formatStats(stats, it)}</span>`:''}${armorSetTooltipHtml(it)}${healLine}${priceLine}`;
         invItemTooltip.style.borderColor = RARITY_COLORS[(it||{}).rarity] || '';
         invItemTooltip.style.display = 'block';
       });
@@ -11244,7 +11413,7 @@
       slot.addEventListener('mouseleave', ()=>{ invItemTooltip.style.display = 'none'; });
       grid.appendChild(slot);
     });
-    for(let i=items.length;i<Math.min(capMax,30);i++){ const empty = document.createElement('div'); empty.className='item-slot'; empty.style.opacity='.35'; attachStackDnD(empty, invTab === 'bolsa' ? 'pouch' : 'bag', i, null); grid.appendChild(empty); }
+    for(let i=items.length;i<capMax;i++){ const empty = document.createElement('div'); empty.className='item-slot'; empty.style.opacity='.35'; attachStackDnD(empty, invTab === 'bolsa' ? 'pouch' : 'bag', i, null); grid.appendChild(empty); }
   }
 
   /* =========================================================
@@ -11260,79 +11429,57 @@
   // grupos separados com rótulo ("Serão vendidos" / "Não serão vendidos"),
   // e os botões Marcar/Desmarcar Todos (ver shop:setQuickSellMarks no
   // servidor) pra não precisar clicar item por item.
-  function renderQuickSellRow(it){
-    const marked = quickSellMarks.includes(it.id);
-    const rarityColor = RARITY_COLORS[it.rarity] || '#ffffff';
-    const row = document.createElement('div');
-    row.className = 'quicksell-row' + (marked?' marked':'');
-    // Item 122 (21/09/2026): preço por item (e total do stack) visível em
-    // toda linha -- crafted (Forja) e loot comum incluídos, mesma fórmula
-    // real usada no servidor (NPC_FERREIRO_BRAN_PRICES por raridade).
-    // 20/10/2026: sem caixinha — clicar em qualquer lugar da linha marca/
-    // desmarca (a caixa pequena era difícil de acertar).
-    row.dataset.qsId = it.id;
-    row.title = marked ? 'Clique para NÃO vender' : 'Clique para marcar para venda';
-    row.innerHTML = `<span class="quicksell-check">${marked?'✓':''}</span>
-      ${resolveItemIconHtml(it)}
-      <div style="flex:1;min-width:0;font-family:var(--font-mono);font-size:10.5px;">
-        <div class="trash-name" style="color:${rarityColor};">${it.name||it.id}${it.qty>1?` x${it.qty}`:''}</div>
-      </div>
-      <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--gold-bright);flex-shrink:0;">🪙 ${npcSellPriceFor(it)}</div>`;
-    return row;
+  /* DESPACHAR LOOT (cidade) — 22/10/2026, igual Huntera: lista da Mochila,
+     clique na linha marca/desmarca, à direita Vender / Depot / Guild (em breve).
+     Marcar = destino 'sell' (padrão) ou o último escolhido; o botão Despachar
+     manda tudo de uma vez (loot:dispatchCity). Mesmas marcas do Robô de Venda. */
+  let qsLastSig = '';
+  function qsSig(){ return JSON.stringify([bag.map(it=>it.id+':'+(it.qty||1)), quickSellMarks, depotMarks, location]); }
+  function bagHasDispatchMark(){ return bag.some(it=> quickSellMarks.includes(it.id) || depotMarks.includes(it.id)); }
+  function updateDispatchBtnGlow(){ const b = document.getElementById('btn-open-quicksell'); if(b) b.classList.toggle('hot', bagHasDispatchMark()); }
+  function renderQuickSellIfChanged(){
+    if(!quickSellModal || !quickSellModal.classList.contains('open')) return;
+    if(qsSig() !== qsLastSig) renderQuickSell();
   }
   function renderQuickSell(){
+    qsLastSig = qsSig();
     const list = document.getElementById('quicksell-list');
+    const keep = list.scrollTop;
     list.innerHTML = '';
-    if(!bag.length){
-      list.innerHTML = '<div class="hint">Mochila vazia — não há nada pra marcar.</div>';
-    } else {
-      const toSell = bag.filter(it=>quickSellMarks.includes(it.id));
-      const toKeep = bag.filter(it=>!quickSellMarks.includes(it.id));
-      if(toSell.length){
-        const label = document.createElement('div');
-        label.className = 'quicksell-group-label';
-        label.textContent = `🪙 Serão vendidos (${toSell.length})`;
-        list.appendChild(label);
-        toSell.forEach(it=> list.appendChild(renderQuickSellRow(it)));
-      }
-      if(toKeep.length){
-        const label = document.createElement('div');
-        label.className = 'quicksell-group-label';
-        label.textContent = `🎒 Não serão vendidos (${toKeep.length})`;
-        list.appendChild(label);
-        toKeep.forEach(it=> list.appendChild(renderQuickSellRow(it)));
-      }
-    }
-    list.querySelectorAll('.quicksell-row[data-qs-id]').forEach(row=>{
-      row.addEventListener('click', ()=>{
-        const id = row.dataset.qsId;
-        // resposta imediata na tela; o servidor confirma em seguida
-        quickSellMarks = quickSellMarks.includes(id) ? quickSellMarks.filter(x=>x!==id) : quickSellMarks.concat([id]);
-        sendWS({ type:'shop:toggleQuickSell', itemId: id });
-        renderQuickSell();
+    if(!bag.length) list.innerHTML = '<div class="hint">Mochila vazia — não há nada pra despachar.</div>';
+    bag.forEach(it=>{
+      const dest = lootDest(it.id), marked = dest !== 'none';
+      const qty = it.qty || 1, unit = npcSellPriceFor({ ...it, qty:1 }), total = unit * qty;
+      const row = document.createElement('div');
+      row.className = 'dl-row' + (marked ? ' marked' : '');
+      const sub = dest === 'depot' ? `${qty} para o seu depot` : `${qty} × ${unit.toLocaleString('pt-BR')} gp${it.bound ? ' · 🔒 vinculado' : ''}`;
+      row.innerHTML = `<span class="dl-ic">${resolveItemIconHtml(it)}${qty>1?`<span class="dl-q">${qty}</span>`:''}</span>
+        <span class="dl-nm" style="${marked?`color:${RARITY_COLORS[it.rarity]||'#fff'}`:''}">${escapeHtml(it.name||it.id)}<small>${sub}</small></span>
+        <span class="dl-tot">${dest==='depot' ? '' : total.toLocaleString('pt-BR') + ' gp'}</span>
+        <span class="dl-seg"><button type="button" data-dl="sell" class="${dest==='sell'?'on':''}">Vender</button><button type="button" data-dl="depot" class="${dest==='depot'?'on':''}">Depot</button></span>`;
+      row.addEventListener('click', e=>{
+        const b = e.target.closest('[data-dl]');
+        if(b){ e.stopPropagation(); const d = b.dataset.dl; setLootDestLocal([it.id], dest === d ? 'none' : d); renderQuickSell(); return; }
+        setLootDestLocal([it.id], marked ? 'none' : (it.slot ? 'depot' : 'sell')); renderQuickSell();
       });
+      list.appendChild(row);
     });
-    // Item 122 (21/09/2026): NPC_FERREIRO_BRAN_PRICES agora tem espelho no
-    // cliente (mesma fórmula do servidor), então dá pra mostrar o total
-    // estimado aqui -- o valor exato que chega no ack de 'shop:quickSell'
-    // continua sendo a fonte de verdade (ouro só muda de mãos ali).
-    const marked = bag.filter(it=>quickSellMarks.includes(it.id));
-    const markedCount = marked.length;
-    const estimatedGold = marked.reduce((sum,it)=> sum + npcSellPriceFor(it), 0);
+    list.scrollTop = keep;
+    const marked = bag.filter(it=> lootDest(it.id) !== 'none');
+    const gold = marked.filter(it=> lootDest(it.id)==='sell').reduce((sum,it)=> sum + npcSellPriceFor(it), 0);
     const summary = document.getElementById('quicksell-summary');
     const confirmBtn = document.getElementById('quicksell-confirm-btn');
-    if(!markedCount){ summary.textContent = 'Nada marcado.'; confirmBtn.disabled = true; }
-    else { summary.textContent = `${markedCount} item(ns) marcado(s) — ≈${estimatedGold} ouro`; confirmBtn.disabled = location !== 'city'; }
+    if(!marked.length){ summary.textContent = 'Nada marcado'; confirmBtn.disabled = true; confirmBtn.textContent = 'Despachar'; }
+    else {
+      summary.textContent = `${marked.length} ${marked.length===1?'item':'itens'}${gold ? ` · ≈${gold.toLocaleString('pt-BR')} gp` : ''}${location !== 'city' ? ' — só na Cidade' : ''}`;
+      confirmBtn.textContent = `Despachar ${marked.length} ${marked.length===1?'item':'itens'}`;
+      confirmBtn.disabled = location !== 'city';
+    }
   }
   function renderQuickSellIfOpen(){ if(quickSellModal.classList.contains('open')) renderQuickSell(); }
   document.getElementById('btn-open-quicksell').addEventListener('click', ()=>{ quickSellModal.classList.toggle('open'); renderQuickSell(); });
-  document.getElementById('quicksell-confirm-btn').addEventListener('click', ()=> sendWS({ type:'shop:quickSell' }));
-  document.getElementById('quicksell-mark-all-btn').addEventListener('click', ()=>{
-    sendWS({ type:'shop:setQuickSellMarks', itemIds: Array.from(new Set(bag.map(it=>it.id))) });
-  });
-  document.getElementById('quicksell-unmark-all-btn').addEventListener('click', ()=>{
-    sendWS({ type:'shop:setQuickSellMarks', itemIds: [] });
-  });
+  document.getElementById('quicksell-confirm-btn').addEventListener('click', ()=> sendWS({ type:'loot:dispatchCity' }));
+  document.getElementById('quicksell-cancel-btn').addEventListener('click', ()=> quickSellModal.classList.remove('open'));
 
   /* =========================================================
      BÊNÇÃOS — até 5, permanentes, reduzem a perda por morte.
@@ -14363,7 +14510,7 @@
       const prevTierLine = r.prevTierItemBase
         ? `<div class="prec-row"><span>${r.prevTierItemName} (consumido)</span><span class="${hasPrevTierItem?'ok':'missing'}">${hasPrevTierItem?'✓':'✗'}</span></div>`
         : '';
-      const hasGold = (player.gold + player.bankGold) >= r.goldCost;
+      const hasGold = (player.gold + player.bankGold + (craftGold||0)) >= r.goldCost; // Ouro de Criação paga primeiro
       const canCraft = !locked && !craftingJob && hasGold && hasPrevTierItem && r.materials.every(m=>bagQty(m.id) >= m.qty);
       // Raridade sai sorteada (não é mais fixa por receita) -- mostra as
       // chances de cada resultado possível pro nível ATUAL de profissão, cada
@@ -14418,7 +14565,7 @@
         </div>`;
     })() : '';
     body.innerHTML = `
-      <div class="profession-level-line">Nível ${prof.level}/100 — ${prof.xp} XP acumulado</div>
+      <div class="profession-level-line">Nível ${prof.level}/100 — ${prof.xp} XP acumulado${craftGold ? ` · <span style="color:var(--gold-bright)" title="Veio da Caixa do Aventureiro: vinculado ao personagem, só serve pra pagar receitas (é gasto antes do seu ouro).">🔒 Ouro de Criação: ${craftGold.toLocaleString('pt-BR')}</span>` : ''}</div>
       ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Criar itens só funciona na Cidade Principal</div>` : ''}
       ${progressBox}
       ${(craftingJob && !jobIsThisTab) ? `<div class="craft-busy-note">⏳ Só dá pra iniciar outro craft quando esse terminar.</div>` : ''}
@@ -14561,7 +14708,7 @@
       }
       if(focusedId==='auc-q'){ qEl.focus(); qEl.setSelectionRange(qEl.value.length, qEl.value.length); }
     } else if(aucTab==='vender'){
-      const items = bag.map((it,idx)=>({ it, idx })).filter(x=>x.it && !x.it.locked);
+      const items = bag.map((it,idx)=>({ it, idx })).filter(x=>x.it && !x.it.locked && !x.it.bound); // vinculado não vai pro Leilão
       const selx = items.find(x=>x.idx===aucSellIdx) || null;
       body.innerHTML = `<div class="auc-wrap">
         <div class="auc-left">
@@ -15223,25 +15370,12 @@
       card.innerHTML = `<div class="hd-monster-icon">👑${boss.icon}</div><div class="hd-monster-name">${boss.name}</div><div class="hd-monster-weak show">Chefe da área (em breve — hoje só visual).</div>`;
       grid.appendChild(card);
     }
-    const lootWrap = document.getElementById('hd-loot-list');
-    lootWrap.innerHTML = '';
-    (def.possibleLoot||[]).forEach((item,idx)=>{
-      const row = document.createElement('label');
-      row.className = 'loot-item';
-      // Item 123 (21/09/2026): mesma correção de ícone (gema/material sem
-      // foto antes do fallback de monstro) de renderHuntLoot -- ver
-      // lootRowIconHtml. Era uma cópia separada dessa lógica, então corrigir
-      // só o painel lateral não corrigia esta modal "Detalhes da Caçada".
-      const iconHtml = lootRowIconHtml(item, def, idx);
-      row.innerHTML = `${iconHtml}<input type="checkbox" data-item="${item.id}" ${lootFilter[item.id]?'checked':''}><span class="rarity-${item.rarity}">${item.name}</span>`;
-      row.querySelector('input').addEventListener('change', e=>{ lootFilter[item.id] = e.target.checked; });
-      attachItemTooltip(row, item);
-      lootWrap.appendChild(row);
-    });
+    buildLootRuleList(document.getElementById('hd-loot-list'), def.possibleLoot, def, ()=> openHuntDetailsModal());
     document.getElementById('hunt-details-modal').classList.add('open');
   }
   document.getElementById('hunt-details-btn').addEventListener('click', openHuntDetailsModal);
   document.getElementById('hd-close').addEventListener('click', ()=> document.getElementById('hunt-details-modal').classList.remove('open'));
+  document.getElementById('hd-close-btn').addEventListener('click', ()=> document.getElementById('hunt-details-modal').classList.remove('open'));
 
   /* =========================================================
      JANELAS MOVÍVEIS E REDIMENSIONÁVEIS — aplica a todo .win
@@ -15382,6 +15516,7 @@
     { id:'premium', tab:'loja', name:'Tempo de Premium', icon:'👑', count:()=> PREMIUM_PACKAGES.length },
     { id:'coins', tab:'loja', name:'Elemental Coin', icon:'💎', count:()=> ELEMENTAL_COIN_PACKAGES.length },
     { id:'itens', tab:'loja', name:'Itens', icon:'🗝️', count:()=> 1 },
+    { id:'treino', tab:'loja', name:'Kit de Treino Veloz', icon:'⚡', count:()=> TRAINING_BOOSTS_CLIENT.length },
     { id:'pets', tab:'loja', name:'Pets', img:SH_ICON+'pets.png', dock:'pets-modal', open:()=>{ petsModal.classList.add('open'); renderPets(); } },
     { id:'battlepass', tab:'loja', name:'Battle Pass', img:SH_ICON+'battlepass.png', dock:'battlepass-modal', open:()=>{ battlePassModal.classList.add('open'); renderBattlePass(); } },
     { id:'ferreiro', tab:'npc', name:'Ferreiro Bran', img:SH_ICON+'shop.png', dock:'shop-modal', open:()=>{ shopModal.classList.add('open'); renderShop(); } },
@@ -15592,6 +15727,20 @@
       art: SH_COIN_ICON, name: `${p.coins.toLocaleString('pt-BR')} Elemental Coin`, price: `R$ ${p.priceBRL.toFixed(2)}`,
       desc: p.bonusCoins ? `Total: ${(p.coins+p.bonusCoins).toLocaleString('pt-BR')} 💎` : '', btn: 'Comprar', data: `data-sh-coin="${p.id}"` })).join('');
   }
+  // Kit de Treino Veloz (22/10/2026) — espelha TRAINING_BOOST_CATALOG do huntEngine.js
+  // (preços PROVISÓRIOS; se mudar lá, mudar aqui também).
+  const TRAINING_BOOSTS_CLIENT = [
+    { id:'treino2x_1h', mult:2, hours:1, cost:20 }, { id:'treino2x_2h', mult:2, hours:2, cost:35 }, { id:'treino2x_6h', mult:2, hours:6, cost:90 }, { id:'treino2x_12h', mult:2, hours:12, cost:160 },
+    { id:'treino3x_1h', mult:3, hours:1, cost:30 }, { id:'treino3x_2h', mult:3, hours:2, cost:55 }, { id:'treino3x_6h', mult:3, hours:6, cost:140 }, { id:'treino3x_12h', mult:3, hours:12, cost:250 },
+  ];
+  function shTrainingBoostCards(mult){
+    return TRAINING_BOOSTS_CLIENT.filter(b=> b.mult === mult).map(b=>{
+      const conf = shConfirmId === 'tb:'+b.id, poor = (elementalCoins||0) < b.cost;
+      return shCard({ tag:`${b.mult}x`, feat: b.hours === 6, art:`<span style="font-size:34px">⚡</span>`, name:`Treino ${b.mult}x — ${b.hours} hora${b.hours>1?'s':''}`,
+        price:`${b.cost} <small>💎 Coin</small>`, desc:`Treino no boneco ${b.mult}x mais rápido por ${b.hours}h (online e offline). Já funciona como Kit de Treino. 🔒 Vinculado.`,
+        btn: conf ? `Confirmar ${b.cost} 💎` : (poor ? 'Coin insuficiente' : 'Comprar'), btnClass: conf ? 'confirm' : '', btnDisabled: poor && !conf, data:`data-sh-tboost="${b.id}"` });
+    }).join('');
+  }
   function shItemCards(){
     return shCard({ tag:'Torres', art:'🗝️', name:'Chave da Torre', price:`${TOWER_KEY_PRICE_COIN} <small>💎 Coin</small>`, desc:'+1 tentativa de Escalada no dia', btn:'Comprar', btnDisabled:(elementalCoins||0) < TOWER_KEY_PRICE_COIN, data:'data-sh-towerkey="1"' });
   }
@@ -15599,6 +15748,11 @@
     main.querySelectorAll('[data-sh-premium]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'shop:buyPremium', packageId: b.dataset.shPremium })));
     main.querySelectorAll('[data-sh-coin]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'shop:buyElementalCoins', packageId: b.dataset.shCoin })));
     main.querySelectorAll('[data-sh-towerkey]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'tower:buyKey', qty:1 })));
+    main.querySelectorAll('[data-sh-tboost]').forEach(b => b.addEventListener('click', ()=>{
+      const id = b.dataset.shTboost;
+      if(shConfirmId !== 'tb:'+id){ shConfirmId = 'tb:'+id; renderStoreHub(false); return; }
+      shConfirmId = null; sendWS({ type:'shop:buyTrainingBoost', boostId: id });
+    }));
     main.querySelectorAll('[data-sh-go]').forEach(b => b.addEventListener('click', ()=> openStoreHub(b.dataset.shGo)));
     shBindOutfitButtons(main);
   }
@@ -15677,6 +15831,13 @@
         + `<div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real; a compra credita na hora, sem cobrança.</div>`;
     } else if(shCat === 'itens'){
       main.innerHTML = H('Itens', 'Consumíveis comprados com Elemental Coin.') + `<div class="sh-grid">${shItemCards()}</div>`;
+    } else if(shCat === 'treino'){
+      const tb = trainingBoost && trainingBoost.until > Date.now() ? trainingBoost : null;
+      main.innerHTML = H('Kit de Treino Veloz', 'Vai pra sua Mochila; ative com 2 cliques (ou botão direito › Ativar) quando for treinar no boneco. Mesmo multiplicador: o tempo soma.')
+        + (tb ? `<div class="sh-sub" style="color:var(--ok);">⚡ Treino ${tb.mult}x ativo — ${fmtTimeLeft(tb.until - Date.now())} restantes</div>` : '')
+        + `<div class="sh-section">2x mais rápido</div><div class="sh-grid">${shTrainingBoostCards(2)}</div>`
+        + `<div class="sh-section">3x mais rápido</div><div class="sh-grid">${shTrainingBoostCards(3)}</div>`
+        + `<div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real.</div>`;
     }
     shBindCommon(main);
   }
@@ -15753,6 +15914,182 @@
   { const t = document.getElementById('btn-open-pvp-tournament'); if(t) shRebind('btn-open-pvp-tournament', 'torneio'); }
   // Ícones que agora moram dentro da Loja saem da barra superior.
   ['btn-open-pvp-shop','btn-open-pets','btn-open-battlepass','btn-open-pvp-tournament'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+
+  /* =========================================================
+     INÍCIO GUIADO (22/10/2026, roteiro do usuário) — ensina fazendo.
+     O servidor só guarda o passo (state.tutorial, tutorial:advance/skip);
+     aqui cada passo tem: alvo destacado (anel dourado pulsando), card com
+     o texto e uma checagem que avança sozinha quando o jogador fez a ação.
+     Personagem salvo antes disso vem com done:true e nunca vê nada.
+     ========================================================= */
+  const tutorialFlags = { posture:false, sold:false };
+  function tutorialOnSend(obj){
+    if(!obj || !tutorialState || tutorialState.done) return;
+    if(obj.type === 'hunt:posture') tutorialFlags.posture = true;
+  }
+  // arma do 1º set pela classe principal (1º arquétipo escolhido)
+  function tutWeaponPlan(){
+    const a = (archetypes && archetypes.chosen && archetypes.chosen[0]) || 'warfare';
+    if(a === 'archery') return { base:'w_distance_oakwood_bow', name:'Oakwood Bow (arco)', prof:'Carpintaria', ranged:true };
+    if(a === 'wizardry' || a === 'witchcraft') return { base:'c_staff_madeira', name:'Mystic Staff (cajado)', prof:'Carpintaria', ranged:true };
+    if(a === 'holy') return { base:'w_club_solid_mace', name:'Solid Mace (maça)', prof:'Forja', ranged:false };
+    if(a === 'shadow') return { base:'d_dagger_enferrujada', name:'Serrated Dagger (adaga)', prof:'Forja', ranged:false };
+    // demais classes: o jogador escolhe espada, machado ou maça (qualquer uma conta)
+    return { base:['w_sword_rough_sword','w_axe_wicked_axe','w_club_solid_mace'], name:'1 arma à sua escolha: Rough Sword (espada), Wicked Axe (machado) ou Solid Mace (maça)', prof:'Forja', ranged:false };
+  }
+  function tutSetPieces(){
+    const w = tutWeaponPlan();
+    return [
+      { slot:'weapon', base:w.base, name:w.name, prof:w.prof },
+      { slot:'armor', base:'a_armor_shadecloth_armor', name:'Pliant Armor (armadura)', prof:'Forja' },
+      { slot:'legs', base:'l_legs_couro', name:'Pliant Legs (calça)', prof:'Forja' },
+      { slot:'boots', base:'a_boots_shadecloth_boots', name:'Pliant Boots (bota)', prof:'Forja' },
+      { slot:'offhand', base:'s_shield_madeira', name:'Wooden Buckler (escudo)', prof:'Forja' },
+    ];
+  }
+  const tutHas = (base, it)=> Array.isArray(base) ? base.some(b=> tutHas(b, it)) : !!(it && it.id && (it.id === base || it.id.startsWith(base + '_')));
+  const tutOwned = p => tutHas(p.base, equipment && equipment[p.slot]) || (bag||[]).some(it=> tutHas(p.base, it));
+  const tutEquipped = p => tutHas(p.base, equipment && equipment[p.slot]);
+  function tutShown(el){ if(typeof el === 'string') el = document.querySelector(el); return !!(el && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden'); }
+  function tutRangedEquipped(){ const w = equipment && equipment.weapon; return !!(w && (w.weaponType === 'distance' || w.weaponType === 'staff')); }
+
+  const TUTORIAL_FLOW = {
+    'open-bag': {
+      title:'Bem-vindo ao Templo!', target:'#bag-shortcut',
+      text:()=> 'Vamos montar o seu primeiro personagem. Comece abrindo o <b>Inventário</b> (ícone da mochila).',
+      done:()=> tutShown('#inventory-modal'),
+    },
+    'open-box': {
+      title:'Caixa do Aventureiro', target:()=> invTab !== 'mochila' ? '.inv-tab[data-invtab="mochila"]' : (document.querySelector('#inv-items-grid [data-tut-box]') || '#inventory-modal'),
+      text:()=> (invTab !== 'mochila' ? 'Clique na aba <b>Mochila</b>.<br><br>' : '') + 'Na sua Mochila tem uma <b>🎁 Caixa do Aventureiro</b>. Abra com <b>2 cliques do botão esquerdo</b> — ou <b>botão direito &gt; 📦 Abrir</b>.<br><br>Repare que no botão direito também aparece <b>🔗 Linkar no chat</b>: serve pra mostrar qualquer item no chat pros outros jogadores.',
+      done:()=> !(bag||[]).some(it=> it.kind === 'box'),
+    },
+    'open-professions': {
+      title:'Kit recebido!', target:'#btn-open-professions',
+      text:()=> 'A Caixa te deu <b>Ouro de Criação</b> e <b>materiais</b> (Minério de Ferro e Madeira Bruta) — tudo 🔒 <b>vinculado</b> ao seu personagem: não dá pra trocar nem vender no Leilão. Aqui você não compra o set: você <b>cria</b>. Abra o painel de <b>Profissões</b>.',
+      done:()=> tutShown('#professions-modal'),
+    },
+    'craft-set': {
+      title:'Crie o seu set', target:'#professions-modal',
+      text:()=> 'Crie as 5 peças (uma de cada vez, leva alguns segundos):<br>' + tutSetPieces().map(p=> `${tutOwned(p)?'✅':'⬜'} ${p.name} — <i>${p.prof}</i>`).join('<br>') + '<br><br><small>Use a busca ou os filtros de categoria pra achar cada item. Não use o <b>Refino</b> agora — ele gasta o minério do set.</small>',
+      done:()=> tutSetPieces().every(tutOwned),
+    },
+    'equip-set': {
+      title:'Equipe o set', target:()=> !tutShown('#inventory-modal') ? '#bag-shortcut' : invTab !== 'mochila' ? '.inv-tab[data-invtab="mochila"]' : '#inv-items-grid',
+      text:()=> 'Tudo pronto! Abra o Inventário, aba <b>Mochila</b>, e <b>clique em cada peça</b> pra equipar:<br>' + tutSetPieces().map(p=> `${tutEquipped(p)?'✅':'⬜'} ${p.name}`).join('<br>'),
+      done:()=> tutSetPieces().every(tutEquipped),
+    },
+    'posture': {
+      title:'Escolha a postura', target:'#posture-row',
+      text:()=> 'A postura define como o personagem luta sozinho:<br>🛡️ <b>Defesa</b> — apanha menos, bate menos<br>⚖️ <b>Equilibrado</b> — meio a meio<br>⚔️ <b>Ataque</b> — bate mais, apanha mais<br><br>Clique em uma delas.',
+      done:()=> tutorialFlags.posture,
+    },
+    'skill': {
+      title:'Sua primeira habilidade', target:()=> tutShown('#skilltree-panel') ? '#skilltree-panel' : '#btn-open-skilltree',
+      text:()=> 'Abra a <b>Árvore de Habilidades</b>, escolha <b>1 habilidade</b> com os seus pontos e confirme. Depois coloque essa magia em um <b>slot da barra de ações</b> (clique no slot pra escolher).',
+      done:()=> hotbar.some(h=> h && h.kind === 'spell' && h.id),
+    },
+    'distance': {
+      title:'Distância do alvo', target:'#sqm-row',
+      text:()=> 'Com arco ou cajado, você luta de longe. Ajuste o <b>SQM</b> pra <b>2 a 4</b> — o personagem mantém essa distância dos monstros sozinho.',
+      skip:()=> !tutRangedEquipped(),
+      done:()=> sqmDistance >= 2 && sqmDistance <= 4,
+    },
+    'potion': {
+      title:'Regra da poção', target:'#hotbar',
+      text:()=> 'Clique num <b>slot vazio da barra</b>, escolha a poção de <b>Vida</b> e a condição <b>"HP do jogador menor que X%"</b> (ex.: 50%). Ela vai ser bebida sozinha durante a caçada.',
+      done:()=> hotbar.some(h=> h && h.kind === 'item' && h.condition && h.condition.type === 'hpBelow'),
+    },
+    'hunt': {
+      title:'Primeira caçada', target:()=> tutShown('#hunts-modal') ? '#hunt-action-btn' : '#open-hunts-btn',
+      text:()=> 'Abra a <b>lista de Caçadas</b>, escolha a <b>primeira</b> da lista e clique em <b>Iniciar Caçada</b>. O personagem anda sozinho até a entrada.',
+      done:()=> location === 'dungeon',
+    },
+    'kill': {
+      title:'Agora é com ele', target:null,
+      text:()=> `Assista o seu personagem lutar <b>sozinho</b>: ele anda, ataca, usa a habilidade e bebe poção pelas regras que você criou.<br><br>Objetivo: subir pro <b>nível ${((tutorialState && tutorialState.startLevel) || player.level) + 1}</b>.`,
+      done:()=> player.level > ((tutorialState && tutorialState.startLevel) || 1),
+    },
+    'leave': {
+      title:'Subiu de nível!', target:'#exit-hunt-pill',
+      text:()=> 'Muito bem! Agora clique em <b>↩ Sair da Caçada</b> (ele sai em 5 segundos) pra voltar à cidade e vender o que dropou.',
+      done:()=> location === 'city',
+    },
+    'sell': {
+      title:'Despachar Loot', target:()=> tutShown('#quicksell-modal') ? '#quicksell-modal' : '#btn-open-quicksell',
+      text:()=> 'Repare: o botão <b>Despachar Loot</b> brilha quando tem loot marcado. Abra, clique nos itens pra marcar, escolha <b>Vender</b> (ou <b>Depot</b> pra guardar) e clique em <b>Despachar</b>.<br><br>Dica: em <b>Caçadas › Loot possível</b> você escolhe antes de caçar o que <b>PEGAR</b> e o que <b>DESPACHAR</b> — o Robô de Venda usa a mesma regra.',
+      done:()=> tutorialFlags.sold,
+    },
+    'training': {
+      title:'Treino na cidade', target:()=> !tutShown('#hunts-modal') ? '#open-hunts-btn' : (document.querySelector('.hunts-tab[data-tab="treino"].active') ? '#treino-online-btn' : '.hunts-tab[data-tab="treino"]'),
+      text:()=> 'Presente: um <b>Kit de Treino</b> permanente na sua Mochila (🔒 vinculado ao personagem).<br><br>Abra a lista de Caçadas, aba <b>Treino</b>, e clique em <b>Iniciar Treino</b>: o personagem anda até o <b>boneco da cidade</b> e treina as habilidades da arma — dá pra evoluir mesmo sem caçar, e até offline.',
+      finishLabel:'Concluir',
+      done:()=> !!(trainingActive && trainingActive.mode === 'online') || !!offlineTrainingArmed,
+    },
+  };
+  const TUTORIAL_ORDER = ['open-bag','open-box','open-professions','craft-set','equip-set','posture','skill','distance','potion','hunt','kill','leave','sell','training','done']; // 'next-hunt' saiu (22/10/2026): ele já foi numa caçada
+
+  const tutRing = document.createElement('div'); tutRing.id = 'tut-ring';
+  const tutCard = document.createElement('div'); tutCard.id = 'tut-card'; tutCard.className = 'glass ornate';
+  const tutStyle = document.createElement('style');
+  tutStyle.textContent = `
+    #tut-ring{ position:fixed; pointer-events:none; z-index:9998; border:3px solid #ffd76a; border-radius:8px; box-shadow:0 0 0 4px rgba(255,215,106,.25), 0 0 18px rgba(255,215,106,.7); display:none; animation:tutPulse 1.2s ease-in-out infinite; }
+    @keyframes tutPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+    #tut-card{ position:fixed; top:64px; left:16px; width:min(320px, calc(100vw - 32px)); z-index:9999; padding:12px 14px; display:none; font-size:12.5px; line-height:1.45; color:var(--ink, #eee); }
+    #tut-card .tut-step{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim, #aaa); letter-spacing:.06em; text-transform:uppercase; }
+    #tut-card .tut-title{ font-weight:700; color:var(--gold-bright, #ffd76a); font-size:14px; margin:2px 0 6px; }
+    #tut-card .tut-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap; }
+    #tut-card button{ font-family:var(--font-mono); font-size:10px; padding:5px 9px; border-radius:4px; border:1px solid var(--gold-deep, #8a6d2f); background:rgba(0,0,0,.35); color:var(--ink-dim, #ccc); cursor:pointer; }
+    #tut-card button.primary{ color:var(--gold-bright, #ffd76a); border-color:var(--gold-bright, #ffd76a); }
+    #tut-card.min .tut-body, #tut-card.min .tut-actions{ display:none; }
+  `;
+  document.head.appendChild(tutStyle); document.body.appendChild(tutRing); document.body.appendChild(tutCard);
+  let tutSkipArmed = false, tutLastHtml = '', tutAdvancing = null;
+  tutCard.addEventListener('click', e=>{
+    const b = e.target.closest('button[data-tut]'); if(!b) return;
+    const act = b.dataset.tut;
+    if(act === 'min'){ tutCard.classList.toggle('min'); tutLastHtml = ''; return; }
+    if(act === 'next' || act === 'finish') tutorialGoNext();
+    if(act === 'skip'){
+      if(!tutSkipArmed){ tutSkipArmed = true; tutLastHtml = ''; setTimeout(()=>{ tutSkipArmed = false; tutLastHtml = ''; }, 4000); return; }
+      sendWS({ type:'tutorial:skip' }); tutorialState = { step:'done', done:true }; tutorialRender();
+    }
+  });
+  function tutorialGoNext(){
+    const cur = tutorialState.step;
+    let i = TUTORIAL_ORDER.indexOf(cur) + 1;
+    while(i < TUTORIAL_ORDER.length - 1){ const st = TUTORIAL_FLOW[TUTORIAL_ORDER[i]]; if(!(st && st.skip && st.skip())) break; i++; }
+    const to = TUTORIAL_ORDER[i] || 'done';
+    sendWS({ type:'tutorial:advance', from: cur, to });
+    tutorialState = { ...tutorialState, step: to, done: to === 'done', startLevel: to === 'kill' ? player.level : tutorialState.startLevel };
+    tutAdvancing = to; tutLastHtml = '';
+    // entrou na 1ª caçada: fecha a lista pra ele assistir a luta (e o botão Sair da Caçada não fica escondido atrás)
+    if(to === 'kill'){ const hm = document.getElementById('hunts-modal'); if(hm) hm.classList.remove('open'); }
+  }
+  function tutorialRender(){
+    if(!tutorialState || tutorialState.done || tutorialState.step === 'done'){ tutCard.style.display = 'none'; tutRing.style.display = 'none'; return; }
+    // snapshot atrasado ainda com o passo anterior? mantém o otimista local
+    if(tutAdvancing && TUTORIAL_ORDER.indexOf(tutorialState.step) < TUTORIAL_ORDER.indexOf(tutAdvancing)) tutorialState = { ...tutorialState, step: tutAdvancing };
+    else tutAdvancing = null;
+    const step = TUTORIAL_FLOW[tutorialState.step]; if(!step){ tutCard.style.display = 'none'; tutRing.style.display = 'none'; return; }
+    if(step.skip && step.skip()){ tutorialGoNext(); return; }
+    if(step.done()){ tutorialGoNext(); return; }
+    const total = TUTORIAL_ORDER.length - 1, idx = TUTORIAL_ORDER.indexOf(tutorialState.step) + 1;
+    const html = `<div class="tut-step">Início guiado · ${idx}/${total}</div><div class="tut-title">${step.title}</div><div class="tut-body">${step.text()}</div>
+      <div class="tut-actions">${step.finishLabel ? `<button class="primary" data-tut="finish">${step.finishLabel}</button>` : `<button data-tut="next" title="Pular só este passo">Pular passo</button>`}<button data-tut="skip">${tutSkipArmed ? 'Clique de novo pra sair' : 'Sair do tutorial'}</button><button data-tut="min" title="Minimizar">${tutCard.classList.contains('min') ? '▢' : '—'}</button></div>`;
+    if(html !== tutLastHtml){ tutCard.innerHTML = html; tutLastHtml = html; }
+    tutCard.style.display = 'block';
+    let tgt = typeof step.target === 'function' ? step.target() : step.target;
+    if(typeof tgt === 'string') tgt = document.querySelector(tgt);
+    if(tgt && tutShown(tgt)){
+      const r = tgt.getBoundingClientRect(), pad = 4;
+      Object.assign(tutRing.style, { display:'block', left:(r.left - pad)+'px', top:(r.top - pad)+'px', width:(r.width + pad*2)+'px', height:(r.height + pad*2)+'px' });
+      // card sempre do lado OPOSTO do alvo, pra nunca tampar o que ele tem que clicar
+      const side = (r.left + r.width/2) < window.innerWidth/2 ? 'right' : 'left';
+      if(tutCard.dataset.side !== side){ tutCard.dataset.side = side; tutCard.style.left = side === 'left' ? '16px' : 'auto'; tutCard.style.right = side === 'right' ? '16px' : 'auto'; }
+    } else tutRing.style.display = 'none';
+  }
+  setInterval(()=>{ try{ tutorialRender(); }catch(e){ console.warn('[tutorial]', e); } }, 400);
 
 })();
 </script>
