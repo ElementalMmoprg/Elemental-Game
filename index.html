@@ -152,6 +152,7 @@
       <div class="field"><label>Usuário</label><input type="text" id="register-username" autocomplete="username"></div>
       <div class="field"><label>Email</label><input type="email" id="register-email" autocomplete="email"></div>
       <div class="field"><label>Senha (mín. 6 caracteres)</label><input type="password" id="register-password" autocomplete="new-password"></div>
+      <div id="register-captcha" style="margin:6px 0 10px;"></div>
       <button class="btn-primary" id="register-btn">Criar Conta</button>
       <div class="recovery-box" id="register-recovery">
         <div class="warn">Sua Recovery Key (enviada por email) — guarde-a, é a única forma de trocar o email da conta:</div>
@@ -187,6 +188,23 @@
   // localStorage padronizado globalmente (index.html, character-select.html, hunt-engine.html)
   const LS_TOKEN = 'elemental_token';
   const LS_USERNAME = 'elemental_username';
+  // Id do aparelho (anti-spam, 22/10/2026): aleatório, salvo neste navegador — o
+  // servidor usa pra banir o "lugar" junto com a conta (ver /ban no server.js).
+  const LS_DEVICE = 'elemental_device';
+  function deviceId(){
+    let d = null; try{ d = localStorage.getItem(LS_DEVICE); }catch(e){}
+    if(!d){ d = Array.from(crypto.getRandomValues(new Uint8Array(16)), b=>b.toString(16).padStart(2,'0')).join(''); try{ localStorage.setItem(LS_DEVICE, d); }catch(e){} }
+    return d;
+  }
+  // Captcha do cadastro (Cloudflare Turnstile) — só aparece se o servidor tiver a chave configurada
+  let captchaToken = null, captchaWidget = null;
+  fetch(API_BASE + '/api/config').then(r=>r.json()).then(cfg=>{
+    if(!cfg || !cfg.turnstileSiteKey) return;
+    window.__onTurnstile = ()=>{ captchaWidget = window.turnstile.render('#register-captcha', { sitekey: cfg.turnstileSiteKey, theme:'dark', callback: t=>{ captchaToken = t; }, 'expired-callback': ()=>{ captchaToken = null; } }); };
+    const sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__onTurnstile&render=explicit'; sc.async = true; document.head.appendChild(sc);
+  }).catch(()=>{});
+  // Mensagem deixada pelo jogo ao ser desconectado (ban/expulsão)
+  try{ const kick = sessionStorage.getItem('elemental_kick_msg'); if(kick){ sessionStorage.removeItem('elemental_kick_msg'); setTimeout(()=> showMsg('login-msg', kick, 'error'), 50); } }catch(e){}
 
   function showMsg(id, text, type){
     const el = document.getElementById(id);
@@ -230,9 +248,16 @@
     usuario_nao_encontrado:'Usuário não encontrado.',
     recovery_key_invalida:'Recovery key inválida para esse usuário.',
     erro_interno:'Erro no servidor. Tente novamente.',
+    conta_banida:'Esta conta (ou este aparelho/rede) está banida.',
+    limite_de_contas:'Limite de contas novas desta rede atingido. Tente de novo amanhã.',
+    captcha_invalido:'Confirme que você não é um robô (captcha).',
+    muitas_tentativas:'Muitas tentativas erradas. Espere 10 minutos e tente de novo.',
     resposta_invalida:'Não foi possível falar com o servidor. Ele está rodando (node server.js)?',
   };
-  function labelFor(err){ return ERROR_LABELS[err] || 'Algo deu errado.'; }
+  function labelFor(err, data){
+    if(err === 'conta_banida' && data){ return ERROR_LABELS.conta_banida + (data.until ? ` Até ${new Date(data.until).toLocaleString('pt-BR')}.` : ' (permanente).') + (data.reason ? ` Motivo: ${data.reason}` : ''); }
+    return ERROR_LABELS[err] || 'Algo deu errado.';
+  }
 
   function saveSessionAndEnter(token, username){
     localStorage.setItem(LS_TOKEN, token);
@@ -246,8 +271,8 @@
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
     if(!username || !password){ showMsg('login-msg','Preencha usuário e senha.','error'); return; }
-    const data = await api('/api/login', { username, password });
-    if(!data.ok){ showMsg('login-msg', labelFor(data.error), 'error'); return; }
+    const data = await api('/api/login', { username, password, deviceId: deviceId() });
+    if(!data.ok){ showMsg('login-msg', labelFor(data.error, data), 'error'); return; }
     showMsg('login-msg', `Bem-vindo de volta, ${data.username}. Entrando...`, 'ok');
     saveSessionAndEnter(data.token, data.username);
   });
@@ -260,9 +285,17 @@
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
     if(!username || !email || !password){ showMsg('register-msg','Preencha todos os campos.','error'); return; }
-    const data = await api('/api/register', { username, email, password });
-    if(!data.ok){ showMsg('register-msg', labelFor(data.error), 'error'); return; }
-    showMsg('register-msg', 'Conta criada! Recovery key enviada por email.', 'ok');
+    const data = await api('/api/register', { username, email, password, deviceId: deviceId(), captchaToken });
+    if(!data.ok){
+      showMsg('register-msg', labelFor(data.error, data), 'error');
+      if(captchaWidget != null && window.turnstile){ try{ window.turnstile.reset(captchaWidget); }catch(e){} captchaToken = null; }
+      return;
+    }
+    showMsg('register-msg', 'Conta criada! Guarde a sua Recovery Key abaixo.', 'ok');
+    if(data.recoveryKey){
+      document.getElementById('register-recovery-key').textContent = data.recoveryKey;
+      document.getElementById('register-recovery').classList.add('show');
+    }
 
     // busca a recovery key no outbox mockado (modo dev) só pra exibir na tela
     try{

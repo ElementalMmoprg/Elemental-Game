@@ -1985,6 +1985,8 @@
   .ch-sistema{ color:var(--gold-bright); }
   .ch-guild{ color:var(--mp-a); }
   .ch-global{ color:var(--ink); }
+  .chat-nick{ cursor:pointer; } .chat-nick:hover{ text-decoration:underline; }
+  #chat-nick-menu div:hover{ background:rgba(191,161,95,.15); }
   .ch-local{ color:var(--ok); }
   .ch-combate{ color:var(--danger); }
   #chat-input-row{ display:flex; border-top:1px solid var(--gold-deep); flex-shrink:0; }
@@ -4006,6 +4008,31 @@
     if(activeChatTab===channel) renderChatMessages();
     else if(t.pm) t.unread = true, renderChatTabs();
   }
+  /* DENUNCIAR NO CHAT (22/10/2026, anti-spam): clicar no nome de quem falou
+     abre um menu com Sussurrar / Denunciar. 3 denúncias de jogadores
+     diferentes em 30 min silenciam a pessoa (ver handleReport no server.js). */
+  const chatNickMenu = document.createElement('div'); chatNickMenu.id = 'chat-nick-menu';
+  chatNickMenu.style.cssText = 'position:fixed;display:none;z-index:9000;background:#16121c;border:1px solid var(--gold-deep);border-radius:6px;font-family:var(--font-mono);font-size:11px;min-width:150px;box-shadow:0 6px 18px rgba(0,0,0,.5);';
+  document.body.appendChild(chatNickMenu);
+  let chatNickTarget = null;
+  document.addEventListener('click', async e=>{
+    const n = e.target.closest('[data-chat-nick]');
+    if(n){
+      chatNickTarget = n.dataset.chatNick;
+      if(chatNickTarget === PLAYER_NICK) return;
+      chatNickMenu.innerHTML = `<div data-cnm="pm" style="padding:7px 10px;cursor:pointer;">💬 Sussurrar ${escapeHtml(chatNickTarget)}</div><div data-cnm="report" style="padding:7px 10px;cursor:pointer;color:#ff8a7a;">🚩 Denunciar (spam/ofensa)</div>`;
+      chatNickMenu.style.left = Math.min(e.clientX, window.innerWidth - 170) + 'px'; chatNickMenu.style.top = Math.min(e.clientY, window.innerHeight - 70) + 'px';
+      chatNickMenu.style.display = 'block'; e.stopPropagation(); return;
+    }
+    const opt = e.target.closest('[data-cnm]');
+    if(opt && chatNickTarget){
+      chatNickMenu.style.display = 'none';
+      if(opt.dataset.cnm === 'pm'){ try{ openPmTab(chatNickTarget, true); }catch(_){} }
+      if(opt.dataset.cnm === 'report' && await showConfirmModal(`Denunciar ${chatNickTarget} por spam ou ofensa no chat?`)) sendWS({ type:'chat:report', targetNick: chatNickTarget });
+      return;
+    }
+    chatNickMenu.style.display = 'none';
+  });
   /* LINK DE ITEM NO CHAT (20/10/2026) — botão direito em qualquer item
      (Mochila, Bolsa, Armazém, Lixeira, equipado, Wiki, Loja do NPC) →
      "Linkar no chat": põe [Nome] no campo do chat; ao enviar, o item vai
@@ -7713,7 +7740,7 @@
     ws.addEventListener('open', ()=>{
       netState.connected = true;
       statusEl.textContent = `● online — ${AUTH_USERNAME}`;
-      ws.send(JSON.stringify({ type:'join', token:AUTH_TOKEN, x:player.x, y:player.y, characterId: SELECTED_CHARACTER && SELECTED_CHARACTER.id, nick:PLAYER_NICK }));
+      ws.send(JSON.stringify({ type:'join', token:AUTH_TOKEN, x:player.x, y:player.y, characterId: SELECTED_CHARACTER && SELECTED_CHARACTER.id, nick:PLAYER_NICK, deviceId: (()=>{ try{ let d = localStorage.getItem('elemental_device'); if(!d){ d = Array.from(crypto.getRandomValues(new Uint8Array(16)), b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem('elemental_device', d); } return d; }catch(e){ return undefined; } })() }));
     });
     ws.addEventListener('close', ()=>{ netState.connected = false; if(netState.stopReconnect) return; statusEl.textContent = '● offline (reconectando em breve)'; setTimeout(connectToServer, 3000); });
     lastHuntSnap = null; // conexão nova: o 1º snapshot do servidor vem completo
@@ -7723,6 +7750,7 @@
       let msg; try{ msg = JSON.parse(ev.data); } catch(e){ return; }
       switch(msg.type){
         case 'system': logChat('sistema', escapeHtml(msg.text)); break;
+        case 'chat:notice': logChat(CHAT_SENDABLE.includes(activeChatTab) || (chatTabsData[activeChatTab] && chatTabsData[activeChatTab].pm) ? activeChatTab : 'sistema', `<span style="color:#ffb35c">${escapeHtml(msg.text)}</span>`); break; // avisos do anti-spam/moderação, no canal onde ele está digitando
         case 'welcome':
           setTimeout(()=>{ try{ syncPotionAutoUse(); }catch(_){} }, 300); // poção automática = só as que estão na barra
           // Pedido do usuário: tirar esse anúncio do chat Sistema -- ficava
@@ -7748,7 +7776,7 @@
             const label = msg.self ? `Você` : `<b>${escapeHtml(otherNick)}</b>`;
             logChat(pmId, `${label}: ${chatTextWithLinks(msg.text, msg.links)}`);
           } else {
-            logChat(msg.channel, `<b>${escapeHtml(msg.from)}</b>: ${chatTextWithLinks(msg.text, msg.links)}`);
+            logChat(msg.channel, `<b class="chat-nick" data-chat-nick="${escapeHtml(msg.from)}" title="Clique: sussurrar ou denunciar">${escapeHtml(msg.from)}</b>: ${chatTextWithLinks(msg.text, msg.links)}`);
           }
           break;
         case 'item:mythicAnnounce': handleMythicAnnounce(msg); break;
@@ -7930,6 +7958,12 @@
         case 'error':
           // 22/10/2026 (auditoria): login vencido / personagem que não é desta conta
           if(msg.error === 'token_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = 'index.html'; break; }
+          if(msg.error === 'conta_banida' || msg.error === 'expulso'){
+            netState.stopReconnect = true;
+            const txt = msg.error === 'expulso' ? 'Você foi desconectado por um moderador.' : `Conta banida${msg.until ? ` até ${new Date(msg.until).toLocaleString('pt-BR')}` : ' permanentemente'}.${msg.reason ? ' Motivo: ' + msg.reason : ''}`;
+            try{ sessionStorage.setItem('elemental_kick_msg', txt); }catch(e){}
+            localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = 'index.html'; break;
+          }
           if(msg.error === 'personagem_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_CHARACTER); window.location.href = 'character-select.html'; break; }
           logLoot(`⚠️ ${msg.error}`); break;
       }
