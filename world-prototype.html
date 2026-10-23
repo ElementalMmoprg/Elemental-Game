@@ -6219,7 +6219,7 @@
     for(let i = monsterShots.length-1; i >= 0; i--){
       const s = monsterShots[i], k = (t - s.bornAt) / s.dur;
       if(k >= 1){ monsterShots.splice(i,1); continue; }
-      const p = toScreen(s.fx + (player.x - s.fx)*k, s.fy + (player.y - s.fy)*k);
+      const p = worldToScreen(s.fx + (player.x - s.fx)*k, s.fy + (player.y - s.fy)*k);
       ctx.save(); ctx.globalAlpha = 1 - k*0.4; ctx.fillStyle = s.color; ctx.shadowColor = s.color; ctx.shadowBlur = 8;
       ctx.beginPath(); ctx.arc(p.x, p.y - 18, 3.5, 0, Math.PI*2); ctx.fill(); ctx.restore();
     }
