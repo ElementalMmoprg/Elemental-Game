@@ -639,6 +639,10 @@
      #footer-bar), sempre visível em qualquer área do jogo. ============ */
   #tactics-bar{ display:flex; align-items:center; gap:10px; padding:6px 10px; white-space:nowrap; align-self:flex-end; }
   .tactics-group{ display:flex; align-items:center; gap:5px; }
+  .tactics-group.tactics-alvo{ flex-direction:column; align-items:stretch; gap:3px; }
+  .tactics-alvo .alvo-top{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .lure-toggle{ font-family:var(--font-mono); font-size:8px; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:9px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.35); color:var(--ink-dim); cursor:pointer; }
+  .lure-toggle.on{ color:#1a1206; background:linear-gradient(180deg,#f3d58a,#c79a3c); border-color:#f3d58a; box-shadow:0 0 8px rgba(243,213,138,.45); }
   .tactics-group + .tactics-group{ padding-left:10px; border-left:1px solid rgba(191,161,95,.2); }
   .tactics-label{ font-family:var(--font-mono); font-size:7.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; }
 
@@ -1248,6 +1252,8 @@
   #skill-node-modal-backdrop.show{ display:flex; }
   #skill-node-modal{ width:380px; max-width:90vw; max-height:80vh; overflow-y:auto; }
   .skill-node-modal-points-row{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:6px; }
+  .spell-card-real{ margin:6px 0 8px; padding:6px 8px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(240,200,110,.06); font-family:var(--font-mono); font-size:10px; color:var(--ink); line-height:1.5; }
+  .spell-card-real .lbl{ color:var(--gold); }
   .skill-node-modal-points-row b{ color:var(--gold-bright); }
 
   /* ============ ACOMPANHAR BESTIÁRIO (item 11 da lista de tarefas,
@@ -1759,7 +1765,7 @@
   #item-showcase-modal.open{ display:block; }
   #item-showcase-icon-ring{ width:96px; height:96px; margin:10px auto 12px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); }
   #item-showcase-icon-ring img.item-icon{ width:56px; height:56px; object-fit:contain; }
-  #item-showcase-icon-ring .rarity-frame{ width:96px; height:96px; }
+  #item-showcase-icon-ring .rarity-frame{ position:absolute; inset:0; width:96px; height:96px; pointer-events:none; } /* 23/10/2026: moldura POR CIMA do ícone (antes ficava do lado e o item aparecia fora do quadro) */
   #item-showcase-name{ font-family:var(--font-display); font-size:18px; font-weight:700; margin-bottom:4px; }
   #item-showcase-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:8px; }
   #item-showcase-stats{ font-family:var(--font-mono); font-size:10.5px; padding:0 14px 14px; }
@@ -3315,10 +3321,18 @@
     <div id="footer-left">
     <!-- Vitals compactos (estilo Huntera: HP/Mana/Level ficam coladas na
          hotbar, não mais numa janela solta no canto superior). -->
+    <style>
+      /* Efeitos negativos dos monstros (Queimadura, Veneno, Congelamento...) */
+      #debuff-row{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 4px;}
+      #debuff-row:empty{display:none;}
+      .debuff-chip{display:inline-flex;align-items:center;gap:3px;padding:1px 6px 1px 4px;border-radius:9px;font-family:var(--font-mono);font-size:9px;color:#fff;background:rgba(0,0,0,.45);border:1px solid var(--dc,#c66);box-shadow:0 0 6px -2px var(--dc,#c66);}
+      .debuff-chip b{font-weight:700;color:var(--dc,#f99);}
+    </style>
     <div id="vitals-block" class="glass ornate">
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_health.png" alt=""><div class="bar-track hp-track"><div class="bar-fill hp" id="hp-bar" style="width:100%"></div><div class="bar-label" id="hp-label"></div></div></div>
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_mana.png" alt=""><div class="bar-track mp-track"><div class="bar-fill mp" id="mp-bar" style="width:100%"></div><div class="bar-label" id="mp-label"></div></div></div>
       <div class="vitals-row xp-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_experience.png" alt=""><div class="bar-track xp-track"><div class="bar-fill xp" id="xp-bar" style="width:0%"></div><div class="bar-label" id="xp-label"></div></div></div>
+      <div id="debuff-row"></div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="bar-track" style="flex:1;margin-bottom:0;"><div class="bar-fill stam" id="stam-bar" style="width:100%"></div><div class="bar-label" id="stam-label"></div></div>
         <div id="stam-recharge-btn" class="hover-trigger" title="Recarregar Stamina (Free +4h / Premium +6h)">
@@ -3354,8 +3368,11 @@
         <span class="tactics-label">Postura</span>
         <div class="tactics-row" id="posture-row"></div>
       </div>
-      <div class="tactics-group">
-        <span class="tactics-label">Alvo</span>
+      <div class="tactics-group tactics-alvo">
+        <div class="alvo-top">
+          <span class="tactics-label">Alvo</span>
+          <button type="button" id="lure-toggle" class="lure-toggle" title="Lure: o personagem só para de andar quando tiver 8 monstros nele (fecha a box). Desligado: para e luta assim que os monstros chegam.">Lure 8</button>
+        </div>
         <select id="target-mode-select"></select>
       </div>
       <div class="tactics-group">
@@ -3836,6 +3853,8 @@
   const TRAINING_RESET_COST_CLIENT = 100; // espelha TRAINING_RESET_COST_ELEMENTAL_COIN no servidor
   let combatPosture = 'balanca';
   let sqmDistance = 1;
+  let lureMode = false, lureToggleLocalAt = 0; // botão Lure (23/10/2026)
+  let regenNow = { hp:0, mp:0 }; // regeneração por segundo (servidor, pelo arquétipo)
   let targetMode = 'closest';
   let followUsername = null; // username sendo seguido quando targetMode==='followPartyMember'
   let currentTargetMonsterId = null; // espelho de state.currentTargetMonsterId do servidor (ver huntEngine.js) — usado pra desenhar a placa de alvo real da Ravendawn (ver drawTargetPlate)
@@ -3986,6 +4005,9 @@
     // em draw() pra escolher o tileset certo em TOWER_ELEMENT_TILE_THEME.
     visualTheme:null,
   };
+  // Curva de XP (23/10/2026) — mesma do servidor (huntEngine.xpForNextLevel/xpLevelStart)
+  function xpForNextLevelClient(l){ return 40*l*l + 60*l; }
+  function xpLevelStartClient(L){ const n = L-1; return Math.round(40*n*(n+1)*(2*n+1)/6 + 60*n*(n+1)/2); }
   const remotePlayers = new Map(); // username -> {x,y,location}
   let serverOnlineCount = null, cityInstanceNo = null; // ver 'positions' (cidade instanciada)
 
@@ -6175,6 +6197,33 @@
     for(const p of activeHunt.lurePoints){ const m = p.monsters.find(mm=>mm.id===id); if(m) return m; }
     return null;
   }
+  // ===== Efeitos dos monstros (23/10/2026) =====
+  const MONSTER_FX_ELEM_COLOR = { fogo:'#ff7a2e', agua:'#7fd3ff', terra:'#8fd35a', ar:'#ffe45c', luz:'#fff3b0', trevas:'#b98cff' };
+  const MONSTER_FX_ELEM_ICON = { fogo:'🔥', agua:'❄️', terra:'☠️', ar:'⚡', luz:'✨', trevas:'🌑' };
+  const MONSTER_FX_STATUS_LABEL = { queimadura:'🔥 Queimadura', congelamento:'❄️ Congelamento', envenenamento:'☠️ Envenenamento', eletrificacao:'⚡ Eletrificação', ofuscamento:'✨ Ofuscamento', maldicao:'🌑 Maldição', sangramento:'🩸 Sangramento' };
+  const DEBUFF_CHIP_COLOR = { fogo:'#ff7a2e', agua:'#7fd3ff', terra:'#8fd35a', ar:'#ffe45c', luz:'#fff3b0', trevas:'#b98cff', fisico:'#e05252' };
+  function renderDebuffs(list){
+    const row = document.getElementById('debuff-row'); if(!row) return;
+    const html = list.map(d=>{
+      const s = Math.max(1, Math.ceil(d.leftMs/1000));
+      const tip = `${d.label}: dano por segundo${d.slowPct?` e ${d.slowPct}% de lentidão`:''}. Some com cura ou magia de velocidade.`;
+      return `<span class="debuff-chip" style="--dc:${DEBUFF_CHIP_COLOR[d.type]||'#c66'}" title="${escapeHtml(tip)}">${d.icon} ${escapeHtml(d.label)} <b>${s}s</b></span>`;
+    }).join('');
+    if(row.innerHTML !== html) row.innerHTML = html;
+  }
+  // tirinho do monstro de longe até o jogador (anel pequeno que viaja)
+  const monsterShots = [];
+  function spawnMonsterShot(fromX, fromY, color){ monsterShots.push({ fx: fromX, fy: fromY, color, bornAt: now(), dur: 260 }); }
+  function drawMonsterShots(ctx){
+    const t = now();
+    for(let i = monsterShots.length-1; i >= 0; i--){
+      const s = monsterShots[i], k = (t - s.bornAt) / s.dur;
+      if(k >= 1){ monsterShots.splice(i,1); continue; }
+      const p = toScreen(s.fx + (player.x - s.fx)*k, s.fy + (player.y - s.fy)*k);
+      ctx.save(); ctx.globalAlpha = 1 - k*0.4; ctx.fillStyle = s.color; ctx.shadowColor = s.color; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(p.x, p.y - 18, 3.5, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    }
+  }
   function processCombatFx(fxList){
     if(!Array.isArray(fxList) || !fxList.length) return;
     // Magia de área (20/10/2026): o servidor manda 1 'spellHit' por monstro
@@ -6229,8 +6278,28 @@
           else SpellFxManager.spawnAreaEffect(fx.archetypeId, 'attack', m.x, m.y, fx.element);
         }
       } else if(fx.t === 'monsterHit'){
-        spawnFloatingText(()=>({x:player.x,y:player.y}), `${fx.special?'⚡ ':''}-${fx.dmg}`, fx.special ? '#ff8a3d' : '#ff5a5a');
+        // 23/10/2026: golpe físico (vermelho) x golpe mágico do elemento (cor
+        // do elemento); habilidade do monstro mostra o NOME em cima dele e o
+        // efeito aplicado (Queimadura, Congelamento...) em cima do jogador.
+        const mm = findMonsterById(fx.monsterId);
+        const ec = fx.element ? (MONSTER_FX_ELEM_COLOR[fx.element] || '#ff8a3d') : '#ff5a5a';
+        spawnFloatingText(()=>({x:player.x,y:player.y}), `${fx.ability?(MONSTER_FX_ELEM_ICON[fx.element]||'💢')+' ':''}-${fx.dmg}`, fx.ability || fx.element ? ec : '#ff5a5a', fx.ability ? { big: true } : undefined);
+        if(fx.ability && fx.abilityName && mm) spawnFloatingText(()=>({x:mm.x,y:mm.y}), fx.abilityName, ec, { yOffset: 18, big: true });
+        if(fx.status && MONSTER_FX_STATUS_LABEL[fx.status]) spawnFloatingText(()=>({x:player.x,y:player.y}), MONSTER_FX_STATUS_LABEL[fx.status], ec, { yOffset: 16 });
+        // ataque DE LONGE (arqueiro/mago): um rastro do monstro até o jogador
+        if(mm && fx.style && fx.style !== 'melee' && !fx.aoe) spawnMonsterShot(mm.x, mm.y, fx.style === 'caster' || fx.element ? ec : '#e8dcc0');
         if(fx.monsterId) monsterHitFlash.set(fx.monsterId, now());
+      } else if(fx.t === 'monsterAoe'){
+        const ec = fx.element ? (MONSTER_FX_ELEM_COLOR[fx.element] || '#ff8a3d') : '#ff5a5a';
+        const ax = fx.x, ay = fx.y;
+        spawnFxRing(()=>({x:ax,y:ay}), ec, (fx.r||2)*TILE_STEP + TILE_STEP/2, 650);
+        spawnFxRing(()=>({x:ax,y:ay}), ec, (fx.r||2)*TILE_STEP*0.6, 420);
+      } else if(fx.t === 'dot'){
+        const ec = fx.element ? (MONSTER_FX_ELEM_COLOR[fx.element] || '#ff8a3d') : '#d84a4a';
+        spawnFloatingText(()=>({x:player.x+8,y:player.y}), `-${fx.dmg}`, ec);
+      } else if(fx.t === 'cleanse'){
+        spawnFloatingText(()=>({x:player.x,y:player.y}), '✨ Purificado!', '#9ff0b0', { yOffset: 20, big: true });
+        spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(159,240,176,.8)', 30, 420);
       } else if(fx.t === 'dodge'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), 'Esquiva!', '#8fd0ff', { big: true });
       } else if(fx.t === 'heal'){
@@ -7002,6 +7071,7 @@
       ctx.globalAlpha = 1 - t; ctx.lineWidth = 2; ctx.strokeStyle = r.color;
       ctx.beginPath(); ctx.arc(s.x, s.y - 20, r.maxRadius * t, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
     }
+    drawMonsterShots(ctx); // tiro do monstro de longe (arqueiro/mago)
 
     if(activeHunt.running){
       activeHunt.lurePoints.forEach((p,i)=>{
@@ -7352,10 +7422,10 @@
     document.getElementById('stam-bar').style.width = Math.max(0,stamina.current/stamina.max*100)+'%';
     document.getElementById('stam-label').textContent = fmtDuration(stamina.current);
     // Barra de XP — mesma curva usada no Analisador de Caçada pra ETA de
-    // level (100 XP x nível atual por level, ver levelFromXp em huntEngine.js).
+    // level (curva 40·L²+60·L, ver xpForNextLevel em huntEngine.js).
     {
-      const xpAtLevelStart = 50 * player.level * (player.level - 1);
-      const xpNeededThisLevel = 100 * player.level;
+      const xpAtLevelStart = xpLevelStartClient(player.level);
+      const xpNeededThisLevel = xpForNextLevelClient(player.level);
       const xpIntoLevel = Math.max(0, player.xp - xpAtLevelStart);
       const xpPct = player.level >= 100 ? 100 : Math.max(0, Math.min(100, xpIntoLevel/xpNeededThisLevel*100));
       document.getElementById('xp-bar').style.width = xpPct + '%';
@@ -7674,6 +7744,8 @@
     Object.assign(training, msg.training); trainingBank = msg.trainingBank; trainingBankSnapshotAt = Date.now();
     if(typeof msg.usedFreeTrainingReset === 'boolean') usedFreeTrainingReset = msg.usedFreeTrainingReset;
     combatPosture = msg.combatPosture; sqmDistance = msg.sqmDistance;
+    if(msg.regen) regenNow = msg.regen;
+    if(msg.lureMode != null && !(lureToggleLocalAt && Date.now() - lureToggleLocalAt < 1500)){ lureMode = !!msg.lureMode; const lt = document.getElementById('lure-toggle'); if(lt) lt.classList.toggle('on', lureMode); }
     targetMode = msg.targetMode; followUsername = msg.followUsername || null;
     currentTargetMonsterId = msg.currentTargetMonsterId || null;
     autoSellOnBagFull = msg.autoSellOnBagFull;
@@ -7710,6 +7782,7 @@
     if(msg.statAttributes) statAttributes = msg.statAttributes;
     if(msg.combatStats) combatStats = msg.combatStats;
     processCombatFx(msg.combatFx);
+    if(Array.isArray(msg.debuffs)) renderDebuffs(msg.debuffs);
     if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
     if(msg.towerClimb) towerClimb = msg.towerClimb;
@@ -9482,6 +9555,12 @@
       }
     });
 
+    const lureBtn = document.getElementById('lure-toggle');
+    if(lureBtn) lureBtn.addEventListener('click', ()=>{
+      lureMode = !lureMode; lureToggleLocalAt = Date.now();
+      lureBtn.classList.toggle('on', lureMode);
+      sendWS({ type:'hunt:lure', on: lureMode });
+    });
     const sqmRow = document.getElementById('sqm-row');
     [1,2,3,4].forEach(n=>{
       const btn = document.createElement('button');
@@ -9915,14 +9994,14 @@
         <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);margin-bottom:12px;">Level ${player.level} — ${rankLabel}</div>
         <div class="char-bar-row"><span class="lbl">Pontos de vida</span><div class="char-bar-track"><div class="char-bar-fill hp" style="width:${Math.max(0,player.hp/player.hpMax*100)}%"></div></div><span class="val">${Math.round(player.hp)} / ${player.hpMax}</span></div>
         <div class="char-bar-row"><span class="lbl">Mana</span><div class="char-bar-track"><div class="char-bar-fill mp" style="width:${Math.max(0,player.mp/player.mpMax*100)}%"></div></div><span class="val">${Math.round(player.mp)} / ${player.mpMax}</span></div>
-        <div class="char-bar-row"><span class="lbl">Experiência</span><div class="char-bar-track"><div class="char-bar-fill xp" style="width:${(Math.round(player.xp)%1000)/10}%"></div></div><span class="val">${Math.round(player.xp).toLocaleString('pt-BR')} XP</span></div>
+        <div class="char-bar-row"><span class="lbl">Experiência</span><div class="char-bar-track"><div class="char-bar-fill xp" style="width:${player.level>=100?100:Math.max(0,Math.min(100,(player.xp-xpLevelStartClient(player.level))/xpForNextLevelClient(player.level)*100))}%"></div></div><span class="val">${Math.round(player.xp).toLocaleString('pt-BR')} XP</span></div>
       </div>
       <div class="cs-right">
         <div class="row"><span>Velocidade</span><b>${speed}</b></div>
         <div class="row"><span>Capacidade</span><b>${capacity.toLocaleString('pt-BR')} oz</b></div>
         <div class="row"><span>Magic Level</span><b>${Math.round(training.magia)}</b></div>
-        <div class="row"><span>Regen. de vida</span><b>Só em caçadas</b></div>
-        <div class="row"><span>Regen. de mana</span><b>Só em caçadas</b></div>
+        <div class="row"><span>Regen. de vida</span><b>${(regenNow.hp||0).toLocaleString('pt-BR',{maximumFractionDigits:1})}/s${location==='city'?' (x3)':''}</b></div>
+        <div class="row"><span>Regen. de mana</span><b>${(regenNow.mp||0).toLocaleString('pt-BR',{maximumFractionDigits:1})}/s${location==='city'?' (x3)':''}</b></div>
         <div class="row"><span>Stamina</span><b>${fmtDuration(stamina.current)}</b></div>
       </div>
     `;
@@ -12535,9 +12614,9 @@
       const xpPerHour = sessionXp / elapsedH;
       const profitPerHour = sessionWealth / elapsedH;
       // Tempo estimado pro próximo level: usa a mesma curva do servidor
-      // (100 XP x nível atual por level — ver levelFromXp em huntEngine.js).
-      const xpAtLevelStart = 50 * player.level * (player.level - 1);
-      const xpNeededThisLevel = 100 * player.level;
+      // (curva 40·L²+60·L — ver xpForNextLevel em huntEngine.js).
+      const xpAtLevelStart = xpLevelStartClient(player.level);
+      const xpNeededThisLevel = xpForNextLevelClient(player.level);
       const xpIntoLevel = Math.max(0, player.xp - xpAtLevelStart);
       const xpRemaining = Math.max(0, xpNeededThisLevel - xpIntoLevel);
       const etaNextLevel = (player.level >= 100) ? 'Nível máximo' : (xpPerHour > 0.01 ? fmtDuration((xpRemaining / xpPerHour) * 3600000) : '—');
@@ -12998,6 +13077,28 @@
   // nível/destravar) -- item 4 da lista de tarefas, 20/09/2026: antes esse
   // card aparecia inline no fim da lista (exigia rolar a tela pra achar),
   // agora é montado dentro do #skill-node-modal-body que abre na hora.
+  // Efeito REAL no Elemental (23/10/2026) — vem do servidor (GET
+  // /api/spellstats, huntEngine.spellSummaries): a descrição da wiki fala do
+  // jogo original (Aether etc.); esta linha diz o que a magia faz aqui.
+  let SPELL_STATS = null;
+  fetch(API_BASE + '/api/spellstats').then(r=>r.json()).then(j=>{ if(j && j.spells) SPELL_STATS = j.spells; }).catch(()=>{});
+  // Nível/XP/estilo PRÓPRIOS de cada monstro (23/10/2026, MONSTER_INFO no huntEngine.js)
+  let MONSTER_INFO_CLIENT = {};
+  fetch(API_BASE + '/api/monsterinfo').then(r=>r.json()).then(j=>{ if(j && j.monsters) MONSTER_INFO_CLIENT = j.monsters; }).catch(()=>{});
+  const BUFF_STAT_LABEL = { atkPct:'Ataque', defPct:'Defesa', magicDmgPct:'Dano mágico', healingPowerPct:'Cura', hastePct:'Velocidade de ataque' };
+  function spellEffectLine(archId, sp, level){
+    const L = SPELL_STATS && SPELL_STATS[archId] && SPELL_STATS[archId][sp.id];
+    if(!L || !L.length) return '';
+    const r = L[Math.max(0, Math.min(L.length-1, (level||1)-1))];
+    const area = r.aoe ? ' · em área' : '';
+    let what = '';
+    if(r.kind==='attack') what = `Dano: <b>${r.mult.toLocaleString('pt-BR')}×</b> o golpe base (escala com ${r.scale==='arma'?'Poder de Arma / Might':'Poder Mágico / Inteligência'})${area}`;
+    else if(r.kind==='heal') what = `Cura <b>${r.healPct.toLocaleString('pt-BR')}%</b> da vida máxima`;
+    else if(r.kind==='defense') what = `Escudo de <b>${r.shieldPct.toLocaleString('pt-BR')}%</b> da vida por ${r.durS.toLocaleString('pt-BR')} s`;
+    else if(r.kind==='buff') what = `+<b>${r.buffPct.toLocaleString('pt-BR')}%</b> de ${BUFF_STAT_LABEL[r.stat]||r.stat} por ${r.durS.toLocaleString('pt-BR')} s`;
+    else if(r.kind==='taunt') what = `Faz os monstros a até <b>${r.radius} SQM</b> atacarem você por ${r.durS} s (não trocam de alvo)`;
+    return `<div class="spell-card-real"><span class="lbl">No Elemental · Nv. ${level||1}:</span> ${what} · recarga ${r.cd.toLocaleString('pt-BR')} s · ${r.mana} mana</div>`;
+  }
   function spellDetailHtml(archId, sp, draft){
     const st = computeSpellNodeState(archId, sp, draft);
     const iconUrl = spellIconUrl(sp.name);
@@ -13018,6 +13119,7 @@
         </div>
         <div class="skill-node-modal-points-row">Pontos livres nesta árvore: <b>${avail}</b></div>
         <div class="spell-card-desc">${sp.desc || ''}</div>
+        ${sp.kind !== 'passive' ? spellEffectLine(archId, sp, Math.max(1, st.level)) : ''}
         ${st.lockedReason ? `<div class="spell-card-lock-msg"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/skill_lock.png" style="width:11px;height:11px;vertical-align:-1px;object-fit:contain;margin-right:3px;" onerror="this.replaceWith('🔒 ')"/>${st.lockedReason}</div>` : ''}
         ${btns}
       </div>`;
@@ -15701,7 +15803,7 @@
         const width = Math.max(4, Math.min(100, pct*0.7));
         return `<div class="resist-row"><span class="resist-label">${t}</span><div class="resist-track"><div class="resist-fill" style="width:${width}%;background:${resistBarColor(pct)}"></div></div><span class="resist-pct ${cls}">${pct}%</span></div>`;
       }).join('');
-      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros. Os demais afetam o dano de magia de verdade.</div></div>`;
+      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${(()=>{ const mi = MONSTER_INFO_CLIENT[mt.name]; if(!mi) return ''; const st = { melee:'⚔️ Corpo a corpo', ranged:'🏹 De longe', caster:'🔮 Mago' }[mi.style] || ''; return `<div class="hd-monster-xp" style="font-family:var(--font-mono);font-size:8.5px;color:var(--gold);margin:1px 0 2px;">Nv ${mi.level} · ${Number(mi.xp).toLocaleString('pt-BR')} XP</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--ink-dim);margin-bottom:2px;">${st}</div>`; })()}${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros. Os demais afetam o dano de magia de verdade.</div></div>`;
       const toggle = card.querySelector('.hd-monster-toggle');
       const weakBox = card.querySelector('.hd-monster-weak');
       toggle.addEventListener('click', (e)=>{
