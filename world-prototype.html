@@ -567,6 +567,25 @@
      hotbar pra esquerda). */
   #footer-bar{ bottom:14px; left:12px; right:12px; transform:none; display:grid; grid-template-columns:1fr auto 1fr; align-items:end; gap:12px; z-index:6; pointer-events:none; }
   #footer-bar > *{ pointer-events:auto; }
+  /* BAÚ DO CHEFE (23/10/2026) — aviso no meio da tela + 3 baús */
+  #boss-chest{ position:fixed; left:50%; top:46%; transform:translate(-50%,-50%); z-index:40; display:none; flex-direction:column; align-items:center; gap:14px; padding:22px 30px 20px; min-width:520px; max-width:94vw; background:radial-gradient(ellipse at 50% 0%, rgba(120,90,30,.35), rgba(10,8,5,.94) 70%); border:1px solid var(--gold); border-radius:10px; box-shadow:0 0 40px rgba(240,200,110,.25), 0 10px 40px rgba(0,0,0,.7); pointer-events:auto; }
+  #boss-chest.show{ display:flex; animation:bcIn .35s ease-out; }
+  @keyframes bcIn{ from{ opacity:0; transform:translate(-50%,-46%) scale(.94); } to{ opacity:1; transform:translate(-50%,-50%) scale(1); } }
+  #boss-chest .bc-title{ font-family:var(--font-display); font-size:22px; color:var(--gold-bright); text-shadow:0 0 14px rgba(240,200,110,.5); text-align:center; }
+  #boss-chest .bc-sub{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); text-align:center; }
+  #boss-chest .bc-row{ display:flex; gap:22px; justify-content:center; }
+  #boss-chest .bc-box{ width:132px; height:132px; border-radius:10px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .15s, box-shadow .15s, opacity .3s, filter .3s; position:relative; }
+  #boss-chest .bc-box img.bc-chest{ width:90px; height:90px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(0 6px 8px rgba(0,0,0,.6)); }
+  #boss-chest .bc-box:hover{ transform:translateY(-4px) scale(1.04); box-shadow:0 0 18px rgba(240,200,110,.45); border-color:var(--gold); }
+  #boss-chest.picked .bc-box{ cursor:default; transform:none; }
+  #boss-chest.picked .bc-box:not(.chosen){ opacity:.25; filter:grayscale(1); }
+  #boss-chest .bc-box.chosen{ border-color:var(--gold-bright); box-shadow:0 0 26px rgba(255,215,120,.7); animation:bcOpen .5s ease-out; }
+  @keyframes bcOpen{ 0%{ transform:scale(1); } 40%{ transform:scale(1.15) rotate(-3deg); } 100%{ transform:scale(1); } }
+  #boss-chest .bc-drop{ min-height:58px; display:flex; align-items:center; gap:12px; font-family:var(--font-mono); font-size:12px; color:var(--ink); }
+  #boss-chest .bc-drop .bc-ico{ position:relative; width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-size:28px; background:rgba(0,0,0,.4); border-radius:6px; }
+  #boss-chest .bc-drop .bc-ico img.rarity-frame{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  #boss-chest .bc-drop .bc-name{ font-family:var(--font-display); font-size:15px; }
+  #boss-chest .bc-timer{ font-family:var(--font-mono); font-size:12px; color:var(--gold); }
   #footer-left{ display:flex; align-items:flex-end; gap:12px; justify-self:end; pointer-events:none; }
   #footer-left > *{ pointer-events:auto; }
   #footer-bar > #tactics-bar{ justify-self:start; }
@@ -2450,6 +2469,13 @@
        flutua sem caixa/borda logo abaixo do #top-bar (ver CSS #pvpBuffsPanel). -->
   <div id="pvpBuffsPanel"></div>
 
+  <div id="boss-chest">
+    <div class="bc-title" id="bc-title">🏆 Parabéns!</div>
+    <div class="bc-sub" id="bc-sub">Escolha um baú</div>
+    <div class="bc-row" id="bc-row"></div>
+    <div class="bc-drop" id="bc-drop"></div>
+    <div class="bc-timer" id="bc-timer"></div>
+  </div>
   <div id="tower-climb-banner">
     <div class="line1"></div>
     <div class="line2"></div>
@@ -7754,18 +7780,20 @@
       activeHunt.mapId = msg.hunt.mapId || null;
       activeHunt.huntLevel = msg.hunt.huntLevel || null;
       activeHunt.possibleLoot = Array.isArray(msg.hunt.possibleLoot) ? msg.hunt.possibleLoot : null;
+      activeHunt.chest = msg.hunt.chest || null;
       if(msg.hunt.previewLeftMs > 0){
         if(!(activeHunt.previewEndLocal > Date.now())) activeHunt.previewStartLocal = Date.now();
         activeHunt.previewEndLocal = Date.now() + msg.hunt.previewLeftMs;
       } else activeHunt.previewEndLocal = 0;
     } else {
-      activeHunt.mapId = null; activeHunt.previewEndLocal = 0;
+      activeHunt.mapId = null; activeHunt.previewEndLocal = 0; activeHunt.chest = null;
       activeHunt.running = false; activeHunt.lurePoints = [];
       activeHunt.isTower = false; activeHunt.towerId = null; activeHunt.towerMode = null; activeHunt.climbFloor = null;
       activeHunt.climbCountdownUntil = 0; activeHunt.climbNextFloor = null; activeHunt.climbNextFloorIsBoss = false;
       activeHunt.visualTheme = null;
     }
     updateTowerClimbBanner();
+    try{ renderBossChest(); }catch(e){}
     // ---- RENDER DE PAINÉIS — por que isso é THROTTLED e não roda a cada
     // snapshot (os dados acima SEMPRE atualizam a 30Hz, isso aqui é só o DOM) ----
     // O servidor manda um snapshot completo pra CADA jogador 30x/segundo (ver
@@ -13370,7 +13398,7 @@
      huntEngine.js updateMovementAndCombat). ---- */
   const towerClimbBannerEl = document.getElementById('tower-climb-banner');
   function updateTowerClimbBanner(){
-    const active = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && !!activeHunt.climbNextFloor;
+    const active = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && !!activeHunt.climbNextFloor && !activeHunt.chest;
     if(!active){ towerClimbBannerEl.classList.remove('show','boss'); return; }
     const tower = TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId);
     towerClimbBannerEl.classList.add('show');
@@ -13386,6 +13414,61 @@
     }
   }
   setInterval(updateTowerClimbBanner, 200);
+
+  /* ---- BAÚ DO CHEFE (23/10/2026) — ver startTowerChest no huntEngine.js.
+     O servidor manda hunt.chest { floor, bossName, isRoom, picked,
+     pickLeftMs, revealLeftMs, drop }; o cliente só desenha e manda
+     'tower:pickChest'. Se o jogador não escolher, o servidor escolhe. ---- */
+  const bossChestEl = document.getElementById('boss-chest');
+  const TOWER_ITEM_EMOJI = { tower_shard:'🔷', tower_core:'🔮', tower_crown:'👑' };
+  let bossChestKey = null, bossChestEnd = 0, bossChestRevealEnd = 0;
+  function renderBossChest(){
+    const c = activeHunt.running && activeHunt.isTower ? activeHunt.chest : null;
+    if(!c){ if(bossChestKey){ bossChestEl.classList.remove('show','picked'); bossChestKey = null; } return; }
+    const key = (activeHunt.towerId||'') + ':' + c.floor + ':' + (c.isRoom?'r':'c');
+    if(key !== bossChestKey){
+      bossChestKey = key;
+      const tower = TOWERS_CATALOG_CLIENT.find(t=>t.id===activeHunt.towerId);
+      document.getElementById('bc-title').textContent = c.isRoom
+        ? `🏆 Parabéns! ${c.bossName ? c.bossName.replace(/\s*\(andar \d+\)$/,'') : 'O Boss'} foi derrotado!`
+        : `🏆 Parabéns! O Boss do andar ${c.floor} foi morto!`;
+      document.getElementById('bc-sub').textContent = `${tower ? tower.name : 'Torre'} · escolha 1 dos 3 baús`;
+      const row = document.getElementById('bc-row'); row.innerHTML = '';
+      [0,1,2].forEach(i=>{
+        const b = document.createElement('div'); b.className = 'bc-box'; b.dataset.idx = i;
+        b.innerHTML = `<img class="bc-chest" src="${URL_BASE}hud/boss_chest.png" alt="Baú" onerror="this.replaceWith(document.createTextNode('🧰'))">`;
+        b.addEventListener('click', ()=>{ if(bossChestEl.classList.contains('picked')) return; sendWS({ type:'tower:pickChest', idx:i }); });
+        row.appendChild(b);
+      });
+      document.getElementById('bc-drop').innerHTML = '';
+      bossChestEl.classList.remove('picked'); bossChestEl.classList.add('show');
+    }
+    if(c.picked == null){
+      bossChestEnd = Date.now() + (c.pickLeftMs||0);
+    } else {
+      bossChestRevealEnd = Date.now() + (c.revealLeftMs||0);
+      if(!bossChestEl.classList.contains('picked')){
+        bossChestEl.classList.add('picked');
+        const box = bossChestEl.querySelector(`.bc-box[data-idx="${c.picked}"]`); if(box) box.classList.add('chosen');
+        const d = c.drop || {}; const it = d.item || {};
+        const col = RARITY_COLORS[it.rarity] || '#fff';
+        document.getElementById('bc-drop').innerHTML = `<div class="bc-ico">${TOWER_ITEM_EMOJI[it.id] || '🎁'}${rarityFrameHtml(it.rarity)}</div>
+          <div><div class="bc-name" style="color:${col}">${escapeHtml(it.name||'Item')}</div><div style="color:var(--ink-dim);font-size:10px;">${escapeHtml(it.rarity||'')}</div>
+          <div style="margin-top:3px;">🪙 +${Math.round(d.gold||0).toLocaleString('pt-BR')} Gold</div></div>`;
+        logLoot(`🧰 Baú do chefe: <b style="color:${col}">${escapeHtml(it.name||'Item')}</b> + ${Math.round(d.gold||0).toLocaleString('pt-BR')} Gold`);
+      }
+    }
+  }
+  setInterval(()=>{
+    if(!bossChestKey) return;
+    const t = document.getElementById('bc-timer');
+    if(!bossChestEl.classList.contains('picked')){
+      const left = Math.max(0, Math.ceil((bossChestEnd - Date.now())/1000));
+      t.textContent = `Escolha em ${left}s — se não escolher, o jogo escolhe por você`;
+    } else {
+      t.textContent = activeHunt.chest && activeHunt.chest.isRoom ? 'Seguindo para o portal de saída...' : 'Seguindo para o portal do próximo andar...';
+    }
+  }, 200);
 
   /* =========================================================
      ALTAR DE EVOLUÇÃO — Reset de Estrela real: gasta Gold + Fragmentos
