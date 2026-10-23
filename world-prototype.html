@@ -568,7 +568,7 @@
   #footer-bar{ bottom:14px; left:12px; right:12px; transform:none; display:grid; grid-template-columns:1fr auto 1fr; align-items:end; gap:12px; z-index:6; pointer-events:none; }
   #footer-bar > *{ pointer-events:auto; }
   /* BAÚ DO CHEFE (23/10/2026) — aviso no meio da tela + 3 baús */
-  #boss-chest{ position:fixed; left:50%; top:46%; transform:translate(-50%,-50%); z-index:40; display:none; flex-direction:column; align-items:center; gap:14px; padding:22px 30px 20px; min-width:520px; max-width:94vw; background:radial-gradient(ellipse at 50% 0%, rgba(120,90,30,.35), rgba(10,8,5,.94) 70%); border:1px solid var(--gold); border-radius:10px; box-shadow:0 0 40px rgba(240,200,110,.25), 0 10px 40px rgba(0,0,0,.7); pointer-events:auto; }
+  #boss-chest{ position:fixed; left:50%; top:46%; transform:translate(-50%,-50%); z-index:150; display:none; flex-direction:column; align-items:center; gap:14px; padding:22px 30px 20px; min-width:520px; max-width:94vw; background:radial-gradient(ellipse at 50% 0%, rgba(120,90,30,.35), rgba(10,8,5,.94) 70%); border:1px solid var(--gold); border-radius:10px; box-shadow:0 0 40px rgba(240,200,110,.25), 0 10px 40px rgba(0,0,0,.7); pointer-events:auto; }
   #boss-chest.show{ display:flex; animation:bcIn .35s ease-out; }
   @keyframes bcIn{ from{ opacity:0; transform:translate(-50%,-46%) scale(.94); } to{ opacity:1; transform:translate(-50%,-50%) scale(1); } }
   #boss-chest .bc-title{ font-family:var(--font-display); font-size:22px; color:var(--gold-bright); text-shadow:0 0 14px rgba(240,200,110,.5); text-align:center; }
@@ -3756,9 +3756,9 @@
   // que só existe nas caçadas de INFERNAL_HUNT_IDS (espelho do servidor).
   const DIFFICULTIES = {
     cauteloso: { label:'Fácil',    monstersPerLure:2,  xpBonus:0,    lootBonus:0    },
-    ousado:    { label:'Normal',   monstersPerLure:5,  xpBonus:0.20, lootBonus:0.20 },
-    agressivo: { label:'Difícil',  monstersPerLure:8,  xpBonus:0.50, lootBonus:0.50 },
-    infernal:  { label:'Infernal', monstersPerLure:13, xpBonus:1.00, lootBonus:1.00, infernalOnly:true },
+    ousado:    { label:'Normal',   monstersPerLure:5,  xpBonus:0, lootBonus:0.20 },
+    agressivo: { label:'Difícil',  monstersPerLure:8,  xpBonus:0, lootBonus:0.50 },
+    infernal:  { label:'Infernal', monstersPerLure:13, xpBonus:0, lootBonus:1.00, infernalOnly:true },
   };
   const INFERNAL_HUNT_IDS = ['meadow','trail','boar','cave','coldstone','dwarf','brotherhood','trunk','chainwraith','gazer','blademaster_djinn_blizzard_beast','astor','draconic'];
   const huntHasInfernal = (h)=> !!h && INFERNAL_HUNT_IDS.includes(h.id);
@@ -9425,7 +9425,7 @@
       if(d.infernalOnly && !huntHasInfernal(selectedHunt)) return; // Infernal só nas caçadas escolhidas
       const btn = document.createElement('div');
       btn.className = 'diff-btn' + (key===selectedDifficulty?' active':'') + (d.infernalOnly?' infernal':'');
-      btn.innerHTML = `<div class="name">${d.label}</div><div class="sub">${d.monstersPerLure}/lure · +${Math.round(d.xpBonus*100)}%</div>`;
+      btn.innerHTML = `<div class="name">${d.label}</div><div class="sub">${d.monstersPerLure}/lure${d.lootBonus ? ` · loot +${Math.round(d.lootBonus*100)}%` : ''}</div>`;
       btn.addEventListener('click', ()=>{ selectedDifficulty = key; renderHuntCenter(); });
       diffPicker.appendChild(btn);
     });
@@ -13414,6 +13414,39 @@
     }
   }
   setInterval(updateTowerClimbBanner, 200);
+
+  /* ---- JANELA ABERTA POR ÚLTIMO VEM PRA FRENTE (23/10/2026) — pedido do
+     usuário: "se estou com o modal do personagem aberto e abro a forja, o
+     modal da forja vai para trás ... fazer isso com tudo". Cada janela
+     (.win) tinha um z-index fixo próprio; agora existe uma PILHA: a que
+     abriu (ou foi clicada) por último fica no topo. Faixa 26..~59 (acima de
+     todos os z fixos antigos, abaixo dos diálogos de confirmação 200+). ---- */
+  (function windowStack(){
+    const BASE_Z = 26;
+    const stack = [];
+    const isWin = el => el && el.classList && el.classList.contains('win') && el.id !== 'chat-window';
+    function restack(){ stack.forEach((el,i)=>{ el.style.zIndex = String(BASE_Z + i); }); }
+    function bringToFront(el){
+      const i = stack.indexOf(el); if(i !== -1) stack.splice(i,1);
+      stack.push(el); restack();
+    }
+    const wasOpen = new WeakMap();
+    new MutationObserver(muts=>{
+      muts.forEach(m=>{
+        const el = m.target; if(!isWin(el)) return;
+        const open = el.classList.contains('open');
+        if(open && !wasOpen.get(el)) bringToFront(el);
+        if(!open && wasOpen.get(el)){ const i = stack.indexOf(el); if(i !== -1) stack.splice(i,1); el.style.zIndex = ''; restack(); }
+        wasOpen.set(el, open);
+      });
+    }).observe(document.body, { subtree:true, attributes:true, attributeFilter:['class'] });
+    document.querySelectorAll('.win').forEach(el=>{ if(isWin(el)) wasOpen.set(el, el.classList.contains('open')); });
+    // clicar numa janela já aberta também traz ela pra frente
+    document.addEventListener('pointerdown', e=>{
+      const w = e.target.closest && e.target.closest('.win');
+      if(isWin(w) && w.classList.contains('open') && stack[stack.length-1] !== w) bringToFront(w);
+    }, true);
+  })();
 
   /* ---- BAÚ DO CHEFE (23/10/2026) — ver startTowerChest no huntEngine.js.
      O servidor manda hunt.chest { floor, bossName, isRoom, picked,
