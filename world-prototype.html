@@ -3722,7 +3722,7 @@
   function monsterElementFromWeakTo(weakTo){ return monsterElementsFromWeakTo(weakTo)[0] || null; }
   function elementMultClient(atk, defEls){
     if(!atk || !defEls || !defEls.length) return 1;
-    return Math.min(...defEls.map(d=> atk===d ? 0.5 : ELEMENT_BEATS[atk]===d ? 1 : ELEMENT_BEATS[d]===atk ? 0 : 0.75)); // vantagem 100%, desvantagem 0%, mesmo 50%, resto 75%
+    return Math.min(...defEls.map(d=> atk===d ? 0.5 : ELEMENT_BEATS[atk]===d ? 1 : ELEMENT_BEATS[d]===atk ? 0.25 : 0.75)); // vantagem 100%, desvantagem 25% (era 0%), mesmo 50%, resto 75%
   }
   function computeMonsterElementResist(weakTo){
     const els = monsterElementsFromWeakTo(weakTo); const out = {};
@@ -13270,7 +13270,7 @@
       const EFF = { fogo:'🔥 Queimadura', agua:'💧 Molhado (lento)', terra:'☠️ Envenenamento', ar:'⚡ Eletrificação', luz:'✨ Ofuscamento', trevas:'🌑 Maldição' };
       const REAC = { fogo:'💥 Explosão Tóxica (em envenenado)', agua:'💨 Vapor (em queimando)', terra:'🪨 Aterramento (em eletrificado)', ar:'⚡ Choque (em molhado)', luz:'🌟 Purificação (em amaldiçoado)', trevas:'🌑 Eclipse (em ofuscado)' };
       what += ` · elemento <b>${EL[r.element]}</b>`;
-      if(r.kind==='attack') what += ` (100% em ${LBL[BEATS[r.element]]}${loses?`, 0% em ${LBL[loses]}`:''}, 50% em ${LBL[r.element]}, 75% nos outros) · ${r.dot?'aplica':'25% de chance de aplicar'} ${EFF[r.element]} · reação: ${REAC[r.element]}`;
+      if(r.kind==='attack') what += ` (100% em ${LBL[BEATS[r.element]]}${loses?`, 25% em ${LBL[loses]}`:''}, 50% em ${LBL[r.element]}, 75% nos outros) · ${r.dot?'aplica':'25% de chance de aplicar'} ${EFF[r.element]} · reação: ${REAC[r.element]}`;
     }
     return `<div class="spell-card-real"><span class="lbl">No Elemental · Nv. ${level||1}:</span> ${what} · recarga ${r.cd.toLocaleString('pt-BR')} s · ${r.mana} mana</div>`;
   }
