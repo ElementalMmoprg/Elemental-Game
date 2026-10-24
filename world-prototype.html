@@ -3387,6 +3387,7 @@
   <div id="hunts-modal" class="glass win">
     <div id="hunts-tabs" class="win-drag">
       <div class="hunts-tab active" data-tab="cacadas">Caçadas</div>
+      <div class="hunts-tab" data-tab="material">⛏️ Caça de Material</div>
       <div class="hunts-tab" data-tab="treino">Treino</div>
       <div class="hunts-tab disabled" data-tab="quests">Quests</div>
       <div class="hunts-tab disabled" data-tab="arena">Arena</div>
@@ -3664,6 +3665,23 @@
     { id:"duskling_dunewalker_jackal", name:"Dune Wastes", level:"74-83", record:'—', possibleLoot:[{id:"demon_trophy",name:"Demon Trophy",rarity:"lendária"},{id:"jackal_trophy",name:"Jackal Trophy",rarity:"lendária"},{id:"mindsurge_fragment",name:"Mindsurge Fragment",rarity:"lendária"},{id:"voidmind_fragment",name:"Voidmind Fragment",rarity:"lendária"},{id:"beastly_distillate",name:"Beastly Distillate",rarity:"épica"}], monsterTypes:[{name:"Duskling",creatureType:"undeads",icon:"🌑",weakTo:["Água"],spriteId:5356,walkAtlas:2132},{name:"Dunewalker Jackal",creatureType:"beasts",icon:"🌑",weakTo:["Água"],spriteId:5337,walkAtlas:1429}] },
     { id:"draconic", name:"Draconic Bastion", level:"91-100", record:'—', possibleLoot:[{id:"draconic_hide",name:"Draconic Hide",rarity:"rara"},{id:"draconic_wings",name:"Draconic Wings",rarity:"rara"},{id:"fiery_essence",name:"Fiery Essence",rarity:"rara"},{id:"golden_ruby_belt",name:"Golden Ruby Belt",rarity:"rara"},{id:"red_horns",name:"Red Horns",rarity:"rara"}], monsterTypes:[{name:"Draconic Crusader",creatureType:"draconics",icon:"🐲",weakTo:["Água"],spriteId:1441,walkAtlas:1441},{name:"Draconic Fighter",creatureType:"draconics",icon:"🐲",weakTo:["Água"],spriteId:4755,walkAtlas:8066},{name:"Draconic Pyromancer",creatureType:"draconics",icon:"🐲",weakTo:["Água"],spriteId:4757,walkAtlas:8070}] },
 { id:"frostbound_shore", name:"Frostbound Shore", level:"91-100", record:'—', possibleLoot:[{id:"netherweave_fragment",name:"Netherweave Fragment",rarity:"lendária"},{id:"ethereal_cloak",name:"Ethereal Cloak",rarity:"rara"},{id:"ghastly_lamp",name:"Ghastly Lamp",rarity:"rara"},{id:"eerie_bone_plate",name:"Eerie Bone Plate",rarity:"rara"},{id:"igneous_ice_shard",name:"Igneous Ice Shard",rarity:"épica"}], monsterTypes:[{name:"Frost Lancer",creatureType:"undeads",icon:"❄️",weakTo:["Ar"],spriteId:1015,walkAtlas:1015},{name:"Rime Duelist",creatureType:"undeads",icon:"❄️",weakTo:["Ar"],spriteId:1017,walkAtlas:1017},{name:"Drowned Phantom",creatureType:"undeads",icon:"👻",weakTo:["Ar"],spriteId:1005,walkAtlas:1005},{name:"Abyssal Phantom",creatureType:"undeads",icon:"👻",weakTo:["Ar"],spriteId:1009,walkAtlas:1009},{name:"Glacial Warden",creatureType:"undeads",icon:"❄️",weakTo:["Ar"],spriteId:1019,walkAtlas:1019}] },
+    // Caçadas de Material (24/10/2026) — espelho de MATERIAL_HUNTS do huntEngine.js
+    { id:"mat_pedreira_1", name:"Pedreira I", level:"1-20", material:true, materialType:"Minérios", record:'—', possibleLoot:[{"id":"minerio_cobre","name":"Minério de Cobre","rarity":"comum"},{"id":"minerio_estanho","name":"Minério de Estanho","rarity":"comum"}], monsterTypes:[{"name":"Pedregulho Vivo","creatureType":"beasts","icon":"🪨","weakTo":["Fogo"],"spriteId":7609,"walkAtlas":7609},{"name":"Rocha Florida","creatureType":"beasts","icon":"🪨","weakTo":["Fogo"],"spriteId":3465,"walkAtlas":3465}] },
+    { id:"mat_pedreira_2", name:"Pedreira II", level:"20-45", material:true, materialType:"Minérios", record:'—', possibleLoot:[{"id":"minerio_ferro","name":"Minério de Ferro","rarity":"comum"},{"id":"carvao","name":"Carvão","rarity":"comum"},{"id":"minerio_estanho","name":"Minério de Estanho","rarity":"comum"}], monsterTypes:[{"name":"Tartaruga de Pedra","creatureType":"beasts","icon":"🐢","weakTo":["Fogo"],"spriteId":4143,"walkAtlas":4143},{"name":"Golem de Musgo","creatureType":"beasts","icon":"🗿","weakTo":["Fogo"],"spriteId":7798,"walkAtlas":7798}] },
+    { id:"mat_pedreira_3", name:"Pedreira III", level:"45-70", material:true, materialType:"Minérios", record:'—', possibleLoot:[{"id":"minerio_cobalto","name":"Minério de Cobalto","rarity":"comum"},{"id":"carvao","name":"Carvão","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"}], monsterTypes:[{"name":"Golem de Granito","creatureType":"beasts","icon":"🗿","weakTo":["Fogo"],"spriteId":3913,"walkAtlas":3913},{"name":"Tartaruga Rochosa Anciã","creatureType":"beasts","icon":"🐢","weakTo":["Fogo"],"spriteId":7607,"walkAtlas":7607}] },
+    { id:"mat_pedreira_4", name:"Pedreira IV", level:"70-100", material:true, materialType:"Minérios", record:'—', possibleLoot:[{"id":"minerio_titanio","name":"Minério de Titânio","rarity":"comum"},{"id":"carvao","name":"Carvão","rarity":"comum"},{"id":"minerio_cobalto","name":"Minério de Cobalto","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"},{"id":"catalisador_radiante","name":"Catalisador Radiante","rarity":"lendária"}], monsterTypes:[{"name":"Colosso de Rubi","creatureType":"beasts","icon":"💎","weakTo":["Água"],"spriteId":4141,"walkAtlas":4141},{"name":"Núcleo de Magma","creatureType":"beasts","icon":"🔥","weakTo":["Água"],"spriteId":4139,"walkAtlas":4139}] },
+    { id:"mat_bosque_1", name:"Bosque Vivo I", level:"1-20", material:true, materialType:"Madeira", record:'—', possibleLoot:[{"id":"tora_pequena","name":"Tora Pequena","rarity":"comum"}], monsterTypes:[{"name":"Toco Vivo","creatureType":"beasts","icon":"🪵","weakTo":["Fogo"],"spriteId":374,"walkAtlas":374},{"name":"Toco Espinhoso","creatureType":"beasts","icon":"🪵","weakTo":["Fogo"],"spriteId":376,"walkAtlas":376}] },
+    { id:"mat_bosque_2", name:"Bosque Vivo II", level:"20-45", material:true, materialType:"Madeira", record:'—', possibleLoot:[{"id":"tora_pesada","name":"Tora Pesada","rarity":"comum"},{"id":"tora_pequena","name":"Tora Pequena","rarity":"comum"}], monsterTypes:[{"name":"Tronco Assombrado","creatureType":"beasts","icon":"🌳","weakTo":["Fogo"],"spriteId":7430,"walkAtlas":7430},{"name":"Arbusto Seco","creatureType":"beasts","icon":"🌿","weakTo":["Fogo"],"spriteId":7457,"walkAtlas":7457}] },
+    { id:"mat_bosque_3", name:"Bosque Vivo III", level:"45-70", material:true, materialType:"Madeira", record:'—', possibleLoot:[{"id":"tora_robusta","name":"Tora Robusta","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"}], monsterTypes:[{"name":"Ent Ancião","creatureType":"beasts","icon":"🌳","weakTo":["Fogo"],"spriteId":1403,"walkAtlas":1403},{"name":"Ent Gélido","creatureType":"beasts","icon":"🌲","weakTo":["Ar"],"spriteId":4152,"walkAtlas":4152}] },
+    { id:"mat_bosque_4", name:"Bosque Vivo IV", level:"70-100", material:true, materialType:"Madeira", record:'—', possibleLoot:[{"id":"tora_fina","name":"Tora Fina","rarity":"comum"},{"id":"tora_robusta","name":"Tora Robusta","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"},{"id":"catalisador_radiante","name":"Catalisador Radiante","rarity":"lendária"}], monsterTypes:[{"name":"Ent Sombrio","creatureType":"beasts","icon":"🌳","weakTo":["Luz"],"spriteId":6815,"walkAtlas":6815},{"name":"Ent Corrompido","creatureType":"beasts","icon":"🌳","weakTo":["Luz"],"spriteId":6966,"walkAtlas":6966}] },
+    { id:"mat_campos_1", name:"Campos de Lã I", level:"1-20", material:true, materialType:"Algodão e Lã", record:'—', possibleLoot:[{"id":"algodao","name":"Algodão","rarity":"comum"},{"id":"la","name":"Lã","rarity":"comum"}], monsterTypes:[{"name":"Aranha Dourada","creatureType":"beasts","icon":"🕷️","weakTo":["Fogo"],"spriteId":341,"walkAtlas":341},{"name":"Aranha Tecelã","creatureType":"beasts","icon":"🕷️","weakTo":["Fogo"],"spriteId":337,"walkAtlas":337}] },
+    { id:"mat_campos_2", name:"Campos de Lã II", level:"20-45", material:true, materialType:"Algodão e Lã", record:'—', possibleLoot:[{"id":"algodao","name":"Algodão","rarity":"comum"},{"id":"la","name":"Lã","rarity":"comum"}], monsterTypes:[{"name":"Carneiro Lanoso","creatureType":"beasts","icon":"🐏","weakTo":["Terra"],"spriteId":367,"walkAtlas":367},{"name":"Aranha da Seda","creatureType":"beasts","icon":"🕷️","weakTo":["Fogo"],"spriteId":349,"walkAtlas":349}] },
+    { id:"mat_campos_3", name:"Campos de Lã III", level:"45-70", material:true, materialType:"Algodão e Lã", record:'—', possibleLoot:[{"id":"algodao","name":"Algodão","rarity":"comum"},{"id":"la","name":"Lã","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"}], monsterTypes:[{"name":"Iaque Lanoso","creatureType":"beasts","icon":"🐂","weakTo":["Terra"],"spriteId":2230,"walkAtlas":2230},{"name":"Aranha Fiandeira","creatureType":"beasts","icon":"🕷️","weakTo":["Fogo"],"spriteId":3366,"walkAtlas":3366}] },
+    { id:"mat_campos_4", name:"Campos de Lã IV", level:"70-100", material:true, materialType:"Algodão e Lã", record:'—', possibleLoot:[{"id":"algodao","name":"Algodão","rarity":"comum"},{"id":"la","name":"Lã","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"},{"id":"catalisador_radiante","name":"Catalisador Radiante","rarity":"lendária"}], monsterTypes:[{"name":"Mamute Lanoso","creatureType":"beasts","icon":"🦣","weakTo":["Terra"],"spriteId":1048,"walkAtlas":1048},{"name":"Aranha de Cristal","creatureType":"beasts","icon":"🕷️","weakTo":["Trevas"],"spriteId":3215,"walkAtlas":3215}] },
+    { id:"mat_covil_1", name:"Covil das Feras I", level:"1-20", material:true, materialType:"Couro", record:'—', possibleLoot:[{"id":"couro_cru","name":"Couro Cru","rarity":"comum"}], monsterTypes:[{"name":"Javali Selvagem","creatureType":"beasts","icon":"🐗","weakTo":["Fogo"],"spriteId":872,"walkAtlas":872},{"name":"Lobo Cinzento","creatureType":"beasts","icon":"🐺","weakTo":["Terra"],"spriteId":153,"walkAtlas":153}] },
+    { id:"mat_covil_2", name:"Covil das Feras II", level:"20-45", material:true, materialType:"Couro", record:'—', possibleLoot:[{"id":"couro_cru","name":"Couro Cru","rarity":"comum"}], monsterTypes:[{"name":"Urso Pardo","creatureType":"beasts","icon":"🐻","weakTo":["Fogo"],"spriteId":312,"walkAtlas":312},{"name":"Javali de Presas","creatureType":"beasts","icon":"🐗","weakTo":["Fogo"],"spriteId":874,"walkAtlas":874}] },
+    { id:"mat_covil_3", name:"Covil das Feras III", level:"45-70", material:true, materialType:"Couro", record:'—', possibleLoot:[{"id":"couro_cru","name":"Couro Cru","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"}], monsterTypes:[{"name":"Bisão","creatureType":"beasts","icon":"🦬","weakTo":["Fogo"],"spriteId":1457,"walkAtlas":1457},{"name":"Urso Negro","creatureType":"beasts","icon":"🐻","weakTo":["Luz"],"spriteId":7391,"walkAtlas":7391}] },
+    { id:"mat_covil_4", name:"Covil das Feras IV", level:"70-100", material:true, materialType:"Couro", record:'—', possibleLoot:[{"id":"couro_cru","name":"Couro Cru","rarity":"comum"},{"id":"aether_vinculante","name":"Aether Vinculante","rarity":"épica"},{"id":"catalisador_radiante","name":"Catalisador Radiante","rarity":"lendária"}], monsterTypes:[{"name":"Búfalo Colossal","creatureType":"beasts","icon":"🐃","weakTo":["Fogo"],"spriteId":3317,"walkAtlas":3317},{"name":"Bisão Ancião","creatureType":"beasts","icon":"🦬","weakTo":["Fogo"],"spriteId":1458,"walkAtlas":1458}] },
   ];
   // ITEM_INFO: descrição + preço base de cada item de loot, coletados da
   // ravenquest.wiki.br (mesma fonte dos sprites de monstro). Chave = item.id
@@ -6629,7 +6647,7 @@
   // por SQM, igual o OTClient: duração do passo / nº de quadros), então as
   // patas acompanham o deslocamento sem "patinar" nem ficar em câmera lenta,
   // qualquer que seja a velocidade do monstro ou o atraso da rede.
-  const MONSTER_ATLAS_IDLE_COL = new Set([13, 8653, 8644, 8641, 8701, 8647, 8661, 8636, 8662, 8651, 6792, 35, 63, 69, 79, 80, 81, 98, 152, 311, 313, 324, 358, 360, 361, 362, 369, 371, 372, 373, 413, 414, 415, 809, 812, 814, 815, 817, 818, 819, 820, 995, 996, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1058, 1107, 1108, 1110, 1111, 1112, 1206, 1310, 1322, 1323, 1327, 1338, 1353, 1401, 1402, 1404, 1406, 1417, 1420, 1423, 1426, 1429, 1432, 1441, 1456, 1507, 1513, 1544, 1549, 1552, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 2104, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2299, 3274, 7395, 8066, 8070, 8698]);
+  const MONSTER_ATLAS_IDLE_COL = new Set([13, 8653, 8644, 8641, 8701, 8647, 8661, 8636, 8662, 8651, 6792, 35, 63, 69, 79, 80, 81, 98, 152, 311, 313, 324, 358, 360, 361, 362, 369, 371, 372, 373, 413, 414, 415, 809, 812, 814, 815, 817, 818, 819, 820, 995, 996, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1058, 1107, 1108, 1110, 1111, 1112, 1206, 1310, 1322, 1323, 1327, 1338, 1353, 1401, 1402, 1404, 1406, 1417, 1420, 1423, 1426, 1429, 1432, 1441, 1456, 1507, 1513, 1544, 1549, 1552, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 2104, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2299, 3274, 7395, 8066, 8070, 8698, 7609, 3465, 4143, 7798, 3913, 7607, 4141, 4139, 374, 376, 7430, 7457, 1403, 4152, 6815, 6966, 341, 337, 367, 349, 2230, 3366, 1048, 3215, 872, 153, 312, 874, 1457, 7391, 3317, 1458]); // + monstros das Caçadas de Material (24/10/2026)
   const MONSTER_WALK_CYCLE_WORLD = TILE_STEP; // 1 ciclo de andar = 1 SQM
   // escala de pixel dos monstros (pixel do sprite -> pixel de tela) com o SQM
   // de 40px das caçadas/Torre: o mapa usa 1,25 (32px -> 40px); 1,5 deixa um
@@ -8034,7 +8052,7 @@
           lastHuntSnap = Object.assign(lastHuntSnap || {}, msg); delete lastHuntSnap.light;
           applyHuntSnapshot(lastHuntSnap); break;
         }
-        case 'hunt:map': if(msg.map){ HUNT_MAPS[msg.map.id] = msg.map; } break;
+        case 'hunt:map': if(msg.map){ HUNT_MAPS[msg.map.id] = msg.map; const hk = activeHunt && activeHunt.running ? huntMapKey() : null; if(hk && hk !== msg.map.id) HUNT_MAPS[hk] = msg.map; } break; // Caçada de Material: 4 faixas usam o mesmo mapa (id do mapa != id da caçada)
         case 'hunt:ack': handleAck(msg); break;
         case 'party:invite': showPartyInviteToast(msg); break;
         case 'party:declined': logLoot(`👥 <b>${escapeHtml(msg.by)}</b> recusou o convite pro grupo.`); break;
@@ -8485,6 +8503,8 @@
       } else if (action.acao === 'magia') {
         const ic = action.elemento ? (PVP_EL_ICON[action.elemento] || '') + ' ' : '';
         let txt = T + `${who} usou <b>${ic}${action.nome}</b>`;
+        if(action.dano != null && action.selfMove) setTokenPos(side, action.x, action.y);   // Warfare: avançou
+        if(action.dano != null && action.alvoMove) setTokenPos(alvo, action.x, action.y);   // Warfare: puxou
         if (action.esquiva) { floatText(alvo, 'Esquiva', '#9fd0ff'); txt += ` — ${tgt} esquivou`; }
         else if (action.bloqueado) { floatText(alvo, 'Bloqueado', '#9fd0ff'); txt += ` — bloqueada pela muralha de vento`; }
         else if (action.dano != null) {
@@ -8879,7 +8899,8 @@
     if(['outfit:buy','outfit:equip','ornament:buy','ornament:equip','wing:buy','wing:equip','aura:buy','aura:equip','shop:buyPremium','shop:buyElementalCoins','tower:buyKey'].includes(msg.forType)) storeHubRenderIfOpen();
     if(['outfit:equip','mount:equip','wing:equip','aura:equip','cosmetic:color'].includes(msg.forType) && !msg.ok) logLoot(`⚠️ ${msg.reason}`);
     if(['equip:item','equip:remove'].includes(msg.forType)){
-      if(!msg.ok) logLoot(`⚠️ ${msg.reason}`);
+      if(!msg.ok) logLoot(`⚠️ ${msg.reason === 'mochila_cheia' ? 'Mochila cheia — libere espaço pra trocar.' : msg.reason}`);
+      else if(msg.removed) logLoot(msg.removed === 'offhand' ? '✋✋ Arma de duas mãos: o escudo foi pra Mochila.' : '✋✋ O escudo tirou a arma de duas mãos (foi pra Mochila).');
       renderInventoryIfOpen();
     }
     if(msg.forType === 'skill:save'){
@@ -8975,9 +8996,9 @@
     }
     if(msg.forType === 'profession:refine'){
       if(msg.ok){
-        logLoot(`⚗️ Refinou e ganhou ${msg.gainedName || msg.gained}${msg.wentToTrash?' (mochila cheia — foi pra Lixeira)':''}.`);
+        logLoot(`⚗️ Refinou e ganhou ${msg.qty>1?msg.qty+'x ':''}${msg.gainedName || msg.gained}${msg.wentToTrash?' (mochila cheia — foi pra Lixeira)':''}.`);
       } else {
-        const reasonMap = { profissao_invalida:'profissão inválida.', apenas_na_cidade_principal:'refinar só funciona na Cidade Principal.', material_insuficiente:`material insuficiente (${msg.have||0}/${msg.need||PROFESSION_REFINE_RATIO_CLIENT}).` };
+        const reasonMap = { profissao_invalida:'profissão inválida.', apenas_na_cidade_principal:'refinar só funciona na Cidade Principal.', material_insuficiente:`falta ${PROFESSION_MATERIAL_LABEL[msg.missing]||msg.missing||'material'} (${msg.have||0}/${msg.need||0}).`, nivel_insuficiente:`precisa do Nível ${msg.need||'?'} na profissão.`, receita_invalida:'refino inválido.' };
         logLoot(`⚠️ Não foi possível refinar: ${reasonMap[msg.reason] || msg.reason}`);
       }
       renderInventoryIfOpen();
@@ -9335,7 +9356,12 @@
     t.addEventListener('click', ()=>{
       if(t.classList.contains('disabled')) return;
       document.querySelectorAll('.hunts-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-      const tab = t.dataset.tab, isCacadas = tab === 'cacadas';
+      const tab = t.dataset.tab, isCacadas = tab === 'cacadas' || tab === 'material';
+      if(isCacadas){
+        huntListMode = tab === 'material' ? 'material' : 'normal';
+        if(!!selectedHunt.material !== (huntListMode==='material')){ const first = HUNTS.filter(h=>!!h.material===(huntListMode==='material')).sort((a,b)=>huntLevelSortKey(a)-huntLevelSortKey(b))[0]; if(first) selectedHunt = first; }
+        renderHuntsList(document.getElementById('hunts-search').value); renderHuntCenter(); renderHuntLoot();
+      }
       document.getElementById('hunts-left').style.display = isCacadas ? '' : 'none';
       document.getElementById('hunts-center').style.display = isCacadas ? '' : 'none';
       document.getElementById('hunts-right').style.display = isCacadas ? '' : 'none';
@@ -9513,10 +9539,18 @@
     const m = String(h.level||'').match(/\d+/);
     return m ? parseInt(m[0], 10) : 0;
   }
+  let huntListMode = 'normal'; // 'material' = aba Caça de Material
   function renderHuntsList(filter=''){
     const listEl = document.getElementById('hunts-list');
     listEl.innerHTML = '';
-    HUNTS.filter(h=> h.name.toLowerCase().includes(filter.toLowerCase()))
+    if(huntListMode === 'material'){
+      const tip = document.createElement('div');
+      tip.className = 'hunt-material-tip';
+      tip.style.cssText = 'font-size:11px;color:var(--ink-dim);margin:0 0 6px;line-height:1.35;';
+      tip.innerHTML = 'Monstros que dão <b>matéria-prima</b> pra Profissão (sem troféus). A faixa de nível muda o material: <b>I</b> cobre/estanho/tora pequena · <b>II</b> ferro/carvão/tora pesada · <b>III</b> cobalto/tora robusta · <b>IV</b> titânio/tora fina + Aether e Catalisador.';
+      listEl.appendChild(tip);
+    }
+    HUNTS.filter(h=> !!h.material === (huntListMode === 'material') && h.name.toLowerCase().includes(filter.toLowerCase()))
       .sort((a,b)=> huntLevelSortKey(a) - huntLevelSortKey(b))
       .forEach(h=>{
       const el = document.createElement('div');
@@ -9532,7 +9566,7 @@
       const iconHtml = iconUrl
         ? `<img class="hunt-list-item-icon" src="${iconUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">${emojiFallback}`
         : emojiFallback;
-      el.innerHTML = `${iconHtml}<div class="hunt-list-item-body">${h.name}<span class="lvl">Nv. ${h.level}</span></div>`;
+      el.innerHTML = `${iconHtml}<div class="hunt-list-item-body">${h.name}<span class="lvl">Nv. ${h.level}${h.material?` · ${h.materialType}`:''}</span></div>`;
       el.addEventListener('click', ()=> selectHunt(h));
       listEl.appendChild(el);
     });
@@ -11286,12 +11320,6 @@
   // (mesmo estilo stroke-based do resto do jogo), resolvido ANTES da
   // tentativa de PNG (ver resolveItemIconHtml/renderInventory).
   const RAW_MATERIAL_ICON_SVG = {
-    minerio_ferro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l3-8 6-2 7 4-2 8-6 3-8-5z"/><path d="M9 6l2 6 6-2"/></svg>',
-    barra_aco: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6" rx="1.5"/><path d="M3 12h18M7 9v6M17 9v6"/></svg>',
-    madeira_bruta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="3"/><circle cx="4.5" cy="12" r="1.6"/><circle cx="19.5" cy="12" r="1.6"/></svg>',
-    madeira_nobre: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="3"/><circle cx="4.5" cy="12" r="1.6"/><circle cx="19.5" cy="12" r="1.6"/><path d="M12 2l1.2 2.4L16 5l-2.4 1.2L12 9l-.8-2.8L8 5l2.8-.6L12 2z"/></svg>',
-    fio_de_la: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M6 8c3 2 3 6 0 8M12 4c3 3 3 13 0 16M18 8c-3 2-3 6 0 8"/></svg>',
-    seda_encantada: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c4-3 8-3 9 0s5 3 9 0M3 14c4-3 8-3 9 0s5 3 9 0"/><path d="M12 2l.6 1.6L14 4l-1.4.4L12 6l-.6-1.6L10 4l1.4-.4L12 2z"/></svg>',
     // Item 121 da lista de tarefas (21/09/2026): loot de Meadow Outskirts/
     // Woodland Trail (zonas novas da família "Fledgling", ver 3ª rodada de
     // claude/sprites-monstro-4-direcoes-notas.md) nunca teve PNG real em
@@ -13173,6 +13201,15 @@
     else if(r.kind==='windWall') what = `Bloqueia os tiros de monstros arqueiros/magos em quem estiver a até ${r.radius} SQM por <b>${r.durS.toLocaleString('pt-BR')} s</b>`;
     else if(r.kind==='airAura') what = `Aura no Alvo da cura: depois de ${r.windowS} s vira escudo de <b>${r.convert}%</b> do dano recebido (${r.shieldS} s)`;
     else if(r.kind==='blink') what = `Piscar: quando um monstro encosta, teleporta até <b>${r.tiles} SQM</b> pra longe dele`;
+    else if(r.kind==='manaSurge') what = `Recupera <b>${r.instantPct}%</b> da mana na hora e +${r.tickPct}% a cada ${r.tickS} s por ${r.durS} s (usa quando a mana passa de 60% pra baixo)`;
+    if(r.leapTiles) what += ` · <b>avança</b> até o alvo (até ${r.leapTiles} SQM)`;
+    if(r.pullTiles) what += ` · <b>puxa</b> ${r.aoe?'os monstros':'o alvo'} pro seu lado (até ${r.pullTiles} SQM)`;
+    if(r.execBelow) what += ` · +${r.execBonus}% de dano em alvo com menos de ${r.execBelow}% de vida`;
+    if(r.sunderPct) what += ` · −${r.sunderPct}% de defesa no alvo por ${r.sunderS} s`;
+    if(r.interruptS) what += ` · <b>interrompe</b>: o monstro fica ${r.interruptS} s sem habilidade (no PvP: ${r.silenceS} s sem magia)`;
+    if(r.healOfDmg) what += ` · cura ${r.healOfDmg}% do dano causado`;
+    if(r.healPerTarget) what += ` · cura ${r.healPerTarget}% do dano por alvo atingido`;
+    if(r.bleedPct) what += ` · 🩸 Sangramento: ${r.bleedPct}% do golpe por segundo por ${r.bleedS} s`;
     if(r.ricochet) what += ` · ricocheteia em +${r.ricochet} alvos (${r.ricochetPct}% do dano)`;
     if(r.stunS) what += ` · <b>atordoa</b> os monstros por ${r.stunS} s`;
     if(r.rootS) what += ` · <b>prende</b> os monstros por ${r.rootS} s (não andam)`;
@@ -14113,15 +14150,22 @@
     CRAFT_STAT_BASE_BY_SLOT_CLIENT['dmg_'+e] = { weapon:3, ring:2, amulet:2, gloves:2 };
     CRAFT_STAT_BASE_BY_SLOT_CLIENT['res_'+e] = { armor:3, legs:2.5, helmet:2, boots:2, offhand:2.5, ring:1.5, amulet:1.5, gloves:1.5 };
   });
-  function computeBaseItemStatsClient(slot, rarity, powerTier, statKeys){
+  function computeBaseItemStatsClient(slot, rarity, powerTier, statKeys, catKey){
     let base = SLOT_BASE_STATS[slot]; if(!base) return {};
+    const catDef = catKey && CRAFT_CATS_CLIENT[catKey];
+    if(catDef && CATEGORY_BASE_CLIENT[catDef.category]) base = CATEGORY_BASE_CLIENT[catDef.category];
     if(Array.isArray(statKeys) && statKeys.length){ base = {}; statKeys.forEach(k=>{ const v = CRAFT_STAT_BASE_BY_SLOT_CLIENT[k] && CRAFT_STAT_BASE_BY_SLOT_CLIENT[k][slot]; if(v) base[k] = v; }); }
     const mult = RARITY_STAT_MULT[rarity] || 1;
     const tierMult = POWER_TIER_MULT_CLIENT[(powerTier||1)-1] || 1;
     const out = {};
-    Object.keys(base).forEach(k=>{ const v = base[k]*mult*tierMult*EQUIP_BASE_STAT_SCALE_CLIENT; out[k] = k==='bagSlots' ? Math.max(1, Math.round(v)) : Math.round(v*10)/10; });
+    const handMult = catDef && catDef.twoHanded ? TWO_HAND_MULT_CLIENT : 1;
+    Object.keys(base).forEach(k=>{ const v = base[k]*mult*tierMult*handMult*EQUIP_BASE_STAT_SCALE_CLIENT; out[k] = k==='bagSlots' ? Math.max(1, Math.round(v)) : Math.round(v*10)/10; });
+    // identidade da linha de armadura (Placa/Couro/Pano) — espelho de ARMOR_LINE_IMPLICIT
+    const imp = catDef && catDef.armorLine ? LINE_IMPLICIT_CLIENT[catDef.armorLine] : null;
+    if(imp) Object.entries(imp).forEach(([k,f])=>{ (k==='res_all' ? CRAFT_ELEMENTS_CLIENT.map(e=>'res_'+e) : [k]).forEach(kk=>{ const b = CRAFT_STAT_BASE_BY_SLOT_CLIENT[kk] && CRAFT_STAT_BASE_BY_SLOT_CLIENT[kk][slot]; if(b) out[kk] = Math.round(((out[kk]||0) + b*f*mult*tierMult*EQUIP_BASE_STAT_SCALE_CLIENT)*10)/10; }); });
     return out;
   }
+  let LINE_IMPLICIT_CLIENT = { placa:{ def:0.6, vitality:0.25 }, couro:{ def:0.4, dodgePct:0.2, dexterity:0.75 }, pano:{ def:0.3, res_all:0.25, wisdom:0.75 } };
   // Escolha de atributos por slot (lembrada enquanto o jogo está aberto)
   const craftStatChoice = {};
   let craftStatPickerOpen = null; // id da receita com o seletor aberto
@@ -14156,7 +14200,7 @@
   }
   function getItemTotalStatsClient(item){
     if(!item || !item.slot) return {};
-    const base = computeBaseItemStatsClient(item.slot, item.rarity, item.powerTier, item.craftStats);
+    const base = computeBaseItemStatsClient(item.slot, item.rarity, item.powerTier, item.craftStats, craftCategoryOfItemClient(item));
     const enchantMult = 1 + (item.enchantLevel||0)*0.08;
     const infusionMult = getInfusionBaseMultClient(item);
     const out = {};
@@ -14675,8 +14719,12 @@
   // em recipesOut acima) -- usado nos chips de filtro do modal da Forja.
   const CRAFT_CATEGORY_LABEL_CLIENT = {
     dagger:'Adaga', sword:'Espada', axe:'Machado', club:'Maça', staff:'Cajado', distance:'Arco',
+    greataxe:'Machado Grande', lightblade:'Lâmina Leve', hammer:'Martelo', greatsword:'Espada Grande', sceptre:'Cetro', totem:'Totem', buckler:'Broquel', tower:'Escudo Torre',
     legs:'Calças', offhand:'Escudo', helmet:'Elmo', armor:'Armadura', boots:'Botas',
     ring:'Anel', amulet:'Amuleto', gloves:'Luvas',
+    helmet_placa:'Elmo de Placa', armor_placa:'Armadura de Placa', legs_placa:'Calça de Placa', boots_placa:'Bota de Placa',
+    helmet_couro:'Elmo de Couro', armor_couro:'Armadura de Couro', legs_couro:'Calça de Couro', boots_couro:'Bota de Couro',
+    helmet_pano:'Capuz de Pano', armor_pano:'Túnica de Pano', legs_pano:'Calça de Pano', boots_pano:'Bota de Pano',
   };
   // Espelho de POWER_TIER_MULT/POWER_TIER_LEVEL_REQ do huntEngine.js -- ver
   // comentário grandão lá (o servidor continua autoritativo pro dano real;
@@ -14684,8 +14732,8 @@
   // 2026-09-20 (item 8 da lista de tarefas): curva trocada pra proporção
   // REAL de Attack Power confirmada na wiki (Axe/Bow, tiers 1-5: 1/1.5/2/3/4)
   // -- ver huntEngine.js e claude/comparativo-itens-ravenquest-notas.md § 27.
-  const POWER_TIER_LEVEL_REQ_CLIENT = [1, 10, 25, 40, 55];
-  const POWER_TIER_MULT_CLIENT = [1, 1.5, 2, 3, 4];
+  let POWER_TIER_LEVEL_REQ_CLIENT = [1, 10, 25, 40, 55, 75, 90, 100];
+  let POWER_TIER_MULT_CLIENT = [1, 1.5, 2, 3, 4, 5, 6, 7.5];
   const POWER_TIER_GOLD_BASE_CLIENT = 400;
   const POWER_TIER_MATERIAL_QTY_BASE_CLIENT = 10;
   function buildCraftableClientTables(){
@@ -14727,7 +14775,39 @@
     });
     return { itemsOut, recipesOut };
   }
-  const { itemsOut: CRAFTABLE_ITEMS_CLIENT, recipesOut: PROFESSION_RECIPES_CLIENT } = buildCraftableClientTables();
+  let { itemsOut: CRAFTABLE_ITEMS_CLIENT, recipesOut: PROFESSION_RECIPES_CLIENT } = buildCraftableClientTables();
+  // 24/10/2026: o catálogo de verdade (8 tiers, linhas novas, duas mãos,
+  // receitas reais simplificadas, refinos) vem do servidor em /api/craftcatalog.
+  // A tabela acima fica só como reserva se o fetch falhar.
+  let CRAFT_ITEM_CATEGORY_CLIENT = {}, CRAFT_CATS_CLIENT = {}, PROFESSION_REFINES_CLIENT = {}, TWO_HAND_MULT_CLIENT = 2, CATEGORY_BASE_CLIENT = { tower:{ def:6 } };
+  function applyCraftCatalog(j){
+    if(!j || !j.categories || !j.recipes) return;
+    CRAFT_CATS_CLIENT = j.categories; PROFESSION_REFINES_CLIENT = j.refines || {};
+    if(Array.isArray(j.tierMult)) POWER_TIER_MULT_CLIENT = j.tierMult;
+    if(Array.isArray(j.levelReq)) POWER_TIER_LEVEL_REQ_CLIENT = j.levelReq;
+    if(j.twoHandMult) TWO_HAND_MULT_CLIENT = j.twoHandMult;
+    if(j.categoryBase) CATEGORY_BASE_CLIENT = j.categoryBase;
+    if(j.lineImplicit) LINE_IMPLICIT_CLIENT = j.lineImplicit;
+    Object.entries(j.materials||{}).forEach(([id,m])=>{ PROFESSION_MATERIAL_LABEL[id] = m.name; });
+    const items = {}, cat = {};
+    const suffixToRarity = { common:'comum', uncommon:'incomum', rare:'rara', epic:'épica', legendary:'lendária' };
+    Object.entries(j.categories).forEach(([key,c])=>{
+      c.items.forEach((b,idx)=>{
+        cat[b.id] = key;
+        Object.keys(suffixToRarity).forEach(sfx=>{ const rar = suffixToRarity[sfx];
+          items[`${b.id}_${sfx}`] = { name:`${b.name} (${CRAFT_RARITY_LABEL_CAP_CLIENT[rar]})`, rarity:rar, slot:c.slot, weaponType:c.weaponType||null, icon:b.icon, description:b.description, powerTier:idx+1, twoHanded:c.twoHanded||undefined }; });
+      });
+    });
+    CRAFTABLE_ITEMS_CLIENT = items; CRAFT_ITEM_CATEGORY_CLIENT = cat;
+    PROFESSION_RECIPES_CLIENT = j.recipes;
+    renderProfessionsIfOpen();
+  }
+  function craftCategoryOfItemClient(item){
+    if(!item || typeof item.id !== 'string') return null;
+    const base = item.id.replace(/_(common|uncommon|rare|epic|legendary|mythic)$/, '');
+    return CRAFT_ITEM_CATEGORY_CLIENT[base] || null;
+  }
+  fetch(API_BASE + '/api/craftcatalog').then(r=>r.json()).then(applyCraftCatalog).catch(()=>{});
   // Espelho de CRAFT_RARITY_TIERS/WEIGHTS_LOW/HIGH em huntEngine.js -- só
   // pra CALCULAR e MOSTRAR as % de chance na UI (transparência pro
   // jogador); o sorteio de verdade acontece no servidor.
@@ -15054,6 +15134,7 @@
   document.getElementById('craft-float-banner').addEventListener('click', ()=>{
     professionsModal.classList.add('open'); renderProfessions();
   });
+  let professionRefineOpen = false;
   function renderProfessions(){
     if(!professionsModal.classList.contains('open')) return;
     professionTabsEl.innerHTML = Object.keys(PROFESSION_LABEL).map(p=>`<div class="profession-tab ${p===professionSelectedTab?'active':''}" data-profession-tab="${p}"><img class="profession-tab-icon" src="${PROFESSION_ICON_URL[p]}" onerror="this.style.display='none';" />${PROFESSION_LABEL[p]}</div>`).join('');
@@ -15146,7 +15227,7 @@
         const legItem = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_legendary`];
         const item = CRAFTABLE_ITEMS_CLIENT[`${r.resultBase}_${CRAFT_RARITY_SUFFIX_CLIENT[o.tier]}`]
           || (o.tier === 'mítica' && legItem ? { ...legItem, name: (legItem.name||'').replace(/\s*\([^)]*\)\s*$/, '') + ' (Mítica)' } : null);
-        const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier, craftStatsFor(r.slot)) : {};
+        const stats = r.slot ? computeBaseItemStatsClient(r.slot, o.tier, r.powerTier, craftStatsFor(r.slot), CRAFT_ITEM_CATEGORY_CLIENT[r.resultBase]) : {};
         const fk = r.slot ? craftFixedFor(r.slot) : null, band = fk ? craftFixedBand(fk, r.powerTier, o.tier) : null;
         const fixedTxt = band ? ` · 🔒 ${CRAFT_FIXED_LABEL_CLIENT[fk]}: <b>${band[0]}–${band[1]}${/Leech/.test(fk)?'%':''}</b>` : '';
         const statPreview = (Object.keys(stats).length || fixedTxt) ? `<div class="prec-stat-preview">${Object.keys(stats).length ? formatStats(stats, r) : ''}${fixedTxt}</div>` : '';
@@ -15166,6 +15247,7 @@
             <div class="prec-headtext">
               <div class="prec-name">${r.name}${locked?` — requer Nível ${r.levelReq} de ${PROFESSION_LABEL[professionSelectedTab]}`:''}</div>
               ${r.description ? `<div class="prec-desc">${r.description}</div>` : ''}
+              ${r.twoHanded ? `<div class="prec-desc" style="color:var(--gold-bright);">✋✋ Duas mãos — ocupa também o lugar do escudo (atributos em dobro)</div>` : ''}
             </div>
           </div>
           <div class="prec-row"><span>Custo</span><span class="${hasGold?'ok':'missing'}">${r.goldCost} Gold</span></div>
@@ -15180,17 +15262,25 @@
           <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" data-craft-slot="${r.slot||''}" ${canCraft?'':'disabled'}>Criar</button>
         </div>`;
     }).join('') : `<div class="profession-empty-hint">Nenhum item encontrado${searchQ?` pra "${professionSearchEl.value}"`:''}${professionCategoryFilter!=='all'?` em ${CRAFT_CATEGORY_LABEL_CLIENT[professionCategoryFilter]||professionCategoryFilter}`:''}.</div>`;
-    const refineMats = PROFESSION_MATERIALS_CLIENT[professionSelectedTab];
-    const refineBox = refineMats ? (()=>{
-      const haveBasic = bagQty(refineMats.basic);
-      const canRefine = !craftingJob && inCityForShop() && haveBasic >= PROFESSION_REFINE_RATIO_CLIENT;
-      return `
-        <div class="profession-recipe-box${canRefine?' can-craft':''}">
-          <div class="prec-name">Refino: ${PROFESSION_MATERIAL_LABEL[refineMats.basic]||refineMats.basic} → ${PROFESSION_MATERIAL_LABEL[refineMats.refined]||refineMats.refined}</div>
-          <div class="prec-row"><span>${PROFESSION_MATERIAL_LABEL[refineMats.basic]||refineMats.basic} (consome ${PROFESSION_REFINE_RATIO_CLIENT})</span><span class="${haveBasic>=PROFESSION_REFINE_RATIO_CLIENT?'ok':'missing'}">${haveBasic}/${PROFESSION_REFINE_RATIO_CLIENT}</span></div>
-          <button class="party-btn" style="width:100%;margin-top:6px;" id="btn-profession-refine" ${canRefine?'':'disabled'}>Refinar</button>
-        </div>`;
-    })() : '';
+    // 24/10/2026: refino da cadeia de materiais (minério -> lingote, tora -> tábua, couro cru -> couro, algodão -> linha)
+    const refines = PROFESSION_REFINES_CLIENT[professionSelectedTab] || [];
+    const refineBox = refines.length ? `
+      <details class="profession-recipe-box" ${professionRefineOpen?'open':''} id="profession-refine-details">
+        <summary class="prec-name" style="cursor:pointer;">⚗️ Refino de materiais (${refines.length})</summary>
+        ${refines.map(rf=>{
+          const lockedR = prof.level < rf.levelReq;
+          const maxN = Math.min(...rf.materials.map(m=>Math.floor(bagQty(m.id)/m.qty)));
+          const can = !lockedR && !craftingJob && inCityForShop() && maxN >= 1;
+          return `<div class="refine-row" style="border-top:1px solid rgba(255,255,255,.08);padding:5px 0;">
+            <div style="display:flex;align-items:center;gap:6px;"><img src="${itemIconUrl(rf.result)}" style="width:22px;height:22px;" onerror="this.style.display='none'"/><b>${rf.name}</b>${lockedR?` <span style="color:#ff9a80;font-size:11px;">— requer Nível ${rf.levelReq}</span>`:''}</div>
+            ${rf.materials.map(m=>{ const have = bagQty(m.id); return `<div class="prec-row"><span>${PROFESSION_MATERIAL_LABEL[m.id]||m.id}</span><span class="${have>=m.qty?'ok':'missing'}">${have}/${m.qty}</span></div>`; }).join('')}
+            <div style="display:flex;gap:4px;margin-top:3px;">
+              <button class="party-btn" style="flex:1" data-refine-id="${rf.id}" data-refine-times="1" ${can?'':'disabled'}>Refinar 1</button>
+              <button class="party-btn" style="flex:1" data-refine-id="${rf.id}" data-refine-times="10" ${can&&maxN>=10?'':'disabled'}>10</button>
+              <button class="party-btn" style="flex:1" data-refine-id="${rf.id}" data-refine-times="${Math.max(1,Math.min(100,maxN))}" ${can?'':'disabled'}>Máx (${Math.max(0,Math.min(100,maxN))})</button>
+            </div></div>`;
+        }).join('')}
+      </details>` : '';
     body.innerHTML = `
       <div class="profession-level-line">Nível ${prof.level}/100 — ${prof.xp} XP acumulado${craftGold ? ` · <span style="color:var(--gold-bright)" title="Veio da Caixa do Aventureiro: vinculado ao personagem, só serve pra pagar receitas (é gasto antes do seu ouro).">🔒 Ouro de Criação: ${craftGold.toLocaleString('pt-BR')}</span>` : ''}</div>
       ${!inCityForShop() ? `<div class="enchant-req-row" style="color:#ff9a80;">⚠️ Criar itens só funciona na Cidade Principal</div>` : ''}
@@ -15224,8 +15314,11 @@
         renderProfessions();
       });
     });
-    const refineBtn = document.getElementById('btn-profession-refine');
-    if(refineBtn) refineBtn.addEventListener('click', ()=> sendWS({ type:'profession:refine', profession: professionSelectedTab }));
+    const refDet = document.getElementById('profession-refine-details');
+    if(refDet) refDet.addEventListener('toggle', ()=>{ professionRefineOpen = refDet.open; });
+    body.querySelectorAll('[data-refine-id]').forEach(btn=>{
+      btn.addEventListener('click', ()=> sendWS({ type:'profession:refine', profession: professionSelectedTab, refineId: btn.dataset.refineId, times: Number(btn.dataset.refineTimes)||1 }));
+    });
   }
 
   /* =========================================================
@@ -15237,7 +15330,7 @@
      equipamento único continua na Troca direta (#trade-modal).
      ========================================================= */
   const marketModal = document.getElementById('market-modal');
-  const MARKET_MATERIAL_IDS = ['minerio_ferro','barra_aco','madeira_bruta','madeira_nobre','fio_de_la','seda_encantada'];
+  let MARKET_MATERIAL_IDS = ['minerio_ferro','barra_aco','minerio_cobre','lingote_cobre','tora_pequena','tabua_rustica','couro_cru','algodao','linha_grossa'];
   // ---- LEILÃO (20/10/2026, estilo Huntera): a lista mostra TODOS os itens à
   // venda; clicou no item -> vê os detalhes -> "Comprar" compra na hora, sem
   // ordem de compra. Vender = escolher um item da Mochila e o preço.
@@ -16602,7 +16695,7 @@
       { slot:'armor', base:'a_armor_shadecloth_armor', name:'Pliant Armor (armadura)', prof:'Forja' },
       { slot:'legs', base:'l_legs_couro', name:'Pliant Legs (calça)', prof:'Forja' },
       { slot:'boots', base:'a_boots_shadecloth_boots', name:'Pliant Boots (bota)', prof:'Forja' },
-      { slot:'offhand', base:'s_shield_madeira', name:'Wooden Buckler (escudo)', prof:'Forja' },
+      { slot:'offhand', base:'s_shield_madeira', name:'Wooden Buckler (escudo)', prof:'Carpintaria' },
     ];
   }
   const tutHas = (base, it)=> Array.isArray(base) ? base.some(b=> tutHas(b, it)) : !!(it && it.id && (it.id === base || it.id.startsWith(base + '_')));
@@ -16624,7 +16717,7 @@
     },
     'open-professions': {
       title:'Kit recebido!', target:'#btn-open-professions',
-      text:()=> 'A Caixa te deu <b>Ouro de Criação</b> e <b>materiais</b> (Minério de Ferro e Madeira Bruta) — tudo 🔒 <b>vinculado</b> ao seu personagem: não dá pra trocar nem vender no Leilão. Aqui você não compra o set: você <b>cria</b>. Abra o painel de <b>Profissões</b>.',
+      text:()=> 'A Caixa te deu <b>Ouro de Criação</b> e <b>materiais</b> (Lingote de Cobre, Tábua Rústica e Linha Grossa) — tudo 🔒 <b>vinculado</b> ao seu personagem: não dá pra trocar nem vender no Leilão. Aqui você não compra o set: você <b>cria</b>. Abra o painel de <b>Profissões</b>.',
       done:()=> tutShown('#professions-modal'),
     },
     'craft-set': {
