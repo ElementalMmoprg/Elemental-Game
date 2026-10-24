@@ -3332,6 +3332,7 @@
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_health.png" alt=""><div class="bar-track hp-track"><div class="bar-fill hp" id="hp-bar" style="width:100%"></div><div class="bar-label" id="hp-label"></div></div></div>
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_mana.png" alt=""><div class="bar-track mp-track"><div class="bar-fill mp" id="mp-bar" style="width:100%"></div><div class="bar-label" id="mp-label"></div></div></div>
       <div class="vitals-row xp-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_experience.png" alt=""><div class="bar-track xp-track"><div class="bar-fill xp" id="xp-bar" style="width:0%"></div><div class="bar-label" id="xp-label"></div></div></div>
+      <div id="affinity-chip" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);margin:1px 0 2px;" title="Elemento do personagem: o que mais aparece nas magias da sua hotbar. Recebe −25% de dano desse elemento e +25% do elemento que vence ele."></div>
       <div id="debuff-row"></div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="bar-track" style="flex:1;margin-bottom:0;"><div class="bar-fill stam" id="stam-bar" style="width:100%"></div><div class="bar-label" id="stam-label"></div></div>
@@ -3693,6 +3694,7 @@
   // do huntEngine.js: Água→Fogo→Terra→Ar→Água e Luz↔Trevas. 150/75/50/100%.
   const ELEMENT_BEATS = { agua:'fogo', fogo:'terra', terra:'ar', ar:'agua', luz:'trevas', trevas:'luz' };
   const ELEMENT_ICON = { fogo:'🔥', agua:'💧', terra:'🪨', ar:'🌪️', luz:'✨', trevas:'🌑' };
+  let myAffinity = null, myAffinityList = []; // vem do servidor (elemento que mais aparece nas magias da hotbar)
   const ARCHETYPE_AFFINITY_CLIENT = { spiritual:'ar', holy:'luz', shadow:'trevas', wizardry:'fogo', witchcraft:'terra', archery:'ar', warfare:'fogo', protection:'terra' };
   function monsterElementsFromWeakTo(weakTo){
     const out = [];
@@ -6343,8 +6345,8 @@
         // classifySpellEffect kind:'buff' em huntEngine.js) reaproveitam o
         // mesmo visual de anel/pose do Escudo — feedback claro de "algo
         // aconteceu" mesmo sem sprite dedicado ainda pra cada uma.
-        const buffLabel = { atkPct: 'Ataque', defPct: 'Defesa', magicDmgPct: 'Magia', healingPowerPct: 'Cura', moveSpeedPct: 'Velocidade', basicExtraPct: 'Ataque básico', airAura: 'Aura de Vento', windWall: 'Parede de Vento', push: 'Empurrão', taunt: 'Provocar' }[fx.statKey] || 'Buff';
-        spawnFloatingText(()=>({x:player.x,y:player.y}), ['airAura','windWall','push','taunt'].includes(fx.statKey) ? buffLabel : `+${fx.pct}% ${buffLabel}`, '#ffd27a');
+        const buffLabel = { atkPct: 'Ataque', defPct: 'Defesa', magicDmgPct: 'Magia', healingPowerPct: 'Cura', moveSpeedPct: 'Velocidade', basicExtraPct: 'Ataque básico', airAura: 'Aura de Vento', windWall: 'Parede de Vento', push: 'Empurrão', taunt: 'Provocar', blink: 'Piscar!', flow: 'Fluxo de Magia' }[fx.statKey] || 'Buff';
+        spawnFloatingText(()=>({x:player.x,y:player.y}), ['airAura','windWall','push','taunt','blink'].includes(fx.statKey) ? buffLabel : `+${fx.pct}% ${buffLabel}`, '#ffd27a');
         if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,210,122,.75)', 32, 420);
         castPoseUntil = now() + CAST_POSE_MS;
@@ -7060,7 +7062,7 @@
         }
         // efeitos elementais no monstro (Queimadura, Molhado, Veneno...) — ícones em cima do nome
         if(item.monsterSt && item.monsterSt.length){
-          const ICON = { burn:'🔥', wet:'💧', poison:'☠️', shock:'⚡', blind:'✨', curse:'🌑', eclipse:'🌘' };
+          const ICON = { burn:'🔥', wet:'💧', poison:'☠️', shock:'⚡', blind:'✨', curse:'🌑', eclipse:'🌘', stun:'💫', root:'⛓️' };
           ctx.font = `${Math.round(9*SPRITE_SCALE)}px sans-serif`; ctx.textAlign = 'center';
           ctx.fillText(item.monsterSt.map(k=>ICON[k]||'').join(''), s.x, headY-40*SPRITE_SCALE);
         }
@@ -7805,6 +7807,13 @@
     if(msg.combatStats) combatStats = msg.combatStats;
     processCombatFx(msg.combatFx);
     if(Array.isArray(msg.debuffs)) renderDebuffs(msg.debuffs);
+    if(typeof msg.affinity !== 'undefined'){
+      const lst = Array.isArray(msg.affinity) ? msg.affinity : (msg.affinity ? [msg.affinity] : []);
+      myAffinityList = lst; myAffinity = lst[0] || null;
+      const ac = document.getElementById('affinity-chip');
+      if(ac){ const L={fogo:'Fogo',agua:'Água',terra:'Terra',ar:'Ar',luz:'Luz',trevas:'Trevas'}; const W={fogo:'agua',terra:'fogo',ar:'terra',agua:'ar',luz:'trevas',trevas:'luz'};
+        ac.innerHTML = lst.length ? `Afinidade: <b style="color:var(--gold-bright)">${lst.map(a=>ELEMENT_ICON[a]+' '+L[a]).join(' + ')}</b>${lst.length>1?` (${Math.round(100/lst.length)}% cada)`:''} · fraco a ${lst.map(a=>ELEMENT_ICON[W[a]]+' '+L[W[a]]).join(' / ')}` : ''; }
+    }
     if(typeof msg.usedFreeStatReset === 'boolean') usedFreeStatReset = msg.usedFreeStatReset;
     if(msg.towers) towers = msg.towers;
     if(msg.towerClimb) towerClimb = msg.towerClimb;
@@ -8350,6 +8359,7 @@
     // Md3 -- mostrá-lo antes da hora entrega o resultado antes da animação
     // terminar. runningScore só conta jogos que já foram ASSISTIDOS até o fim.
     let runningScore = { a: 0, b: 0 };
+    let lastWinner = null; // 'fim'/'tempo_esgotado' do log diz quem venceu o jogo
 
     const el = {
       overlay: document.getElementById('pvpArenaOverlay'),
@@ -8441,21 +8451,66 @@
 
     function nickOf(side) { return side === 'A' ? match.playerA.nick : match.playerB.nick; }
 
+    const PVP_EL_ICON = { fogo:'🔥', agua:'💧', terra:'🪨', ar:'🌪️', luz:'✨', trevas:'🌑' };
+    function floatText(side, text, color) {
+      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
+      const f = document.createElement('div');
+      f.className = 'pvp-dmg-float';
+      f.textContent = text;
+      if (color) f.style.color = color;
+      f.style.left = tokenEl.style.left;
+      f.style.top = tokenEl.style.top;
+      el.grid.appendChild(f);
+      setTimeout(() => f.remove(), 950);
+    }
+    // 24/10/2026: duelo com habilidades — toda ação traz hpA/hpB (vida dos dois)
+    function syncHp(action) {
+      const hm = match.hpMax[gameIndex] || { a: 1, b: 1 };
+      if (action.hpA != null) setHp('A', action.hpA, hm.a);
+      if (action.hpB != null) setHp('B', action.hpB, hm.b);
+      if (action.hpA == null && action.hpAlvo != null && action.player) { const al = action.player === 'A' ? 'B' : 'A'; setHp(al, action.hpAlvo, hm[al.toLowerCase()]); } // log antigo (antes das habilidades)
+    }
     function applyAction(action) {
       const side = action.player;
+      const who = side ? `<span class="log-${side.toLowerCase()}">${nickOf(side)}</span>` : '';
+      const alvo = side === 'A' ? 'B' : 'A';
+      const tgt = side ? `<span class="log-${alvo.toLowerCase()}">${nickOf(alvo)}</span>` : '';
+      const T = `Turno ${action.turno} — `;
       if (action.acao === 'andar') {
         setTokenPos(side, action.x, action.y);
-        logLine(`Turno ${action.turno} — <span class="log-${side.toLowerCase()}">${nickOf(side)}</span> avançou para (${action.x}, ${action.y})`);
       } else if (action.acao === 'ataque') {
-        const alvo = side === 'A' ? 'B' : 'A';
-        const hpMax = match.hpMax[gameIndex][alvo.toLowerCase()];
-        flashHit(alvo);
-        floatDamage(alvo, action.dano);
-        setHp(alvo, action.hpAlvo, hpMax);
-        logLine(`Turno ${action.turno} — <span class="log-${side.toLowerCase()}">${nickOf(side)}</span> atacou <span class="log-${alvo.toLowerCase()}">${nickOf(alvo)}</span> por <strong>${action.dano}</strong> (restam ${action.hpAlvo} HP)`);
+        if (action.esquiva) { floatText(alvo, action.errou ? 'Errou' : 'Esquiva', '#9fd0ff'); logLine(T + `${tgt} ${action.errou ? 'escapou (ofuscado)' : 'esquivou'} do ataque de ${who}`); }
+        else if (action.bloqueado) { floatText(alvo, 'Bloqueado', '#9fd0ff'); logLine(T + `Muralha de vento de ${tgt} bloqueou o tiro de ${who}`); }
+        else { flashHit(alvo); floatDamage(alvo, action.dano); logLine(T + `${who} atacou ${tgt}: <strong>${action.dano}</strong>${action.crit ? ' (crítico)' : ''}`); }
+      } else if (action.acao === 'magia') {
+        const ic = action.elemento ? (PVP_EL_ICON[action.elemento] || '') + ' ' : '';
+        let txt = T + `${who} usou <b>${ic}${action.nome}</b>`;
+        if (action.esquiva) { floatText(alvo, 'Esquiva', '#9fd0ff'); txt += ` — ${tgt} esquivou`; }
+        else if (action.bloqueado) { floatText(alvo, 'Bloqueado', '#9fd0ff'); txt += ` — bloqueada pela muralha de vento`; }
+        else if (action.dano != null) {
+          flashHit(alvo); floatDamage(alvo, action.dano);
+          txt += `: <strong>${action.dano}</strong>${action.crit ? ' (crítico)' : ''}`;
+          if (action.reacao) { floatText(alvo, action.reacao.icone + ' ' + action.reacao.nome, '#ffd36b'); txt += ` · reação <b>${action.reacao.icone} ${action.reacao.nome}</b>`; }
+          if (action.efeito) txt += ` · ${action.efeito.icone} ${action.efeito.nome}`;
+          if (action.cc) { floatText(alvo, action.cc, '#c9a2ff'); txt += ` · <b>${tgt} ${action.cc}</b>`; }
+        } else if (action.cura != null) { if (action.cura > 0) floatText(side, '+' + action.cura, '#7dff9b'); txt += action.cura > 0 ? ` e curou <strong>${action.cura}</strong>` : ' (cura contínua)'; }
+        else if (action.escudo != null) { floatText(side, '🛡 ' + action.escudo, '#8fd3ff'); txt += ` (escudo de ${action.escudo})`; }
+        else if (action.buff != null) { floatText(side, action.nome, '#ffe08a'); txt += ` (+${action.buff}%)`; }
+        else if (action.alvoMove) { setTokenPos(alvo, action.x, action.y); txt += ` e empurrou ${tgt}`; }
+        else if (action.selfMove) { setTokenPos(side, action.x, action.y); txt += ' e se afastou'; }
+        logLine(txt);
+      } else if (action.acao === 'dot') {
+        flashHit(alvo); floatText(alvo, '-' + action.dano, '#ffa060');
+        logLine(T + `${tgt} sofreu ${action.icone} ${action.nome}: <strong>${action.dano}</strong>`);
+      } else if (action.acao === 'atordoado') {
+        floatText(side, '💫', '#c9a2ff'); logLine(T + `${who} está atordoado`);
+      } else if (action.acao === 'preso') {
+        logLine(T + `${who} está preso e não pode andar`);
       } else if (action.acao === 'tempo_esgotado') {
-        logLine(`Turno ${action.turno} — tempo esgotado, decisão por % de vida restante`);
+        logLine(T + `tempo esgotado, decisão por % de vida restante`);
       }
+      syncHp(action);
+      if (action.acao === 'fim' || action.acao === 'tempo_esgotado') lastWinner = action.vencedor || null;
     }
 
     function showBanner(html, ms) {
@@ -8464,13 +8519,14 @@
       if (ms) setTimeout(() => el.banner.classList.remove('pvp-show'), ms);
     }
 
-    function stepDelayMs() { return 420 / speed; }
+    function stepDelayMs() { return 650 / speed; }
 
     function playNextAction() {
       if (!playing) return;
       const log = match.logs[gameIndex];
       if (actionIndex >= log.length) {
-        const wonA = pos.A.hp > 0;
+        const wonA = lastWinner ? lastWinner === 'A' : pos.A.hp > 0; // tempo esgotado: os dois vivos
+        lastWinner = null;
         if (wonA) runningScore.a++; else runningScore.b++;
         el.score.textContent = `${runningScore.a} x ${runningScore.b}`;
         showBanner(`Jogo ${gameIndex + 1} — Vitória de <span>${wonA ? nickOf('A') : nickOf('B')}</span>`, 1400);
@@ -8490,8 +8546,9 @@
         }, 1500);
         return;
       }
-      applyAction(log[actionIndex]);
-      actionIndex++;
+      // aplica TODAS as ações do mesmo turno juntas (1 turno = 1 s de luta)
+      const turno = log[actionIndex].turno;
+      while (actionIndex < log.length && log[actionIndex].turno === turno) { applyAction(log[actionIndex]); actionIndex++; }
       playTimer = setTimeout(playNextAction, stepDelayMs());
     }
 
@@ -13115,7 +13172,13 @@
     else if(r.kind==='push') what = `Empurra os monstros a até ${r.radius} SQM por <b>${r.pushTiles} SQM</b> e deixa ${r.slowPct}% mais lentos por ${r.slowS.toLocaleString('pt-BR')} s`;
     else if(r.kind==='windWall') what = `Bloqueia os tiros de monstros arqueiros/magos em quem estiver a até ${r.radius} SQM por <b>${r.durS.toLocaleString('pt-BR')} s</b>`;
     else if(r.kind==='airAura') what = `Aura no Alvo da cura: depois de ${r.windowS} s vira escudo de <b>${r.convert}%</b> do dano recebido (${r.shieldS} s)`;
+    else if(r.kind==='blink') what = `Piscar: quando um monstro encosta, teleporta até <b>${r.tiles} SQM</b> pra longe dele`;
     if(r.ricochet) what += ` · ricocheteia em +${r.ricochet} alvos (${r.ricochetPct}% do dano)`;
+    if(r.stunS) what += ` · <b>atordoa</b> os monstros por ${r.stunS} s`;
+    if(r.rootS) what += ` · <b>prende</b> os monstros por ${r.rootS} s (não andam)`;
+    if(r.everyN) what += ` · a cada ${r.everyN}º disparo: +${r.nBonusPct}% de dano e ${r.nSlowPct}% de lentidão por ${r.nSlowS} s`;
+    if(r.outerPct) what += ` · ${r.outerPct}% do dano numa área maior`;
+    if(r.effectMult) what += ` · efeito ${r.effectMult}× mais forte`;
     if(r.kind==='attack' && r.slowPct) what += ` · deixa ${r.slowPct}% mais lentos por ${r.slowS} s`;
     const EL = { fogo:'🔥 Fogo', agua:'💧 Água', terra:'🪨 Terra', ar:'🌪️ Ar', luz:'✨ Luz', trevas:'🌑 Trevas' };
     if(r.element && EL[r.element]){
@@ -15932,7 +15995,7 @@
         const width = Math.max(4, Math.min(100, pct));
         return `<div class="resist-row"><span class="resist-label">${t}</span><div class="resist-track"><div class="resist-fill" style="width:${width}%;background:${elemT ? resistBarColor(pct) : 'linear-gradient(180deg,var(--gold),var(--gold-deep))'}"></div></div><span class="resist-pct ${cls}">${pct}%</span></div>`;
       }).join('');
-      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${(()=>{ const mi = MONSTER_INFO_CLIENT[mt.name]; if(!mi) return ''; const st = { melee:'⚔️ Corpo a corpo', ranged:'🏹 De longe', caster:'🔮 Mago' }[mi.style] || ''; const els = monsterElementsFromWeakTo(mt.weakTo); const my = ARCHETYPE_AFFINITY_CLIENT[(archetypes && archetypes.chosen && archetypes.chosen[0])||''] || null; const k = my ? elementMultClient(my, els) : 1; const adv = !my ? '' : k >= 1 ? `<span style="color:#7fd88f;">▲ Vantagem (${ELEMENT_ICON[my]} 100%)</span>` : k <= 0 ? `<span style="color:#e0685a;">✖ Imune ao seu elemento (${ELEMENT_ICON[my]} 0%)</span>` : k <= 0.5 ? `<span style="color:#e0a85a;">▼ Mesmo elemento (${ELEMENT_ICON[my]} 50%)</span>` : `<span>= Neutro (${ELEMENT_ICON[my]} 75%)</span>`; return `<div class="hd-monster-xp" style="font-family:var(--font-mono);font-size:8.5px;color:var(--gold);margin:1px 0 2px;">Nv ${mi.level} · ${Number(mi.xp).toLocaleString('pt-BR')} XP</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--ink-dim);margin-bottom:2px;">${st} · ${els.map(e=>ELEMENT_ICON[e]+' '+ELEMENT_LABEL[e]).join(' + ')}</div><div style="font-family:var(--font-mono);font-size:8px;margin-bottom:2px;">${adv}</div>`; })()}${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros. Os demais afetam o dano de magia de verdade.</div></div>`;
+      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${(()=>{ const mi = MONSTER_INFO_CLIENT[mt.name]; if(!mi) return ''; const st = { melee:'⚔️ Corpo a corpo', ranged:'🏹 De longe', caster:'🔮 Mago' }[mi.style] || ''; const els = monsterElementsFromWeakTo(mt.weakTo); const myL = (myAffinityList && myAffinityList.length) ? myAffinityList : [ARCHETYPE_AFFINITY_CLIENT[(archetypes && archetypes.chosen && archetypes.chosen[0])||'']].filter(Boolean); const my = myL[0] || null; const k = myL.length ? Math.max(...myL.map(a=>elementMultClient(a, els))) : 1; const adv = !my ? '' : k >= 1 ? `<span style="color:#7fd88f;">▲ Vantagem (${ELEMENT_ICON[my]} 100%)</span>` : k <= 0 ? `<span style="color:#e0685a;">✖ Imune ao seu elemento (${ELEMENT_ICON[my]} 0%)</span>` : k <= 0.5 ? `<span style="color:#e0a85a;">▼ Mesmo elemento (${ELEMENT_ICON[my]} 50%)</span>` : `<span>= Neutro (${ELEMENT_ICON[my]} 75%)</span>`; return `<div class="hd-monster-xp" style="font-family:var(--font-mono);font-size:8.5px;color:var(--gold);margin:1px 0 2px;">Nv ${mi.level} · ${Number(mi.xp).toLocaleString('pt-BR')} XP</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--ink-dim);margin-bottom:2px;">${st} · ${els.map(e=>ELEMENT_ICON[e]+' '+ELEMENT_LABEL[e]).join(' + ')}</div><div style="font-family:var(--font-mono);font-size:8px;margin-bottom:2px;">${adv}</div>`; })()}${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros. Os demais afetam o dano de magia de verdade.</div></div>`;
       const toggle = card.querySelector('.hd-monster-toggle');
       const weakBox = card.querySelector('.hd-monster-weak');
       toggle.addEventListener('click', (e)=>{
