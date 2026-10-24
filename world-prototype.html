@@ -6337,7 +6337,7 @@
       } else if(fx.t === 'hot'){
         spawnFloatingText(()=>({x:player.x+8,y:player.y}), `+${fx.amount}`, '#9ff0b0');
       } else if(fx.t === 'blocked'){
-        spawnFloatingText(()=>({x:player.x,y:player.y}), '🌪️ Bloqueado!', '#bfe8ff');
+        spawnFloatingText(()=>({x:player.x,y:player.y}), fx.immune ? '✨ Invulnerável' : '🌪️ Bloqueado!', fx.immune ? '#fff2a8' : '#bfe8ff');
       } else if(fx.t === 'heal'){
         if(fx.amount > 0) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
         if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
@@ -6363,8 +6363,9 @@
         // classifySpellEffect kind:'buff' em huntEngine.js) reaproveitam o
         // mesmo visual de anel/pose do Escudo — feedback claro de "algo
         // aconteceu" mesmo sem sprite dedicado ainda pra cada uma.
-        const buffLabel = { atkPct: 'Ataque', defPct: 'Defesa', magicDmgPct: 'Magia', healingPowerPct: 'Cura', moveSpeedPct: 'Velocidade', basicExtraPct: 'Ataque básico', airAura: 'Aura de Vento', windWall: 'Parede de Vento', push: 'Empurrão', taunt: 'Provocar', blink: 'Piscar!', flow: 'Fluxo de Magia' }[fx.statKey] || 'Buff';
-        spawnFloatingText(()=>({x:player.x,y:player.y}), ['airAura','windWall','push','taunt','blink'].includes(fx.statKey) ? buffLabel : `+${fx.pct}% ${buffLabel}`, '#ffd27a');
+        const buffLabel = { atkPct: 'Ataque', defPct: 'Defesa', magicDmgPct: 'Magia', healingPowerPct: 'Cura', moveSpeedPct: 'Velocidade', basicExtraPct: 'Ataque básico', airAura: 'Aura de Vento', windWall: 'Parede de Vento', push: 'Empurrão', taunt: 'Provocar', blink: 'Piscar!', flow: 'Fluxo de Magia', purify: '✨ Purificado!', evade: '👤 Ilusório!', stalk: '🗡️ Espreitar!', venomousWeapons: '🧪 Armas Venenosas', livingSaint: `+${fx.pct}% Defesa e Cura`, holyZone: '☀️ Círculo de Luz', apotheosis: '🌅 Avatar da Alvorada' }[fx.statKey] || 'Buff';
+        spawnFloatingText(()=>({x:player.x,y:player.y}), ['airAura','windWall','push','taunt','blink','purify','livingSaint','holyZone','apotheosis','evade','stalk','venomousWeapons'].includes(fx.statKey) ? buffLabel : `+${fx.pct}% ${buffLabel}`, '#ffd27a');
+        if(fx.statKey === 'holyZone') spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,240,160,.8)', 80, 900);
         if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,210,122,.75)', 32, 420);
         castPoseUntil = now() + CAST_POSE_MS;
@@ -7080,7 +7081,7 @@
         }
         // efeitos elementais no monstro (Queimadura, Molhado, Veneno...) — ícones em cima do nome
         if(item.monsterSt && item.monsterSt.length){
-          const ICON = { burn:'🔥', wet:'💧', poison:'☠️', shock:'⚡', blind:'✨', curse:'🌑', eclipse:'🌘', stun:'💫', root:'⛓️' };
+          const ICON = { burn:'🔥', wet:'💧', poison:'☠️', shock:'⚡', blind:'✨', curse:'🌑', eclipse:'🌘', stun:'💫', root:'⛓️', holydot:'📿', bleed:'🩸', shred:'🧪', shadowwound:'🗡️', weaken:'🔻' };
           ctx.font = `${Math.round(9*SPRITE_SCALE)}px sans-serif`; ctx.textAlign = 'center';
           ctx.fillText(item.monsterSt.map(k=>ICON[k]||'').join(''), s.x, headY-40*SPRITE_SCALE);
         }
@@ -13183,7 +13184,7 @@
   // Nível/XP/estilo PRÓPRIOS de cada monstro (23/10/2026, MONSTER_INFO no huntEngine.js)
   let MONSTER_INFO_CLIENT = {};
   fetch(API_BASE + '/api/monsterinfo').then(r=>r.json()).then(j=>{ if(j && j.monsters) MONSTER_INFO_CLIENT = j.monsters; }).catch(()=>{});
-  const BUFF_STAT_LABEL = { atkPct:'Ataque', defPct:'Defesa', magicDmgPct:'Dano mágico', healingPowerPct:'Cura', hastePct:'Velocidade de ataque', moveSpeedPct:'Velocidade de corrida (limpa lentidão)', basicExtraPct:'dano extra no ataque básico' };
+  const BUFF_STAT_LABEL = { venomousWeapons:'Armas Venenosas', atkPct:'Ataque', defPct:'Defesa', magicDmgPct:'Dano mágico', healingPowerPct:'Cura', hastePct:'Velocidade de ataque', moveSpeedPct:'Velocidade de corrida (limpa lentidão)', basicExtraPct:'dano extra no ataque básico' };
   function spellEffectLine(archId, sp, level){
     const L = SPELL_STATS && SPELL_STATS[archId] && SPELL_STATS[archId][sp.id];
     if(!L || !L.length) return '';
@@ -13193,14 +13194,21 @@
     if(r.kind==='attack') what = `Dano: <b>${r.mult.toLocaleString('pt-BR')}×</b> o golpe base (escala com ${r.scale==='arma'?'Poder de Arma / Might':'Poder Mágico / Inteligência'})${area}`;
     else if(r.kind==='heal') what = `Cura <b>${r.healPct.toLocaleString('pt-BR')}%</b> da vida máxima`;
     else if(r.kind==='defense') what = `Escudo de <b>${r.shieldPct.toLocaleString('pt-BR')}%</b> da vida por ${r.durS.toLocaleString('pt-BR')} s`;
+    else if(r.kind==='buff' && r.stat==='venomousWeapons') what = `Por <b>${r.durS.toLocaleString('pt-BR')} s</b>, cada ataque básico tira <b>1%</b> da defesa do alvo por 8 s (até 10 acúmulos)`;
     else if(r.kind==='buff') what = `+<b>${r.buffPct.toLocaleString('pt-BR')}%</b> de ${BUFF_STAT_LABEL[r.stat]||r.stat} por ${r.durS.toLocaleString('pt-BR')} s`;
     else if(r.kind==='taunt') what = `Faz os monstros a até <b>${r.radius} SQM</b> atacarem você por ${r.durS} s (não trocam de alvo)`;
+    else if(r.kind==='hot' && r.tickS && r.tickS !== 1) what = `Cura <b>${r.perSecPct.toLocaleString('pt-BR')}%</b> da vida a cada ${r.tickS.toLocaleString('pt-BR')} s durante ${r.durS} s (total ${r.totalPct.toLocaleString('pt-BR')}%) no Alvo da cura`;
     else if(r.kind==='hot') what = `Cura <b>${r.perSecPct.toLocaleString('pt-BR')}%</b> da vida por segundo durante ${r.durS} s (total ${r.totalPct.toLocaleString('pt-BR')}%) no Alvo da cura`;
     else if(r.kind==='manaShield') what = `Escudo de mana: absorve <b>${r.manaPct}%</b> da sua mana máxima em dano por ${r.durS.toLocaleString('pt-BR')} s`;
     else if(r.kind==='push') what = `Empurra os monstros a até ${r.radius} SQM por <b>${r.pushTiles} SQM</b> e deixa ${r.slowPct}% mais lentos por ${r.slowS.toLocaleString('pt-BR')} s`;
     else if(r.kind==='windWall') what = `Bloqueia os tiros de monstros arqueiros/magos em quem estiver a até ${r.radius} SQM por <b>${r.durS.toLocaleString('pt-BR')} s</b>`;
     else if(r.kind==='airAura') what = `Aura no Alvo da cura: depois de ${r.windowS} s vira escudo de <b>${r.convert}%</b> do dano recebido (${r.shieldS} s)`;
     else if(r.kind==='blink') what = `Piscar: quando um monstro encosta, teleporta até <b>${r.tiles} SQM</b> pra longe dele`;
+    else if(r.kind==='evade') what = `Por <b>${r.durS.toLocaleString('pt-BR')} s</b> (+${r.meleeBonus}% com arma corpo a corpo) desvia de todo ataque que não seja em área, mas causa ${r.penalty}% menos dano (usa sozinho quando um monstro encosta e sua vida está abaixo de 60%)`;
+    else if(r.kind==='purify') what = `Remove <b>todos</b> os efeitos negativos do Alvo da cura e dá ${r.immuneS} s de imunidade a efeitos novos (só usa quando há efeito negativo)`;
+    else if(r.kind==='multiBuff') what = r.buffs.map(b=>`+<b>${b.pct}%</b> de ${BUFF_STAT_LABEL[b.stat]||b.stat}`).join(' e ') + ` por ${r.durS.toLocaleString('pt-BR')} s`;
+    else if(r.kind==='holyZone') what = `Área no chão (${r.radius} SQM, ${r.durS} s): a cada segundo, dano de <b>${r.mult.toLocaleString('pt-BR')}×</b> o golpe base nos monstros, cura <b>${r.healPerSecPct.toLocaleString('pt-BR')}%</b> da vida de quem está dentro (você e o grupo) e <b>Cegueira</b> nos monstros (erram ${r.blindPct}% dos ataques por ${r.blindS} s)`;
+    else if(r.kind==='apotheosis') what = `Avatar por <b>${r.durS} s</b>: invulnerável e imune a efeitos, cura ${r.selfHealPct.toLocaleString('pt-BR')}% na hora e ${r.pulseHealPct.toLocaleString('pt-BR')}% a cada ${r.pulseS.toLocaleString('pt-BR')} s no membro do grupo com menos vida. −30% de velocidade e não ataca nesse tempo (usa sozinho quando você cai de 60% ou alguém do grupo de 50%)`;
     else if(r.kind==='manaSurge') what = `Recupera <b>${r.instantPct}%</b> da mana na hora e +${r.tickPct}% a cada ${r.tickS} s por ${r.durS} s (usa quando a mana passa de 60% pra baixo)`;
     if(r.leapTiles) what += ` · <b>avança</b> até o alvo (até ${r.leapTiles} SQM)`;
     if(r.pullTiles) what += ` · <b>puxa</b> ${r.aoe?'os monstros':'o alvo'} pro seu lado (até ${r.pullTiles} SQM)`;
@@ -13213,7 +13221,18 @@
     if(r.ricochet) what += ` · ricocheteia em +${r.ricochet} alvos (${r.ricochetPct}% do dano)`;
     if(r.stunS) what += ` · <b>atordoa</b> os monstros por ${r.stunS} s`;
     if(r.rootS) what += ` · <b>prende</b> os monstros por ${r.rootS} s (não andam)`;
-    if(r.everyN) what += ` · a cada ${r.everyN}º disparo: +${r.nBonusPct}% de dano e ${r.nSlowPct}% de lentidão por ${r.nSlowS} s`;
+    if(r.everyN && r.nBonusPct != null) what += ` · a cada ${r.everyN}º disparo: +${r.nBonusPct}% de dano` + (r.nSlowPct ? ` e ${r.nSlowPct}% de lentidão por ${r.nSlowS} s` : '');
+    if(r.everyN && r.nBonusHealPct != null) what += ` · a cada ${r.everyN}ª: +${r.nBonusHealPct.toLocaleString('pt-BR')}% de cura extra`;
+    if(r.bigArea) what += ` · <b>área grande</b>`;
+    if(r.everyCrit) what += ` · a cada ${r.everyCrit}º uso: <b>crítico garantido</b>`;
+    if(r.noDamage) what = what.replace(/^Dano: [^·]*·?\s*/, 'Sem dano · ');
+    if(r.weakenPct) what += ` · o alvo causa ${r.weakenPct}% menos dano e você +${r.selfAtkPct}% de dano por ${r.weakenS} s`;
+    if(r.altLeap) what += ` · arremessa de longe; no uso seguinte <b>avança</b> até o alvo (até ${r.altLeap} SQM) com ${r.altPct}% do dano e ${r.altSlowPct}% de lentidão por ${r.altSlowS} s`;
+    if(r.venomPct) what += ` · ☠️ Veneno: ${r.venomPct}% do golpe por segundo por ${r.venomS} s · no PvP: −${r.antiHealPct}% de cura recebida`;
+    if(r.multiHit) what += ` · ${r.multiHit} golpes seguidos`;
+    if(r.invulnS) what += ` · você fica <b>invulnerável</b> por ${r.invulnS.toLocaleString('pt-BR')} s`;
+    if(r.holyDotPct) what += ` · 📿 ${r.holyDotPct}% do golpe por segundo por ${r.holyDotS} s`;
+    if(r.selfHealPowerPct) what += ` · em você: +${r.selfHealPowerPct}% de cura por ${r.buffS} s; em aliado: +${r.allyHealRecvPct}% de cura recebida · recupera 3% da mana a cada 2 s por ${r.buffS} s`;
     if(r.outerPct) what += ` · ${r.outerPct}% do dano numa área maior`;
     if(r.effectMult) what += ` · efeito ${r.effectMult}× mais forte`;
     if(r.kind==='attack' && r.slowPct) what += ` · deixa ${r.slowPct}% mais lentos por ${r.slowS} s`;
