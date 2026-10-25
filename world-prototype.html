@@ -2186,6 +2186,31 @@
     animation: pvpFadeIn 0.25s ease-out;
   }
   .pvp-arena-overlay.pvp-open { display: flex; }
+  /* Arena no mundo (24/10/2026): o canvas do jogo vira a arena; o overlay é só o HUD */
+  .pvp-arena-overlay.pvp-world { background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55)); backdrop-filter: none; padding: 0; align-items: stretch; justify-content: stretch; pointer-events: none; }
+  .pvp-world .pvp-arena-box { width: 100%; max-height: none; height: 100%; overflow: visible; pointer-events: none; }
+  .pvp-world .pvp-arena-app { height: 100%; display: flex; flex-direction: column; }
+  .pvp-world .pvp-arena-topbar { width: min(760px, 94%); margin: 12px auto 0; border-radius: 12px; background: rgba(14,13,20,.88); pointer-events: auto; }
+  .pvp-world .pvp-arena-wrap { flex: 1; background: transparent; border: none; padding: 0; position: relative; }
+  .pvp-world .pvp-arena-grid { background: none; border: none; aspect-ratio: auto; height: 100%; overflow: visible; }
+  .pvp-world .pvp-arena-grid::after { display: none; }
+  .pvp-world .pvp-token, .pvp-world .pvp-dmg-float { display: none !important; }
+  .pvp-world .pvp-banner { background: transparent; backdrop-filter: none; pointer-events: none; text-shadow: 0 2px 8px #000, 0 0 2px #000; font-size: 26px; }
+  .pvp-world .pvp-arena-controls { width: min(760px, 94%); margin: 0 auto; border-radius: 12px 12px 0 0; background: rgba(14,13,20,.88); pointer-events: auto; border-top: 1px solid var(--border); }
+  .pvp-world .pvp-arena-log { width: min(760px, 94%); margin: 0 auto 10px; max-height: 110px; background: rgba(10,10,16,.88); pointer-events: auto; }
+  .pvp-world .pvp-arena-close { position: fixed; top: 14px; right: 14px; pointer-events: auto; }
+  /* AO VIVO (pedido do usuário): sem Pausar/Reiniciar/velocidade -- isso só na gravação */
+  .pvp-world.pvp-live .pvp-arena-controls { display: none; }
+  .pvp-world.pvp-live .pvp-arena-log { max-height: 64px; overflow: hidden; background: rgba(10,10,16,.55); border-radius: 10px; pointer-events: none; font-size: 12px; }
+  .pvp-arena-mid { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .pvp-mode-tag { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: #ff5c5c; text-transform: uppercase; }
+  .pvp-top-hp { width: 150px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; margin-top: 4px; }
+  .pvp-arena-side.side-b .pvp-top-hp { margin-left: auto; }
+  .pvp-top-hp > div { height: 100%; width: 100%; background: #57d17a; transition: width .25s ease, background .25s; }
+  .pvp-world .pvp-banner.pvp-count { font-size: 84px; font-weight: 900; color: #ffd27a; letter-spacing: .04em; }
+  body.pvp-watching #top-bar, body.pvp-watching #minimap-panel, body.pvp-watching #chat-window, body.pvp-watching #hunt-action-row,
+  body.pvp-watching #footer-bar, body.pvp-watching #hotbar-hint, body.pvp-watching #party-panel, body.pvp-watching #analyzer-panel,
+  body.pvp-watching #ws-status, body.pvp-watching #build-tag, body.pvp-watching #tut-card { visibility: hidden !important; }
   .pvp-arena-box { position: relative; width: min(980px, 100%); max-height: 92vh; overflow-y: auto; }
   .pvp-arena-close {
     position: absolute; top: -14px; right: -14px; width: 32px; height: 32px;
@@ -3532,14 +3557,16 @@
             <div>
               <div class="pvp-arena-nick" id="pvpNickA">—</div>
               <div class="pvp-arena-classe" id="pvpClasseA">—</div>
+              <div class="pvp-top-hp"><div id="pvpTopHpA"></div></div>
             </div>
           </div>
-          <div class="pvp-arena-score" id="pvpScore">0 x 0</div>
+          <div class="pvp-arena-mid"><div class="pvp-arena-score" id="pvpScore">0 x 0</div><div class="pvp-mode-tag" id="pvpModeTag">● AO VIVO</div></div>
           <div class="pvp-arena-side side-b">
             <span class="pvp-arena-dot" style="background:var(--cor-b)"></span>
             <div>
               <div class="pvp-arena-nick" id="pvpNickB">—</div>
               <div class="pvp-arena-classe" id="pvpClasseB">—</div>
+              <div class="pvp-top-hp"><div id="pvpTopHpB"></div></div>
             </div>
           </div>
         </div>
@@ -3995,6 +4022,7 @@
   let pvpTournamentState = null;
   let pvpMyRegistered = false; // vem em 'pvp:getState'.myRegistered (por-jogador, não dá pra ir na visão pública do torneio)
   let pvpArenaResolvedCache = {};
+  const pvpLiveArenaIds = new Set(); // duelos acontecendo AGORA (pvp:duelStart .. pvp:arenaResolved)
   let pvpthBetTargetArenaId = null;
   let pvpthBetSelectedSide = null;
   // Progresso de PvP do próprio personagem (título, até 3 presets de
@@ -5462,6 +5490,7 @@
   // player.x/player.y (atualizada pelo servidor e, de forma otimista, pelo
   // clique de movimento/WASD) no meio do canvas.
   function getCameraOffset(){
+    if(pvpScene && pvpScene.active){ const cc = pvpScene.cam || pvpScene.center; const c = worldToScreenRaw(cc.x, cc.y); return { x: viewW/2 - c.x, y: viewH/2 - c.y - 12 }; } // arena do torneio (centro da grade de luta)
     // Arena da Torre/Sala do Chefe (22/10/2026): durante a prévia na zona
     // segura a câmera mostra o personagem E o chefe (ponto do meio).
     const pv = towerPreviewFocus();
@@ -5553,6 +5582,7 @@
   (function rcLoad(){
     fetch(URL_BASE + RC_BASE + 'city.json').then(r=>r.json()).then(meta=>{
       RC.meta = meta;
+      if(meta.anim){ RC.anim = new Map(); for(const k in meta.anim){ const a = meta.anim[k], cum = []; let t = 0; a.d.forEach(ms => { t += Math.max(30, ms || 100); cum.push(t); }); RC.anim.set(+k, { f: a.f, cum, tot: t }); } } // animações (fogo, água, tochas...)
       meta.changes.forEach(c=> RC.changes.set(c[0]+','+c[1]+','+c[2], { x:c[3], y:c[4], z:c[5] }));
       meta.atlas.pages.forEach((p,i)=>{ const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = ()=>{ RC.pages[i] = img; }; img.src = URL_BASE + RC_BASE + p; });
       // andar principal e os de cima primeiro (são os que aparecem na tela), depois o resto
@@ -5570,6 +5600,7 @@
     return !!(bits[i>>3] & (1 << (i&7)));
   }
   function rcSprite(idx, dx, dy, size){
+    const an = RC.anim && RC.anim.get(idx); if(an) idx = huntRealAnimIdx(an);
     const pg = RC.pages[idx >> 12]; if(!pg) return;
     const j = idx & 4095;
     ctx.drawImage(pg, (j & 63)*32, (j >> 6)*32, 32, 32, dx, dy, size, size);
@@ -5729,6 +5760,9 @@
     const base = URL_BASE + 'hunts/' + id + '/';
     fetch(base + 'meta.json').then(r=>r.json()).then(meta=>{
       D.meta = meta;
+      // ANIMAÇÕES DO MAPA REAL (24/10/2026): meta.anim = { idx: { f:[idx por fase], d:[ms por fase] } }
+      // (fogo, água, tochas, lava... as fases do próprio .dat, ver huntRealSprite)
+      if(meta.anim){ D.anim = new Map(); for(const k in meta.anim){ const a = meta.anim[k], cum = []; let t = 0; a.d.forEach(ms => { t += Math.max(30, ms || 100); cum.push(t); }); D.anim.set(+k, { f: a.f, cum, tot: t }); } }
       (meta.atlas ? meta.atlas.pages : []).forEach((p,i)=>{ const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = ()=>{ D.pages[i] = img; }; img.src = base + p; });
       // andar principal primeiro (é o que aparece na entrada)
       const order = meta.floors.slice().sort((a,b)=> Math.abs(a-meta.mainZ) - Math.abs(b-meta.mainZ));
@@ -5747,10 +5781,16 @@
     return huntRealBand(m, wx) === huntRealBand(m, player.x);
   }
   let huntRealPagesNow = null; // páginas do atlas da caçada sendo desenhada
+  let huntRealTargetCtx = null; // != null: desenha num canvas de cache (arena do duelo) em vez da tela
+  let huntRealAnimNow = null;   // animações do mapa sendo desenhado (D.anim)
+  let huntRealAnimDefer = null; // != null: guarda os sprites animados em vez de desenhar (cache da arena)
+  function huntRealAnimIdx(an){ const t = performance.now() % an.tot; let i = 0; while(i < an.cum.length - 1 && t >= an.cum[i]) i++; return an.f[i]; }
   function huntRealSprite(idx, dx, dy, size){
+    const an = huntRealAnimNow && huntRealAnimNow.get(idx);
+    if(an){ if(huntRealAnimDefer){ huntRealAnimDefer.push(idx, dx, dy, size); return; } idx = huntRealAnimIdx(an); }
     const pg = huntRealPagesNow && huntRealPagesNow[idx >> 12]; if(!pg) return;
     const j = idx & 4095;
-    ctx.drawImage(pg, (j & 63)*32, (j >> 6)*32, 32, 32, dx, dy, size, size);
+    (huntRealTargetCtx || ctx).drawImage(pg, (j & 63)*32, (j >> 6)*32, 32, 32, dx, dy, size, size);
   }
   function huntRealDrawArr(arr, tlx, tly, k, size){
     for(let q=0; q<arr.length; q+=3) huntRealSprite(arr[q], Math.round(tlx + arr[q+1]*k), Math.round(tly + arr[q+2]*k), size);
@@ -5760,7 +5800,7 @@
     const D = huntRealLoad(map);
     const meta = D.meta;
     if(!meta || !D.pages[0]) return null;
-    huntRealPagesNow = D.pages;
+    huntRealPagesNow = D.pages; huntRealAnimNow = D.anim || null;
     const pb = huntRealBand(map, player.x), pz = map.floors[Math.max(0, Math.min(map.floors.length-1, pb))];
     if(!D.floors[pz]) return null;
     const TS = TILE_STEP, tilePx = TS*WORLD_SCALE, k = tilePx/32, size = Math.ceil(tilePx)+1, half = tilePx/2;
@@ -7433,6 +7473,230 @@
   }
 
   let lastT = now();
+
+  /* =====================================================================
+     ARENA DO TORNEIO NO MUNDO (24/10/2026, pedido do usuário): a luta do
+     torneio aparece como na caçada/chefe — os 2 personagens de verdade (roupa,
+     cabelo, asas, aura) "teleportados" para uma arena, com as animações das
+     habilidades (SpellFxManager), números de dano, barras de vida e efeitos.
+     A luta roda NO SERVIDOR, em tempo real, no motor de duelo (huntEngine.
+     startDuel = o motor da caçada); aqui só desenhamos os quadros que ele
+     manda (ver window.pvpArenaView mais abaixo).
+     ===================================================================== */
+  const PVP_ARENA_W = 15, PVP_ARENA_H = 10;
+  const PVP_ARENA_ORIGIN = { x: -60000, y: -60000 }; // longe de tudo: a câmera fica só na arena
+  const PVP_ARENA_THEME = { floor: '2159', floorAlt: '2159', wall: '2255_v2' }; // reserva, enquanto o mapa real carrega
+  // Arena real (24/10/2026, pedido do usuário: "procure no nosso mapa uma arena"):
+  // pátio murado da ilha a oeste do 1098.otbm (assets/hunts/pvp_arena). A grade
+  // 15x10 do simulador fica no meio do pátio: tile (tx,ty) = real (gx+tx, gy+ty).
+  // Arenas reais (24/10/2026, usuário: "a 1 e a 3 aleatoriamente, e para a final a 2"):
+  // assets/hunts/<id>/ (meta traz x0/y0, andar principal, centro e enquadramento).
+  // O servidor manda qual é em pvp:duelStart (mapId) e em cada quadro (fr.m).
+  const PVP_MAPS = ['pvp_arena_fosso', 'pvp_arena_neve', 'pvp_arena_final'];
+  const PVP_REAL = { id: 'pvp_arena_fosso', x0: 5749, y0: 5177 }; // trocado por pvpSetMap
+  function pvpSetMap(id){
+    if(!id || !PVP_MAPS.includes(id)) id = 'pvp_arena_fosso';
+    PVP_REAL.id = id;
+    const D = huntRealLoad({ id }); // já começa a baixar
+    if(D.meta){ PVP_REAL.x0 = D.meta.x0; PVP_REAL.y0 = D.meta.y0; }
+    return D;
+  }
+  function pvpTileToWorld(tx, ty){ return { x: PVP_ARENA_ORIGIN.x + tx * TILE_STEP, y: PVP_ARENA_ORIGIN.y + ty * TILE_STEP }; }
+  var pvpScene = { // var (não const): getCameraOffset pode ser chamado antes desta linha rodar
+    active: false, F: { A: null, B: null }, zones: [],
+    center: { x: PVP_ARENA_ORIGIN.x, y: PVP_ARENA_ORIGIN.y }, // meio da arena (meta.center), recalculado a cada quadro
+    clock: null, // relógio da transmissão (ms), definido pela tela do duelo
+  };
+  // DUELO AO VIVO (24/10/2026): o motor do servidor (huntEngine.startDuel)
+  // manda a posição em tiles REAIS do mapa + o passo em andamento (de X,Y
+  // pra TX,TY entre ss e se, no relógio da transmissão) — igual a caçada.
+  function pvpRealToWorld(X, Y){ return { x: PVP_ARENA_ORIGIN.x + (X - PVP_REAL.x0) * TILE_STEP, y: PVP_ARENA_ORIGIN.y + (Y - PVP_REAL.y0) * TILE_STEP }; }
+  // folga curta entre 2 passos (o próximo passo já chega antes, ver "ahead"): parado = pé no chão na hora
+  const PVP_STEP_GRACE_MS = 70;
+  function pvpFighterPose(f){
+    if(!f || !f.s) return { x: pvpScene.center.x, y: pvpScene.center.y, moving: false, dir: 'down' };
+    const c = pvpScene.clock ? pvpScene.clock() : 0, q = f.s;
+    const a = pvpRealToWorld(q.X, q.Y), b = pvpRealToWorld(q.TX, q.TY);
+    if(q.se > q.ss && c < q.se){
+      const k = Math.max(0, Math.min(1, (c - q.ss) / (q.se - q.ss)));
+      const dx = q.TX - q.X, dy = q.TY - q.Y; // andando: olha pra onde anda (regra da caçada: diagonal = de perfil)
+      f._stepDir = dx !== 0 ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : dy < 0 ? 'up' : (f._stepDir || q.dir));
+      return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, moving: true, dir: f._stepDir };
+    }
+    if(q.se > q.ss && c < q.se + PVP_STEP_GRACE_MS) return { x: b.x, y: b.y, moving: true, dir: f._stepDir || q.dir }; // entre 2 passos: mesma direção, sem virar e desvirar
+    // terminou o passo: o próximo chega no quadro seguinte (até 100 ms) -- mantém o
+    // ciclo de andar nesse intervalo (igual WALK_ANIM_MOVE_GRACE_MS da caçada), sem "piscar" parado
+    return { x: b.x, y: b.y, moving: false, dir: q.dir };
+  }
+  function pvpFighterWorld(f){ const p = pvpFighterPose(f); return { x: p.x, y: p.y }; }
+  const PVP_ZONE_COLOR = { holyZone: 'rgba(255,226,122,', witchZone: 'rgba(160,90,220,', dmgZone: 'rgba(200,220,120,', earthZone: 'rgba(150,110,60,', fire: 'rgba(255,120,40,' };
+  // chão/objetos do mapa real da arena; devolve { objs, upper } ou null se ainda carregando
+  // chão/objetos do mapa real da arena; devolve { objs, upper } ou null se ainda carregando
+  function drawPvpRealMap(toScreen){
+    const D = huntRealLoad({ id: PVP_REAL.id });
+    const meta = D.meta;
+    if(!meta) return null;
+    PVP_REAL.x0 = meta.x0; PVP_REAL.y0 = meta.y0;
+    const MZ = meta.mainZ;
+    if(!D.pages[0] || !D.floors[MZ]) return null;
+    huntRealPagesNow = D.pages; huntRealAnimNow = D.anim || null;
+    const TS = TILE_STEP, tilePx = TS * WORLD_SCALE, k = tilePx / 32, size = Math.ceil(tilePx) + 1, half = tilePx / 2, footOff = TILE_FOOT_OFFSET;
+    const prevSmooth = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+    const tl = screenToWorld(0, 0), br = screenToWorld(viewW, viewH);
+    // andar z visto do andar principal (regra do Tibia: cada andar de baixo desloca 1 tile)
+    const toW = (X, Y, z) => ({ x: PVP_ARENA_ORIGIN.x + (X - meta.x0 + (z - MZ)) * TS, y: PVP_ARENA_ORIGIN.y + (Y - meta.y0 + (z - MZ)) * TS });
+    const rx0 = Math.floor((tl.x - PVP_ARENA_ORIGIN.x) / TS) + meta.x0 - 2, rx1 = Math.ceil((br.x - PVP_ARENA_ORIGIN.x) / TS) + meta.x0 + 3;
+    const ry0 = Math.floor((tl.y - PVP_ARENA_ORIGIN.y) / TS) + meta.y0 - 2, ry1 = Math.ceil((br.y - PVP_ARENA_ORIGIN.y) / TS) + meta.y0 + 4;
+    const eachTile = (z, fn) => {
+      const F = D.floors[z]; if(!F) return;
+      const d = z - MZ;
+      for(let Y = ry0 - d; Y <= ry1 - d; Y++){
+        if(Y < meta.y0 || Y >= meta.y0 + meta.h) continue;
+        for(let X = rx0 - d; X <= rx1 - d; X++){
+          if(X < meta.x0 || X >= meta.x0 + meta.w) continue;
+          const t = F.get((Y - meta.y0) * meta.w + (X - meta.x0)); if(t) fn(t, toW(X, Y, z));
+        }
+      }
+    };
+    const drawAll = (t, w) => { const s = toScreen(w.x, w.y - footOff); huntRealDrawArr(t[1], s.x - half, s.y - half, k, size); huntRealDrawArr(t[2], s.x - half, s.y - half, k, size); huntRealDrawArr(t[3], s.x - half, s.y - half, k, size); };
+    const below = (meta.floors || []).filter(z => z > MZ).sort((a, b) => b - a);   // de baixo pra cima
+    // andares de cima só se nada cobre o meio da arena (senão é teto de caverna/telhado)
+    const above = [];
+    { const cx = (meta.center || [meta.x0 + meta.w / 2])[0], cy = (meta.center || [0, meta.y0 + meta.h / 2])[1];
+      for(let zu = MZ - 1; zu >= 0; zu--){ const Fu = D.floors[zu]; if(!Fu) continue; const dd = MZ - zu, x = cx + dd - meta.x0, y = cy + dd - meta.y0; if(Fu.has(y * meta.w + x)) break; above.push(zu); } }
+    // CACHE (desempenho): câmera fixa -> chão (andares de baixo + chão do principal) e
+    // andares de cima desenhados 1 vez num canvas fora da tela; 1 drawImage por quadro
+    const pagesOk = !!(meta.atlas && D.pages.filter(Boolean).length === meta.atlas.pages.length && (meta.floors || []).every(z => D.floors[z]));
+    const cam = getCameraOffset();
+    const key = [PVP_REAL.id, TILE_SCREEN_PX, viewW, viewH, Math.round(cam.x), Math.round(cam.y)].join('|');
+    const C = drawPvpRealMap._c || (drawPvpRealMap._c = { key: null, ground: document.createElement('canvas'), up: document.createElement('canvas') });
+    if(pagesOk && C.key !== key){
+      [C.ground, C.up].forEach(cv => { cv.width = viewW; cv.height = viewH; });
+      const g = C.ground.getContext('2d'), u = C.up.getContext('2d');
+      g.imageSmoothingEnabled = false; u.imageSmoothingEnabled = false;
+      huntRealTargetCtx = g; huntRealAnimDefer = C.animG = [];
+      below.forEach(z => eachTile(z, drawAll));
+      eachTile(MZ, (t, w) => { const s = toScreen(w.x, w.y - footOff); huntRealDrawArr(t[1], s.x - half, s.y - half, k, size); });
+      huntRealTargetCtx = u; huntRealAnimDefer = C.animU = [];
+      above.forEach(z => eachTile(z, drawAll));
+      huntRealTargetCtx = null; huntRealAnimDefer = null;
+      C.key = key;
+    }
+    const cached = pagesOk && C.key === key;
+    const drawDeferred = L => { for(let q = 0; q < L.length; q += 4) huntRealSprite(L[q], L[q + 1], L[q + 2], L[q + 3]); };
+    if(cached){ ctx.drawImage(C.ground, 0, 0); drawDeferred(C.animG); } // água/lava/fogo do chão animando por cima do cache
+    else below.forEach(z => eachTile(z, drawAll));
+    const objs = [];
+    eachTile(MZ, (t, w) => {
+      const s = toScreen(w.x, w.y - footOff);
+      if(!cached) huntRealDrawArr(t[1], s.x - half, s.y - half, k, size);
+      if(t[2].length) objs.push({ y: w.y - 1, draw: () => { const s2 = toScreen(w.x, w.y - footOff); huntRealDrawArr(t[2], s2.x - half, s2.y - half, k, size); } });
+      if(t[3].length) objs.push({ y: w.y + TS * 0.5, draw: () => { const s2 = toScreen(w.x, w.y - footOff); huntRealDrawArr(t[3], s2.x - half, s2.y - half, k, size); } });
+    });
+    ctx.imageSmoothingEnabled = prevSmooth;
+    const upper = () => { if(cached){ ctx.drawImage(C.up, 0, 0); huntRealPagesNow = D.pages; huntRealAnimNow = D.anim || null; drawDeferred(C.animU); return; } const ps = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; huntRealPagesNow = D.pages; huntRealAnimNow = D.anim || null; above.forEach(z => eachTile(z, drawAll)); ctx.imageSmoothingEnabled = ps; };
+    return { objs, upper };
+  }
+  function drawPvpFighter(side, f, pose, tNow){
+    const sc = worldToScreen(pose.x, pose.y);
+    const opp = pvpScene.F[side === 'A' ? 'B' : 'A'];
+    const dir = pose.dir || (side === 'A' ? 'right' : 'left');
+    // mesmo formato do updateWalkAnim da caçada: parado = idle (quadro de pé), andando = ciclo a cada WALK_ANIM_FRAME_MS
+    const anim = { dir, frameIdx: pose.moving ? Math.floor((pvpScene.clock ? pvpScene.clock() : tNow) / WALK_ANIM_FRAME_MS) : 0, idle: !pose.moving, pose: !pose.moving && tNow < (f.poseUntil || 0) }; // pose de ataque só parado (não briga com o ciclo de andar)
+    const L = f.look || {};
+    ctx.save();
+    if(f.ko){ ctx.globalAlpha = 0.35; }
+    // sem sombra/anel extra embaixo (dava a impressão de flutuar): desenha igual a caçada
+    let dr = null;
+    try { dr = drawCharacterLayers(sc, 0, L.gender || 'male', L.hairId || 1, L.outfit || 'padrao', L.wings || null, L.aura || null, side === 'A' ? '#5a7bd6' : '#d65a5a', undefined, L.hairStyleId || 1, anim, L.cosmeticColors || { head: 0, body: 0, legs: 0, feet: 0 }); } catch(_){}
+    if(tNow < (f.hitUntil || 0)){ // clarão de dano
+      ctx.globalAlpha = 0.45 * ((f.hitUntil - tNow) / 200); ctx.fillStyle = '#ff4040';
+      ctx.beginPath(); ctx.ellipse(sc.x, sc.y - 22 * SPRITE_SCALE, 16 * SPRITE_SCALE, 26 * SPRITE_SCALE, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    const headY = (dr && dr.topY != null ? dr.topY : sc.y - 56 * SPRITE_SCALE);
+    f._headScr = headY;
+    if(f.shieldUntil > tNow){ ctx.save(); ctx.globalAlpha = 0.35 + 0.15 * Math.sin(tNow / 120); ctx.strokeStyle = '#8fd3ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(sc.x, sc.y - 22 * SPRITE_SCALE, 22 * SPRITE_SCALE, 30 * SPRITE_SCALE, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+    ctx.font = `bold ${Math.round(10 * SPRITE_SCALE)}px "JetBrains Mono"`; ctx.textAlign = 'center';
+    const lx = sc.x + (f._lx || 0); // colados um no outro: nome/barra abrem pros lados
+    ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.strokeText(f.nick || side, lx, headY - 12 * SPRITE_SCALE);
+    ctx.fillStyle = side === 'A' ? '#9cc0ff' : '#ff9c9c'; ctx.fillText(f.nick || side, lx, headY - 12 * SPRITE_SCALE);
+    drawFloatingHpBar(lx, headY - 7 * SPRITE_SCALE, f.hpMax ? f.hp / f.hpMax : 1, 40 * SPRITE_SCALE, 5 * SPRITE_SCALE);
+    const icons = Object.entries(f.st || {}).filter(([, v]) => v.until > tNow).map(([, v]) => v.icon);
+    if(icons.length){ ctx.font = `${Math.round(11 * SPRITE_SCALE)}px sans-serif`; ctx.fillText(icons.slice(0, 5).join(''), lx, headY - 24 * SPRITE_SCALE); }
+    if(f.ko){ ctx.font = `${Math.round(16 * SPRITE_SCALE)}px sans-serif`; ctx.fillText('💀', lx, headY - 26 * SPRITE_SCALE); }
+  }
+  function drawPvpScene(){
+    if(pvpScene.onFrame) pvpScene.onFrame(); // aplica os quadros do servidor antes de desenhar (mesmo relógio da tela)
+    { // arena inteira na tela (meta.fit) e câmera FIXA no meio dela (meta.center)
+      const meta = huntRealLoad({ id: PVP_REAL.id }).meta;
+      const fit = meta && meta.fit, fw = fit ? fit[2] - fit[0] + 1 : 20, fh = fit ? fit[3] - fit[1] + 1 : 16;
+      const px = Math.max(24, Math.min(40, Math.floor(Math.min(viewW / (fw + 2), (viewH - 150) / (fh + 1)))));
+      if(px !== TILE_SCREEN_PX){ TILE_SCREEN_PX = px; WORLD_SCALE = TILE_SCREEN_PX / TILE_STEP; }
+      if(meta){ const c = fit ? [(fit[0] + fit[2]) / 2, (fit[1] + fit[3]) / 2] : meta.center; pvpScene.center = { x: PVP_ARENA_ORIGIN.x + (c[0] - meta.x0) * TILE_STEP, y: PVP_ARENA_ORIGIN.y + (c[1] - meta.y0) * TILE_STEP + 6 }; }
+      pvpScene.cam = null; }
+    const toScreen = worldToScreen;
+    ctx.fillStyle = '#05070a'; ctx.fillRect(0, 0, viewW, viewH);
+    const real = drawPvpRealMap(toScreen);
+    if(!real){ ctx.fillStyle = '#9aa4b0'; ctx.font = 'bold 16px "JetBrains Mono"'; ctx.textAlign = 'center'; ctx.fillText('Carregando a arena...', viewW / 2, viewH / 2); }
+    // zonas no chão (Circle of Light, corvos, chuva de flechas, terra abençoada, fogo)
+    const tNow = now();
+    pvpScene.zones = pvpScene.zones.filter(z => z.until > tNow);
+    pvpScene.zones.forEach(z => {
+      const c = toScreen(z.x, z.y), rx = (z.r + 0.5) * TILE_SCREEN_PX, ry = rx * 0.62;
+      const pulse = 0.18 + 0.08 * Math.sin(tNow / 180);
+      const base = PVP_ZONE_COLOR[z.kind] || 'rgba(255,255,255,';
+      ctx.save();
+      ctx.fillStyle = base + pulse + ')'; ctx.beginPath(); ctx.ellipse(c.x, c.y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = base + '0.65)'; ctx.lineWidth = 2; ctx.stroke();
+      if(z.kind === 'witchZone' || z.kind === 'dmgZone'){ // corvos / flechas caindo
+        for(let i = 0; i < 7; i++){
+          const ang = (tNow / 600 + i * 0.9) % (Math.PI * 2), rr = (0.3 + (i % 3) * 0.3);
+          const px = c.x + Math.cos(ang + i) * rx * rr, py = c.y + Math.sin(ang * 1.3 + i) * ry * rr - 10;
+          ctx.fillStyle = z.kind === 'witchZone' ? 'rgba(30,10,40,.9)' : 'rgba(230,230,200,.85)';
+          ctx.beginPath(); if(z.kind === 'witchZone') ctx.ellipse(px, py, 5, 2.5, ang, 0, Math.PI * 2); else ctx.rect(px - 1, py - 7, 2, 9); ctx.fill();
+        }
+      }
+      ctx.restore();
+    });
+    // objetos do mapa + personagens, ordenados por profundidade
+    const list = real ? real.objs.slice() : [];
+    const poses = {};
+    ['A', 'B'].forEach(side => { const f = pvpScene.F[side]; if(!f || !f.s) return; const pose = pvpFighterPose(f); poses[side] = pose; f._lx = 0; list.push({ y: pose.y, draw: () => drawPvpFighter(side, f, pose, tNow) }); });
+    if(poses.A && poses.B){ // perto um do outro: afasta os rótulos na horizontal pra não empilhar
+      const a = worldToScreen(poses.A.x, poses.A.y), b = worldToScreen(poses.B.x, poses.B.y);
+      const dx = b.x - a.x, need = 70 * SPRITE_SCALE;
+      if(Math.abs(dx) < need && Math.abs(b.y - a.y) < 80 * SPRITE_SCALE){
+        const sh = (need - Math.abs(dx)) / 2, sgn = dx >= 0 ? 1 : -1;
+        pvpScene.F.A._lx = -sh * sgn; pvpScene.F.B._lx = sh * sgn;
+      }
+    }
+    list.sort((a, b) => a.y - b.y).forEach(o => o.draw());
+    if(real) real.upper();
+    // animações de habilidade, números flutuantes e anéis
+    SpellFxManager.draw(toScreen);
+    for(let i = floatingTexts.length - 1; i >= 0; i--){
+      const ft = floatingTexts[i]; const age = now() - ft.bornAt;
+      if(age > FLOAT_LIFETIME_MS){ floatingTexts.splice(i, 1); continue; }
+      const anchor = ft.getAnchor(); const s2 = toScreen(anchor.x, anchor.y);
+      const rise = (age / FLOAT_LIFETIME_MS) * 26; ctx.globalAlpha = Math.max(0, 1 - age / FLOAT_LIFETIME_MS);
+      // texto nasce ACIMA dos ícones de efeito (nome/barra ficam livres)
+      const fF = anchor.side && pvpScene.F[anchor.side];
+      const baseY = (fF && fF._headScr != null) ? fF._headScr - 30 * SPRITE_SCALE : s2.y - 40;
+      const fy = baseY - rise - (ft.yOffset || 0);
+      ctx.font = ft.big ? 'bold 15px "JetBrains Mono"' : 'bold 12px "JetBrains Mono"'; ctx.textAlign = 'center';
+      const fx = s2.x + ((fF && fF._lx) || 0);
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.strokeText(ft.text, fx, fy);
+      ctx.fillStyle = ft.color; ctx.fillText(ft.text, fx, fy); ctx.globalAlpha = 1;
+    }
+    for(let i = fxRings.length - 1; i >= 0; i--){
+      const r = fxRings[i]; const age = now() - r.bornAt;
+      if(age > r.durationMs){ fxRings.splice(i, 1); continue; }
+      const t = age / r.durationMs; const anchor = r.getAnchor(); const s2 = toScreen(anchor.x, anchor.y);
+      ctx.globalAlpha = 1 - t; ctx.lineWidth = 2; ctx.strokeStyle = r.color;
+      ctx.beginPath(); ctx.arc(s2.x, s2.y - 20, r.maxRadius * t, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  }
   function loop(){
     const t = now(); const dt = Math.min(.05,(t-lastT)/1000); lastT = t;
     if(player.gold > lastGold) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.gold-lastGold} 🪙`, '#f0d38a');
@@ -7446,7 +7710,7 @@
     updateTrainingVisual();
     spawnAuraParticles(dt);
     updateStatusLine();
-    draw();
+    if(pvpScene.active){ try { drawPvpScene(); } catch(e){ console.error('[arena]', e); } requestAnimationFrame(loop); } else draw(); // arena do torneio substitui o mundo enquanto a luta passa (draw() é quem pede o próximo quadro)
   }
   requestAnimationFrame(loop);
 
@@ -8157,21 +8421,27 @@
           if (match) { match.odds = msg.odds; renderPvpTournamentIfOpen(); }
           break;
         }
-        case 'pvp:arenaResolved': {
-          // Cache CRU por arenaId, sempre -- inclusive pra confrontos que não
-          // são meus, pra "Assistir Ao Vivo" da Central do Torneio poder abrir
-          // o replay de qualquer arena (decisão 19 do doc, ver
-          // pvpthOpenSpectatorView mais abaixo).
-          pvpArenaResolvedCache[msg.arenaId] = msg;
-          const fichas = pvpArenaFichas[msg.arenaId];
-          const meuIdArena = SELECTED_CHARACTER && SELECTED_CHARACTER.id;
-          const souEuNaArena = fichas && meuIdArena && (fichas.playerA.characterId === meuIdArena || fichas.playerB.characterId === meuIdArena);
-          if (souEuNaArena && window.pvpArenaView) {
+        // DUELO AO VIVO (24/10/2026): o servidor roda a luta no motor e manda
+        // os quadros; os 2 duelistas são "teleportados" pra arena na hora.
+        case 'pvp:duelStart': {
+          pvpArenaFichas[msg.arenaId] = { playerA: msg.playerA, playerB: msg.playerB };
+          pvpLiveArenaIds.add(msg.arenaId);
+          const meuIdDuelo = SELECTED_CHARACTER && SELECTED_CHARACTER.id;
+          const souEuNoDuelo = meuIdDuelo && (msg.playerA.characterId === meuIdDuelo || msg.playerB.characterId === meuIdDuelo);
+          if (souEuNoDuelo && window.pvpArenaView) {
             if (window.pvpOpponentModal) window.pvpOpponentModal.close();
-            document.getElementById('pvpArenaOverlay').classList.add('pvp-open');
-            window.pvpArenaView.loadMatch(msg, fichas.playerA, fichas.playerB);
-            window.pvpArenaView.play();
+            window.pvpArenaView.openLive(msg.arenaId, msg.playerA, msg.playerB, msg.mapId);
           }
+          refreshPvpTournamentIfOpen();
+          break;
+        }
+        case 'pvp:duelFrame':
+          if (window.pvpArenaView) window.pvpArenaView.pushFrame(msg.arenaId, msg.fr);
+          break;
+        case 'pvp:arenaResolved': {
+          msg.receivedAt = Date.now();
+          pvpArenaResolvedCache[msg.arenaId] = msg;
+          pvpLiveArenaIds.delete(msg.arenaId);
           refreshPvpTournamentIfOpen();
           break;
         }
@@ -8364,262 +8634,232 @@
      ===================================================================== */
   (function () {
     'use strict';
-
-    const ARENA_W = 15, ARENA_H = 10; // ver pvpEngine.ARENA_W/ARENA_H -- tem que bater com o servidor
-
-    let match = null;      // { playerA, playerB, score, logs: [[...]], hpMax: [{a,b}] }
-    let gameIndex = 0;
-    let actionIndex = 0;
-    let speed = 1;
-    let playing = false;
-    let playTimer = null;
-    let pos = { A: {}, B: {} };
-    // Placar de VERDADE do payload (match.score) é o resultado FINAL do
-    // Md3 -- mostrá-lo antes da hora entrega o resultado antes da animação
-    // terminar. runningScore só conta jogos que já foram ASSISTIDOS até o fim.
-    let runningScore = { a: 0, b: 0 };
-    let lastWinner = null; // 'fim'/'tempo_esgotado' do log diz quem venceu o jogo
-
+    /* TELA DO DUELO (24/10/2026): mostra o duelo do MOTOR do servidor
+       (huntEngine.startDuel), quadro a quadro, como na caçada.
+       AO VIVO: quadros chegando por 'pvp:duelFrame' (com ~250 ms de folga
+       pra ficar liso), sem controles. GRAVAÇÃO: os quadros salvos, com
+       Pausar/Reiniciar/1x-2x-4x. */
+    const LIVE_DELAY_MS = 300;
+    let mode = 'live', arenaId = null, fichas = { A: null, B: null };
+    let frames = [], fIdx = 0, clockMs = 0, speed = 1, playing = false, timer = null, lastReal = 0, liveOffset = null;
+    let curGame = 0, lastPhase = null, countShown = -1, finished = false;
     const el = {
       overlay: document.getElementById('pvpArenaOverlay'),
-      grid: document.getElementById('pvpGrid'),
-      tokenA: document.getElementById('pvpTokenA'),
-      tokenB: document.getElementById('pvpTokenB'),
-      hpFillA: document.getElementById('pvpHpFillA'),
-      hpFillB: document.getElementById('pvpHpFillB'),
-      banner: document.getElementById('pvpBanner'),
-      nickA: document.getElementById('pvpNickA'),
-      nickB: document.getElementById('pvpNickB'),
-      classeA: document.getElementById('pvpClasseA'),
-      classeB: document.getElementById('pvpClasseB'),
-      score: document.getElementById('pvpScore'),
-      playBtn: document.getElementById('pvpPlayBtn'),
-      restartBtn: document.getElementById('pvpRestartBtn'),
-      closeBtn: document.getElementById('pvpArenaCloseBtn'),
-      turnLabel: document.getElementById('pvpTurnLabel'),
-      log: document.getElementById('pvpLog'),
+      topHpA: document.getElementById('pvpTopHpA'), topHpB: document.getElementById('pvpTopHpB'),
+      modeTag: document.getElementById('pvpModeTag'), banner: document.getElementById('pvpBanner'),
+      nickA: document.getElementById('pvpNickA'), nickB: document.getElementById('pvpNickB'),
+      classeA: document.getElementById('pvpClasseA'), classeB: document.getElementById('pvpClasseB'),
+      score: document.getElementById('pvpScore'), playBtn: document.getElementById('pvpPlayBtn'),
+      restartBtn: document.getElementById('pvpRestartBtn'), closeBtn: document.getElementById('pvpArenaCloseBtn'),
+      turnLabel: document.getElementById('pvpTurnLabel'), log: document.getElementById('pvpLog'),
       speedBtns: document.querySelectorAll('#pvpArenaOverlay [data-speed]'),
     };
-
-    function pctFromSqm(x, y) {
-      return { left: ((x - 0.5) / ARENA_W) * 100, top: ((y - 0.5) / ARENA_H) * 100 };
-    }
-
-    function hpColor(pct) {
-      if (pct > 0.5) return '#57d17a';
-      if (pct > 0.2) return '#ffcf4d';
-      return '#ff5c5c';
-    }
-
-    function setTokenPos(side, x, y) {
-      const p = pctFromSqm(x, y);
-      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
-      tokenEl.style.left = p.left + '%';
-      tokenEl.style.top = p.top + '%';
-      pos[side].x = x; pos[side].y = y;
-    }
-
-    function setHp(side, hp, hpMax) {
-      const pct = Math.max(0, Math.min(1, hp / (hpMax || 1)));
-      const fillEl = side === 'A' ? el.hpFillA : el.hpFillB;
-      fillEl.style.width = (pct * 100) + '%';
-      fillEl.style.background = hpColor(pct);
-      pos[side].hp = hp;
-      if (hp <= 0) (side === 'A' ? el.tokenA : el.tokenB).classList.add('pvp-token--ko');
-    }
-
-    function flashHit(side) {
-      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
-      tokenEl.classList.remove('pvp-token--hit');
-      void tokenEl.offsetWidth;
-      tokenEl.classList.add('pvp-token--hit');
-    }
-
-    function floatDamage(side, dano) {
-      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
-      const f = document.createElement('div');
-      f.className = 'pvp-dmg-float';
-      f.textContent = '-' + dano;
-      f.style.left = tokenEl.style.left;
-      f.style.top = tokenEl.style.top;
-      el.grid.appendChild(f);
-      setTimeout(() => f.remove(), 950);
-    }
-
+    // relógio CONTÍNUO (calculado na hora em cada quadro de tela): antes o
+    // desenho lia um valor que só andava no setInterval de 33 ms — com a tela
+    // a 60 Hz o personagem ficava parado 1 quadro sim, 1 não (a "travada")
+    const clock = () => {
+      const r = performance.now();
+      if (mode === 'live') return liveOffset != null ? r - liveOffset : clockMs;
+      return playing ? clockMs + (r - lastReal) * speed : clockMs;
+    };
+    function hpColor(p) { return p > 0.5 ? '#57d17a' : p > 0.2 ? '#ffcf4d' : '#ff5c5c'; }
+    const nickOf = side => (fichas[side] && fichas[side].nick) || side;
+    const other = side => (side === 'A' ? 'B' : 'A');
+    const anchorOf = side => () => { const w = pvpFighterWorld(pvpScene.F[side]); return { x: w.x, y: w.y, side }; };
+    const posOf = side => pvpFighterWorld(pvpScene.F[side]);
+    function tileDist() { const a = pvpScene.F.A && pvpScene.F.A.s, b = pvpScene.F.B && pvpScene.F.B.s; return a && b ? Math.max(Math.abs(a.TX - b.TX), Math.abs(a.TY - b.TY)) : 1; }
+    function firstArch(P) { const c = String((P && (P.classeSlug || P.classe)) || '').toLowerCase(); const ids = ['warfare','protection','shadow','archery','wizardry','holy','spiritual','witchcraft']; return ids.find(i => c.includes(i)) || 'wizardry'; }
+    function lookOf(P) { if (P && P.look) return P.look; return { gender: 'male', hairId: 1, hairStyleId: 1, outfit: firstArch(P) || 'padrao', wings: null, aura: null, cosmeticColors: { head: 0, body: 0, legs: 0, feet: 0 } }; }
     function logLine(html) {
-      const line = document.createElement('div');
-      line.innerHTML = html;
-      el.log.appendChild(line);
-      el.log.scrollTop = el.log.scrollHeight;
+      if (!el.log) return;
+      const line = document.createElement('div'); line.innerHTML = html; el.log.appendChild(line); el.log.scrollTop = el.log.scrollHeight;
       while (el.log.children.length > 80) el.log.removeChild(el.log.firstChild);
     }
-
-    function resetGameVisuals() {
-      el.log.innerHTML = '';
-      el.banner.classList.remove('pvp-show');
-      el.tokenA.classList.remove('pvp-token--ko');
-      el.tokenB.classList.remove('pvp-token--ko');
-      const hpMax = match.hpMax[gameIndex] || { a: 1, b: 1 };
-      setTokenPos('A', 1, 5); // START_A -- ver pvpEngine.START_A
-      setTokenPos('B', ARENA_W, 5); // START_B -- ver pvpEngine.START_B
-      setHp('A', hpMax.a, hpMax.a);
-      setHp('B', hpMax.b, hpMax.b);
-      el.turnLabel.textContent = `Jogo ${gameIndex + 1} de ${match.logs.length} — placar ${runningScore.a} x ${runningScore.b}`;
-      el.score.textContent = `${runningScore.a} x ${runningScore.b}`;
+    function who(side) { return `<span class="log-${side.toLowerCase()}">${nickOf(side)}</span>`; }
+    function showBanner(html, ms, big) {
+      el.banner.querySelector('div').innerHTML = html; el.banner.classList.toggle('pvp-count', !!big); el.banner.classList.add('pvp-show');
+      clearTimeout(showBanner._t); if (ms) showBanner._t = setTimeout(() => el.banner.classList.remove('pvp-show'), ms / Math.max(1, speed));
     }
-
-    function nickOf(side) { return side === 'A' ? match.playerA.nick : match.playerB.nick; }
-
-    const PVP_EL_ICON = { fogo:'🔥', agua:'💧', terra:'🪨', ar:'🌪️', luz:'✨', trevas:'🌑' };
-    function floatText(side, text, color) {
-      const tokenEl = side === 'A' ? el.tokenA : el.tokenB;
-      const f = document.createElement('div');
-      f.className = 'pvp-dmg-float';
-      f.textContent = text;
-      if (color) f.style.color = color;
-      f.style.left = tokenEl.style.left;
-      f.style.top = tokenEl.style.top;
-      el.grid.appendChild(f);
-      setTimeout(() => f.remove(), 950);
+    function hideBanner() { el.banner.classList.remove('pvp-show'); }
+    function clearFx() { pvpScene.zones = []; SpellFxManager.areaEffects.length = 0; SpellFxManager.missiles.length = 0; floatingTexts.length = 0; fxRings.length = 0; }
+    // HUD: só mexe no DOM quando o valor muda (evita recalcular layout 10x/s à toa)
+    const hudCache = {};
+    function setTopHp(side, hp, hm) {
+      const p = Math.round(Math.max(0, Math.min(1, hp / (hm || 1))) * 200) / 2, t = side === 'A' ? el.topHpA : el.topHpB;
+      if (!t || hudCache['hp' + side] === p) return; hudCache['hp' + side] = p;
+      t.style.width = p + '%'; t.style.background = hpColor(p / 100);
     }
-    // 24/10/2026: duelo com habilidades — toda ação traz hpA/hpB (vida dos dois)
-    function syncHp(action) {
-      const hm = match.hpMax[gameIndex] || { a: 1, b: 1 };
-      if (action.hpA != null) setHp('A', action.hpA, hm.a);
-      if (action.hpB != null) setHp('B', action.hpB, hm.b);
-      if (action.hpA == null && action.hpAlvo != null && action.player) { const al = action.player === 'A' ? 'B' : 'A'; setHp(al, action.hpAlvo, hm[al.toLowerCase()]); } // log antigo (antes das habilidades)
+    function setScore(sc) { if (!sc) return; const txt = `${sc.a} x ${sc.b}`; if (hudCache.score !== txt) { hudCache.score = txt; el.score.textContent = txt; } }
+    function resetFighters() {
+      ['A', 'B'].forEach(side => { pvpScene.F[side] = { nick: nickOf(side), look: lookOf(fichas[side]), arch: firstArch(fichas[side]), s: null, hp: 1, hpMax: 1, st: {}, ko: false }; });
+      clearFx();
     }
-    function applyAction(action) {
-      const side = action.player;
-      const who = side ? `<span class="log-${side.toLowerCase()}">${nickOf(side)}</span>` : '';
-      const alvo = side === 'A' ? 'B' : 'A';
-      const tgt = side ? `<span class="log-${alvo.toLowerCase()}">${nickOf(alvo)}</span>` : '';
-      const T = `Turno ${action.turno} — `;
-      if (action.acao === 'andar') {
-        setTokenPos(side, action.x, action.y);
-      } else if (action.acao === 'ataque') {
-        if (action.esquiva) { floatText(alvo, action.errou ? 'Errou' : 'Esquiva', '#9fd0ff'); logLine(T + `${tgt} ${action.errou ? 'escapou (ofuscado)' : 'esquivou'} do ataque de ${who}`); }
-        else if (action.bloqueado) { floatText(alvo, 'Bloqueado', '#9fd0ff'); logLine(T + `Muralha de vento de ${tgt} bloqueou o tiro de ${who}`); }
-        else { flashHit(alvo); floatDamage(alvo, action.dano); logLine(T + `${who} atacou ${tgt}: <strong>${action.dano}</strong>${action.crit ? ' (crítico)' : ''}`); }
-      } else if (action.acao === 'magia') {
-        const ic = action.elemento ? (PVP_EL_ICON[action.elemento] || '') + ' ' : '';
-        let txt = T + `${who} usou <b>${ic}${action.nome}</b>`;
-        if(action.dano != null && action.selfMove) setTokenPos(side, action.x, action.y);   // Warfare: avançou
-        if(action.dano != null && action.alvoMove) setTokenPos(alvo, action.x, action.y);   // Warfare: puxou
-        if (action.esquiva) { floatText(alvo, 'Esquiva', '#9fd0ff'); txt += ` — ${tgt} esquivou`; }
-        else if (action.bloqueado) { floatText(alvo, 'Bloqueado', '#9fd0ff'); txt += ` — bloqueada pela muralha de vento`; }
-        else if (action.dano != null) {
-          flashHit(alvo); floatDamage(alvo, action.dano);
-          txt += `: <strong>${action.dano}</strong>${action.crit ? ' (crítico)' : ''}`;
-          if (action.reacao) { floatText(alvo, action.reacao.icone + ' ' + action.reacao.nome, '#ffd36b'); txt += ` · reação <b>${action.reacao.icone} ${action.reacao.nome}</b>`; }
-          if (action.efeito) txt += ` · ${action.efeito.icone} ${action.efeito.nome}`;
-          if (action.cc) { floatText(alvo, action.cc, '#c9a2ff'); txt += ` · <b>${tgt} ${action.cc}</b>`; }
-        } else if (action.cura != null) { if (action.cura > 0) floatText(side, '+' + action.cura, '#7dff9b'); txt += action.cura > 0 ? ` e curou <strong>${action.cura}</strong>` : ' (cura contínua)'; }
-        else if (action.escudo != null) { floatText(side, '🛡 ' + action.escudo, '#8fd3ff'); txt += ` (escudo de ${action.escudo})`; }
-        else if (action.buff != null) { floatText(side, action.nome, '#ffe08a'); txt += ` (+${action.buff}%)`; }
-        else if (action.alvoMove) { setTokenPos(alvo, action.x, action.y); txt += ` e empurrou ${tgt}`; }
-        else if (action.selfMove) { setTokenPos(side, action.x, action.y); txt += ' e se afastou'; }
-        logLine(txt);
-      } else if (action.acao === 'dot') {
-        flashHit(alvo); floatText(alvo, '-' + action.dano, '#ffa060');
-        logLine(T + `${tgt} sofreu ${action.icone} ${action.nome}: <strong>${action.dano}</strong>`);
-      } else if (action.acao === 'atordoado') {
-        floatText(side, '💫', '#c9a2ff'); logLine(T + `${who} está atordoado`);
-      } else if (action.acao === 'preso') {
-        logLine(T + `${who} está preso e não pode andar`);
-      } else if (action.acao === 'tempo_esgotado') {
-        logLine(T + `tempo esgotado, decisão por % de vida restante`);
+    const ST_ICON = { stun: '💫', root: '⛓️', silence: '🔇', blind: '🙈', slow: '🐢', invuln: '✨', evade: '👤', mirror: '🪞', shield: '🛡️', burn: '🔥', dfire: '🔥', poison: '☠️', vgren: '🧪', bleed: '🩸', deepwound: '🩸', leech: '🩸', siphon: '💜', wcurse: '🌑', curse: '🌑', eclipse: '🌘', holydot: '✝️', wet: '💧', raven: '🐦‍⬛', pulse: '🌀', exploit: '🗡️', shred: '🧪', weaken: '🥀' };
+    const DOT_COLOR = { burn: '#ff7a2e', dfire: '#ff7a2e', poison: '#8fd35a', vgren: '#8fd35a', bleed: '#ff5a6a', deepwound: '#ff5a6a', holydot: '#ffe27a', wcurse: '#b98bff', leech: '#ff5a6a', siphon: '#c38bff', raven: '#b98bff' };
+    const ZONE_KEYS = { holyZone: 'holyZone', witchZone: 'witchZone', dmgZone: 'dmgZone', earthZone: 'earthZone', banner: 'earthZone' };
+    // aplica 1 quadro do motor (posição, vida, efeitos ativos)
+    function applyFrame(fr) {
+      if (fr.m && fr.m !== PVP_REAL.id) pvpSetMap(fr.m);
+      if (fr.g && fr.g !== curGame && fr.F) { // jogo novo: os 2 voltam pros seus lados, vida cheia
+        curGame = fr.g; resetFighters(); countShown = -1; finished = false;
+        if (el.turnLabel) el.turnLabel.textContent = `Jogo ${fr.g}`;
       }
-      syncHp(action);
-      if (action.acao === 'fim' || action.acao === 'tempo_esgotado') lastWinner = action.vencedor || null;
-    }
-
-    function showBanner(html, ms) {
-      el.banner.querySelector('div').innerHTML = html;
-      el.banner.classList.add('pvp-show');
-      if (ms) setTimeout(() => el.banner.classList.remove('pvp-show'), ms);
-    }
-
-    function stepDelayMs() { return 650 / speed; }
-
-    function playNextAction() {
-      if (!playing) return;
-      const log = match.logs[gameIndex];
-      if (actionIndex >= log.length) {
-        const wonA = lastWinner ? lastWinner === 'A' : pos.A.hp > 0; // tempo esgotado: os dois vivos
-        lastWinner = null;
-        if (wonA) runningScore.a++; else runningScore.b++;
-        el.score.textContent = `${runningScore.a} x ${runningScore.b}`;
-        showBanner(`Jogo ${gameIndex + 1} — Vitória de <span>${wonA ? nickOf('A') : nickOf('B')}</span>`, 1400);
-        playTimer = setTimeout(() => {
-          gameIndex++;
-          if (gameIndex >= match.logs.length || runningScore.a === 2 || runningScore.b === 2) {
-            const championSide = runningScore.a > runningScore.b ? 'A' : 'B';
-            showBanner(`🏆 Vencedor do confronto: <span>${nickOf(championSide)}</span> (${runningScore.a} x ${runningScore.b})`);
-            playing = false;
-            el.playBtn.textContent = '▶ Assistir';
-            el.playBtn.disabled = true;
-            return;
-          }
-          actionIndex = 0;
-          resetGameVisuals();
-          playTimer = setTimeout(playNextAction, stepDelayMs());
-        }, 1500);
-        return;
+      if (fr.sc) setScore(fr.sc);
+      if (fr.F) ['A', 'B'].forEach(side => {
+        const f = pvpScene.F[side]; let q = fr.F[side]; if (!f || !q) return;
+        const pv = f.s; // avanço/puxão/empurrão (Fierce Leap, Shield Throw...): o servidor "teleporta" de casa -> aqui vira um avanço rápido
+        if (pv && !(q.se > q.ss) && Math.max(Math.abs(pv.TX - q.X), Math.abs(pv.TY - q.Y)) >= 2) q = { ...q, X: pv.TX, Y: pv.TY, TX: q.X, TY: q.Y, ss: fr.t, se: fr.t + 380 };
+        f.s = q; f.hp = q.hp; f.hpMax = q.hm; setTopHp(side, q.hp, q.hm);
+        f.st = {}; (q.st || []).forEach(k => { if (ST_ICON[k]) f.st[k] = { icon: ST_ICON[k], until: Infinity }; });
+        f.shieldUntil = (q.st || []).includes('shield') ? Infinity : 0;
+      });
+      (fr.ev || []).forEach(applyEvent);
+      if (fr.ph === 'gameEnd') {
+        const loser = other(fr.w); if (pvpScene.F[loser]) pvpScene.F[loser].ko = true;
+        showBanner(`Jogo ${fr.g} — Vitória de <span>${nickOf(fr.w)}</span>${fr.timeout ? ' (tempo)' : ''}`, 2800);
+        logLine(`<b>Jogo ${fr.g}</b>: vitória de ${who(fr.w)}${fr.timeout ? ' no tempo (mais % de vida)' : ''}`);
+      } else if (fr.ph === 'matchEnd') {
+        finished = true;
+        showBanner(`🏆 Vencedor do confronto: <span>${nickOf(fr.w)}</span> (${fr.sc.a} x ${fr.sc.b})`);
+        logLine(`🏆 ${who(fr.w)} venceu o confronto por ${fr.sc.a} x ${fr.sc.b}`);
       }
-      // aplica TODAS as ações do mesmo turno juntas (1 turno = 1 s de luta)
-      const turno = log[actionIndex].turno;
-      while (actionIndex < log.length && log[actionIndex].turno === turno) { applyAction(log[actionIndex]); actionIndex++; }
-      playTimer = setTimeout(playNextAction, stepDelayMs());
+      lastPhase = fr.ph || lastPhase;
+      if (fr.ph === 'count' || fr.ph === 'fight') pvpScene._ce = fr.ce;
     }
-
-    function play() {
-      if (playing) return;
-      playing = true;
-      el.playBtn.textContent = '⏸ Pausar';
-      playNextAction();
+    // contagem: "Jogo N" -> 3 -> 2 -> 1 -> Lutem! (pelo relógio, não por quadro)
+    function countdownTick() {
+      const ce = pvpScene._ce; if (ce == null || !curGame) return;
+      const left = ce - clockMs;
+      const step = left > 3000 ? 4 : left > 2000 ? 3 : left > 1000 ? 2 : left > 0 ? 1 : (left > -900 ? 0 : -1);
+      if (step === countShown) return;
+      countShown = step;
+      if (step === 4) showBanner(curGame === 1 ? `⚔️ <span>${nickOf('A')}</span> x <span>${nickOf('B')}</span>` : `Jogo ${curGame}`, 1500);
+      else if (step >= 1) showBanner(String(step), 900, true);
+      else if (step === 0) showBanner('Lutem!', 800, true);
     }
-    function pause() {
-      playing = false;
-      el.playBtn.textContent = '▶ Assistir';
-      if (playTimer) clearTimeout(playTimer);
+    function applyEvent(e) {
+      const fx = e.fx || {}, s = e.s, o = other(s), F = pvpScene.F;
+      if (!F[s] || !F[o]) return;
+      if ((fx.t === 'playerHit' || fx.t === 'spellHit' || fx.t === 'monsterDot') && !(fx.dmg > 0) && !fx.spellName) return; // 0 de dano (escudo/absorção): sem número
+      if (fx.t === 'playerHit' || fx.t === 'spellHit') {
+        const magic = fx.t === 'spellHit';
+        if (magic) F[s].poseUntil = now() + CAST_POSE_MS; // pose de ataque só na habilidade (no golpe básico ficava o tempo todo com o "pé na frente")
+        F[o].hitUntil = now() + 200;
+        if (fx.dmg > 0) spawnFloatingText(anchorOf(o), `${fx.crit ? '💥 ' : ''}-${fx.dmg}`, fx.crit ? '#ffd23f' : (magic ? '#8fd0ff' : '#ff8a8a'), { big: true });
+        if (fx.crit) spawnFloatingText(anchorOf(o), 'Crítico!', '#ffd23f', { yOffset: 18 });
+        const me = posOf(s), op = posOf(o), d = tileDist();
+        if (magic) {
+          const arch = fx.archetypeId || F[s].arch, key = (fx.spellName || '') + '|' + Math.floor(e.t / 400);
+          if (fx.spellName && F[s]._lastSpellKey !== key) { F[s]._lastSpellKey = key; spawnFloatingText(anchorOf(s), fx.spellName, '#d9b8ff', { yOffset: 22, big: true }); logLine(`${who(s)} usou <b>${fx.spellName}</b> em ${who(o)}: <strong>${fx.dmg}</strong>${fx.crit ? ' (crítico)' : ''}`); }
+          if (fx.aoe) SpellFxManager.spawnAreaEffect(arch, 'aoe', op.x, op.y, fx.element, 3);
+          else if (fx.ranged || d > 1) SpellFxManager.spawnMissile(arch, 'attack', me.x, me.y, op.x, op.y, fx.element);
+          else SpellFxManager.spawnAreaEffect(arch, 'attack', op.x, op.y, fx.element);
+        } else {
+          if (d > 1) SpellFxManager.spawnMissile(F[s].arch === 'wizardry' || F[s].arch === 'witchcraft' || F[s].arch === 'holy' || F[s].arch === 'spiritual' ? F[s].arch : 'archery', 'attack', me.x, me.y, op.x, op.y, null);
+          else spawnFxRing(anchorOf(o), 'rgba(255,255,255,.7)', 22, 220);
+        }
+      } else if (fx.t === 'monsterDot') {
+        F[o].hitUntil = now() + 120;
+        spawnFloatingText(() => { const w = posOf(o); return { x: w.x + 8, y: w.y, side: o }; }, `-${fx.dmg}`, DOT_COLOR[fx.status] || '#ffa060');
+      } else if (fx.t === 'heal' || fx.t === 'hot') {
+        if (fx.amount > 0) spawnFloatingText(anchorOf(s), `+${Math.round(fx.amount)}`, '#7ee08a');
+        if (fx.t === 'heal') {
+          F[s].poseUntil = now() + CAST_POSE_MS;
+          if (fx.spellName) { spawnFloatingText(anchorOf(s), fx.spellName, '#d9b8ff', { yOffset: 22, big: true }); logLine(`${who(s)} usou <b>${fx.spellName}</b>${fx.amount > 0 ? ` e curou <strong>${Math.round(fx.amount)}</strong>` : ''}`); }
+          const me = posOf(s); SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'heal', me.x, me.y, fx.element);
+        }
+      } else if (fx.t === 'shield' || fx.t === 'buff') {
+        F[s].poseUntil = now() + CAST_POSE_MS;
+        const me = posOf(s), op = posOf(o);
+        const label = fx.t === 'shield' ? '🛡 Escudo' : (fx.spellName || 'Buff');
+        spawnFloatingText(anchorOf(s), label, fx.t === 'shield' ? '#8fd3ff' : '#ffe08a', { yOffset: 22, big: true });
+        if (fx.spellName) logLine(`${who(s)} usou <b>${fx.spellName}</b>`);
+        const zk = ZONE_KEYS[fx.statKey];
+        if (zk) { const at = (zk === 'holyZone' || zk === 'earthZone') ? me : op; pvpScene.zones.push({ x: at.x, y: at.y, r: 2, kind: zk, until: now() + 5500 / Math.max(1, speed) }); SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'aoe', at.x, at.y, null, 3); }
+        else SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'defense', me.x, me.y, fx.element);
+      } else if (fx.t === 'blocked') {
+        spawnFloatingText(anchorOf(s), fx.immune ? '✨ Invulnerável' : 'Bloqueado', '#fff2a8', { yOffset: 38 });
+      } else if (fx.t === 'duelMiss') {
+        spawnFloatingText(anchorOf(o), 'Errou', '#9fd0ff', { yOffset: 38 });
+      } else if (fx.t === 'cleanse') {
+        spawnFloatingText(anchorOf(s), '✨ Livre!', '#9ff0b0', { yOffset: 38 });
+      } else if (fx.t === 'reaction') {
+        spawnFloatingText(anchorOf(o), `${fx.icon || ''} ${fx.name || ''}!`, '#ffd36b', { yOffset: 40, big: true });
+      } else if (fx.t === 'duelFury') {
+        showBanner('⚡ Fúria da Arena — o dano só aumenta!', 2200); logLine('⚡ <b>Fúria da Arena</b>: a partir de agora o dano aumenta a cada segundo');
+      } else if (fx.t === 'duelEnd') {
+        if (F[o]) F[o].ko = true;
+      }
+    }
+    // relógio + aplicação dos quadros
+    function tick() {
+      const r = performance.now();
+      if (mode === 'live') { if (liveOffset != null) clockMs = r - liveOffset; }
+      else if (playing) clockMs += (r - lastReal) * speed;
+      lastReal = r;
+      // aplica cada quadro um pouco ANTES da hora dele (1 intervalo de quadro):
+      // assim o próximo passo já é conhecido quando o anterior termina e o
+      // personagem emenda um passo no outro sem "pular" (era o salto a cada casa)
+      const ahead = mode === 'live' ? 160 : 230;
+      while (fIdx < frames.length && frames[fIdx].t <= clockMs + ahead) applyFrame(frames[fIdx++]);
+      countdownTick();
+      if (mode === 'replay' && playing && fIdx >= frames.length) { playing = false; el.playBtn.textContent = '▶ Assistir'; }
+    }
+    // os quadros do duelo são aplicados NO MESMO requestAnimationFrame que desenha
+    // (pvpScene.onFrame, chamado por drawPvpScene) — o setInterval fica só de
+    // reserva (aba em segundo plano, onde o navegador para o requestAnimationFrame)
+    function startTimer() { clearInterval(timer); lastReal = performance.now(); pvpScene.onFrame = tick; timer = setInterval(() => { if (performance.now() - lastReal > 200) tick(); }, 250); }
+    function openCommon(a, fA, fB, m) {
+      arenaId = a; fichas = { A: fA || { nick: 'A' }, B: fB || { nick: 'B' } }; mode = m;
+      frames = []; fIdx = 0; clockMs = 0; liveOffset = null; curGame = 0; countShown = -1; finished = false; speed = 1; pvpScene._ce = null;
+      el.speedBtns.forEach((b, i) => b.classList.toggle('active', i === 0));
+      el.nickA.textContent = fichas.A.nick || '—'; el.classeA.textContent = fichas.A.classe || '';
+      el.nickB.textContent = fichas.B.nick || '—'; el.classeB.textContent = fichas.B.classe || '';
+      el.modeTag.textContent = m === 'live' ? '● AO VIVO' : '🎬 Gravação';
+      if (el.log) el.log.innerHTML = '';
+      setScore({ a: 0, b: 0 }); setTopHp('A', 1, 1); setTopHp('B', 1, 1); hideBanner();
+      resetFighters(); pvpScene.cam = null;
+      pvpScene.clock = clock; pvpScene.active = true;
+      el.overlay.classList.add('pvp-open', 'pvp-world'); el.overlay.classList.toggle('pvp-live', m === 'live');
+      document.body.classList.add('pvp-watching');
+      startTimer();
+    }
+    // AO VIVO: abre e espera os quadros ('pvp:duelFrame')
+    function openLive(a, fA, fB, mapId) { pvpSetMap(mapId); openCommon(a, fA, fB, 'live'); playing = true; if (el.turnLabel) el.turnLabel.textContent = 'Aguardando a arena...'; }
+    function pushFrame(a, fr) {
+      if (!pvpScene.active || mode !== 'live' || a !== arenaId || !fr) return;
+      const r = performance.now();
+      if (liveOffset == null || r - liveOffset < fr.t - 2000 || r - liveOffset > fr.t + 1500) liveOffset = r - fr.t + LIVE_DELAY_MS; // (re)sincroniza
+      frames.push(fr);
+    }
+    // GRAVAÇÃO: todos os quadros de uma vez, com controles
+    function openReplay(a, fA, fB, rec) {
+      pvpSetMap((rec || []).map(f => f.m).find(Boolean));
+      openCommon(a, fA, fB, 'replay');
+      frames = (rec || []).slice().sort((x, y) => x.t - y.t);
+      clockMs = frames.length ? frames[0].t - 300 : 0; playing = true; el.playBtn.textContent = '⏸ Pausar'; el.playBtn.disabled = false;
     }
     function restart() {
-      pause();
-      gameIndex = 0; actionIndex = 0;
-      runningScore = { a: 0, b: 0 };
-      el.playBtn.disabled = false;
-      resetGameVisuals();
+      if (mode !== 'replay') return;
+      fIdx = 0; curGame = 0; countShown = -1; clockMs = frames.length ? frames[0].t - 300 : 0; resetFighters(); hideBanner();
+      if (el.log) el.log.innerHTML = ''; setScore({ a: 0, b: 0 });
+      playing = true; el.playBtn.textContent = '⏸ Pausar';
     }
     function closeArena() {
-      pause();
-      el.overlay.classList.remove('pvp-open');
+      clearInterval(timer); timer = null; playing = false; pvpScene.onFrame = null;
+      if (mode === 'live' && arenaId) { try { sendWS({ type: 'pvp:unwatch', arenaId }); } catch (_) {} }
+      el.overlay.classList.remove('pvp-open', 'pvp-world', 'pvp-live');
+      pvpScene.active = false; pvpScene.clock = null; clearFx(); document.body.classList.remove('pvp-watching');
+      arenaId = null;
     }
-
-    el.playBtn.addEventListener('click', () => (playing ? pause() : play()));
+    el.playBtn.addEventListener('click', () => { if (mode !== 'replay') return; playing = !playing; if (playing && fIdx >= frames.length) restart(); el.playBtn.textContent = playing ? '⏸ Pausar' : '▶ Assistir'; });
     el.restartBtn.addEventListener('click', restart);
     el.closeBtn.addEventListener('click', closeArena);
-    el.overlay.addEventListener('click', (e) => { if (e.target === el.overlay) closeArena(); });
     el.speedBtns.forEach(btn => btn.addEventListener('click', () => {
-      speed = Number(btn.dataset.speed);
-      el.speedBtns.forEach(b => b.classList.toggle('active', b === btn));
+      if (mode === 'live') return; // ao vivo não acelera
+      speed = Number(btn.dataset.speed); el.speedBtns.forEach(b => b.classList.toggle('active', b === btn));
     }));
-    if (el.speedBtns[0]) el.speedBtns[0].classList.add('active');
-
-    // Carrega um confronto: `matchData` = payload de 'pvp:arenaResolved'
-    // (score, logs, hpMax) + as fichas dos 2 jogadores (nick/classe --
-    // vêm de 'pvp:opponentReveal', casadas por arenaId no switch do WS).
-    function loadMatch(matchData, playerA, playerB) {
-      match = { ...matchData, playerA, playerB };
-      el.nickA.textContent = playerA.nick; el.classeA.textContent = playerA.classe;
-      el.nickB.textContent = playerB.nick; el.classeB.textContent = playerB.classe;
-      // NÃO usa matchData.score aqui de propósito -- é o resultado FINAL do
-      // Md3, mostrar isso antes da animação rodar entrega o resultado antes
-      // da hora. O placar exibido (runningScore) só sobe conforme cada jogo
-      // termina de ser ASSISTIDO -- ver restart()/playNextAction().
-      restart();
-    }
-    window.pvpArenaView = { loadMatch, play, pause, restart, close: closeArena };
+    window.pvpArenaView = { openLive, pushFrame, openReplay, close: closeArena, isOpen: () => pvpScene.active, arenaId: () => arenaId, mode: () => mode };
   })();
 
   connectToServer();
@@ -9154,6 +9394,24 @@
       if(msg.shop) pvpShopState = msg.shop;
       renderPvpShopIfOpen();
       renderInventoryIfOpen();
+    }
+    if(msg.forType === 'pvp:getArena'){
+      const pend = pvpthPendingArena; pvpthPendingArena = null;
+      if(msg.ok && msg.arena && Array.isArray(msg.arena.recording)){
+        const A = msg.arena, fx = pvpArenaFichas[A.arenaId] || {};
+        if(window.pvpOpponentModal) window.pvpOpponentModal.close();
+        pvpTournamentModal.classList.remove('open');
+        window.pvpArenaView.openReplay(A.arenaId, A.fichaA || fx.playerA, A.fichaB || fx.playerB, A.recording);
+      } else if(msg.live && pend){ sendWS({ type:'pvp:watch', arenaId: pend.match.arenaId }); }
+      else logLoot('⚠️ A gravação dessa luta não está disponível.');
+    }
+    if(msg.forType === 'pvp:watch'){
+      if(msg.ok){
+        pvpArenaFichas[msg.arenaId] = { playerA: msg.fichaA, playerB: msg.fichaB };
+        if(window.pvpOpponentModal) window.pvpOpponentModal.close();
+        pvpTournamentModal.classList.remove('open');
+        window.pvpArenaView.openLive(msg.arenaId, msg.fichaA, msg.fichaB, msg.mapId);
+      } else { pvpLiveArenaIds.delete(msg.arenaId); logLoot('⏳ Essa luta não está mais ao vivo — veja a gravação.'); refreshPvpTournamentIfOpen(); }
     }
     if(msg.forType === 'pvp:getState'){
       if(msg.ok){ pvpTournamentState = msg.tournament; pvpMyRegistered = !!msg.myRegistered; }
@@ -15766,10 +16024,15 @@
     const card = document.createElement('div');
     card.className = 'pvpth-card';
     card.dataset.arenaId = match.arenaId;
-    const isFinished = !!match.winner;
-    const isLive = !isFinished && match.liveStartsAt && now >= match.liveStartsAt;
+    // Transmissão ao vivo (24/10/2026): o resultado chega na hora, mas a luta
+    // passa em tempo real -- enquanto ela passa, o card mostra AO VIVO e
+    // esconde o vencedor; depois vira "Ver gravação".
+    const live = pvpthLiveWindow(match);
+    const isLive = live.onAir || (!match.winner && match.liveStartsAt && now >= match.liveStartsAt);
+    const isFinished = !!match.winner && !live.onAir;
+    // (duelo ao vivo: o vencedor só existe quando a luta acaba)
     let actionsHtml;
-    if(isFinished) actionsHtml = `<button class="pvpth-btn pvpth-btn--done" disabled>Luta Encerrada</button>`;
+    if(isFinished) actionsHtml = `<button class="pvpth-btn pvpth-btn--watch" data-action="replay">🎬 Ver gravação</button>`;
     else if(isLive) actionsHtml = `<button class="pvpth-btn pvpth-btn--watch" data-action="watch">▶ Assistir Ao Vivo</button>`;
     else actionsHtml = `<button class="pvpth-btn pvpth-btn--bet" data-action="bet">🪙 Apostar Ouro</button>`;
     card.innerHTML = `
@@ -15810,7 +16073,8 @@
     const btn = card.querySelector('[data-action]');
     if(btn) btn.addEventListener('click', ()=>{
       if(btn.dataset.action === 'bet') pvpthOpenBetModal(match.arenaId);
-      else if(btn.dataset.action === 'watch') pvpthOpenSpectatorView(match);
+      else if(btn.dataset.action === 'watch') pvpthOpenSpectatorView(match, 'live');
+      else if(btn.dataset.action === 'replay') pvpthOpenSpectatorView(match, 'replay');
     });
     return card;
   }
@@ -15931,14 +16195,18 @@
   // Espectador: reaproveita o overlay/motor da grade da arena já integrados
   // (Pedido 3) -- olha o cache de 'pvp:arenaResolved' por arenaId (guardado
   // acima no switch do WS, pra QUALQUER arena, não só a minha).
-  function pvpthOpenSpectatorView(match){
-    const resolved = pvpArenaResolvedCache[match.arenaId];
-    const fichas = pvpArenaFichas[match.arenaId] || { playerA: match.playerA, playerB: match.playerB };
-    if(!resolved || !window.pvpArenaView){ logLoot('⏳ Aguardando o resultado dessa luta chegar do servidor...'); return; }
-    if(window.pvpOpponentModal) window.pvpOpponentModal.close();
-    document.getElementById('pvpArenaOverlay').classList.add('pvp-open');
-    window.pvpArenaView.loadMatch(resolved, fichas.playerA, fichas.playerB);
-    window.pvpArenaView.play();
+  // Janela da transmissão: começa quando o resultado chegou neste cliente
+  // (receivedAt) e dura liveDurationMs (mesma conta do servidor).
+  function pvpthLiveWindow(match){
+    const onAir = pvpLiveArenaIds.has(match.arenaId) || (!match.winner && !!match.liveStartsAt && Date.now() >= match.liveStartsAt && !pvpArenaResolvedCache[match.arenaId]);
+    return { onAir };
+  }
+  let pvpthPendingArena = null; // { match, mode } esperando 'pvp:getArena'
+  function pvpthOpenSpectatorView(match, mode){
+    if(!window.pvpArenaView) return;
+    if(mode !== 'replay' && pvpthLiveWindow(match).onAir){ sendWS({ type:'pvp:watch', arenaId: match.arenaId }); return; } // AO VIVO: passa a receber os quadros
+    if(!match.winner){ logLoot('⏳ Essa luta ainda não começou.'); return; }
+    pvpthPendingArena = { match, mode }; sendWS({ type:'pvp:getArena', arenaId: match.arenaId }); // gravação
   }
   // Tick de 1s só pra atualizar relógio/trocar botão pra "AO VIVO" sozinho,
   // igual ao arquivo isolado original -- evita re-renderizar a grade inteira
@@ -15948,7 +16216,11 @@
     const now = Date.now();
     let needsFullRerender = false;
     pvpTournamentMatches().forEach(m=>{
-      if(m.winner) return;
+      if(m.winner){ // transmissão acabou: AO VIVO -> Ver gravação
+        const onAir = pvpthLiveWindow(m).onAir;
+        if(onAir !== m._wasOnAir){ needsFullRerender = true; m._wasOnAir = onAir; }
+        return;
+      }
       const wasLive = m._wasLive;
       const isLive = m.liveStartsAt && now >= m.liveStartsAt;
       if(isLive !== wasLive){ needsFullRerender = true; m._wasLive = isLive; return; }
