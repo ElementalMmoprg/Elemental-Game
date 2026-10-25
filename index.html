@@ -3,199 +3,456 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aincrad Online — Portal da Torre</title>
+<title>Elemental Online — Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<!--
+  TELA DE LOGIN (24/10/2026): cena animada no Canvas (fundo das 4 torres +
+  dragão voando) e o painel com a arte do jogo (moldura azul, campos, botão
+  ENTRAR em 3 estados, ícones de chave e engrenagem).
+  Imagens em Elemental_assets/assets/login/ (GitHub Pages, ver ASSETS abaixo).
+  A lógica de conta é a MESMA de antes: /api/login, /api/register (com
+  captcha Turnstile quando configurado) e /api/recover/change-email
+  ("Trocar E-mail"; "Trocar RK" usa a mesma rota com o e-mail atual, que
+  gera uma Recovery Key nova).
+-->
 <style>
   :root{
-    --bg-void:#0d0b09; --bg-stone:#171310; --bg-panel:#221b14; --bg-panel-2:#2b2118;
-    --line-gold:#8a6a34; --line-gold-bright:#d3ab54;
-    --text-main:#ece1c8; --text-dim:#9c8d6f;
-    --fogo:#e2542b; --agua:#3a8fc2; --terra:#6f8f4e; --ar:#cdd9df; --luz:#e9c14a; --trevas:#8358c9;
-    --err:#c9455a; --ok:#7fae5e;
-    --font-display:'Cinzel', serif; --font-body:'Spectral', serif; --font-mono:'JetBrains Mono', monospace;
+    --azul:#3ea2ff; --laranja:#ff9a3c;
+    --texto:#dfe6f3; --texto-fraco:#8c97ab;
+    --err:#ff8f8f; --ok:#9fe0a8;
+    --A:url('https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/');
   }
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; min-height:100%; font-family:var(--font-body); color:var(--text-main);
-    background:
-      radial-gradient(ellipse at 20% 10%, #241a10 0%, transparent 55%),
-      radial-gradient(ellipse at 85% 90%, #1a1410 0%, transparent 50%),
-      var(--bg-void);
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ width:100%; height:100%; overflow:hidden; background:#050811; }
+  body{ font-family:'Inter', system-ui, sans-serif; color:var(--texto); }
+
+  /* ---------- cena (canvas atrás de tudo) ---------- */
+  #cena{ position:fixed; inset:0; width:100vw; height:100vh; display:block; z-index:0; }
+
+  /* ---------- painel ---------- */
+  .login-wrap{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center; padding:16px; pointer-events:none; overflow-y:auto; }
+  /* moldura azul da arte (770x500) em 9 fatias: o topo (até abaixo dos
+     estandartes) e a base (cristais) ficam inteiros; só a lateral lisa estica */
+  .painel{
+    pointer-events:auto; --s:.74;
+    width:min(560px, 100%);
+    margin-top:12vh;                      /* céu livre pro dragão */
+    position:relative;
+    padding:calc(114px * var(--s) + 6px) calc(82px * var(--s) + 26px) calc(81px * var(--s) + 14px);
   }
-  #wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px; gap:56px; flex-wrap:wrap; }
-
-  /* ---------- Ilustração da Torre ---------- */
-  #tower-side{ display:flex; flex-direction:column; align-items:center; gap:14px; }
-  #tower-side h1{ font-family:var(--font-display); font-size:22px; letter-spacing:.12em; color:var(--line-gold-bright);
-    text-transform:uppercase; margin:0; text-shadow:0 0 18px rgba(211,171,84,.35); text-align:center; }
-  #tower-side .sub{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); text-align:center; max-width:280px; }
-
-  /* ---------- Card de autenticação ---------- */
-  #auth-card{
-    width:380px; max-width:92vw;
-    background:linear-gradient(180deg,var(--bg-panel),var(--bg-stone));
-    border:1px solid var(--line-gold); border-radius:10px;
-    box-shadow:0 24px 70px rgba(0,0,0,.6);
-    overflow:hidden;
+  .painel::before{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    border-style:solid;
+    border-width:calc(350px * var(--s)) calc(82px * var(--s)) calc(105px * var(--s));
+    border-image:url('https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/moldura_azul.png') 350 82 105 fill / calc(350px * var(--s)) calc(82px * var(--s)) calc(105px * var(--s)) stretch;
+    filter:drop-shadow(0 18px 40px rgba(0,0,0,.6));
   }
-  #auth-tabs{ display:flex; border-bottom:1px solid var(--line-gold); }
-  .auth-tab{ flex:1; text-align:center; padding:12px 4px; font-family:var(--font-mono); font-size:11px;
-    letter-spacing:.05em; color:var(--text-dim); cursor:pointer; text-transform:uppercase; }
-  .auth-tab.active{ color:var(--luz); background:rgba(233,193,74,.06); box-shadow:inset 0 -2px 0 var(--luz); }
+  .painel > *{ position:relative; z-index:1; }
 
-  .auth-body{ padding:24px 22px; display:none; }
-  .auth-body.active{ display:block; }
-
-  .field{ margin-bottom:14px; }
-  .field label{ display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); margin-bottom:5px; letter-spacing:.03em; }
-  .field input{
-    width:100%; background:#140f0a; border:1px solid #3a2f1f; border-radius:5px; color:var(--text-main);
-    padding:10px 11px; font-family:var(--font-body); font-size:13.5px; outline:none;
+  .titulo{
+    font-family:'Cinzel', serif; font-weight:800; text-align:center; letter-spacing:.08em;
+    font-size:25px; margin:6px 0 2px;
+    background:linear-gradient(180deg,#fff3d6,#f2b45c 60%,#b8742a);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.8));
   }
-  .field input:focus{ border-color:var(--line-gold-bright); }
+  .subtitulo{ text-align:center; font-size:11px; color:var(--texto-fraco); letter-spacing:.2em; text-transform:uppercase; margin-bottom:4px; }
 
-  .btn-primary{
-    width:100%; padding:11px; border-radius:6px; border:1px solid var(--line-gold-bright);
-    background:linear-gradient(180deg,#4a3a1e,#2c2115); color:var(--luz); font-family:var(--font-display);
-    font-size:13px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; margin-top:4px;
+  /* telas do painel (login / criar conta / trocar e-mail / trocar RK) */
+  .tela{ display:none; }
+  .tela.ativa{ display:block; animation:surge .25s ease-out; }
+  @keyframes surge{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+
+  /* ---------- campo com a arte (campo_base.png 594x151) ----------
+     o <input> fica na faixa escura (x 115..542, y 39..112 da arte) e o ícone
+     (SVG) no quadradinho da esquerda */
+  .campo{
+    position:relative; display:block; aspect-ratio:594 / 151;
+    margin:-6px -8px -10px;
+    background:url('https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/campo_base.png') center / 100% 100% no-repeat;
+    transition:filter .15s;
   }
-  .btn-primary:hover{ filter:brightness(1.15); }
-  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .campo:focus-within{ filter:drop-shadow(0 0 6px rgba(62,162,255,.7)) brightness(1.12); }
+  .campo svg{ position:absolute; left:14%; top:53%; width:5.6%; transform:translate(-50%,-50%); fill:#8fa6c8; pointer-events:none; }
+  .campo input{
+    position:absolute; left:19.6%; right:8.9%; top:26%; bottom:26%; width:auto;
+    background:transparent; border:0; outline:none; color:var(--texto);
+    font:500 15px 'Inter', sans-serif; padding:0 12px;
+  }
+  .campo input::placeholder{ color:#66748f; }
+  .campo input.mono{ font-family:'JetBrains Mono', monospace; font-size:13px; letter-spacing:.02em; }
 
-  .msg{ font-family:var(--font-mono); font-size:11.5px; padding:9px 10px; border-radius:5px; margin-bottom:12px; display:none; line-height:1.5; }
+  .linha{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 4px; font-size:13px; }
+  .lembrar{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; text-shadow:0 1px 2px #000; }
+  .lembrar input{ appearance:none; width:16px; height:16px; border:1px solid #3a4c74; border-radius:3px; background:#0b1120; display:grid; place-items:center; cursor:pointer; box-shadow:inset 0 1px 3px #000; }
+  .lembrar input:checked{ border-color:var(--azul); box-shadow:0 0 8px rgba(62,162,255,.6); }
+  .lembrar input:checked::after{ content:''; width:8px; height:8px; border-radius:1px; background:var(--azul); }
+  .linha a, .voltar a{ color:#8fc4ff; text-decoration:none; text-shadow:0 1px 2px #000; cursor:pointer; }
+  .linha a:hover, .voltar a:hover{ color:#cfe6ff; text-shadow:0 0 8px rgba(62,162,255,.8); }
+
+  /* ---------- botão com a arte: normal / aceso / pressionado ---------- */
+  .btn-arte{ display:block; width:78%; margin:4px auto 0; aspect-ratio:488 / 117; position:relative; cursor:pointer; border:0; padding:0; background:none; }
+  .btn-arte img{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none; user-select:none; }
+  .btn-arte .b-normal, .btn-arte .b-press{ width:100%; }
+  .btn-arte .b-hover{ width:calc(100% * 508 / 488); opacity:0; transition:opacity .18s; }
+  .btn-arte .b-press{ opacity:0; }
+  .btn-arte:hover .b-hover, .btn-arte:focus-visible .b-hover{ opacity:1; }
+  .btn-arte:active .b-press{ opacity:1; }
+  .btn-arte:active .b-hover{ opacity:0; }
+  .btn-arte:focus-visible{ outline:none; }
+  .btn-arte:disabled{ cursor:wait; filter:grayscale(.6) brightness(.8); }
+  /* o ENTRAR já vem desenhado; nos outros botões a palavra vai por cima da arte "lisa" */
+  .btn-arte .rotulo{ position:absolute; inset:0; display:grid; place-items:center; font-family:'Cinzel', serif; font-weight:800; font-size:15px; letter-spacing:.1em; color:#ffe6c4; text-shadow:0 0 8px rgba(255,154,60,.7), 0 2px 2px #000; pointer-events:none; }
+  .btn-arte .esconde-texto{ position:absolute; left:28%; right:28%; top:30%; bottom:30%; background:linear-gradient(180deg,#2a221d,#201914); border-radius:3px; filter:blur(1.5px); pointer-events:none; }
+
+  /* ---------- links com os ícones da arte ---------- */
+  .links{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:10px; font-size:13px; }
+  .links a{ color:#8fc4ff; text-decoration:none; display:inline-flex; align-items:center; gap:6px; text-shadow:0 1px 2px #000; cursor:pointer; transition:color .15s, text-shadow .15s; }
+  .links a:hover{ color:#cfe6ff; text-shadow:0 0 8px rgba(62,162,255,.8); }
+  .links a img{ width:26px; height:26px; transition:filter .15s, transform .15s; }
+  .links a:hover img{ filter:brightness(1.25) drop-shadow(0 0 4px rgba(255,190,90,.7)); transform:translateY(-1px); }
+  #link-email:hover img{ filter:brightness(1.25) drop-shadow(0 0 5px rgba(62,162,255,.9)); }
+  .voltar{ text-align:center; margin-top:10px; font-size:13px; }
+
+  /* ---------- mensagens / recovery key ---------- */
+  .msg{ display:none; margin:2px 4px 8px; padding:8px 10px; border-radius:4px; font-size:12.5px; line-height:1.45; text-align:center; background:rgba(5,9,18,.7); }
   .msg.show{ display:block; }
-  .msg.error{ background:rgba(201,69,90,.12); border:1px solid var(--err); color:#ef9aa5; }
-  .msg.ok{ background:rgba(127,174,94,.12); border:1px solid var(--ok); color:#b9dba0; }
+  .msg.error{ border:1px solid rgba(255,110,110,.55); color:var(--err); }
+  .msg.ok{ border:1px solid rgba(110,220,140,.5); color:var(--ok); }
+  .rk-box{ display:none; margin:10px 4px 0; padding:10px 12px; border:1px dashed rgba(242,180,92,.7); border-radius:5px; background:rgba(5,9,18,.75); font-size:11.5px; color:var(--texto-fraco); text-align:center; }
+  .rk-box.show{ display:block; }
+  .rk-box .key{ font-family:'JetBrains Mono', monospace; color:#ffd27a; font-size:15px; letter-spacing:.03em; margin:6px 0; word-break:break-all; }
+  .dica{ margin:8px 6px 0; font-size:11.5px; color:var(--texto-fraco); text-align:center; line-height:1.5; text-shadow:0 1px 2px #000; }
+  #register-captcha{ display:flex; justify-content:center; margin:6px 0 2px; }
 
-  .recovery-box{
-    margin-top:14px; padding:12px; background:#140f0a; border:1px dashed var(--line-gold-bright); border-radius:6px;
-    font-family:var(--font-mono); font-size:12px; display:none;
-  }
-  .recovery-box.show{ display:block; }
-  .recovery-box .key{ color:var(--luz); font-size:15px; letter-spacing:.03em; margin:6px 0; word-break:break-all; }
-  .recovery-box .warn{ color:var(--text-dim); font-size:10.5px; }
-
-  .link-row{ text-align:center; margin-top:14px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); }
-  .link-row a{ color:var(--line-gold-bright); text-decoration:none; cursor:pointer; }
-  .link-row a:hover{ text-decoration:underline; }
-
-  .dev-note{ margin-top:16px; padding-top:12px; border-top:1px dashed #3a2f1f; font-family:var(--font-mono); font-size:9.5px; color:#6a5c44; line-height:1.5; }
+  @media (max-width:560px){ .painel{ --s:.5; padding-left:26px; padding-right:26px; margin-top:8vh; } .titulo{ font-size:20px; } }
+  @media (max-height:640px){ .painel{ margin-top:4vh; } }
+  @media (prefers-reduced-motion:reduce){ .btn-arte img, .links a img, .tela.ativa{ transition:none; animation:none; } }
 </style>
 </head>
 <body>
 
-<div id="wrap">
+<canvas id="cena" aria-hidden="true"></canvas>
 
-  <!-- ILUSTRAÇÃO: torre + 6 orbes elementais -->
-  <div id="tower-side">
-    <svg width="240" height="320" viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="glowFogo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e2542b" stop-opacity=".9"/><stop offset="100%" stop-color="#e2542b" stop-opacity="0"/></radialGradient>
-        <radialGradient id="glowAgua" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3a8fc2" stop-opacity=".9"/><stop offset="100%" stop-color="#3a8fc2" stop-opacity="0"/></radialGradient>
-        <radialGradient id="glowTerra" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6f8f4e" stop-opacity=".9"/><stop offset="100%" stop-color="#6f8f4e" stop-opacity="0"/></radialGradient>
-        <radialGradient id="glowAr" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#cdd9df" stop-opacity=".9"/><stop offset="100%" stop-color="#cdd9df" stop-opacity="0"/></radialGradient>
-        <radialGradient id="glowLuz" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e9c14a" stop-opacity=".9"/><stop offset="100%" stop-color="#e9c14a" stop-opacity="0"/></radialGradient>
-        <radialGradient id="glowTrevas" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#8358c9" stop-opacity=".9"/><stop offset="100%" stop-color="#8358c9" stop-opacity="0"/></radialGradient>
-        <linearGradient id="towerBody" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#3a2f22"/><stop offset="100%" stop-color="#171310"/>
-        </linearGradient>
-      </defs>
+<div class="login-wrap">
+  <div class="painel" id="painel">
+    <h1 class="titulo">ELEMENTAL ONLINE</h1>
+    <p class="subtitulo" id="subtitulo">Acesse sua conta</p>
 
-      <ellipse cx="120" cy="300" rx="90" ry="14" fill="#000" opacity=".35"/>
+    <!-- ===================== LOGIN ===================== -->
+    <form class="tela ativa" id="tela-login" data-sub="Acesse sua conta" autocomplete="on" novalidate>
+      <div class="msg" id="login-msg" role="status"></div>
+      <label class="campo" aria-label="Usuário">
+        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.3 0-9 2.7-9 6v2h18v-2c0-3.3-3.7-6-9-6Z"/></svg>
+        <input id="login-username" type="text" placeholder="Usuário" autocomplete="username">
+      </label>
+      <label class="campo" aria-label="Senha">
+        <svg viewBox="0 0 24 24"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v13h14V9h-2Zm-8 0V7a3 3 0 0 1 6 0v2H9Zm3 4a2 2 0 0 1 1 3.7V19h-2v-2.3A2 2 0 0 1 12 13Z"/></svg>
+        <input id="login-password" type="password" placeholder="Senha" autocomplete="current-password">
+      </label>
+      <div class="linha">
+        <label class="lembrar"><input type="checkbox" id="lembrar"> Lembrar dados</label>
+        <a data-ir="registro">Criar conta</a>
+      </div>
+      <button class="btn-arte" type="submit" id="login-btn" aria-label="Entrar">
+        <img class="b-normal" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar.png" alt="">
+        <img class="b-hover" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_hover.png" alt="">
+        <img class="b-press" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_press.png" alt="">
+      </button>
+      <nav class="links">
+        <a id="link-email" data-ir="email"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/icone_engrenagem.png" alt=""> Trocar E-mail</a>
+        <a id="link-rk" data-ir="rk"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/icone_chave.png" alt=""> Trocar RK</a>
+      </nav>
+    </form>
 
-      <!-- orbes elementais orbitando a base -->
-      <circle cx="35"  cy="250" r="26" fill="url(#glowFogo)"/>
-      <circle cx="205" cy="250" r="26" fill="url(#glowAgua)"/>
-      <circle cx="20"  cy="180" r="22" fill="url(#glowTerra)"/>
-      <circle cx="220" cy="180" r="22" fill="url(#glowAr)"/>
-      <circle cx="45"  cy="120" r="20" fill="url(#glowLuz)"/>
-      <circle cx="195" cy="120" r="20" fill="url(#glowTrevas)"/>
-      <circle cx="35" cy="250" r="5" fill="#e2542b"/>
-      <circle cx="205" cy="250" r="5" fill="#3a8fc2"/>
-      <circle cx="20" cy="180" r="4.5" fill="#6f8f4e"/>
-      <circle cx="220" cy="180" r="4.5" fill="#cdd9df"/>
-      <circle cx="45" cy="120" r="4" fill="#e9c14a"/>
-      <circle cx="195" cy="120" r="4" fill="#8358c9"/>
-
-      <!-- torre central -->
-      <polygon points="95,300 145,300 140,60 100,60" fill="url(#towerBody)" stroke="#8a6a34" stroke-width="1.5"/>
-      <polygon points="100,60 140,60 132,30 108,30" fill="#4a3a24" stroke="#8a6a34" stroke-width="1.5"/>
-      <polygon points="108,30 132,30 120,8" fill="#d3ab54"/>
-      <rect x="106" y="140" width="28" height="40" fill="#0d0b09" stroke="#8a6a34" stroke-width="1"/>
-      <rect x="106" y="200" width="28" height="40" fill="#0d0b09" stroke="#8a6a34" stroke-width="1"/>
-      <circle cx="120" cy="19" r="4" fill="#f2e2a8"/>
-    </svg>
-    <h1>Aincrad Online</h1>
-    <div class="sub">Cidade Central e as 6 Torres Elementais aguardam. Crie sua conta para começar a escalada.</div>
-  </div>
-
-  <!-- CARD DE AUTENTICAÇÃO -->
-  <div id="auth-card">
-    <div id="auth-tabs">
-      <div class="auth-tab active" data-tab="login">Entrar</div>
-      <div class="auth-tab" data-tab="register">Criar Conta</div>
-      <div class="auth-tab" data-tab="recover">Recuperar</div>
-    </div>
-
-    <!-- LOGIN -->
-    <div class="auth-body active" id="tab-login">
-      <div class="msg" id="login-msg"></div>
-      <div class="field"><label>Usuário</label><input type="text" id="login-username" autocomplete="username"></div>
-      <div class="field"><label>Senha</label><input type="password" id="login-password" autocomplete="current-password"></div>
-      <button class="btn-primary" id="login-btn">Entrar na Torre</button>
-      <div class="link-row">Esqueceu o acesso? <a data-goto="recover">Recuperar conta</a></div>
-    </div>
-
-    <!-- CRIAR CONTA -->
-    <div class="auth-body" id="tab-register">
-      <div class="msg" id="register-msg"></div>
-      <div class="field"><label>Usuário</label><input type="text" id="register-username" autocomplete="username"></div>
-      <div class="field"><label>Email</label><input type="email" id="register-email" autocomplete="email"></div>
-      <div class="field"><label>Senha (mín. 6 caracteres)</label><input type="password" id="register-password" autocomplete="new-password"></div>
-      <div id="register-captcha" style="margin:6px 0 10px;"></div>
-      <button class="btn-primary" id="register-btn">Criar Conta</button>
-      <div class="recovery-box" id="register-recovery">
-        <div class="warn">Sua Recovery Key (enviada por email) — guarde-a, é a única forma de trocar o email da conta:</div>
+    <!-- ===================== CRIAR CONTA ===================== -->
+    <form class="tela" id="tela-registro" data-sub="Criar conta" autocomplete="on" novalidate>
+      <div class="msg" id="register-msg" role="status"></div>
+      <label class="campo" aria-label="Usuário">
+        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.3 0-9 2.7-9 6v2h18v-2c0-3.3-3.7-6-9-6Z"/></svg>
+        <input id="register-username" type="text" placeholder="Usuário" autocomplete="username">
+      </label>
+      <label class="campo" aria-label="E-mail">
+        <svg viewBox="0 0 24 24"><path d="M2 5h20v14H2V5Zm2 2v.4l8 5 8-5V7H4Zm16 2.8-8 5-8-5V17h16V9.8Z"/></svg>
+        <input id="register-email" type="email" placeholder="E-mail" autocomplete="email">
+      </label>
+      <label class="campo" aria-label="Senha">
+        <svg viewBox="0 0 24 24"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v13h14V9h-2Zm-8 0V7a3 3 0 0 1 6 0v2H9Zm3 4a2 2 0 0 1 1 3.7V19h-2v-2.3A2 2 0 0 1 12 13Z"/></svg>
+        <input id="register-password" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="new-password">
+      </label>
+      <div id="register-captcha"></div>
+      <button class="btn-arte" type="submit" id="register-btn" aria-label="Criar conta">
+        <img class="b-normal" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar.png" alt="">
+        <img class="b-hover" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_hover.png" alt="">
+        <img class="b-press" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_press.png" alt="">
+        <span class="esconde-texto"></span><span class="rotulo">CRIAR CONTA</span>
+      </button>
+      <div class="rk-box" id="register-recovery">
+        Sua Recovery Key (enviada por e-mail). Guarde-a: é a única forma de trocar o e-mail da conta.
         <div class="key" id="register-recovery-key">—</div>
-        <div class="warn">Você será levado ao jogo em alguns segundos...</div>
+        Você será levado ao jogo em alguns segundos...
       </div>
-      <div class="dev-note">Modo de desenvolvimento: este servidor não envia email de verdade. A recovery key acima veio do "outbox" mockado só para você testar o fluxo.</div>
-    </div>
+      <div class="voltar"><a data-ir="login">← Voltar ao login</a></div>
+    </form>
 
-    <!-- RECUPERAR CONTA -->
-    <div class="auth-body" id="tab-recover">
-      <div class="msg" id="recover-msg"></div>
-      <div class="field"><label>Usuário</label><input type="text" id="recover-username"></div>
-      <div class="field"><label>Recovery Key</label><input type="text" id="recover-key" placeholder="EX: FOGO-1D3B-B828-562B" style="font-family:var(--font-mono);"></div>
-      <div class="field"><label>Novo Email</label><input type="email" id="recover-newemail"></div>
-      <button class="btn-primary" id="recover-btn">Trocar Email da Conta</button>
-      <div class="recovery-box" id="recover-recovery">
-        <div class="warn">Sua NOVA Recovery Key (a antiga não funciona mais):</div>
-        <div class="key" id="recover-recovery-key">—</div>
+    <!-- ===================== TROCAR E-MAIL ===================== -->
+    <form class="tela" id="tela-email" data-sub="Trocar e-mail da conta" novalidate>
+      <div class="msg" id="email-msg" role="status"></div>
+      <label class="campo" aria-label="Usuário">
+        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.3 0-9 2.7-9 6v2h18v-2c0-3.3-3.7-6-9-6Z"/></svg>
+        <input id="email-username" type="text" placeholder="Usuário" autocomplete="username">
+      </label>
+      <label class="campo" aria-label="Recovery Key">
+        <svg viewBox="0 0 24 24"><path d="M14 2a8 8 0 0 0-7.7 10.2L2 16.5V22h5.5v-2h2v-2h2l1.3-1.3A8 8 0 1 0 14 2Zm2 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>
+        <input id="email-key" class="mono" type="text" placeholder="Recovery Key (ex.: FOGO-1D3B-B828-562B)" autocomplete="off">
+      </label>
+      <label class="campo" aria-label="Novo e-mail">
+        <svg viewBox="0 0 24 24"><path d="M2 5h20v14H2V5Zm2 2v.4l8 5 8-5V7H4Zm16 2.8-8 5-8-5V17h16V9.8Z"/></svg>
+        <input id="email-new" type="email" placeholder="Novo e-mail" autocomplete="email">
+      </label>
+      <button class="btn-arte" type="submit" id="email-btn" aria-label="Trocar e-mail">
+        <img class="b-normal" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar.png" alt="">
+        <img class="b-hover" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_hover.png" alt="">
+        <img class="b-press" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_press.png" alt="">
+        <span class="esconde-texto"></span><span class="rotulo">TROCAR</span>
+      </button>
+      <div class="rk-box" id="email-recovery">
+        Sua NOVA Recovery Key (a antiga não funciona mais):
+        <div class="key" id="email-recovery-key">—</div>
       </div>
-      <div class="link-row">Lembrou a senha? <a data-goto="login">Voltar ao login</a></div>
-    </div>
+      <div class="voltar"><a data-ir="login">← Voltar ao login</a></div>
+    </form>
+
+    <!-- ===================== TROCAR RK ===================== -->
+    <form class="tela" id="tela-rk" data-sub="Gerar nova Recovery Key" novalidate>
+      <div class="msg" id="rk-msg" role="status"></div>
+      <label class="campo" aria-label="Usuário">
+        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.3 0-9 2.7-9 6v2h18v-2c0-3.3-3.7-6-9-6Z"/></svg>
+        <input id="rk-username" type="text" placeholder="Usuário" autocomplete="username">
+      </label>
+      <label class="campo" aria-label="Recovery Key atual">
+        <svg viewBox="0 0 24 24"><path d="M14 2a8 8 0 0 0-7.7 10.2L2 16.5V22h5.5v-2h2v-2h2l1.3-1.3A8 8 0 1 0 14 2Zm2 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>
+        <input id="rk-key" class="mono" type="text" placeholder="Recovery Key atual" autocomplete="off">
+      </label>
+      <label class="campo" aria-label="E-mail da conta">
+        <svg viewBox="0 0 24 24"><path d="M2 5h20v14H2V5Zm2 2v.4l8 5 8-5V7H4Zm16 2.8-8 5-8-5V17h16V9.8Z"/></svg>
+        <input id="rk-email" type="email" placeholder="E-mail atual da conta" autocomplete="email">
+      </label>
+      <button class="btn-arte" type="submit" id="rk-btn" aria-label="Gerar nova RK">
+        <img class="b-normal" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar.png" alt="">
+        <img class="b-hover" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_hover.png" alt="">
+        <img class="b-press" src="https://elementalmmoprg.github.io/Elemental_assets/assets/login/ui/btn_entrar_press.png" alt="">
+        <span class="esconde-texto"></span><span class="rotulo">GERAR NOVA RK</span>
+      </button>
+      <div class="rk-box" id="rk-recovery">
+        Sua NOVA Recovery Key (a antiga não funciona mais):
+        <div class="key" id="rk-recovery-key">—</div>
+      </div>
+      <p class="dica">A nova chave também é enviada para o e-mail da conta.</p>
+      <div class="voltar"><a data-ir="login">← Voltar ao login</a></div>
+    </form>
   </div>
-
 </div>
 
 <script>
+'use strict';
+/* =====================================================================
+   1) CENA ANIMADA: fundo das 4 torres + dragão (sprite 6 x 2)
+   ===================================================================== */
+const ASSETS = 'https://elementalmmoprg.github.io/Elemental_assets/assets/login/';
+const CENA = {
+  fundo: ASSETS + 'bg-login.jpg',
+  dragao: ASSETS + 'dragon-sprite.png',
+  colunas: 6, linhas: 2, totalFrames: 12,
+  fpsAsas: 12,              // batidas de asa (quadros por segundo)
+  alturaDragao: 0.21,       // altura da arte do dragão = 21% da tela
+  velocidadeMin: 60, velocidadeMax: 140, // px/s (ajustado ao tamanho da tela)
+  chromaKey: true, limiarBranco: 245     // branco puro vira transparente (1x no carregamento)
+};
+const canvas = document.getElementById('cena');
+const ctx = canvas.getContext('2d', { alpha: false });
+let W = 0, H = 0, DPR = 1;
+function redimensionar(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  calcularFundo();
+}
+window.addEventListener('resize', ()=>{ redimensionar(); encaixarNoCeu(); });
+
+function carregar(src){
+  return new Promise((ok, erro) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';            // GitHub Pages manda CORS: libera ler os pixels (recorte do dragão)
+    img.onload = () => ok(img);
+    img.onerror = () => erro(new Error('Não consegui carregar ' + src));
+    img.src = src;
+  });
+}
+let imgFundo = null;
+
+/* Quadros do dragão: a grade é 6 x 2 (célula = largura/6 x altura/2), mas a
+   arte de cada dragão é maior que a célula (a cabeça invade a vizinha) e a
+   linha de baixo está mais alta. 1 vez no carregamento: a grade diz de QUAL
+   quadro é cada dragão (o centro dele cai na célula); recortamos só os pixels
+   dele (componente conectado do alfa) num canvas próprio, com o chroma key, e
+   alinhamos todos pela barriga. No loop é 1 drawImage por quadro. */
+const quadros = []; let celulaW = 0, celulaH = 0, artH = 1, artW = 1;
+function prepararQuadros(img){
+  const W0 = img.naturalWidth, H0 = img.naturalHeight;
+  celulaW = W0 / CENA.colunas; celulaH = H0 / CENA.linhas;
+  const c = document.createElement('canvas'); c.width = W0; c.height = H0;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+  let dados;
+  try { dados = g.getImageData(0, 0, W0, H0); }
+  catch(e){ // sem leitura de pixels: corte simples pela grade
+    for(let f = 0; f < CENA.totalFrames; f++){
+      const col = f % CENA.colunas, lin = Math.floor(f / CENA.colunas);
+      const cv = document.createElement('canvas'); cv.width = Math.ceil(celulaW); cv.height = Math.ceil(celulaH);
+      cv.getContext('2d').drawImage(img, col * celulaW, lin * celulaH, celulaW, celulaH, 0, 0, celulaW, celulaH);
+      quadros[f] = { cv, w: cv.width, h: cv.height, ox: 0, base: cv.height };
+    }
+    artH = celulaH; artW = celulaW; return;
+  }
+  const p = dados.data, L = CENA.limiarBranco;
+  if(CENA.chromaKey) for(let i = 0; i < p.length; i += 4) if(p[i] >= L && p[i+1] >= L && p[i+2] >= L) p[i+3] = 0;
+  const N = W0 * H0, rot = new Int32Array(N), fila = new Int32Array(N), comps = []; let id = 0;
+  for(let s = 0; s < N; s++){
+    if(rot[s] || p[s*4+3] <= 20) continue;
+    id++; let ini = 0, fim = 0, x0 = W0, y0 = H0, x1 = 0, y1 = 0, n = 0;
+    fila[fim++] = s; rot[s] = id;
+    while(ini < fim){
+      const q = fila[ini++], x = q % W0, y = (q / W0) | 0; n++;
+      if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y;
+      for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){
+        const nx = x + dx, ny = y + dy; if(nx < 0 || ny < 0 || nx >= W0 || ny >= H0) continue;
+        const v = ny * W0 + nx; if(!rot[v] && p[v*4+3] > 20){ rot[v] = id; fila[fim++] = v; }
+      }
+    }
+    comps.push({ id, x0, y0, x1, y1, n });
+  }
+  const minimo = celulaW * celulaH * 0.02, porQuadro = [];
+  for(const k of comps){
+    if(k.n < minimo) continue;
+    const col = Math.min(CENA.colunas - 1, Math.floor(((k.x0 + k.x1) / 2) / celulaW));
+    const lin = Math.min(CENA.linhas - 1, Math.floor(((k.y0 + k.y1) / 2) / celulaH));
+    const f = lin * CENA.colunas + col;
+    if(!porQuadro[f] || porQuadro[f].n < k.n) porQuadro[f] = k;
+  }
+  const baseLinha = [];
+  for(let lin = 0; lin < CENA.linhas; lin++){
+    const ks = porQuadro.slice(lin * CENA.colunas, (lin + 1) * CENA.colunas).filter(Boolean);
+    baseLinha[lin] = ks.reduce((s, k) => s + k.y1, 0) / Math.max(1, ks.length);
+  }
+  for(let f = 0; f < CENA.totalFrames; f++){
+    const k = porQuadro[f]; if(!k){ quadros[f] = quadros[f-1] || null; continue; }
+    const col = f % CENA.colunas, lin = Math.floor(f / CENA.colunas);
+    const w = k.x1 - k.x0 + 1, h = k.y1 - k.y0 + 1;
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const cg = cv.getContext('2d'), out = cg.createImageData(w, h), o = out.data;
+    for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){
+      const v = (k.y0 + y) * W0 + (k.x0 + x); if(rot[v] !== k.id) continue;
+      const a = (y * w + x) * 4, b = v * 4; o[a] = p[b]; o[a+1] = p[b+1]; o[a+2] = p[b+2]; o[a+3] = p[b+3];
+    }
+    cg.putImageData(out, 0, 0);
+    quadros[f] = { cv, w, h, ox: k.x0 - col * celulaW, base: h + (baseLinha[lin] - k.y1) };
+    artH = Math.max(artH, h); artW = Math.max(artW, k.x1 - col * celulaW);
+  }
+}
+const fundo = { x: 0, y: 0, w: 0, h: 0 };
+function calcularFundo(){
+  if(!imgFundo) return;
+  const e = Math.max(W / imgFundo.naturalWidth, H / imgFundo.naturalHeight);
+  fundo.w = imgFundo.naturalWidth * e; fundo.h = imgFundo.naturalHeight * e;
+  fundo.x = (W - fundo.w) / 2; fundo.y = (H - fundo.h) / 2;
+}
+const dragao = { x: 0, y: 0, baseY: 0, vel: 0, escala: 1, tempo: 0, fase: 0, dir: 1 };
+const aleatorio = (a, b) => a + Math.random() * (b - a);
+function novaPassada(primeira){   // cada passada: altura, velocidade, tamanho e lado sorteados — sempre no céu acima do painel
+  const d = dragao;
+  d.dir = Math.random() < 0.7 ? 1 : -1;
+  d.sorteioTam = aleatorio(0.8, 1.15); d.sorteioY = Math.random();
+  encaixarNoCeu();
+  d.vel = aleatorio(CENA.velocidadeMin, CENA.velocidadeMax) * Math.max(0.6, W / 1600);
+  d.fase = Math.random() * Math.PI * 2;
+  d.x = d.dir === 1 ? -artW * d.escala : W;
+  if(primeira) d.x = d.dir === 1 ? W * 0.05 : W * 0.6;
+}
+/* tamanho e altura do voo cabem no céu ACIMA do painel (o painel muda de
+   altura entre as telas e com o tamanho da janela): o dragão encolhe se o céu
+   for baixo, em vez de passar escondido atrás da moldura */
+function encaixarNoCeu(){
+  const d = dragao; if(!artH) return;
+  const painel = document.getElementById('painel');
+  const topoPainel = painel.getBoundingClientRect().top + 30;  // a crista da moldura pode cobrir a cauda
+  const desejada = (H * CENA.alturaDragao) / artH * (d.sorteioTam || 1);
+  const caber = (topoPainel - H * 0.02) / (artH * 1.05);
+  d.escala = Math.max(Math.min(desejada, caber), (H * 0.07) / artH);
+  const alturaArte = artH * d.escala;
+  const minY = alturaArte * 0.92 + H * 0.01, maxY = Math.max(minY, topoPainel - H * 0.015);
+  d.baseY = minY + (maxY - minY) * (d.sorteioY == null ? 0.5 : d.sorteioY);
+}
+let ultimo = 0;
+function loop(agora){   // requestAnimationFrame + delta time: mesma velocidade em 60 ou 144 Hz
+  const dt = Math.min(0.05, (agora - ultimo) / 1000 || 0); ultimo = agora;
+  const d = dragao;
+  if(quadros.length){
+    d.tempo += dt; d.x += d.vel * d.dir * dt;
+    d.y = d.baseY + Math.sin(d.tempo * 1.6 + d.fase) * (H * 0.01);
+    if((d.dir === 1 && d.x > W) || (d.dir === -1 && d.x < -artW * d.escala)) novaPassada(false);
+  }
+  if(imgFundo) ctx.drawImage(imgFundo, fundo.x, fundo.y, fundo.w, fundo.h);
+  else { ctx.fillStyle = '#050811'; ctx.fillRect(0, 0, W, H); }
+  if(quadros.length){
+    const q = quadros[Math.floor(d.tempo * CENA.fpsAsas) % CENA.totalFrames];
+    if(q){
+      const s = d.escala, dw = q.w * s, dh = q.h * s, top = d.y - q.base * s;
+      ctx.save();
+      if(d.dir === -1){ ctx.translate(d.x + artW * s, 0); ctx.scale(-1, 1); ctx.drawImage(q.cv, q.ox * s, top, dw, dh); }
+      else ctx.drawImage(q.cv, d.x + q.ox * s, top, dw, dh);
+      ctx.restore();
+    }
+  }
+  requestAnimationFrame(loop);
+}
+(async function iniciarCena(){
+  redimensionar(); requestAnimationFrame(loop);
+  try{
+    const bg = await carregar(CENA.fundo); imgFundo = bg; calcularFundo();
+    const dr = await carregar(CENA.dragao); prepararQuadros(dr); novaPassada(true);
+  }catch(e){ console.warn('[login] cena:', e.message); }
+})();
+
+/* =====================================================================
+   2) CONTA: login / criar conta / trocar e-mail / trocar RK
+   (mesmas rotas e regras da tela anterior)
+   ===================================================================== */
 (function(){
-  "use strict";
   // Backend oficial no Render — fixo, não detectado por location.origin.
   const API_BASE = (/^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(window.location.hostname)) ? `http://${window.location.hostname}:8787` : 'https://elemental-server.onrender.com';
-
-  // localStorage padronizado globalmente (index.html, character-select.html, hunt-engine.html)
-  const LS_TOKEN = 'elemental_token';
-  const LS_USERNAME = 'elemental_username';
-  // Id do aparelho (anti-spam, 22/10/2026): aleatório, salvo neste navegador — o
-  // servidor usa pra banir o "lugar" junto com a conta (ver /ban no server.js).
-  const LS_DEVICE = 'elemental_device';
+  // localStorage padronizado globalmente (index.html, character-select.html, world-prototype.html)
+  const LS_TOKEN = 'elemental_token', LS_USERNAME = 'elemental_username', LS_DEVICE = 'elemental_device', LS_LEMBRAR = 'elemental_login_lembrado';
+  // Id do aparelho (anti-spam): aleatório, salvo neste navegador
   function deviceId(){
     let d = null; try{ d = localStorage.getItem(LS_DEVICE); }catch(e){}
     if(!d){ d = Array.from(crypto.getRandomValues(new Uint8Array(16)), b=>b.toString(16).padStart(2,'0')).join(''); try{ localStorage.setItem(LS_DEVICE, d); }catch(e){} }
     return d;
   }
+  const $ = id => document.getElementById(id);
+
+  // ---- telas do painel ----
+  function irPara(nome){
+    document.querySelectorAll('.tela').forEach(t => t.classList.toggle('ativa', t.id === 'tela-' + nome));
+    const t = $('tela-' + nome); if(t) $('subtitulo').textContent = t.dataset.sub || '';
+    if(typeof encaixarNoCeu === 'function') requestAnimationFrame(encaixarNoCeu);
+    const primeiro = t && t.querySelector('input:not([type=checkbox])'); if(primeiro) setTimeout(()=> primeiro.focus(), 30);
+  }
+  document.querySelectorAll('[data-ir]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); irPara(a.dataset.ir); }));
+
   // Captcha do cadastro (Cloudflare Turnstile) — só aparece se o servidor tiver a chave configurada
   let captchaToken = null, captchaWidget = null;
   fetch(API_BASE + '/api/config').then(r=>r.json()).then(cfg=>{
@@ -203,50 +460,30 @@
     window.__onTurnstile = ()=>{ captchaWidget = window.turnstile.render('#register-captcha', { sitekey: cfg.turnstileSiteKey, theme:'dark', callback: t=>{ captchaToken = t; }, 'expired-callback': ()=>{ captchaToken = null; } }); };
     const sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__onTurnstile&render=explicit'; sc.async = true; document.head.appendChild(sc);
   }).catch(()=>{});
+
+  function showMsg(id, text, type){ const el = $(id); el.textContent = text; el.className = 'msg show ' + type; requestAnimationFrame(encaixarNoCeu); }
+  function clearMsg(id){ $(id).className = 'msg'; }
   // Mensagem deixada pelo jogo ao ser desconectado (ban/expulsão)
   try{ const kick = sessionStorage.getItem('elemental_kick_msg'); if(kick){ sessionStorage.removeItem('elemental_kick_msg'); setTimeout(()=> showMsg('login-msg', kick, 'error'), 50); } }catch(e){}
 
-  function showMsg(id, text, type){
-    const el = document.getElementById(id);
-    el.textContent = text;
-    el.className = 'msg show ' + type;
-  }
-  function clearMsg(id){
-    const el = document.getElementById(id);
-    el.className = 'msg';
-  }
-
-  // troca de abas
-  document.querySelectorAll('.auth-tab').forEach(tab=>{
-    tab.addEventListener('click', ()=> switchTab(tab.dataset.tab));
-  });
-  document.querySelectorAll('[data-goto]').forEach(a=>{
-    a.addEventListener('click', ()=> switchTab(a.dataset.goto));
-  });
-  function switchTab(name){
-    document.querySelectorAll('.auth-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===name));
-    document.querySelectorAll('.auth-body').forEach(b=> b.classList.toggle('active', b.id==='tab-'+name));
-  }
-
   async function api(path, body){
-    const res = await fetch(API_BASE + path, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
-    });
     let data;
-    try { data = await res.json(); } catch(e){ data = { ok:false, error:'resposta_invalida' }; }
+    try{
+      const res = await fetch(API_BASE + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      try { data = await res.json(); } catch(e){ data = { ok:false, error:'resposta_invalida' }; }
+    }catch(e){ data = { ok:false, error:'resposta_invalida' }; }
     return data;
   }
-
   const ERROR_LABELS = {
     campos_obrigatorios:'Preencha todos os campos.',
     usuario_curto:'Usuário precisa ter ao menos 3 caracteres.',
     senha_curta:'Senha precisa ter ao menos 6 caracteres.',
-    email_invalido:'Email inválido.',
+    email_invalido:'E-mail inválido.',
     usuario_em_uso:'Esse nome de usuário já existe.',
-    email_em_uso:'Esse email já está em uso.',
+    email_em_uso:'Esse e-mail já está em uso.',
     credenciais_invalidas:'Usuário ou senha incorretos.',
     usuario_nao_encontrado:'Usuário não encontrado.',
-    recovery_key_invalida:'Recovery key inválida para esse usuário.',
+    recovery_key_invalida:'Recovery Key inválida para esse usuário.',
     erro_interno:'Erro no servidor. Tente novamente.',
     conta_banida:'Esta conta (ou este aparelho/rede) está banida.',
     limite_de_contas:'Limite de contas novas desta rede atingido. Tente de novo amanhã.',
@@ -258,91 +495,84 @@
     if(err === 'conta_banida' && data){ return ERROR_LABELS.conta_banida + (data.until ? ` Até ${new Date(data.until).toLocaleString('pt-BR')}.` : ' (permanente).') + (data.reason ? ` Motivo: ${data.reason}` : ''); }
     return ERROR_LABELS[err] || 'Algo deu errado.';
   }
-
   function saveSessionAndEnter(token, username){
     localStorage.setItem(LS_TOKEN, token);
     localStorage.setItem(LS_USERNAME, username);
     setTimeout(()=>{ window.location.href = 'character-select.html'; }, 1600);
   }
+  // pega a Recovery Key no outbox mockado (modo dev) só pra mostrar na tela
+  async function rkDoOutbox(email, re){
+    try{
+      const inbox = await fetch(`${API_BASE}/api/dev/outbox?email=${encodeURIComponent(email)}`).then(r=>r.json());
+      const last = inbox.mails && inbox.mails[inbox.mails.length-1];
+      const m = last && last.body.match(re); return m ? m[1] : null;
+    }catch(e){ return null; }
+  }
+  function ocupado(btn, sim){ btn.disabled = !!sim; }
+
+  // ---- "Lembrar dados": guarda só o USUÁRIO (nunca a senha) ----
+  try{ const salvo = localStorage.getItem(LS_LEMBRAR); if(salvo){ $('login-username').value = salvo; $('lembrar').checked = true; } }catch(e){}
+  setTimeout(()=> ($('login-username').value ? $('login-password') : $('login-username')).focus(), 50);
 
   // ---- LOGIN ----
-  document.getElementById('login-btn').addEventListener('click', async ()=>{
-    clearMsg('login-msg');
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
+  $('tela-login').addEventListener('submit', async e=>{
+    e.preventDefault(); clearMsg('login-msg');
+    const username = $('login-username').value.trim(), password = $('login-password').value;
     if(!username || !password){ showMsg('login-msg','Preencha usuário e senha.','error'); return; }
+    try{ if($('lembrar').checked) localStorage.setItem(LS_LEMBRAR, username); else localStorage.removeItem(LS_LEMBRAR); }catch(_){}
+    ocupado($('login-btn'), true);
     const data = await api('/api/login', { username, password, deviceId: deviceId() });
-    if(!data.ok){ showMsg('login-msg', labelFor(data.error, data), 'error'); return; }
+    if(!data.ok){ ocupado($('login-btn'), false); showMsg('login-msg', labelFor(data.error, data), 'error'); return; }
     showMsg('login-msg', `Bem-vindo de volta, ${data.username}. Entrando...`, 'ok');
     saveSessionAndEnter(data.token, data.username);
   });
 
   // ---- CRIAR CONTA ----
-  document.getElementById('register-btn').addEventListener('click', async ()=>{
-    clearMsg('register-msg');
-    document.getElementById('register-recovery').classList.remove('show');
-    const username = document.getElementById('register-username').value.trim();
-    const email = document.getElementById('register-email').value.trim();
-    const password = document.getElementById('register-password').value;
+  $('tela-registro').addEventListener('submit', async e=>{
+    e.preventDefault(); clearMsg('register-msg'); $('register-recovery').classList.remove('show');
+    const username = $('register-username').value.trim(), email = $('register-email').value.trim(), password = $('register-password').value;
     if(!username || !email || !password){ showMsg('register-msg','Preencha todos os campos.','error'); return; }
+    ocupado($('register-btn'), true);
     const data = await api('/api/register', { username, email, password, deviceId: deviceId(), captchaToken });
     if(!data.ok){
+      ocupado($('register-btn'), false);
       showMsg('register-msg', labelFor(data.error, data), 'error');
       if(captchaWidget != null && window.turnstile){ try{ window.turnstile.reset(captchaWidget); }catch(e){} captchaToken = null; }
       return;
     }
     showMsg('register-msg', 'Conta criada! Guarde a sua Recovery Key abaixo.', 'ok');
-    if(data.recoveryKey){
-      document.getElementById('register-recovery-key').textContent = data.recoveryKey;
-      document.getElementById('register-recovery').classList.add('show');
-    }
-
-    // busca a recovery key no outbox mockado (modo dev) só pra exibir na tela
-    try{
-      const inbox = await fetch(`${API_BASE}/api/dev/outbox?email=${encodeURIComponent(email)}`).then(r=>r.json());
-      const last = inbox.mails && inbox.mails[inbox.mails.length-1];
-      if(last){
-        const m = last.body.match(/Recovery Key é: (\S+)/);
-        if(m){
-          document.getElementById('register-recovery-key').textContent = m[1];
-          document.getElementById('register-recovery').classList.add('show');
-        }
-      }
-    } catch(e){}
-
+    const rk = data.recoveryKey || await rkDoOutbox(email, /Recovery Key é: (\S+)/);
+    if(rk){ $('register-recovery-key').textContent = rk; $('register-recovery').classList.add('show'); }
     saveSessionAndEnter(data.token, data.username);
   });
 
-  // ---- RECUPERAR CONTA (troca de email com recovery key) ----
-  document.getElementById('recover-btn').addEventListener('click', async ()=>{
-    clearMsg('recover-msg');
-    document.getElementById('recover-recovery').classList.remove('show');
-    const username = document.getElementById('recover-username').value.trim();
-    const recoveryKey = document.getElementById('recover-key').value.trim();
-    const newEmail = document.getElementById('recover-newemail').value.trim();
-    if(!username || !recoveryKey || !newEmail){ showMsg('recover-msg','Preencha todos os campos.','error'); return; }
+  // ---- TROCAR E-MAIL (com a Recovery Key) ----
+  $('tela-email').addEventListener('submit', async e=>{
+    e.preventDefault(); clearMsg('email-msg'); $('email-recovery').classList.remove('show');
+    const username = $('email-username').value.trim(), recoveryKey = $('email-key').value.trim(), newEmail = $('email-new').value.trim();
+    if(!username || !recoveryKey || !newEmail){ showMsg('email-msg','Preencha todos os campos.','error'); return; }
+    ocupado($('email-btn'), true);
     const data = await api('/api/recover/change-email', { username, recoveryKey, newEmail });
-    if(!data.ok){ showMsg('recover-msg', labelFor(data.error), 'error'); return; }
-    showMsg('recover-msg', 'Email atualizado com sucesso! Nova recovery key enviada.', 'ok');
-
-    try{
-      const inbox = await fetch(`${API_BASE}/api/dev/outbox?email=${encodeURIComponent(newEmail)}`).then(r=>r.json());
-      const last = inbox.mails && inbox.mails[inbox.mails.length-1];
-      if(last){
-        const m = last.body.match(/NOVA Recovery Key é: (\S+)/);
-        if(m){
-          document.getElementById('recover-recovery-key').textContent = m[1];
-          document.getElementById('recover-recovery').classList.add('show');
-        }
-      }
-    } catch(e){}
+    ocupado($('email-btn'), false);
+    if(!data.ok){ showMsg('email-msg', labelFor(data.error), 'error'); return; }
+    showMsg('email-msg', 'E-mail atualizado! Uma nova Recovery Key foi enviada.', 'ok');
+    const rk = await rkDoOutbox(newEmail, /NOVA Recovery Key é: (\S+)/);
+    if(rk){ $('email-recovery-key').textContent = rk; $('email-recovery').classList.add('show'); }
   });
 
-  // se já tem sessão salva, pula direto pro jogo
-  if(localStorage.getItem(LS_TOKEN)){
-    // não redireciona automaticamente pra permitir trocar de conta a partir desta tela;
-    // só mostra um aviso discreto.
-  }
+  // ---- TROCAR RK: mesma rota, com o e-mail ATUAL (o servidor gera uma chave nova) ----
+  $('tela-rk').addEventListener('submit', async e=>{
+    e.preventDefault(); clearMsg('rk-msg'); $('rk-recovery').classList.remove('show');
+    const username = $('rk-username').value.trim(), recoveryKey = $('rk-key').value.trim(), email = $('rk-email').value.trim();
+    if(!username || !recoveryKey || !email){ showMsg('rk-msg','Preencha todos os campos.','error'); return; }
+    ocupado($('rk-btn'), true);
+    const data = await api('/api/recover/change-email', { username, recoveryKey, newEmail: email });
+    ocupado($('rk-btn'), false);
+    if(!data.ok){ showMsg('rk-msg', data.error === 'email_em_uso' ? 'Esse não é o e-mail desta conta.' : labelFor(data.error), 'error'); return; }
+    showMsg('rk-msg', 'Nova Recovery Key gerada e enviada para o e-mail da conta.', 'ok');
+    const rk = await rkDoOutbox(email, /NOVA Recovery Key é: (\S+)/);
+    if(rk){ $('rk-recovery-key').textContent = rk; $('rk-recovery').classList.add('show'); }
+  });
 })();
 </script>
 </body>
