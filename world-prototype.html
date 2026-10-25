@@ -575,7 +575,7 @@
   #boss-chest .bc-sub{ font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); text-align:center; }
   #boss-chest .bc-row{ display:flex; gap:22px; justify-content:center; }
   #boss-chest .bc-box{ width:132px; height:132px; border-radius:10px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .15s, box-shadow .15s, opacity .3s, filter .3s; position:relative; }
-  #boss-chest .bc-box img.bc-chest{ width:90px; height:90px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(0 6px 8px rgba(0,0,0,.6)); }
+  #boss-chest .bc-box img.bc-chest{ width:120px; height:96px; object-fit:contain; image-rendering:auto; filter:drop-shadow(0 6px 8px rgba(0,0,0,.6)); } /* 25/10/2026: baú novo (arte pintada, 256x205) */
   #boss-chest .bc-box:hover{ transform:translateY(-4px) scale(1.04); box-shadow:0 0 18px rgba(240,200,110,.45); border-color:var(--gold); }
   #boss-chest.picked .bc-box{ cursor:default; transform:none; }
   #boss-chest.picked .bc-box:not(.chosen){ opacity:.25; filter:grayscale(1); }
@@ -990,6 +990,8 @@
   .skill-points-row{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:6px; flex-shrink:0; }
   .skill-points-row b{ color:var(--gold-bright); }
   #skill-list-wrap{ flex:1; overflow-y:auto; overflow-x:hidden; border:1px solid var(--gold-deep); border-radius:6px; background:radial-gradient(circle at 50% 20%, #16110b, #0a0805 72%); padding:8px; }
+  /* 25/10/2026: arte do arquétipo atrás da árvore (assets/ui/archetype_bg/<arquétipo>.png) */
+  #skill-list-wrap.has-arch-bg{ background:var(--arch-bg) center 6px / auto 470px no-repeat local, radial-gradient(circle at 50% 20%, #16110b, #0a0805 72%); }
   .spell-row-label{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.08em; margin:8px 0 4px; }
   .spell-row-label:first-child{ margin-top:0; }
   .spell-row-cards{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:8px; margin-bottom:4px; }
@@ -1250,7 +1252,9 @@
      de fora) pra garantir que cubra a tela inteira mesmo. ============ */
   #skill-node-modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:220; display:none; align-items:center; justify-content:center; }
   #skill-node-modal-backdrop.show{ display:flex; }
-  #skill-node-modal{ width:380px; max-width:90vw; max-height:80vh; overflow-y:auto; }
+  #skill-node-modal{ width:440px; max-width:92vw; max-height:86vh; overflow-y:auto; }
+  /* 25/10/2026: prévia em vídeo da habilidade (assets/spell_previews/<nome>.mp4) */
+  .spell-preview-video{ display:block; width:100%; aspect-ratio:510/312; margin:4px 0 8px; border:1px solid var(--gold-deep); border-radius:6px; background:#0a0805; object-fit:cover; }
   .skill-node-modal-points-row{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:6px; }
   .spell-card-real{ margin:6px 0 8px; padding:6px 8px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(240,200,110,.06); font-family:var(--font-mono); font-size:10px; color:var(--ink); line-height:1.5; }
   .spell-card-real .lbl{ color:var(--gold); }
@@ -3352,6 +3356,10 @@
       #debuff-row:empty{display:none;}
       .debuff-chip{display:inline-flex;align-items:center;gap:3px;padding:1px 6px 1px 4px;border-radius:9px;font-family:var(--font-mono);font-size:9px;color:#fff;background:rgba(0,0,0,.45);border:1px solid var(--dc,#c66);box-shadow:0 0 6px -2px var(--dc,#c66);}
       .debuff-chip b{font-weight:700;color:var(--dc,#f99);}
+      /* 25/10/2026: ícones de condição (assets/ui/conditions) — buffs verdes e efeitos negativos vermelhos */
+      .cond-ico{position:relative;display:inline-block;width:24px;height:24px;cursor:help;}
+      .cond-ico img{width:24px;height:24px;display:block;image-rendering:auto;}
+      .cond-ico b{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);font-family:var(--font-mono);font-size:8px;font-weight:700;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000;line-height:1;}
     </style>
     <div id="vitals-block" class="glass ornate">
       <div class="vitals-row"><img class="vitals-icon" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn/ui/windows/health_bars/icon_health.png" alt=""><div class="bar-track hp-track"><div class="bar-fill hp" id="hp-bar" style="width:100%"></div><div class="bar-label" id="hp-label"></div></div></div>
@@ -3368,6 +3376,7 @@
             <div class="row">Ganho<b id="stam-recharge-gain">+4h</b></div>
             <div class="row">Hoje<b id="stam-recharge-count">0/4</b></div>
             <div class="row">Custo<b id="stam-recharge-cost">—</b></div>
+            <div class="row" id="stam-session-row" title="Free: a cada 4 horas SEGUIDAS caçando você volta para a Cidade (pode voltar na hora) e, se fechar o jogo, o personagem caça só mais 15 min. Premium: sem limite de sessão e continua caçando até 12h com o jogo fechado.">Caçada seguida<b id="stam-session">—</b></div>
             <div class="italic-note" id="stam-recharge-note"></div>
           </div>
         </div>
@@ -3911,7 +3920,8 @@
   let targetMode = 'closest';
   let followUsername = null; // username sendo seguido quando targetMode==='followPartyMember'
   let currentTargetMonsterId = null; // espelho de state.currentTargetMonsterId do servidor (ver huntEngine.js) — usado pra desenhar a placa de alvo real da Ravendawn (ver drawTargetPlate)
-  let stamina = { current:6*3600*1000, max:6*3600*1000, rechargesUsedToday:0, maxRechargesPerDay:4, rechargeCost:0 };
+  let stamina = { current:12*3600*1000, max:12*3600*1000, rechargesUsedToday:0, maxRechargesPerDay:4, rechargeCost:0, sessionLimitMs:4*3600*1000, sessionMs:0, sessionKickAt:0 };
+  let staminaKickSeen = null, staminaWarned10 = false; // aviso das 4h seguidas do Free (ver tickStamina no huntEngine.js)
   let dispatch = { cooldownMs:60*60*1000, remainingMs:60*60*1000 };
   let autoSellOnBagFull = true;
   let bag = [], bagCapacity = 30;
@@ -4060,8 +4070,11 @@
     visualTheme:null,
   };
   // Curva de XP (23/10/2026) — mesma do servidor (huntEngine.xpForNextLevel/xpLevelStart)
-  function xpForNextLevelClient(l){ return 40*l*l + 60*l; }
-  function xpLevelStartClient(L){ const n = L-1; return Math.round(40*n*(n+1)*(2*n+1)/6 + 60*n*(n+1)/2); }
+  // 25/10/2026: curva igual ao Tibia por volta do Altar — mesma conta de huntEngine.xpForNextLevel
+  function xpCycleClient(){ const p = prestige || {}; return (p.bronzeStars||0)+(p.silverStars||0)+(p.goldStars||0)+(p.diamondRank?1:0); }
+  function tibiaXpTotalClient(L){ return Math.round(50/3*(L*L*L - 6*L*L + 17*L - 12)); }
+  function xpForNextLevelClient(l){ const L = xpCycleClient()*100 + l; return 50*L*L - 150*L + 200; }
+  function xpLevelStartClient(l){ const b = xpCycleClient()*100; return tibiaXpTotalClient(b + l) - tibiaXpTotalClient(b + 1); }
   const remotePlayers = new Map(); // username -> {x,y,location}
   let serverOnlineCount = null, cityInstanceNo = null; // ver 'positions' (cidade instanciada)
 
@@ -6268,13 +6281,43 @@
   const MONSTER_FX_ELEM_ICON = { fogo:'🔥', agua:'❄️', terra:'☠️', ar:'⚡', luz:'✨', trevas:'🌑' };
   const MONSTER_FX_STATUS_LABEL = { queimadura:'🔥 Queimadura', congelamento:'❄️ Congelamento', envenenamento:'☠️ Envenenamento', eletrificacao:'⚡ Eletrificação', ofuscamento:'✨ Ofuscamento', maldicao:'🌑 Maldição', sangramento:'🩸 Sangramento' };
   const DEBUFF_CHIP_COLOR = { fogo:'#ff7a2e', agua:'#7fd3ff', terra:'#8fd35a', ar:'#ffe45c', luz:'#fff3b0', trevas:'#b98cff', fisico:'#e05252' };
-  function renderDebuffs(list){
+  // ===== ÍCONES DE CONDIÇÃO (25/10/2026) — assets/ui/conditions =====
+  // Efeito negativo do monstro no jogador (por elemento) e no monstro (por id
+  // do efeito), e buff positivo no jogador (por atributo). Sem ícone mapeado
+  // cai no emoji de antes.
+  const COND_URL = URL_BASE + 'ui/conditions/';
+  const COND_PLAYER_DEBUFF = { fogo:'over_time_negative', agua:'frostbite_negative', terra:'over_time_negative', ar:'stun_negative', luz:'blind_negative', trevas:'crows_corruption_negative', fisico:'over_time_negative', duelSlow:'speed_negative' };
+  const COND_MONSTER = { burn:'over_time_negative', dfire:'over_time_negative', poison:'over_time_negative', vgren:'16_negative', bleed:'over_time_negative', deepwound:'over_time_negative', leech:'over_time_negative', holydot:'over_time_negative', shadowwound:'over_time_negative', siphon:'over_time_negative',
+    wet:'speed_negative', slow:'speed_negative', shock:'stun_negative', stun:'stun_negative', blind:'blind_negative', curse:'crows_corruption_negative', wcurse:'crows_corruption_negative', eclipse:'crows_corruption_negative', raven:'crows_corruption_negative', acorr:'crows_corruption_negative', acorrBurst:'crows_corruption_negative',
+    root:'snare_negative', shackle:'snare_negative', silence:'confusion_negative', fear:'fear_negative', weaken:'3_negative', exploit:'6_negative', shred:'7_negative', marked:'generic_stats_negative', pulse:'generic_stats_negative' };
+  const COND_BUFF = { defPct:'6_positive', atkPct:'3_positive', magicDmgPct:'5_positive', moveSpeedPct:'speed_positive', healingPowerPct:'16_positive', critPct:'18_positive', basicExtraPct:'2_positive', hpRegenPct:'23_positive', mpRegenPct:'1_positive', shield:'7_positive', hot:'over_time_positive' };
+  const COND_BUFF_LABEL = { defPct:'Defesa', atkPct:'Ataque', magicDmgPct:'Dano mágico', moveSpeedPct:'Velocidade', healingPowerPct:'Poder de cura', critPct:'Crítico', basicExtraPct:'Dano extra no básico', shield:'Escudo', hot:'Cura contínua' };
+  const condImgCache = {};
+  function condImg(name){ // imagem pronta pro canvas (ícones em cima do monstro)
+    if(!name) return null;
+    let im = condImgCache[name];
+    if(!im){ im = new Image(); im.src = COND_URL + name + '.png'; condImgCache[name] = im; }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  function condIconHtml(file, secs, tip, fallback){
+    return `<span class="cond-ico" title="${escapeHtml(tip)}"><img src="${COND_URL}${file}.png" alt="" onerror="this.replaceWith(document.createTextNode('${fallback||'•'}'))">${secs!=null?`<b>${secs}s</b>`:''}</span>`;
+  }
+  let lastBuffList = [];
+  function renderDebuffs(list, buffs){
     const row = document.getElementById('debuff-row'); if(!row) return;
-    const html = list.map(d=>{
+    if(Array.isArray(buffs)) lastBuffList = buffs;
+    const bHtml = (lastBuffList||[]).map(b=>{
+      const secs = Math.max(1, Math.ceil(b.leftMs/1000));
+      const file = COND_BUFF[b.key] || (b.pct < 0 ? 'generic_stats_negative' : 'generic_stats_positive');
+      const what = b.key === 'shield' ? `absorve ${b.pct} de dano` : b.key === 'hot' ? 'recupera vida aos poucos' : `${b.pct>0?'+':''}${b.pct}% de ${COND_BUFF_LABEL[b.key]||b.key}`;
+      return condIconHtml(file, secs, `${b.name ? b.name + ': ' : ''}${what}`, '✨');
+    }).join('');
+    const dHtml = list.map(d=>{
       const s = Math.max(1, Math.ceil(d.leftMs/1000));
       const tip = `${d.label}: dano por segundo${d.slowPct?` e ${d.slowPct}% de lentidão`:''}. Some com cura ou magia de velocidade.`;
-      return `<span class="debuff-chip" style="--dc:${DEBUFF_CHIP_COLOR[d.type]||'#c66'}" title="${escapeHtml(tip)}">${d.icon} ${escapeHtml(d.label)} <b>${s}s</b></span>`;
+      return condIconHtml(COND_PLAYER_DEBUFF[d.type] || 'generic_stats_negative', s, tip, d.icon);
     }).join('');
+    const html = bHtml + dHtml;
     if(row.innerHTML !== html) row.innerHTML = html;
   }
   // tirinho do monstro de longe até o jogador (anel pequeno que viaja)
@@ -7122,8 +7165,11 @@
         // efeitos elementais no monstro (Queimadura, Molhado, Veneno...) — ícones em cima do nome
         if(item.monsterSt && item.monsterSt.length){
           const ICON = { burn:'🔥', wet:'💧', poison:'☠️', shock:'⚡', blind:'✨', curse:'🌑', eclipse:'🌘', stun:'💫', root:'⛓️', holydot:'📿', bleed:'🩸', shred:'🧪', shadowwound:'🗡️', weaken:'🔻', wcurse:'💀', leech:'🩸', siphon:'🌀', raven:'🐦‍⬛', vgren:'🧪', dfire:'🔥', marked:'🎯', pulse:'🔮', exploit:'⬇️', acorr:'🟣', acorrBurst:'🟣', shackle:'⛓️' };
+          // 25/10/2026: ícones de condição de verdade (COND_MONSTER); emoji só se a imagem não existir/carregar
+          const isz = Math.round(11*SPRITE_SCALE), keys = item.monsterSt.slice(0, 6);
+          let ix = s.x - (keys.length * (isz+1) - 1) / 2; const iy = headY - 40*SPRITE_SCALE - isz + 2;
           ctx.font = `${Math.round(9*SPRITE_SCALE)}px sans-serif`; ctx.textAlign = 'center';
-          ctx.fillText(item.monsterSt.map(k=>ICON[k]||'').join(''), s.x, headY-40*SPRITE_SCALE);
+          keys.forEach(k=>{ const im = condImg(COND_MONSTER[k]); if(im) ctx.drawImage(im, ix, iy, isz, isz); else if(ICON[k]) ctx.fillText(ICON[k], ix + isz/2, iy + isz - 1); ix += isz + 1; });
         }
       } else if(item.hpPct!=null){
         // Barra de vida flutuante de jogador (local e outros, pedido do
@@ -7728,6 +7774,9 @@
     document.getElementById('mp-label').textContent = `${Math.round(player.mp)}/${player.mpMax}`;
     document.getElementById('stam-bar').style.width = Math.max(0,stamina.current/stamina.max*100)+'%';
     document.getElementById('stam-label').textContent = fmtDuration(stamina.current);
+    { const sl = stamina.sessionLimitMs, row = document.getElementById('stam-session-row');
+      row.style.display = sl ? '' : 'none';
+      if(sl) document.getElementById('stam-session').textContent = location==='dungeon' ? `${fmtDuration(stamina.sessionMs||0)} / ${fmtDuration(sl)}` : `0 / ${fmtDuration(sl)}`; }
     // Barra de XP — mesma curva usada no Analisador de Caçada pra ETA de
     // level (curva 40·L²+60·L, ver xpForNextLevel em huntEngine.js).
     {
@@ -8057,6 +8106,13 @@
     currentTargetMonsterId = msg.currentTargetMonsterId || null;
     autoSellOnBagFull = msg.autoSellOnBagFull;
     stamina = msg.stamina; dispatch = msg.dispatch;
+    // Free: 4h SEGUIDAS de caçada -> o servidor manda pra Cidade (sessionKickAt muda)
+    if(staminaKickSeen === null) staminaKickSeen = stamina.sessionKickAt || 0;
+    else if((stamina.sessionKickAt||0) > staminaKickSeen){ staminaKickSeen = stamina.sessionKickAt; staminaWarned10 = false; logLoot('⏱️ Você caçou 4 horas seguidas e voltou para a Cidade. Pode voltar a caçar quando quiser (a stamina restante continua sua).'); }
+    if(stamina.sessionLimitMs && stamina.sessionMs > 0){
+      const left = stamina.sessionLimitMs - stamina.sessionMs;
+      if(left <= 10*60*1000 && !staminaWarned10){ staminaWarned10 = true; logLoot('⏱️ Faltam 10 minutos para completar 4 horas seguidas de caçada — aí você volta para a Cidade.'); }
+    } else staminaWarned10 = false;
     handleDispatchPreviewUi(dispatch);
     party = msg.party; activeTradeId = msg.activeTradeId; partyAutoAccept = !!msg.partyAutoAccept;
     handlePartyKickUi(msg);
@@ -8089,7 +8145,7 @@
     if(msg.statAttributes) statAttributes = msg.statAttributes;
     if(msg.combatStats) combatStats = msg.combatStats;
     processCombatFx(msg.combatFx);
-    if(Array.isArray(msg.debuffs)) renderDebuffs(msg.debuffs);
+    if(Array.isArray(msg.debuffs)) renderDebuffs(msg.debuffs, msg.buffs);
     if(typeof msg.affinity !== 'undefined'){
       const lst = Array.isArray(msg.affinity) ? msg.affinity : (msg.affinity ? [msg.affinity] : []);
       myAffinityList = lst; myAffinity = lst[0] || null;
@@ -8354,6 +8410,11 @@
           else closeHuntPartyModal();
           break;
         case 'matchmaking:matched': handleMatchmakingMatched(msg); break;
+        case 'hunt:offlineResult': {
+          const R = { premium12h:'completou as 12h de caçada offline do Premium', free15min:'ficou os 15 min de caçada offline do Free', stamina:'a stamina acabou', parou:'a caçada parou (morte, mochila cheia ou saída automática)', ainda_cacando:'continua caçando' };
+          logLoot(`🌙 Enquanto você estava fora (${fmtDuration(msg.durationMs)}${msg.huntName ? ' em ' + escapeHtml(msg.huntName) : ''}): <b>${Number(msg.kills).toLocaleString('pt-BR')}</b> monstros, <b>+${Number(msg.xpGained).toLocaleString('pt-BR')}</b> XP${msg.levelsGained ? ` (+${msg.levelsGained} nível${msg.levelsGained>1?'is':''})` : ''}, <b>+${Number(msg.goldGained).toLocaleString('pt-BR')}</b> Gold. ${msg.stillHunting ? 'Seu personagem continua caçando.' : 'Voltou para a Cidade: ' + (R[msg.reason] || msg.reason) + '.'}`);
+          break;
+        }
         case 'training:offlineResult':
           logLoot(`🏋️ Enquanto você estava fora, o treino offline rendeu <b>+${msg.gained}</b> ponto(s) pro banco.`);
           break;
@@ -8925,7 +8986,7 @@
       if(document.getElementById('hunts-modal').classList.contains('open')) renderHuntCenter();
     }
     if(msg.forType === 'stamina:recharge'){
-      if(msg.ok) logLoot(`⚡ Stamina recarregada (+6h) por ${msg.cost} Gold.`);
+      if(msg.ok) logLoot(`⚡ Stamina recarregada (+${Math.round((stamina.rechargeMs||0)/3600000)||4}h) por ${msg.cost} Gold.`);
       else logLoot(`⚠️ Recarga falhou: ${({stamina_cheia:'sua stamina já está cheia.', ouro_insuficiente:'Gold insuficiente.', limite_diario_atingido:'limite de recargas de hoje atingido.'})[msg.reason] || msg.reason}`);
     }
     /* ---- TORRES ELEMENTAIS — nenhuma das 5 mensagens tinha feedback nenhum
@@ -10077,8 +10138,8 @@
   // delegado só cobre todo mundo de uma vez.
   document.addEventListener('click', e=>{
     const x = e.target.closest('.win-close-x');
-    if(!x) return;
-    document.getElementById(x.dataset.closeWin).classList.remove('open');
+    if(!x || !x.dataset.closeWin) return; // ✕ sem janela alvo (ex.: ficha da habilidade) tem handler próprio
+    const w = document.getElementById(x.dataset.closeWin); if(w) w.classList.remove('open');
   });
   document.getElementById('training-pill').addEventListener('click', ()=>{
     if(!trainingActive) return;
@@ -12363,9 +12424,10 @@
     { id:'lesser_health', icon: URL_BASE+'items/potions/lesser_health.png', name:'Lesser Health', minLevel:1,  kind:'health', cost:0,  healPercent:0.25 },
     { id:'medium_health', icon: URL_BASE+'items/potions/medium_health.png', name:'Medium Health', minLevel:25, kind:'health', cost:12, healPercent:0.45 },
     { id:'strong_health', icon: URL_BASE+'items/potions/strong_health.png', name:'Strong Health', minLevel:50, kind:'health', cost:22, healPercent:0.70 },
-    { id:'lesser_mana',   icon: URL_BASE+'items/potions/lesser_mana.png',   name:'Lesser Mana',   minLevel:1,  kind:'mana',   cost:0,  healPercent:0.25 },
-    { id:'medium_mana',   icon: URL_BASE+'items/potions/medium_mana.png',   name:'Medium Mana',   minLevel:25, kind:'mana',   cost:12, healPercent:0.45 },
-    { id:'strong_mana',   icon: URL_BASE+'items/potions/strong_mana.png',   name:'Strong Mana',   minLevel:50, kind:'mana',   cost:22, healPercent:0.70 },
+    // 25/10/2026: mana recupera valor FIXO (restoreFlat) — igual huntEngine POTION_CATALOG
+    { id:'lesser_mana',   icon: URL_BASE+'items/potions/lesser_mana.png',   name:'Lesser Mana',   minLevel:1,  kind:'mana',   cost:0,  restoreFlat:35 },
+    { id:'medium_mana',   icon: URL_BASE+'items/potions/medium_mana.png',   name:'Medium Mana',   minLevel:25, kind:'mana',   cost:9,  restoreFlat:90 },
+    { id:'strong_mana',   icon: URL_BASE+'items/potions/strong_mana.png',   name:'Strong Mana',   minLevel:50, kind:'mana',   cost:17, restoreFlat:160 },
   ];
   function canUsePotion(pot){ return player.level >= pot.minLevel; }
   const CONDITION_TYPES = [
@@ -12528,6 +12590,7 @@
       // já reflete equipamento/skill tree/treino que aumentam o teto.
       const maxPool = pot.kind==='health' ? (player.hpMax||0) : (player.mpMax||0);
       const realAmt = Math.round(maxPool * (pot.healPercent||0));
+      if(pot.restoreFlat != null) return `<div class="tt-name">${pot.name}</div><div>Restaura <b>${pot.restoreFlat}</b> de ${pot.kind==='health'?'HP':'Mana'} · Nv.${pot.minLevel} · ${pot.cost>0?pot.cost+' Gold por uso':'Grátis'}</div>`;
       return `<div class="tt-name">${pot.name}</div><div>Restaura ${Math.round((pot.healPercent||0)*100)}% de ${pot.kind==='health'?'HP':'Mana'}${realAmt?` (≈${realAmt})`:''} · Nv.${pot.minLevel} · ${pot.cost>0?pot.cost+' Gold por uso':'Grátis'}</div>`;
     }
     return null;
@@ -12725,7 +12788,7 @@
         // é aqui que o jogador compara Lesser/Medium/Strong lado a lado.
         const pickerMaxPool = p.kind==='health' ? (player.hpMax||0) : (player.mpMax||0);
         const pickerRealAmt = Math.round(pickerMaxPool * (p.healPercent||0));
-        html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''} data-tooltip-potion="${p.id}"><img src="${p.icon}" style="width:16px;height:16px;vertical-align:middle;object-fit:contain;margin-right:4px;" /> ${p.name} <span class="req">${Math.round((p.healPercent||0)*100)}%${pickerRealAmt?` (≈${pickerRealAmt})`:''} · Nv.${p.minLevel} · ${p.cost>0?p.cost+'g/uso':'Grátis'}</span></div>`;
+        html += `<div class="opt-row ${selected?'selected':''} ${unlocked?'':'disabled'}" ${unlocked?`data-assign-item="${p.id}"`:''} data-tooltip-potion="${p.id}"><img src="${p.icon}" style="width:16px;height:16px;vertical-align:middle;object-fit:contain;margin-right:4px;" /> ${p.name} <span class="req">${p.restoreFlat!=null ? `+${p.restoreFlat}` : `${Math.round((p.healPercent||0)*100)}%${pickerRealAmt?` (≈${pickerRealAmt})`:''}`} · Nv.${p.minLevel} · ${p.cost>0?p.cost+'g/uso':'Grátis'}</span></div>`;
       });
     }
     // Remover deste slot -- só aparece se o slot tiver algo (magia OU poção).
@@ -13530,7 +13593,7 @@
       what += ` · elemento <b>${EL[r.element]}</b>`;
       if(r.kind==='attack') what += ` (100% em ${LBL[BEATS[r.element]]}${loses?`, 25% em ${LBL[loses]}`:''}, 50% em ${LBL[r.element]}, 75% nos outros) · ${r.dot?'aplica':'25% de chance de aplicar'} ${EFF[r.element]} · reação: ${REAC[r.element]}`;
     }
-    return `<div class="spell-card-real"><span class="lbl">No Elemental · Nv. ${level||1}:</span> ${what} · recarga ${r.cd.toLocaleString('pt-BR')} s · ${r.mana} mana</div>`;
+    return `<div class="spell-card-real"><span class="lbl">No Elemental · Nv. ${level||1}:</span> ${what} · recarga ${r.cd.toLocaleString('pt-BR')} s · ${Math.round(r.mana * (1 + 0.02 * (Math.max(1, player.level||1) - 1)))} mana</div>`;
   }
   function spellDetailHtml(archId, sp, draft){
     const st = computeSpellNodeState(archId, sp, draft);
@@ -13550,12 +13613,22 @@
           <img class="spell-card-icon" src="${iconUrl}" onerror="this.style.visibility='hidden'" />
           <div class="spell-card-title"><b>${sp.name}</b>${kindBadge}</div>
         </div>
+        ${spellPreviewVideoHtml(sp)}
         <div class="skill-node-modal-points-row">Pontos livres nesta árvore: <b>${avail}</b></div>
         <div class="spell-card-desc">${sp.desc || ''}</div>
         ${sp.kind !== 'passive' ? spellEffectLine(archId, sp, Math.max(1, st.level)) : ''}
         ${st.lockedReason ? `<div class="spell-card-lock-msg"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/skill_lock.png" style="width:11px;height:11px;vertical-align:-1px;object-fit:contain;margin-right:3px;" onerror="this.replaceWith('🔒 ')"/>${st.lockedReason}</div>` : ''}
         ${btns}
       </div>`;
+  }
+  // PRÉVIA EM VÍDEO (25/10/2026): assets/spell_previews/<nome em minúsculo com _>.mp4
+  // (95 magias; as ultimates não têm vídeo). Some sozinho se o arquivo não existir.
+  const SPELL_PREVIEW_URL = URL_BASE + 'spell_previews/';
+  function spellPreviewSlug(name){ return String(name||'').toLowerCase().replace(/'/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); }
+  function spellPreviewVideoHtml(sp){
+    if(!sp || sp.kind === 'passive') return '';
+    const base = SPELL_PREVIEW_URL + spellPreviewSlug(sp.name);
+    return `<video class="spell-preview-video" data-preview="${base}" autoplay muted loop playsinline preload="auto"><source src="${base}.webm" type="video/webm"><source src="${base}.mp4" type="video/mp4" onerror="this.parentNode.remove()"></video>`;
   }
   function availablePointsForDraft(archId, draft){
     const total = (skillPoints && skillPoints.total) || 0;
@@ -13577,7 +13650,11 @@
     const draft = currentDraft(archId);
     const sp = (ARCHETYPE_SPELLBOOK[archId]||[]).find(s=>s.id===activeSkillNodeModalSpellId);
     if(!sp){ closeSkillNodeModal(); return; }
+    // o vídeo de prévia NÃO pode ser recriado a cada atualização (reiniciava sem parar) — reaproveita o mesmo elemento
+    const oldVid = skillNodeModalBody.querySelector('.spell-preview-video');
     skillNodeModalBody.innerHTML = spellDetailHtml(archId, sp, draft);
+    const newVid = skillNodeModalBody.querySelector('.spell-preview-video');
+    if(oldVid && newVid && oldVid.dataset.preview === newVid.dataset.preview) newVid.replaceWith(oldVid);
     skillNodeModalBody.querySelectorAll('.spell-card-plus, .spell-card-minus, .spell-card-toggle-btn').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
@@ -13663,6 +13740,8 @@
     // lista de tarefas, 20/09/2026). selectedSpellId só controla o anel de
     // destaque do nó no grafo.
     wrap.innerHTML = html;
+    // 25/10/2026: arte do arquétipo atrás da árvore
+    wrap.classList.add('has-arch-bg'); wrap.style.setProperty('--arch-bg', `url("${URL_BASE}ui/archetype_bg/${archId}.png")`);
     wrap.querySelectorAll('.spell-node').forEach(node=>{
       node.addEventListener('click', ()=>{
         selectedSpellId = node.dataset.spell;
@@ -16405,7 +16484,7 @@
         const width = Math.max(4, Math.min(100, pct));
         return `<div class="resist-row"><span class="resist-label">${t}</span><div class="resist-track"><div class="resist-fill" style="width:${width}%;background:${elemT ? resistBarColor(pct) : 'linear-gradient(180deg,var(--gold),var(--gold-deep))'}"></div></div><span class="resist-pct ${cls}">${pct}%</span></div>`;
       }).join('');
-      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${(()=>{ const mi = MONSTER_INFO_CLIENT[mt.name]; if(!mi) return ''; const st = { melee:'⚔️ Corpo a corpo', ranged:'🏹 De longe', caster:'🔮 Mago' }[mi.style] || ''; const els = monsterElementsFromWeakTo(mt.weakTo); const myL = (myAffinityList && myAffinityList.length) ? myAffinityList : [ARCHETYPE_AFFINITY_CLIENT[(archetypes && archetypes.chosen && archetypes.chosen[0])||'']].filter(Boolean); const my = myL[0] || null; const k = myL.length ? Math.max(...myL.map(a=>elementMultClient(a, els))) : 1; const adv = !my ? '' : k >= 1 ? `<span style="color:#7fd88f;">▲ Vantagem (${ELEMENT_ICON[my]} 100%)</span>` : k <= 0 ? `<span style="color:#e0685a;">✖ Imune ao seu elemento (${ELEMENT_ICON[my]} 0%)</span>` : k <= 0.5 ? `<span style="color:#e0a85a;">▼ Mesmo elemento (${ELEMENT_ICON[my]} 50%)</span>` : `<span>= Neutro (${ELEMENT_ICON[my]} 75%)</span>`; return `<div class="hd-monster-xp" style="font-family:var(--font-mono);font-size:8.5px;color:var(--gold);margin:1px 0 2px;">Nv ${mi.level} · ${Number(mi.xp).toLocaleString('pt-BR')} XP</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--ink-dim);margin-bottom:2px;">${st} · ${els.map(e=>ELEMENT_ICON[e]+' '+ELEMENT_LABEL[e]).join(' + ')}</div><div style="font-family:var(--font-mono);font-size:8px;margin-bottom:2px;">${adv}</div>`; })()}${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros. Os demais afetam o dano de magia de verdade.</div></div>`;
+      card.innerHTML = `<div class="hd-monster-icon">${mtIconHtml}</div><div class="hd-monster-name">${mt.name}</div>${(()=>{ const mi = MONSTER_INFO_CLIENT[mt.name]; if(!mi) return ''; const st = { melee:'⚔️ Corpo a corpo', ranged:'🏹 De longe', caster:'🔮 Mago' }[mi.style] || ''; const els = monsterElementsFromWeakTo(mt.weakTo); const myL = (myAffinityList && myAffinityList.length) ? myAffinityList : [ARCHETYPE_AFFINITY_CLIENT[(archetypes && archetypes.chosen && archetypes.chosen[0])||'']].filter(Boolean); const my = myL[0] || null; const k = myL.length ? Math.max(...myL.map(a=>elementMultClient(a, els))) : 1; const adv = !my ? '' : k >= 1 ? `<span style="color:#7fd88f;">▲ Vantagem (${ELEMENT_ICON[my]} 100%)</span>` : k <= 0 ? `<span style="color:#e0685a;">✖ Imune ao seu elemento (${ELEMENT_ICON[my]} 0%)</span>` : k <= 0.5 ? `<span style="color:#e0a85a;">▼ Mesmo elemento (${ELEMENT_ICON[my]} 50%)</span>` : `<span>= Neutro (${ELEMENT_ICON[my]} 75%)</span>`; return `<div class="hd-monster-xp" style="font-family:var(--font-mono);font-size:8.5px;color:var(--gold);margin:1px 0 2px;">Nv ${mi.level} · ${Number(mi.xp).toLocaleString('pt-BR')} XP${mi.goldMax!=null?` · 💰 ${Number(mi.goldMin).toLocaleString('pt-BR')}–${Number(mi.goldMax).toLocaleString('pt-BR')}`:''}</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--ink-dim);margin-bottom:2px;">${st} · ${els.map(e=>ELEMENT_ICON[e]+' '+ELEMENT_LABEL[e]).join(' + ')}</div><div style="font-family:var(--font-mono);font-size:8px;margin-bottom:2px;">${adv}</div>`; })()}${statusHtml}<div class="hd-monster-toggle">Dano recebido ▾</div><div class="hd-monster-weak"><div class="resist-grid">${resistHtml}</div><div style="margin-top:4px;color:var(--ink-dim);font-size:7.5px;">Físico e Life Drain não têm elemento no nosso sistema, ficam sempre neutros. Os demais afetam o dano de magia de verdade.</div></div>`;
       const toggle = card.querySelector('.hd-monster-toggle');
       const weakBox = card.querySelector('.hd-monster-weak');
       toggle.addEventListener('click', (e)=>{
