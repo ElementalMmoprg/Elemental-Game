@@ -1155,6 +1155,118 @@
   .glass.win > .panel-title{ color:#eee6d3; text-shadow:0 1px 2px rgba(0,0,0,.7); }
   .glass.win > .panel-title .rule{ background:linear-gradient(90deg, rgba(255,255,255,.28), transparent); }
 
+  /* ============ TEMAS DE INTERFACE (30/10/2026) ============
+     O jogador escolhe em Configurações (⚙️ > Tema da interface): Clássico
+     (o visual de sempre), Sombra (roxo), Luz (dourado), Terra (verde) ou
+     Raio (azul). Arte gerada pelo usuário (pastas UI DARK/LUZ/TERRA/RAIO),
+     com o fundo xadrez removido e recortada em Elemental_assets/assets/ui/
+     themes/<tema>/ (frame, close, button, button_sm, icons/<nome>.png).
+     - Janelas (.glass.win): moldura em 9-slice (border-image com fill, o
+       centro escuro vem da própria arte) desenhada por cima do padding e
+       um pouco pra fora (outset), sem mudar o tamanho/posição de nada.
+     - Botão fechar: arte do tema; brilho no hover via filtro (a versão
+       "acesa" da arte vinha com halo sujo do xadrez).
+     - Ícones da barra superior / Mochila: troca pelo medalhão do tema
+       (ver UI_THEME_ICONS no JS); emojis ficam escondidos no tema.
+     - Botões principais: moldura 9-slice do botão do tema. */
+  html body.ui-themed{ --theme-accent:#f0d38a; --theme-glow:rgba(240,211,138,.55); }
+  html body.ui-theme-sombra{ --theme-accent:#c8a2ff; --theme-glow:rgba(168,110,255,.7); --theme-frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/sombra/frame.png); --theme-close:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/sombra/close.png); --theme-btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/sombra/button.png); }
+  html body.ui-theme-luz{ --theme-accent:#ffe08a; --theme-glow:rgba(255,214,90,.75); --theme-frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/luz/frame.png); --theme-close:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/luz/close.png); --theme-btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/luz/button.png); }
+  html body.ui-theme-terra{ --theme-accent:#9fe8a8; --theme-glow:rgba(60,230,120,.7); --theme-frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/frame.png); --theme-close:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/close.png); --theme-btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/button.png); }
+  html body.ui-theme-raio{ --theme-accent:#9fd2ff; --theme-glow:rgba(70,160,255,.8); --theme-frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/frame.png); --theme-close:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/close.png); --theme-btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/button.png); }
+  html body.ui-themed .glass.win{
+    background:none; box-shadow:0 18px 46px rgba(0,0,0,.65);
+    border-style:solid; border-width:0; border-radius:0;
+    border-image-source:var(--theme-frame); border-image-slice:21% fill;
+    border-image-width:52px; border-image-outset:10px; border-image-repeat:stretch;
+    padding-top:16px;
+  }
+  html body.ui-theme-terra .glass.win{ border-image-slice:19% fill; border-image-width:48px; border-image-repeat:round; }
+  html body.ui-theme-raio .glass.win{ border-image-slice:14% fill; border-image-width:36px; border-image-outset:8px; }
+  html body.ui-themed .win.sh-docked, html body.ui-themed .win.fh-docked{ border-image:none !important; }
+  html body.ui-themed .glass.win > .panel-title{ color:var(--theme-accent); text-shadow:0 0 8px var(--theme-glow), 0 1px 2px rgba(0,0,0,.9); }
+  html body.ui-themed .glass.win > .panel-title .rule{ background:linear-gradient(90deg, var(--theme-accent), transparent); opacity:.55; }
+  html body.ui-themed .win-close-x{ width:22px; height:22px; background-image:var(--theme-close); }
+  html body.ui-themed .win-close-x:hover{ background-image:var(--theme-close); filter:brightness(1.35) drop-shadow(0 0 6px var(--theme-glow)); }
+  /* barra superior / mochila */
+  .theme-ico{ display:none; }
+  html body.ui-themed .tb-icon[data-theme-ico]{ border:none; background:none; box-shadow:none; width:46px; height:46px; }
+  html body.ui-themed .tb-icon[data-theme-ico] > .theme-ico{ display:block; width:46px; height:46px; object-fit:contain; filter:drop-shadow(0 2px 3px rgba(0,0,0,.7)); }
+  html body.ui-themed .tb-icon[data-theme-ico] > img:not(.theme-ico), html body.ui-themed .tb-icon[data-theme-ico] > .tb-emoji{ display:none; }
+  html body.ui-themed .tb-icon[data-theme-ico]:hover > .theme-ico{ filter:brightness(1.25) drop-shadow(0 0 8px var(--theme-glow)); }
+  html body.ui-themed .tb-pill[data-theme-ico] > img.menu-ico:not(.theme-ico){ display:none; }
+  html body.ui-themed .tb-pill[data-theme-ico] > .theme-ico{ display:inline-block; width:22px; height:22px; vertical-align:-6px; margin-right:3px; }
+  html body.ui-themed #bag-shortcut[data-theme-ico]{ background:none; border:none; box-shadow:none; }
+  html body.ui-themed #bag-shortcut[data-theme-ico] > img.menu-ico:not(.theme-ico){ display:none; }
+  html body.ui-themed #bag-shortcut[data-theme-ico] > .theme-ico{ display:block; width:52px; height:52px; }
+  /* botões principais com a moldura de botão do tema */
+  html body.ui-themed #treino-actions button, html body.ui-themed .treino-inline-btn, html body.ui-themed .settings-menu-btn{
+    background:none; border-radius:0; border-style:solid; border-width:0;
+    border-image-source:var(--theme-btn); border-image-slice:30% 16% fill; border-image-width:14px 22px; border-image-outset:3px 6px;
+    color:var(--theme-accent); text-shadow:0 1px 2px rgba(0,0,0,.9);
+  }
+  html body.ui-themed #treino-actions button:hover, html body.ui-themed .treino-inline-btn:hover, html body.ui-themed .settings-menu-btn:hover{ filter:brightness(1.25) drop-shadow(0 0 6px var(--theme-glow)); box-shadow:none; }
+  html body.ui-themed .settings-menu-btn.danger{ color:#ff9a80; }
+  /* ---- tema em TUDO (30/10/2026, pedido do usuário: "colocar o tema em
+     tudo", sem sobrar dourado). 1) as variáveis de cor do jogo inteiro
+     (--gold*, --glass-*, --ink-dim) mudam pro tema; 2) as cores douradas
+     escritas direto no CSS são recoloridas em tempo de execução (ver
+     buildUiThemeRecolor no JS); 3) os painéis fixos do HUD também ganham a
+     moldura do tema. */
+  html body.ui-theme-sombra{ --gold-deep:#4b3577; --gold:#9a72d6; --gold-bright:#d6b8ff; --premium:#d6b8ff; --glass-1:rgba(18,13,30,.74); --glass-2:rgba(8,6,15,.9); --ink-dim:#a99cc6; }
+  html body.ui-theme-luz{ --gold-deep:#8a7440; --gold:#d8bb6a; --gold-bright:#fff0b8; --premium:#fff0b8; --glass-1:rgba(18,22,38,.74); --glass-2:rgba(7,9,19,.9); --ink-dim:#bcb08e; }
+  html body.ui-theme-terra{ --gold-deep:#3d6b3f; --gold:#6fbf6a; --gold-bright:#b5f0a8; --premium:#b5f0a8; --glass-1:rgba(12,22,15,.74); --glass-2:rgba(5,10,7,.9); --ink-dim:#97b293; }
+  html body.ui-theme-raio{ --gold-deep:#2d4f80; --gold:#5f9ae0; --gold-bright:#a8d6ff; --premium:#a8d6ff; --glass-1:rgba(10,16,30,.74); --glass-2:rgba(4,7,15,.9); --ink-dim:#91a6c4; }
+  html body.ui-themed :is(#vitals-block, #hotbar, #tactics-bar, #hunt-action-row, #confirm-modal, #tut-card, .split-box, .sdo-card, #skill-node-modal, #bestiary-track-search-modal, #bestiary-reward-modal, #profile-popover, #bank-popover, #settings-popover, #dispatch-popover, #exit-popover, #stam-recharge-popover){
+    background:none; box-shadow:0 10px 30px rgba(0,0,0,.55); backdrop-filter:none; -webkit-backdrop-filter:none;
+    border-style:solid; border-width:0; border-radius:0;
+    border-image-source:var(--theme-frame); border-image-slice:21% fill; border-image-width:30px; border-image-outset:6px; border-image-repeat:stretch;
+  }
+  html body.ui-theme-terra :is(#vitals-block, #hotbar, #tactics-bar, #hunt-action-row, #confirm-modal, #tut-card, .split-box, .sdo-card, #skill-node-modal, #bestiary-track-search-modal, #bestiary-reward-modal, #profile-popover, #bank-popover, #settings-popover, #dispatch-popover, #exit-popover, #stam-recharge-popover){ border-image-slice:19% fill; border-image-repeat:round; }
+  html body.ui-theme-raio :is(#vitals-block, #hotbar, #tactics-bar, #hunt-action-row, #confirm-modal, #tut-card, .split-box, .sdo-card, #skill-node-modal, #bestiary-track-search-modal, #bestiary-reward-modal, #profile-popover, #bank-popover, #settings-popover, #dispatch-popover, #exit-popover, #stam-recharge-popover){ border-image-slice:14% fill; border-image-width:22px; }
+  html body.ui-themed #top-bar{ border-bottom:2px solid var(--gold); box-shadow:0 2px 14px var(--theme-glow); }
+  html body.ui-themed .service-plate-btn, html body.ui-themed .tb-pill, html body.ui-themed .party-btn{
+    background:none; box-shadow:none; border-radius:0; border-style:solid; border-width:0;
+    border-image-source:var(--theme-btn); border-image-slice:30% 16% fill; border-image-width:12px 18px; border-image-outset:2px 5px;
+    color:var(--gold-bright);
+  }
+  html body.ui-themed :is(#tb-gold-pill, #btn-open-rank, #tb-coin-pill){
+    background:none !important; border-radius:0; border-style:solid; border-width:0;
+    border-image-source:var(--theme-btn); border-image-slice:30% 16% fill; border-image-width:14px 20px; border-image-outset:2px 6px; color:var(--gold-bright); padding:7px 22px;
+  }
+  html body.ui-themed #top-bar > .tb-pill, html body.ui-themed #top-bar > .tb-portrait{ flex-shrink:0; }
+  html body.ui-themed #tb-online{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  html body.ui-themed .service-plate-btn:hover, html body.ui-themed .tb-pill:hover, html body.ui-themed .party-btn:hover{ filter:brightness(1.25) drop-shadow(0 0 6px var(--theme-glow)); box-shadow:none; }
+  /* ---- respiro do texto (30/10/2026): com a moldura do tema o texto
+     encostava na borda/arte. Botões ganham padding maior que a moldura e
+     texto centralizado; janelas/painéis ganham margem interna extra (as
+     caixas crescem um pouco em vez de apertar o conteúdo). */
+  html body.ui-themed :is(#treino-actions button, .treino-inline-btn, .settings-menu-btn, .party-btn, .service-plate-btn){
+    padding:10px 26px !important; min-height:38px; text-align:center; line-height:1.35; box-sizing:border-box;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  }
+  html body.ui-themed .settings-menu-btn{ display:flex; width:100%; margin-bottom:10px; }
+  html body.ui-themed .service-plate-btn{ min-width:118px; padding:10px 22px !important; }
+  html body.ui-themed :is(#tb-gold-pill, #btn-open-rank, #tb-coin-pill){ min-width:96px; padding:8px 30px !important; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  html body.ui-themed .glass.win{ padding:22px 22px 18px !important; }
+  html body.ui-themed .glass.win > .panel-title{ padding-left:0 !important; padding-right:0 !important; }
+  html body.ui-themed :is(#confirm-modal, #tut-card, #skill-node-modal, #bestiary-track-search-modal, #bestiary-reward-modal, #profile-popover, #bank-popover, #settings-popover, #dispatch-popover, #exit-popover, #stam-recharge-popover){ padding:16px 18px !important; }
+  html body.ui-themed #settings-popover{ width:270px; }
+  html body.ui-themed #party-panel{ width:300px; }
+  html body.ui-themed #city-services-bar{ gap:12px; margin-bottom:4px; }
+  html body.ui-themed .service-plate-btn{ min-width:0 !important; padding:9px 18px !important; }
+  html body.ui-themed.in-city #hotbar-hint{ bottom:150px; }
+  html body.ui-themed #hotbar-wrap{ gap:14px; }
+  html body.ui-themed #party-invite-row{ gap:10px; align-items:center; }
+  /* seletor de tema dentro do popover de Configurações */
+  .ui-theme-title{ font-family:var(--font-display); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-bright); margin:10px 0 6px; }
+  .ui-theme-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
+  .ui-theme-opt{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:5px 2px; border-radius:6px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); cursor:pointer; font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
+  .ui-theme-opt img, .ui-theme-opt .sw{ width:26px; height:26px; object-fit:contain; }
+  .ui-theme-opt .sw{ border-radius:50%; border:2px solid var(--gold); background:radial-gradient(circle,#3a2e1d,#0d0a06); display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .ui-theme-opt:hover{ color:var(--ink); border-color:var(--gold-bright); }
+  .ui-theme-opt.active{ color:var(--gold-bright); border-color:var(--gold-bright); box-shadow:0 0 8px rgba(240,211,138,.3); }
+
   /* ============ PARTY — membros, convite, botão IR (só líder) ============ */
   #party-panel{ top:60px; right:480px; width:250px; display:none; z-index:6; overflow:visible; } /* 20/10/2026: sem barra de rolagem */
   #party-panel *{ box-sizing:border-box; }
@@ -2684,6 +2796,8 @@
           <div class="panel-title" style="margin-bottom:8px;">Configurações<span class="rule"></span></div>
           <button type="button" class="settings-menu-btn" id="settings-back-to-select-btn">🔁 Voltar pra Seleção de Personagem</button>
           <button type="button" class="settings-menu-btn danger" id="settings-exit-game-btn">🚪 Sair do Jogo</button>
+          <div class="ui-theme-title">Tema da interface</div>
+          <div class="ui-theme-grid" id="ui-theme-grid"></div>
           <div class="italic-note" style="margin-top:10px;">Configurações do servidor (som, notificações etc.) chegam em breve aqui.</div>
         </div>
       </div>
@@ -11524,6 +11638,137 @@
   settingsTrigger.addEventListener('mouseleave', scheduleCloseSettingsPopover);
   settingsPopover.addEventListener('mouseenter', openSettingsPopover);
   settingsPopover.addEventListener('mouseleave', scheduleCloseSettingsPopover);
+
+  // ---- Tema da interface (30/10/2026) — ver CSS "TEMAS DE INTERFACE".
+  // Preferência por navegador (localStorage), aplicada já na carga.
+  const UI_THEME_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/';
+  const UI_THEMES = [
+    { id:'classico', name:'Clássico' },
+    { id:'sombra', name:'Sombra' },
+    { id:'luz', name:'Luz' },
+    { id:'terra', name:'Terra' },
+    { id:'raio', name:'Raio' },
+  ];
+  // elemento da barra → nome do ícone em themes/<tema>/icons/
+  const UI_THEME_ICONS = {
+    'btn-open-shop':'shop', 'btn-open-rank':'rank', 'open-hunts-btn':'combat', 'btn-open-party':'party',
+    'btn-open-guild':'guild', 'btn-open-friends':'friends', 'btn-open-altar':'altar', 'btn-open-attrs':'attributes',
+    'btn-open-skilltree':'skilltree', 'btn-open-towers':'tower', 'btn-open-pvp-tournament':'tournament',
+    'btn-open-pvp-shop':'pvpshop', 'btn-open-forge':'forge', 'btn-open-enchant':'forge', 'btn-open-infusion':'infusion',
+    'btn-open-fusion':'fusion', 'btn-open-pets':'pets', 'btn-open-battlepass':'battlepass', 'btn-open-partydps':'dps',
+    'btn-open-analyzer':'analyzer', 'btn-open-wiki':'wiki', 'btn-open-settings':'settings', 'bag-shortcut':'backpack',
+  };
+  const LS_UI_THEME = 'elemental_ui_theme';
+  function prepThemeIcons(){
+    Object.entries(UI_THEME_ICONS).forEach(([id, ico])=>{
+      const el = document.getElementById(id); if(!el || el.dataset.themeIco) return;
+      el.dataset.themeIco = ico;
+      // emoji solto (texto) vira <span class="tb-emoji"> pra poder esconder no tema
+      Array.from(el.childNodes).forEach(n=>{ if(n.nodeType === 3 && n.textContent.trim() && el.classList.contains('tb-icon')){ const sp = document.createElement('span'); sp.className = 'tb-emoji'; sp.textContent = n.textContent.trim(); el.replaceChild(sp, n); } });
+      const img = document.createElement('img'); img.className = 'theme-ico'; img.alt = ''; img.draggable = false;
+      el.insertBefore(img, el.firstChild);
+    });
+  }
+  function applyUiTheme(id){
+    if(!UI_THEMES.some(t=>t.id === id)) id = 'classico';
+    UI_THEMES.forEach(t=> document.body.classList.remove('ui-theme-' + t.id));
+    document.body.classList.toggle('ui-themed', id !== 'classico');
+    if(id !== 'classico') document.body.classList.add('ui-theme-' + id);
+    prepThemeIcons();
+    document.querySelectorAll('[data-theme-ico] > .theme-ico').forEach(img=>{
+      if(id === 'classico'){ img.removeAttribute('src'); return; }
+      img.src = UI_THEME_BASE + id + '/icons/' + img.parentElement.dataset.themeIco + '.png';
+    });
+    try{ buildUiThemeRecolor(id); }catch(e){ console.warn('tema: recolor falhou', e); }
+    try{ localStorage.setItem(LS_UI_THEME, id); }catch(_){}
+    requestAnimationFrame(()=>{ centerBagShortcut(); keepChatAboveVitals(); });
+    document.querySelectorAll('.ui-theme-opt').forEach(b=> b.classList.toggle('active', b.dataset.theme === id));
+  }
+  // Recolore as cores douradas que estão escritas direto no CSS (rgb/rgba
+  // com matiz de dourado) pra matiz do tema — gera um <style> com as mesmas
+  // regras prefixadas por body.ui-theme-<id> (mais específicas, então
+  // vencem a original). Recalculado a cada troca de tema.
+  const UI_THEME_HUE = { sombra:[270, .55], luz:[46, .75], terra:[125, .45], raio:[212, .7] };
+  function rgbToHsl(r,g,b){ r/=255; g/=255; b/=255; const mx=Math.max(r,g,b), mn=Math.min(r,g,b); let h=0,s=0; const l=(mx+mn)/2; if(mx!==mn){ const d=mx-mn; s=l>.5?d/(2-mx-mn):d/(mx+mn); h = mx===r ? (g-b)/d+(g<b?6:0) : mx===g ? (b-r)/d+2 : (r-g)/d+4; h*=60; } return [h,s,l]; }
+  function hslToRgb(h,s,l){ h/=360; const f=(p,q,t)=>{ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; }; if(!s) return [l*255,l*255,l*255]; const q=l<.5?l*(1+s):l+s-l*s, p=2*l-q; return [f(p,q,h+1/3)*255, f(p,q,h)*255, f(p,q,h-1/3)*255]; }
+  function buildUiThemeRecolor(id){
+    let tag = document.getElementById('ui-theme-recolor');
+    if(!tag){ tag = document.createElement('style'); tag.id = 'ui-theme-recolor'; document.head.appendChild(tag); }
+    const hs = UI_THEME_HUE[id]; if(!hs){ tag.textContent = ''; uiThemeRecolorFn = null; recolorInlineStyles(document.body); return; }
+    const [H, S] = hs;
+    const recolor = (txt)=> txt.replace(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)/g, (m,r,g,b,a)=>{
+      const [h,s,l] = rgbToHsl(+r,+g,+b);
+      if(!(h >= 33 && h <= 52 && s >= .25 && l >= .08 && l <= .96)) return m;
+      const [R,G,B] = hslToRgb(H, Math.min(1, s*S/.6), l).map(v=>Math.round(v));
+      const outc = a !== undefined ? `rgba(${R}, ${G}, ${B}, ${a})` : `rgb(${R}, ${G}, ${B})`;
+      uiThemeRev.set(outc, m); return outc;
+    });
+    const out = [];
+    const prefix = (sel)=> sel.split(',').map(x=>{ x = x.trim(); if(!x) return ''; if(/^(html|:root)\b/.test(x)) return ''; if(/^body\b/.test(x)) return x.replace(/^body/, `body.ui-theme-${id}`); return `body.ui-theme-${id} ${x}`; }).filter(Boolean).join(', ');
+    const walk = (rules)=>{ for(const r of rules){
+      if(r.type === 1){ const sel = r.selectorText || ''; if(/ui-theme/.test(sel)) continue; const t = r.style.cssText; if(!/rgb/.test(t)) continue; const n = recolor(t); if(n !== t){ const p = prefix(sel); if(p) out.push(`${p}{${n}}`); } }
+      else if(r.type === 4 && r.cssRules){ const inner = []; const save = out.length; walk(r.cssRules); const added = out.splice(save); if(added.length) out.push(`@media ${r.conditionText || r.media.mediaText}{${added.join('\n')}}`); }
+    } };
+    for(const sh of Array.from(document.styleSheets)){ if(sh.ownerNode === tag) continue; let rules; try{ rules = sh.cssRules; }catch(_){ continue; } if(rules) walk(rules); }
+    tag.textContent = out.join('\n');
+    uiThemeRecolorFn = recolor;
+    recolorInlineStyles(document.body);
+  }
+  // estilos inline (style="...") com dourado escrito direto — inclusive os
+  // gerados depois pelos render*() (MutationObserver, em lote por frame).
+  let uiThemeRecolorFn = null;
+  const uiThemeRev = new Map(); // cor recolorida -> cor original (pra trocar de tema sem recarregar)
+  const UI_RGB_RE = /rgba?\(\s*\d+,\s*\d+,\s*\d+(?:,\s*[\d.]+)?\s*\)/g;
+  function recolorInlineStyles(root){
+    if(!root || !root.querySelectorAll) return;
+    const els = root.hasAttribute && root.hasAttribute('style') ? [root, ...root.querySelectorAll('[style]')] : root.querySelectorAll('[style]');
+    for(const el of els){
+      const cur = el.style.cssText; if(!cur || cur.indexOf('rgb') < 0) continue;
+      const base = cur.replace(UI_RGB_RE, m=> uiThemeRev.get(m) || m);
+      const n = uiThemeRecolorFn ? uiThemeRecolorFn(base) : base;
+      if(n !== cur) el.style.cssText = n;
+    }
+  }
+  let uiThemePending = new Set(), uiThemeRaf = 0;
+  new MutationObserver(muts=>{
+    if(!uiThemeRecolorFn) return;
+    for(const m of muts) for(const n of m.addedNodes) if(n.nodeType === 1) uiThemePending.add(n);
+    if(!uiThemeRaf) uiThemeRaf = requestAnimationFrame(()=>{ uiThemeRaf = 0; const list = Array.from(uiThemePending); uiThemePending.clear(); list.forEach(recolorInlineStyles); });
+  }).observe(document.body, { childList:true, subtree:true });
+  // Mochila (atalho #bag-shortcut) centralizada no vão entre o painel de
+  // vida/mana e a barra de habilidades (30/10/2026, pedido do usuário) — o
+  // vão muda com a largura da tela (a hotbar fica no centro do grid), então
+  // recalcula no resize/troca de tema em vez de margem fixa.
+  function centerBagShortcut(){
+    const bag = document.getElementById('bag-shortcut'), left = document.getElementById('vitals-block'), hb = document.getElementById('hotbar');
+    if(!bag || !left || !hb || !bag.offsetParent) return;
+    bag.style.transform = '';
+    const lb = left.getBoundingClientRect(), hr = hb.getBoundingClientRect(), br = bag.getBoundingClientRect();
+    const target = (lb.right + hr.left) / 2 - br.width / 2;
+    const dx = Math.round(target - br.left);
+    if(dx > 0 && dx < 400) bag.style.transform = `translateX(${dx}px)`;
+  }
+  // Chat sempre ACIMA do painel de vida/mana (30/10/2026): o painel cresce
+  // conforme o conteúdo (afinidade, caçada…) e a moldura dos temas sai um
+  // pouco pra fora, então o chat ficava por trás. Só mexe se o jogador não
+  // arrastou a janela (arrastar grava top/left inline).
+  function keepChatAboveVitals(){
+    const chat = document.getElementById('chat-window'), v = document.getElementById('vitals-block');
+    if(!chat || !v || !v.offsetParent || chat.style.top) return;
+    const gap = document.body.classList.contains('ui-themed') ? 26 : 12;
+    const want = Math.max(185, Math.round(window.innerHeight - v.getBoundingClientRect().top + gap));
+    if(chat.style.bottom !== want + 'px') chat.style.bottom = want + 'px';
+  }
+  window.addEventListener('resize', ()=> requestAnimationFrame(()=>{ centerBagShortcut(); keepChatAboveVitals(); }));
+  setInterval(keepChatAboveVitals, 1000);
+  setInterval(centerBagShortcut, 1500);
+  (function initUiThemePicker(){
+    const grid = document.getElementById('ui-theme-grid'); if(!grid) return;
+    grid.innerHTML = UI_THEMES.map(t=> `<div class="ui-theme-opt" data-theme="${t.id}" title="Tema ${t.name}">${t.id === 'classico' ? '<span class="sw">⚜️</span>' : `<img src="${UI_THEME_BASE}${t.id}/icons/settings.png" alt="">`}<span>${t.name}</span></div>`).join('');
+    grid.querySelectorAll('.ui-theme-opt').forEach(b=> b.addEventListener('click', ()=> applyUiTheme(b.dataset.theme)));
+    let saved = 'classico'; try{ saved = localStorage.getItem(LS_UI_THEME) || 'classico'; }catch(_){}
+    applyUiTheme(saved);
+  })();
   // Voltar pra Seleção de Personagem -- só troca de tela, mantém a sessão
   // (LS_TOKEN/LS_USERNAME) logada; não precisa de confirmação, é reversível
   // (character-select.html deixa entrar de novo em qualquer personagem).
