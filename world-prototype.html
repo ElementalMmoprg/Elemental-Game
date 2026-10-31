@@ -701,7 +701,9 @@
   .inv-stat-group::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(191,161,95,.4), transparent); }
   .inv-stat-row{ display:flex; align-items:center; gap:6px; font-family:var(--font-mono); padding:2px 6px; border-radius:4px; }
   .inv-stat-row:nth-child(odd){ background:rgba(255,255,255,.025); }
-  .inv-stat-icon{ font-size:12px; width:16px; text-align:center; flex-shrink:0; }
+  .inv-stat-icon{ font-size:12px; width:18px; text-align:center; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; }
+  .inv-stat-icon img{ width:18px; height:18px; object-fit:contain; display:block; }
+  .inv-res-top .inv-stat-icon{ display:inline-flex; vertical-align:-4px; }
   .inv-stat-label{ font-size:9.5px; color:var(--ink-dim); white-space:nowrap; }
   .inv-stat-row b{ margin-left:auto; font-size:12px; color:var(--gold-bright); font-family:var(--font-display); white-space:nowrap; }
   .inv-set-chip{ margin-top:4px; padding:5px 8px; border-radius:6px; border:1px dashed rgba(191,161,95,.35); font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
@@ -3317,20 +3319,20 @@
            equipamento via getItemTotalStatsClient), não decorativos. -->
       <div id="inv-stats-col">
         <div class="panel-title" style="align-self:flex-start;">Atributos</div>
-        <div class="inv-res"><div class="inv-res-top">❤️ Vida <b id="inv-stat-life">0</b></div><div class="inv-res-bar hp"><i id="inv-bar-life"></i></div></div>
+        <div class="inv-res"><div class="inv-res-top"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/life.png" alt="❤️" onerror="this.replaceWith(document.createTextNode('❤️'))"></span> Vida <b id="inv-stat-life">0</b></div><div class="inv-res-bar hp"><i id="inv-bar-life"></i></div></div>
         <div class="inv-res"><div class="inv-res-top">💧 Mana <b id="inv-stat-mana">0</b></div><div class="inv-res-bar mp"><i id="inv-bar-mana"></i></div></div>
         <div class="inv-stat-group">Ataque</div>
         <div>
-          <div class="inv-stat-row"><span class="inv-stat-icon">⚔️</span><span class="inv-stat-label">DPS</span><b id="inv-stat-dps">0</b></div>
-          <div class="inv-stat-row"><span class="inv-stat-icon">🎯</span><span class="inv-stat-label">Chance Crít.</span><b id="inv-stat-critchance">0%</b></div>
-          <div class="inv-stat-row"><span class="inv-stat-icon">💥</span><span class="inv-stat-label">Dano Crítico</span><b id="inv-stat-critdmg">0%</b></div>
-          <div class="inv-stat-row"><span class="inv-stat-icon">🗡️</span><span class="inv-stat-label">Dano Físico</span><b id="inv-stat-physdmg">0%</b></div>
-          <div class="inv-stat-row"><span class="inv-stat-icon">🔮</span><span class="inv-stat-label">Dano Mágico</span><b id="inv-stat-magicdmg">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/dps.png" alt="⚔️" onerror="this.replaceWith(document.createTextNode('⚔️'))"></span><span class="inv-stat-label">DPS</span><b id="inv-stat-dps">0</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/critchance.png" alt="🎯" onerror="this.replaceWith(document.createTextNode('🎯'))"></span><span class="inv-stat-label">Chance Crít.</span><b id="inv-stat-critchance">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/critdmg.png" alt="💥" onerror="this.replaceWith(document.createTextNode('💥'))"></span><span class="inv-stat-label">Dano Crítico</span><b id="inv-stat-critdmg">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/physdmg.png" alt="🗡️" onerror="this.replaceWith(document.createTextNode('🗡️'))"></span><span class="inv-stat-label">Dano Físico</span><b id="inv-stat-physdmg">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/magicdmg.png" alt="🔮" onerror="this.replaceWith(document.createTextNode('🔮'))"></span><span class="inv-stat-label">Dano Mágico</span><b id="inv-stat-magicdmg">0%</b></div>
         </div>
         <div class="inv-stat-group">Defesa</div>
         <div>
-          <div class="inv-stat-row"><span class="inv-stat-icon">🛡️</span><span class="inv-stat-label">Armadura</span><b id="inv-stat-armor">0</b></div>
-          <div class="inv-stat-row"><span class="inv-stat-icon">🌀</span><span class="inv-stat-label">Esquiva</span><b id="inv-stat-dodge">0%</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/armor.png" alt="🛡️" onerror="this.replaceWith(document.createTextNode('🛡️'))"></span><span class="inv-stat-label">Armadura</span><b id="inv-stat-armor">0</b></div>
+          <div class="inv-stat-row"><span class="inv-stat-icon"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/stats/dodge.png" alt="🌀" onerror="this.replaceWith(document.createTextNode('🌀'))"></span><span class="inv-stat-label">Esquiva</span><b id="inv-stat-dodge">0%</b></div>
         </div>
         <div class="inv-stat-group">Atributos</div>
         <div id="inv-primary-rows"></div>
@@ -4690,6 +4692,45 @@
           (out[name]||[]).forEach((f,i)=>{ if(f.sw < bw - 1){ bw = f.sw; bi = i; } });
           out.idle[name] = bi;
         });
+        // 31/10/2026: PONTO DO PÉ de cada direção (coordenadas da célula):
+        // mediana, entre todos os quadros da linha, do centro das pegadas
+        // (faixa mais baixa de pixels) e da linha mais baixa. O corpo passa
+        // a ser ancorado por ele (não pela célula do quadro "de frente"), então
+        // virar pra >> ou << não desloca mais o personagem pro lado (várias
+        // linhas do atlas são o espelho de outra e ficavam com folgas
+        // diferentes dentro da célula), e asas/auras usam o mesmo ponto.
+        out.cell = cell; out.foot = {};
+        const med = arr => { const a = arr.slice().sort((p,q)=>p-q); return a.length ? a[Math.floor(a.length/2)] : 0; };
+        dirNames.forEach((name, rowIdx)=>{
+          const fxs = [], fys = [];
+          for(let cIdx=0; cIdx<cols; cIdx++){
+            const x0 = Math.round(cIdx*cellW), x1 = Math.min(w, Math.round((cIdx+1)*cellW)), y0 = rowIdx*cell, y1 = Math.min(h, y0+cell);
+            let yb = -1;
+            for(let y=y1-1; y>=y0 && yb<0; y--) for(let x=x0; x<x1; x++){ if(!isBg(x,y)){ yb = y; break; } }
+            if(yb < 0) continue;
+            const band = Math.max(2, Math.round(cell/16)), xs = [];
+            for(let y=Math.max(y0, yb-band); y<=yb; y++) for(let x=x0; x<x1; x++){ if(!isBg(x,y)) xs.push(x - x0); }
+            fxs.push(med(xs)); fys.push(yb - y0 + 1);
+          }
+          out.foot[name] = fxs.length ? { x: med(fxs), y: med(fys) } : { x: cell*0.6, y: cell*0.95 };
+        });
+        // CENTRO DE MASSA do corpo (quadro parado de cada direção), com
+        // erosão pra ignorar armas/cajados finos. Usado pelas asas nos
+        // trajes de célula maior que 64 (ver drawCharacterLayers).
+        out.mass = {};
+        const er = Math.max(1, Math.round(cell/32));
+        dirNames.forEach((name, rowIdx)=>{
+          const ci = out.idle[name] || 0, x0 = Math.round(ci*cellW), y0 = rowIdx*cell, cw = Math.min(w - x0, Math.round(cellW));
+          let sx = 0, sy = 0, n = 0, sx2 = 0, sy2 = 0, n2 = 0;
+          for(let y=0; y<cell; y++) for(let x=0; x<cw; x++){
+            if(isBg(x0+x, y0+y)) continue;
+            sx2 += x; sy2 += y; n2++;
+            let ok = true;
+            for(let dy=-er; dy<=er && ok; dy++){ const ry = er - Math.abs(dy); for(let dx=-ry; dx<=ry; dx++){ const xx = x+dx, yy = y+dy; if(xx<0||yy<0||xx>=cw||yy>=cell||isBg(x0+xx, y0+yy)){ ok = false; break; } } }
+            if(ok){ sx += x; sy += y; n++; }
+          }
+          out.mass[name] = n >= 15 ? { x: sx/n + 0.5, y: sy/n + 0.5 } : (n2 ? { x: sx2/n2 + 0.5, y: sy2/n2 + 0.5 } : { x: cell*0.66, y: cell*0.66 });
+        });
         return out;
       }catch(e){ return null; }
     }
@@ -5140,7 +5181,12 @@
       // pé fica no mesmo ponto em todos os quadros/direções. Antes cada
       // recorte era centralizado sozinho e o personagem "pulava" (pior no
       // andar pra baixo, com arma/brilho mudando o recorte a cada passo).
-      if(f.cellX != null && ref.cellX != null){
+      const foot = entry.dirFrames && entry.dirFrames.foot;
+      if(f.cellX != null && foot){
+        const ft = foot[dir] || foot.down;
+        dx = cx + ((f.sx - f.cellX) - ft.x)*scale;
+        dy = bottomY + ((f.sy - f.cellY) - ft.y)*scale;
+      } else if(f.cellX != null && ref.cellX != null){
         const refCx = (ref.sx - ref.cellX) + ref.sw/2, refBottom = (ref.sy - ref.cellY) + ref.sh;
         dx = cx + ((f.sx - f.cellX) - refCx)*scale;
         dy = bottomY + ((f.sy - f.cellY) - refBottom)*scale;
@@ -5158,10 +5204,22 @@
       // andar" reportado. Ancorando sempre no topo do quadro DE REFERÊNCIA
       // (parado, mesmo em todas as direções/frames), a cabeça fica travada
       // no pescoço e anda junto do corpo como uma peça só.
-      const stableTopY = bottomY - (ref.sh*scale);
+      const stableTopY = (foot && ref.cellY != null) ? bottomY - (foot.down.y - (ref.sy - ref.cellY))*scale : bottomY - (ref.sh*scale);
       return { dw, dh, dx, dy, topY: stableTopY };
     }
-    return { load, monsterSprite, monsterWalkSprite, headSprite, bodySprite, armorSprite, outfitTemplateSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, drawHeadStyleContainFit, getHeadStyleFrame, BODY_WALK_SAFE_FRAMES, URL_BASE };
+    // 31/10/2026: geometria da célula do traje (ancorada no pé, igual
+    // drawBodyDirFrame) ANTES de desenhar — asas (que vão atrás do corpo) e
+    // auras usam a MESMA escala de pixel e a mesma célula do traje vestido,
+    // então encaixam em qualquer traje, em qualquer direção e quadro.
+    function bodyCellLayout(entry, dir, cx, bottomY, maxW, maxH){
+      if(!entry || !entry.loaded || !entry.frame || !entry.dirFrames || !entry.dirFrames.foot) return null;
+      const ref = entry.frame, D = entry.dirFrames;
+      const scale = Math.min(maxW/ref.sw, maxH/ref.sh);
+      const ft = D.foot[dir] || D.foot.down;
+      const bodyH = (D.foot.down.y - (ref.sy - ref.cellY))*scale;
+      return { s: scale, ox: cx - ft.x*scale, oy: bottomY - ft.y*scale, cell: D.cell, bodyH };
+    }
+    return { load, monsterSprite, monsterWalkSprite, headSprite, bodySprite, armorSprite, outfitTemplateSprite, wingSprite, auraFrame, drawClippedFrame, drawFrameContainFit, drawBodyDirFrame, bodyCellLayout, drawHeadStyleContainFit, getHeadStyleFrame, BODY_WALK_SAFE_FRAMES, URL_BASE };
   })();
 
   // Desenha corpo + outfit equipado + cabeça em camadas pra QUALQUER personagem
@@ -5320,7 +5378,12 @@
     octx.drawImage(tbFaceScratch, Math.round(cx - side/2), Math.max(0, top - Math.round(side*0.08)), side, side, 0, 0, out.width, out.height);
   }
   setInterval(()=> updateTopBarFace(), 1500);
+  // 31/10/2026 (pedido do usuário): trajes que JÁ vêm com asa desenhada no
+  // próprio sprite (rd_9383..rd_9392) não recebem a asa comprada por cima —
+  // ela continua equipada e volta a aparecer ao trocar de traje.
+  const OUTFITS_WITH_BUILTIN_WINGS = new Set(['rd_9383','rd_9384','rd_9385','rd_9386','rd_9387','rd_9388','rd_9389','rd_9390','rd_9391','rd_9392']);
   function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim, cosmeticColorsArg){
+    if(wingId && OUTFITS_WITH_BUILTIN_WINGS.has(outfitId)) wingId = null;
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
     // sempre; com ele, desenha em QUALQUER outro canvas (usado pelo retrato
     // do personagem no Inventário, que reaproveita esse mesmo desenhista em
@@ -5385,15 +5448,45 @@
     // centradas no pé e ATRÁS do corpo; Vaga-lumes e Morcegos ficam centrados
     // no meio do corpo, circulando o personagem (por cima).
     const EX_AURA_ANCHOR = {
-      ex_aura_1: { cx:47, cy:50, at:'feet' }, ex_aura_2: { cx:44.5, cy:45.5, at:'feet' }, ex_aura_3: { cx:33, cy:35, at:'feet' },
+      ex_aura_1: { cx:47, cy:50, at:'feet' }, ex_aura_2: { cx:44.5, cy:45.5, at:'feet' }, ex_aura_3: { cx:37, cy:37.5, at:'feet' },
       ex_aura_4: { cx:32, cy:27.5, at:'body' }, ex_aura_5: { cx:33, cy:32.5, at:'body' },
     };
+    // 31/10/2026: layout da célula do traje vestido (ver bodyCellLayout) —
+    // mesma escala/âncora do corpo que vai ser desenhado logo abaixo.
+    const oScaleL = (outfitDef && outfitDef.scale) || 1;
+    const bodyL = archetypeArmor ? SpriteManager.bodyCellLayout(archetypeArmor, exDir, s.x, s.y + breathe, 48*scl*oScaleL, 64*scl*oScaleL) : null;
     const drawExodusAttached = (relPath, key, dir, anchor) => {
       const e = SpriteManager.load(key, relPath);
       if(!e.loaded || !e.img.naturalWidth) return;
-      const cols = Math.max(1, Math.round(e.img.naturalWidth/64));
+      // célula = altura/4 (as folhas têm células de 64 OU 96 px — ler tudo
+      // como 64 cortava os quadros das asas grandes)
+      const cs = Math.max(1, Math.round(e.img.naturalHeight/4));
+      const cols = Math.max(1, Math.round(e.img.naturalWidth/cs));
       const row = { down:0, up:1, right:2, left:3 }[dir] ?? 0;
       const col = Math.floor(Date.now()/AURA_FRAME_MS) % cols;
+      if(bodyL){
+        const k = bodyL.s;
+        if(anchor){
+          // aura: sempre no PÉ (ou no meio do corpo) do traje, igual em
+          // toda direção — não acompanha mais a folga de cada linha
+          const tx = s.x, ty = anchor.at === 'feet' ? (s.y + breathe) - 2*k : (s.y + breathe) - bodyL.bodyH*0.5;
+          tctx.drawImage(e.img, col*cs, 0, cs, cs, tx - anchor.cx*k, ty - anchor.cy*k, cs*k, cs*k);
+        } else {
+          // asa: as folhas são do padrão Tibia (célula 64, canto inferior-
+          // direito alinhado com o do boneco). Traje de célula 64 = encaixe
+          // direto. Traje de célula maior (96/128/160, boneco solto no meio
+          // da célula): monta uma célula 64 "virtual" levando o centro de
+          // massa do traje ao centro de massa médio dos trajes de 64 na
+          // mesma direção. Mesma escala de pixel do corpo.
+          const SC = { down:[42.3,42.4], up:[42.8,43.9], right:[42.3,42.4], left:[43.6,42.5] }[dir] || [42.3,42.4];
+          const ms = archetypeArmor.dirFrames.mass && archetypeArmor.dirFrames.mass[dir];
+          let vx = bodyL.ox, vy = bodyL.oy;
+          if(bodyL.cell !== 64 && ms){ vx = bodyL.ox + (ms.x - SC[0])*k; vy = bodyL.oy + (ms.y - SC[1])*k; }
+          else if(bodyL.cell !== 64){ vx = bodyL.ox + (bodyL.cell - 64)*k; vy = bodyL.oy + (bodyL.cell - 64)*k; }
+          tctx.drawImage(e.img, col*cs, row*cs, cs, cs, vx + (64 - cs)*k, vy + (64 - cs)*k, cs*k, cs*k);
+        }
+        return;
+      }
       const ws = exBodyH / 46;
       if(anchor){
         // pés: os sprites isométricos pisam ~20% da largura à direita do centro
@@ -5404,7 +5497,7 @@
         tctx.drawImage(e.img, col*64, row*64, 64, 64, tx - anchor.cx*ws, ty - anchor.cy*ws, 64*ws, 64*ws);
         return;
       }
-      tctx.drawImage(e.img, col*64, row*64, 64, 64, s.x - 45*ws, (s.y+breathe) - 63*ws, 64*ws, 64*ws);
+      tctx.drawImage(e.img, col*cs, row*cs, cs, cs, s.x - (cs-19)*ws, (s.y+breathe) - (cs-1)*ws, cs*ws, cs*ws);
     };
     const exAuraAnchor = auraId ? EX_AURA_ANCHOR[auraId] : null;
     // aura de chão: desenhada antes de tudo (fica embaixo do pé, atrás do corpo)
@@ -5441,10 +5534,12 @@
     let bodyDraw;
     if(archetypeArmor){
       const oScale = (outfitDef && outfitDef.scale) || 1; // ex.: Druidesa Mística um pouco maior
-      const fIdx = (walkAnim && walkAnim.idle && !drawWalkAnim.pose) ? -1 : drawWalkAnim && drawWalkAnim.frameIdx;
-      bodyDraw = drawWalkAnim
-        ? SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, drawWalkAnim.dir, fIdx, s.x, feetY, 48*scl*oScale, 64*scl*oScale, drawWalkAnim.pose)
-        : SpriteManager.drawFrameContainFit(tctx, archetypeArmor, s.x, feetY, 48*scl*oScale, 64*scl*oScale);
+      // 31/10/2026: parado (ou golpeando parado) = SEMPRE o quadro de pé da
+      // direção. Antes a "pose de golpe" usava o 1º quadro do andar, então a
+      // cada ataque o boneco parado alternava pé-na-frente/pé-junto (pernas
+      // "mexendo pra frente e pra trás" sem sair do lugar).
+      const fIdx = (!drawWalkAnim || drawWalkAnim.idle || (drawWalkAnim.pose && drawWalkAnim.idle !== false)) ? -1 : drawWalkAnim.frameIdx;
+      bodyDraw = SpriteManager.drawBodyDirFrame(tctx, archetypeArmor, (drawWalkAnim && drawWalkAnim.dir) || 'down', fIdx, s.x, feetY, 48*scl*oScale, 64*scl*oScale, false);
     } else {
       const body = SpriteManager.bodySprite(genero);
       bodyDraw = drawWalkAnim
@@ -6486,7 +6581,9 @@
         // de "usei uma habilidade/ataquei" que estava faltando por completo.
         if(firstOfCast) spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
         castPoseUntil = now() + CAST_POSE_MS;
-        if(aoeKey && firstOfCast && fx.archetypeId){
+        // animação própria da magia (SPELL_FX) — se não tiver, cai no visual antigo por arquétipo
+        const sfxDone = isMagic && m && spellFxOnHit(fx.spellName, player.x, player.y, m.x, m.y, !!aoeKey, firstOfCast, player.x, player.y, ()=>({x:player.x,y:player.y}));
+        if(!sfxDone && aoeKey && firstOfCast && fx.archetypeId){
           // estouro grande no centro da área (em volta do conjurador, igual o servidor calcula a área)
           SpellFxManager.spawnAreaEffect(fx.archetypeId, 'aoe', player.x, player.y, fx.element, 4.5);
         }
@@ -6495,7 +6592,7 @@
         // manda archetypeId, então não entra aqui). fx.ranged (magia com
         // range>1, ver castSpell) decide projétil-até-o-alvo vs. estouro
         // direto no tile do monstro (magia de contato/curta distância).
-        if(isMagic && fx.archetypeId && m){
+        if(!sfxDone && isMagic && fx.archetypeId && m){
           if(aoeKey) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'attack', m.x, m.y, fx.element, 1.1); // impacto menor em cada alvo da área
           else if(fx.ranged) SpellFxManager.spawnMissile(fx.archetypeId, 'attack', player.x, player.y, m.x, m.y, fx.element);
           else SpellFxManager.spawnAreaEffect(fx.archetypeId, 'attack', m.x, m.y, fx.element);
@@ -6533,6 +6630,8 @@
         if(md) spawnFloatingText(()=>({x:md.x+8,y:md.y}), `-${fx.dmg}`, fx.status==='burn' ? '#ff7a2e' : '#8fd35a');
       } else if(fx.t === 'hot'){
         spawnFloatingText(()=>({x:player.x+8,y:player.y}), `+${fx.amount}`, '#9ff0b0');
+        // cura contínua: repete o efeito da magia no máx. a cada 2,5 s (não a cada tick)
+        if(fx.spellName){ const hk = fx.spellName, hm = (processCombatFx._hot = processCombatFx._hot || {}); if(!(now() - (hm[hk] || 0) < 2500)){ hm[hk] = now(); spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})); } }
       } else if(fx.t === 'blocked'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), fx.immune ? '✨ Invulnerável' : '🌪️ Bloqueado!', fx.immune ? '#fff2a8' : '#bfe8ff');
       } else if(fx.t === 'heal'){
@@ -6540,7 +6639,7 @@
         if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
         castPoseUntil = now() + CAST_POSE_MS;
-        if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'heal', player.x, player.y, fx.element);
+        if(!spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})) && fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'heal', player.x, player.y, fx.element);
       } else if(fx.t === 'healedOther'){
         // Cura em ALIADO (Alvo da cura configurado, ver resolveHealTarget no
         // huntEngine.js) -- o "+X" de verdade aparece na TELA DO ALIADO (via
@@ -6554,7 +6653,7 @@
         if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
         castPoseUntil = now() + CAST_POSE_MS;
-        if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
+        if(!spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})) && fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
       } else if(fx.t === 'buff'){
         // Magias de buff puro (Spirit Shield/Living Saint/Haste etc. — ver
         // classifySpellEffect kind:'buff' em huntEngine.js) reaproveitam o
@@ -6566,7 +6665,7 @@
         if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#c9a6ff', { yOffset: 14, big: true });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,210,122,.75)', 32, 420);
         castPoseUntil = now() + CAST_POSE_MS;
-        if(fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
+        if(!spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})) && fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
       } else if(fx.t === 'death'){
         // Consequências de morte (ver onPlayerDeath em huntEngine.js) — XP/
         // atributos/chance de item cair, todos reduzidos pela proteção das
@@ -6738,7 +6837,7 @@
   // sempre agenda o Area Effect de impacto sozinho via onArrive) ficam
   // encapsuladas aqui.
   const SpellFxManager = {
-    areaEffects: [], missiles: [],
+    areaEffects: [], missiles: [], strips: [],
     spawnAreaEffect(archetypeId, kind, worldX, worldY, element, boxTiles){
       const v = spellVisualFor(archetypeId, kind);
       const color = spellFallbackColor(archetypeId, element);
@@ -6756,8 +6855,130 @@
     draw(toScreen){
       for(let i = this.areaEffects.length - 1; i >= 0; i--){ const e = this.areaEffects[i]; e.draw(toScreen); if(e.finished) this.areaEffects.splice(i, 1); }
       for(let i = this.missiles.length - 1; i >= 0; i--){ const m = this.missiles[i]; m.draw(toScreen); if(m.finished) this.missiles.splice(i, 1); }
+      for(let i = 0; i < this.strips.length; i++){ this.strips[i].draw(toScreen); }
+      for(let i = this.strips.length - 1; i >= 0; i--){ if(this.strips[i].finished) this.strips.splice(i, 1); }
     },
   };
+
+  /* =========================================================
+     ANIMAÇÃO POR MAGIA (30/10/2026) — efeitos reais do cliente Ravendawn
+     (update_client 1098), escolhidos magia a magia comparando os vídeos de
+     prévia com os scripts originais (data/spells/scripts/<arquetipo>/*.lua).
+     Cada efeito é UMA tira horizontal (assets/spellfx/effects/x<id>.png,
+     quadros de w*32 x h*32, 100 ms cada) e cada míssil uma tira de 9
+     direções (assets/spellfx/missiles/m<id>.png, índice yp*3+xp: 0=NO 1=N
+     2=NE 3=O 5=L 6=SO 7=S 8=SE). Chaves por magia (SPELL_FX, slug do nome):
+       m = míssil do conjurador até o alvo   i = impacto no alvo
+       a = efeito grande da área (1x por conjuração)   ai = impacto em cada
+       alvo da área   s = efeito no próprio conjurador   d = impacto
+       direcional [N,L,S,O] (escolhido pela direção conjurador→alvo).
+     Sem arte carregada, cai no sistema antigo (SPELL_VISUALS) abaixo.
+     ========================================================= */
+  const SFX_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/spellfx/';
+  const SFX_META = {"e":{"293":[3,3,12,-0.74,-0.67],"300":[5,5,18,-0.33,-0.33],"307":[7,5,16,0.18,-0.38],"311":[5,5,10,-0.48,-0.46],"328":[2,2,9,-0.19,-0.24],"334":[2,2,9,0.03,-0.04],"344":[2,2,10,-0.4,-0.42],"345":[1,1,10,-0.04,-0.04],"424":[3,3,16,0.03,0.03],"426":[2,2,11,0.14,0.22],"427":[2,2,11,0.14,0.22],"432":[2,2,8,-0.01,-0.12],"447":[2,2,15,0.02,0.01],"448":[2,2,6,-0.03,-0.09],"454":[2,2,12,-0.28,-0.29],"455":[2,2,10,-0.14,-0.14],"459":[2,2,10,-0.14,-0.14],"464":[2,2,7,-0.05,-0.04],"485":[2,2,17,-0.0,0.01],"487":[2,2,8,0.1,0.13],"489":[2,2,5,-0.09,0.01],"490":[2,2,5,-0.0,0.01],"493":[2,2,7,-0.31,-0.27],"500":[3,3,14,-0.14,-0.17],"580":[2,2,8,-0.26,-0.27],"625":[4,4,12,-0.1,-0.07],"1028":[8,8,8,0.19,-0.16],"1105":[5,5,7,-0.05,-0.05],"1107":[5,5,8,-0.14,-0.14],"1108":[7,7,7,-0.09,-0.09],"1110":[7,7,8,-0.14,-0.14],"1111":[9,9,7,-0.1,-0.08],"1142":[4,4,9,-0.06,-0.06],"1189":[3,3,8,0.04,-0.06],"1192":[4,4,8,-0.4,-0.47],"1194":[4,4,8,-0.4,-0.47],"1241":[6,7,9,0,0],"1242":[7,6,9,0,0],"1243":[7,6,9,0,0],"1244":[6,7,9,0,0],"1286":[3,3,4,0.01,0.01],"1288":[9,9,9,0.14,0.03],"1289":[7,7,9,0.02,-0.18],"1291":[3,3,5,0,0],"1292":[3,3,5,0,0],"1293":[3,3,5,0,0],"1294":[3,3,5,0,0],"1299":[3,3,6,0,0],"1300":[3,3,6,0,0],"1301":[3,3,6,0,0],"1302":[3,3,6,0,0],"1303":[7,7,7,-0.21,0.01],"1527":[7,7,18,0.16,0.15],"1528":[5,5,13,0.2,0.15],"1540":[3,3,5,-0.0,0.03],"1582":[5,5,14,-0.29,-0.34],"1584":[5,5,10,0.09,0.11],"1706":[4,4,5,-0.06,0.0],"1710":[13,13,11,-1.28,-1.22],"1713":[13,13,11,0.01,0.03],"1714":[13,13,11,0.94,0.78],"1716":[8,8,16,0.75,0.74],"1717":[8,8,5,0.13,0.28],"1753":[9,9,5,-0.0,0.01],"1758":[3,3,10,-0.22,-0.31],"1759":[3,3,10,0.21,0.21],"1791":[9,9,4,0.01,0.06],"1795":[3,3,8,-0.15,-0.41],"1796":[3,3,8,-0.41,-0.15],"1797":[3,3,8,-0.46,-0.31],"1801":[3,3,8,-0.41,-0.43],"1820":[9,9,9,0.01,0.06],"1906":[4,4,8,-0.4,-0.47],"2106":[7,7,9,-0.38,0.0],"2110":[5,5,8,-0.73,-0.92],"2111":[5,5,8,-0.33,-0.24],"2113":[5,5,8,0.24,0.66],"2135":[7,7,14,0.23,0.22],"2177":[7,7,8,0.01,0.02],"2181":[7,7,8,0.21,0.18],"2187":[7,7,10,0.44,-0.01],"2190":[3,3,16,0.16,0.07],"2194":[6,6,10,-0.41,-0.4],"2209":[3,3,8,0.04,-0.06],"2236":[4,4,9,-0.33,-0.6],"2273":[9,9,9,0.0,0.05],"2275":[9,9,17,0.0,0.04],"2276":[9,9,17,0.0,0.04],"2432":[3,3,8,0.04,-0.06],"2434":[3,3,8,0.04,-0.06],"2435":[3,3,13,0.14,0.33],"2436":[3,3,13,0.12,0.29],"2437":[3,3,13,0.13,0.31],"2499":[7,7,8,0.12,0.16],"2504":[5,4,9,0.14,-0.27]},"m":{"20":1,"22":1,"24":1,"29":1,"30":1,"31":1,"33":1,"34":1,"40":1,"41":1,"50":1,"52":1,"56":1,"61":1,"87":2,"88":1,"93":2,"162":2}};
+  const SPELL_FX = {"fireball":{"m":52,"i":307,"is":0.7},"frostbolt":{"m":93,"i":334},"erupt":{"i":1194},"frost_shards":{"m":50,"i":328},"combustion":{"a":2499,"i":311,"ai":311},"frost_lance":{"m":162,"i":1142},"flame_tornado":{"a":1194,"ai":307},"coldblast":{"a":1028,"ai":334},"meteor_strike":{"i":300,"ai":300},"icestorm":{"a":1528,"ai":1527},"pyroblast":{"m":87,"i":307,"is":1.3},"teleport":{"s":493},"cataclysm":{"a":2499,"ai":300},"brutal_strike":{"i":2111},"guillotine":{"i":2110},"shieldbreak":{"i":1286,"d":[1292,1293,1294,1291]},"bull_rush":{"ai":432,"d":[1300,1302,1301,1299]},"pummel":{"i":432},"feasting_strike":{"i":2113,"s":1706},"bladestorm":{"a":1584,"ai":2111},"fissure":{"ai":1286,"d":[1242,1241,1243,1244]},"spiked_chains":{"i":1710,"is":0.55},"earthquake":{"a":1289,"ai":1189},"fierce_leap":{"a":1288,"ai":1189},"berserk":{"s":1706},"chaos_chains":{"a":1713,"ai":1710,"ais":0.5},"bash":{"i":448},"spirits_resolve":{"s":426,"ss":1.8},"smiting_smash":{"a":1192,"ai":448},"provoke":{"a":1906},"revenge":{"a":464,"ai":448},"shield_throw":{"m":20,"i":448},"safeguard":{"s":2273},"banner_of_protection":{"a":1107},"spirit_shield":{"s":2275},"blessed_earth":{"a":2432,"ai":2437},"unchained":{"s":1286},"unbreakable":{"s":2276},"eternal_retribution":{"a":1303,"ai":1286},"quick_slash":{"i":487},"shadowstrike":{"i":489},"shadow_kick":{"i":580},"coup_de_grace":{"a":1582,"ai":489},"stalk":{"s":493},"crippling_dagger":{"m":22,"i":489},"shadowbind":{"i":1540,"ai":1540},"anti_healing_venom":{"i":2435},"venomous_weapons":{"s":2436},"sinister_plot":{"s":2106},"death_blossom":{"i":1582,"is":0.75},"illusive":{"s":490},"reapers_eclipse":{"a":1714,"ai":580},"wind_arrow":{"m":30,"i":454,"i0":5},"viper_arrow":{"m":31,"i":455,"i0":5},"concussive_shot":{"m":33,"i":459,"i0":5},"quick_fire":{"m":29,"i":454,"i0":5},"precision_shot":{"m":40,"i":447},"snaring_shot":{"m":41,"i":2209},"disengage":{"m":34,"i":293},"rain_of_arrows":{"rain":[454,2,9],"ai":454},"dawn_arrow":{"m":33,"i":464,"ai":464},"venom_grenade":{"m":61,"i":2435,"ai":2435},"dragons_arrow":{"m":87,"i":307,"is":0.8},"spirit_rangers":{"s":625},"celestial_barrage":{"a":2504,"rain":[459,3,14],"ai":459},"flash_heal":{"s":1105},"smite":{"i":2504,"is":1.4},"mend":{"s":426,"ss":1.8},"holy_shackles":{"i":500},"healing_channel":{"s":1758,"ss":1.6},"devotion":{"s":424},"holy_force":{"a":1108,"ai":2504},"purify":{"s":2236,"ss":1.6},"circle_of_light":{"a":1110,"ai":426},"generous_influence":{"s":1105},"living_saint":{"s":1107},"dawns_apotheosis":{"a":1111,"s":1105},"cyclone":{"i":1717},"regenerate":{"s":1759,"ss":1.6},"whirlwind":{"a":1716,"ai":1717},"barrier":{"s":1795},"windstrike_spirit":{"s":1797},"force_push":{"a":1189,"d":[1300,1302,1301,1299]},"wind_wall":{"a":1716},"party_recovery":{"s":427,"ss":1.8},"air_aura":{"s":1796},"haste":{"s":1801},"healing_air_sphere":{"a":1753,"s":1759},"typhoon":{"a":1716,"ai":1717},"eye_of_the_storm":{"a":1303,"ai":1286},"arcane_pulse":{"i":344},"curse":{"i":1791,"ai":1791},"arcane_torrent":{"m":24,"i":345},"leech":{"m":56,"i":2434},"eternal_worms":{"i":2190},"siphon":{"m":88,"i":1192},"magic_rupture":{"i":2181},"shackles_of_pain":{"i":1540},"dispel":{"i":2194},"mirror_image":{"s":485},"death_touch":{"a":2187,"ai":2135},"hex":{"i":1820},"witchs_call":{"a":2177}};
+  const SFX_FRAME_MS = 100;
+  function spellSlug(name){ return String(name||'').toLowerCase().replace(/['’]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+  function spellFxConf(name){ return name ? SPELL_FX[spellSlug(name)] || null : null; }
+  const sfxCache = {};
+  function sfxImg(path){
+    let e = sfxCache[path]; if(e) return e;
+    e = sfxCache[path] = { img:new Image(), loaded:false, failed:false };
+    e.img.crossOrigin = 'anonymous';
+    e.img.onload = ()=>{ e.loaded = true; }; e.img.onerror = ()=>{ e.failed = true; };
+    e.img.src = SFX_BASE + path; return e;
+  }
+  const sfxEff = (id)=> sfxImg(`effects/x${id}.png`);
+  const sfxMis = (id)=> sfxImg(`missiles/m${id}.png`);
+  // pré-carrega tudo em segundo plano (senão a 1ª conjuração de cada magia some)
+  setTimeout(()=>{ try{
+    const ids = Object.keys(SFX_META.e); let i = 0;
+    (function next(){ for(let k=0; k<6 && i<ids.length; k++, i++) sfxEff(ids[i]); if(i<ids.length) setTimeout(next, 250); else Object.keys(SFX_META.m).forEach(sfxMis); })();
+  }catch(_){} }, 2500);
+
+  class SpellStripEffect {
+    constructor(id, x, y, opts){
+      this.id = id; this.x = x; this.y = y; opts = opts || {};
+      const m = SFX_META.e[id] || [1,1,1,0,0];
+      this.tw = m[0]; this.th = m[1]; this.n = m[2]; this.ox = m[3] || 0; this.oy = m[4] || 0; // ox/oy: correção (em tiles) pro centro visual do efeito cair no alvo
+      this.scale = opts.scale || 1; this.bornAt = now() + (opts.delay || 0);
+      this.follow = opts.follow || null;
+      this.f0 = Math.min(this.n - 1, opts.startFrame || 0); // pula quadros iniciais (ex.: flecha caindo quando já veio pelo míssil) // função que devolve {x,y} (efeito preso no personagem)
+    }
+    get finished(){ return now() - this.bornAt >= (this.n - this.f0) * SFX_FRAME_MS; }
+    draw(toScreen){
+      const el = now() - this.bornAt; if(el < 0) return;
+      const sp = sfxEff(this.id); if(!sp.loaded) return;
+      const f = Math.min(this.n - 1, this.f0 + Math.floor(el / SFX_FRAME_MS));
+      const p = this.follow ? this.follow() : this;
+      const s = toScreen(p.x, p.y);
+      const fw = this.tw * 32, fh = this.th * 32;
+      const k = SPRITE_SCALE * this.scale; // mesma escala de pixel dos outfits: efeito proporcional ao personagem, como no Ravendawn
+      const dw = fw * k, dh = fh * k;
+      // ancorado no centro do tile (um pouco acima do chão, no corpo)
+      const t32 = 32 * k;
+      ctx.drawImage(sp.img, f * fw, 0, fw, fh, s.x - dw / 2 + this.ox * t32, s.y - 14 * SPRITE_SCALE - dh / 2 + this.oy * t32, dw, dh);
+    }
+  }
+  class SpellStripMissile {
+    constructor(id, fx, fy, tx, ty, onArrive){
+      this.id = id; this.fx = fx; this.fy = fy; this.tx = tx; this.ty = ty; this.onArrive = onArrive;
+      const dx = tx - fx, dy = ty - fy, dist = Math.hypot(dx, dy) || 1;
+      this.dur = Math.max(110, dist / SPELL_MISSILE_SPEED_PX_S * 1000);
+      const a = Math.atan2(dy, dx), oct = (Math.round(a / (Math.PI / 4)) + 8) % 8; // 0=L,1=SE,2=S,3=SO,4=O,5=NO,6=N,7=NE
+      this.dirIdx = [5,8,7,6,3,0,1,2][oct];
+      this.tw = SFX_META.m[id] || 1; this.bornAt = now(); this.arrived = false;
+    }
+    get finished(){ return this.arrived; }
+    draw(toScreen){
+      const t = Math.min(1, (now() - this.bornAt) / this.dur);
+      const sp = sfxMis(this.id);
+      if(sp.loaded){
+        const s = toScreen(this.fx + (this.tx - this.fx) * t, this.fy + (this.ty - this.fy) * t);
+        const fw = this.tw * 32, k = SPRITE_SCALE, d = fw * k;
+        ctx.drawImage(sp.img, this.dirIdx * fw, 0, fw, fw, s.x - d / 2, s.y - 14 * SPRITE_SCALE - d / 2, d, d);
+      }
+      if(t >= 1 && !this.arrived){ this.arrived = true; if(this.onArrive) this.onArrive(); }
+    }
+  }
+  // direção conjurador→alvo nas 4 retas [N,L,S,O]
+  function sfxDir4(fx, fy, tx, ty){ const dx = tx - fx, dy = ty - fy; return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0); }
+  function sfxSpawn(id, x, y, o){ if(id) SpellFxManager.strips.push(new SpellStripEffect(id, x, y, o)); }
+  function sfxImpact(conf, fx, fy, tx, ty, aoe){
+    const imp = aoe ? (conf.ai || conf.i) : (conf.i || conf.ai);
+    if(conf.d) sfxSpawn(conf.d[sfxDir4(fx, fy, tx, ty)], tx, ty);
+    if(imp) sfxSpawn(imp, tx, ty, { scale: (aoe && conf.ai ? conf.ais : conf.is) || 1, startFrame: (!aoe || !conf.ai) ? (conf.i0 || 0) : 0 });
+  }
+  // chuva (flechas caindo do céu): N impactos em tiles aleatórios num raio, escalonados
+  function sfxRain(conf, cx, cy){
+    if(!conf.rain) return;
+    const [id, r, n] = conf.rain;
+    for(let k = 0; k < n; k++){
+      const ang = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()) * r;
+      sfxSpawn(id, cx + Math.round(Math.cos(ang) * d) * TILE_STEP, cy + Math.round(Math.sin(ang) * d) * TILE_STEP, { delay: Math.round(k * 650 / n + Math.random() * 120) });
+    }
+  }
+  // golpe de magia num alvo: devolve true se a magia tem animação própria
+  function spellFxOnHit(name, fx, fy, tx, ty, aoe, firstOfCast, cx, cy, follow){
+    const conf = spellFxConf(name); if(!conf) return false;
+    if(firstOfCast){
+      if(conf.a) sfxSpawn(conf.a, cx, cy);
+      sfxRain(conf, cx, cy);
+      if(conf.s) sfxSpawn(conf.s, fx, fy, { follow, scale: conf.ss || 1 });
+    }
+    if(conf.m && Math.hypot(tx - fx, ty - fy) > TILE_STEP * 1.2 && (!aoe || firstOfCast)){
+      SpellFxManager.strips.push(new SpellStripMissile(conf.m, fx, fy, tx, ty, ()=> sfxImpact(conf, fx, fy, tx, ty, aoe)));
+    } else sfxImpact(conf, fx, fy, tx, ty, aoe);
+    return true;
+  }
+  // cura/escudo/buff no próprio conjurador (+ zona, se a magia tiver uma)
+  function spellFxOnSelf(name, x, y, follow, zx, zy){
+    const conf = spellFxConf(name); if(!conf || !(conf.s || conf.a || conf.rain)) return false;
+    if(conf.s) sfxSpawn(conf.s, x, y, { follow, scale: conf.ss || 1 });
+    if(conf.a) sfxSpawn(conf.a, zx != null ? zx : x, zy != null ? zy : y);
+    sfxRain(conf, zx != null ? zx : x, zy != null ? zy : y);
+    return true;
+  }
 
   // Animação de andar: acompanha, por personagem (jogador local + cada
   // remoto, indexados por uma chave estável — ver chamadores), pra ONDE ele
@@ -7231,7 +7452,7 @@
       // é uma pose de ataque/gesto no próprio atlas, sem mexer na direção
       // que o jogador está de fato encarando.
       const castAnim = (now() < castPoseUntil)
-        ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true }
+        ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true, idle: anim.idle }
         : anim;
       const dr = drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
       drawnTopByKey['__player__'] = dr ? dr.topY : null;
@@ -8856,7 +9077,7 @@
       clearTimeout(showBanner._t); if (ms) showBanner._t = setTimeout(() => el.banner.classList.remove('pvp-show'), ms / Math.max(1, speed));
     }
     function hideBanner() { el.banner.classList.remove('pvp-show'); }
-    function clearFx() { pvpScene.zones = []; SpellFxManager.areaEffects.length = 0; SpellFxManager.missiles.length = 0; floatingTexts.length = 0; fxRings.length = 0; }
+    function clearFx() { pvpScene.zones = []; SpellFxManager.areaEffects.length = 0; SpellFxManager.missiles.length = 0; SpellFxManager.strips.length = 0; floatingTexts.length = 0; fxRings.length = 0; }
     // HUD: só mexe no DOM quando o valor muda (evita recalcular layout 10x/s à toa)
     const hudCache = {};
     function setTopHp(side, hp, hm) {
@@ -8926,7 +9147,8 @@
         if (magic) {
           const arch = fx.archetypeId || F[s].arch, key = (fx.spellName || '') + '|' + Math.floor(e.t / 400);
           if (fx.spellName && F[s]._lastSpellKey !== key) { F[s]._lastSpellKey = key; spawnFloatingText(anchorOf(s), fx.spellName, '#d9b8ff', { yOffset: 22, big: true }); logLine(`${who(s)} usou <b>${fx.spellName}</b> em ${who(o)}: <strong>${fx.dmg}</strong>${fx.crit ? ' (crítico)' : ''}`); }
-          if (fx.aoe) SpellFxManager.spawnAreaEffect(arch, 'aoe', op.x, op.y, fx.element, 3);
+          if (spellFxOnHit(fx.spellName, me.x, me.y, op.x, op.y, !!fx.aoe, true, op.x, op.y, () => posOf(s))) { /* animação própria (SPELL_FX) */ }
+          else if (fx.aoe) SpellFxManager.spawnAreaEffect(arch, 'aoe', op.x, op.y, fx.element, 3);
           else if (fx.ranged || d > 1) SpellFxManager.spawnMissile(arch, 'attack', me.x, me.y, op.x, op.y, fx.element);
           else SpellFxManager.spawnAreaEffect(arch, 'attack', op.x, op.y, fx.element);
         } else {
@@ -8941,7 +9163,7 @@
         if (fx.t === 'heal') {
           F[s].poseUntil = now() + CAST_POSE_MS;
           if (fx.spellName) { spawnFloatingText(anchorOf(s), fx.spellName, '#d9b8ff', { yOffset: 22, big: true }); logLine(`${who(s)} usou <b>${fx.spellName}</b>${fx.amount > 0 ? ` e curou <strong>${Math.round(fx.amount)}</strong>` : ''}`); }
-          const me = posOf(s); SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'heal', me.x, me.y, fx.element);
+          const me = posOf(s); if (!spellFxOnSelf(fx.spellName, me.x, me.y, () => posOf(s))) SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'heal', me.x, me.y, fx.element);
         }
       } else if (fx.t === 'shield' || fx.t === 'buff') {
         F[s].poseUntil = now() + CAST_POSE_MS;
@@ -8950,8 +9172,8 @@
         spawnFloatingText(anchorOf(s), label, fx.t === 'shield' ? '#8fd3ff' : '#ffe08a', { yOffset: 22, big: true });
         if (fx.spellName) logLine(`${who(s)} usou <b>${fx.spellName}</b>`);
         const zk = ZONE_KEYS[fx.statKey];
-        if (zk) { const at = (zk === 'holyZone' || zk === 'earthZone') ? me : op; pvpScene.zones.push({ x: at.x, y: at.y, r: 2, kind: zk, until: now() + 5500 / Math.max(1, speed) }); SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'aoe', at.x, at.y, null, 3); }
-        else SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'defense', me.x, me.y, fx.element);
+        if (zk) { const at = (zk === 'holyZone' || zk === 'earthZone') ? me : op; pvpScene.zones.push({ x: at.x, y: at.y, r: 2, kind: zk, until: now() + 5500 / Math.max(1, speed) }); if (!spellFxOnSelf(fx.spellName, me.x, me.y, () => posOf(s), at.x, at.y)) SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'aoe', at.x, at.y, null, 3); }
+        else if (!spellFxOnSelf(fx.spellName, me.x, me.y, () => posOf(s))) SpellFxManager.spawnAreaEffect(fx.archetypeId || F[s].arch, 'defense', me.x, me.y, fx.element);
       } else if (fx.t === 'blocked') {
         spawnFloatingText(anchorOf(s), fx.immune ? '✨ Invulnerável' : 'Bloqueado', '#fff2a8', { yOffset: 38 });
       } else if (fx.t === 'duelMiss') {
@@ -12218,7 +12440,9 @@
       const tot = sa.primaryTotals || statAllocation || {};
       const fromItems = sa.primaryFromItems || {};
       const PT = { vitality:'Vitalidade', might:'Força', intelligence:'Inteligência', dexterity:'Destreza', wisdom:'Sabedoria' };
-      const META = { vitality:{label:'Vitality',icon:'❤️',desc:'Aumenta seu HP máximo.'}, might:{label:'Might',icon:'⚔️',desc:'Aumenta Weapon Power (dano físico).'}, intelligence:{label:'Intelligence',icon:'🔮',desc:'Aumenta Spell Power (dano mágico).'}, dexterity:{label:'Dexterity',icon:'🏹',desc:'Aumenta Haste, Precision e Impact.'}, wisdom:{label:'Wisdom',icon:'📖',desc:'Aumenta Healing Power e seu MP máximo.'} };
+      // 31/10/2026: ícones pixel-art (assets/ui/stats/<id>.png); emoji só se a imagem falhar
+      const SI = (n, e) => `<img src="${URL_BASE}ui/stats/${n}.png" alt="${e}" onerror="this.replaceWith(document.createTextNode('${e}'))">`;
+      const META = { vitality:{label:'Vitality',icon:SI('life','❤️'),desc:'Aumenta seu HP máximo.'}, might:{label:'Might',icon:SI('might','⚔️'),desc:'Aumenta Weapon Power (dano físico).'}, intelligence:{label:'Intelligence',icon:SI('intelligence','🔮'),desc:'Aumenta Spell Power (dano mágico).'}, dexterity:{label:'Dexterity',icon:SI('dexterity','🏹'),desc:'Aumenta Haste, Precision e Impact.'}, wisdom:{label:'Wisdom',icon:SI('wisdom','📖'),desc:'Aumenta Healing Power e seu MP máximo.'} };
       box.innerHTML = Object.keys(META).map(k=>{
         const m = META[k], it = Math.round(fromItems[k]||0), base = Math.round((statAllocation||{})[k]||0);
         const tip = `${m.label} (${PT[k]}) — ${m.desc} Pontos: ${base}${it?` · Itens: +${it}`:''}`;
