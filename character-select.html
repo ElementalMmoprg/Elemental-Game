@@ -779,6 +779,10 @@
         isArchetypeBody = !!bodyDraw;
       }
     }
+    // 31/10/2026 (pedido do usuário): sem arquétipo escolhido (ou traje
+    // ainda carregando) o quadro fica VAZIO — não mostra mais o boneco
+    // genérico de teste. O texto "Escolha um arquétipo" abaixo já orienta.
+    if(!bodyDraw){ ctx.clearRect(0,0,w,h); return; }
     if(!bodyDraw){
       // Sem arquétipo escolhido ainda (ou traje ainda carregando) -- corpo
       // genérico só como placeholder temporário, nunca por baixo do traje.

@@ -1157,6 +1157,18 @@
   .glass.win > .panel-title{ color:#eee6d3; text-shadow:0 1px 2px rgba(0,0,0,.7); }
   .glass.win > .panel-title .rule{ background:linear-gradient(90deg, rgba(255,255,255,.28), transparent); }
 
+  /* Carregando o mapa (31/10/2026) */
+  #map-loading{ position:fixed; inset:0; z-index:2147483000; background:#0a0806; display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:#f0d38a; font:600 15px "JetBrains Mono", monospace; letter-spacing:.06em; }
+  #map-loading.show{ display:flex; }
+  #map-loading .ml-spin{ width:42px; height:42px; border-radius:50%; border:3px solid rgba(240,211,138,.18); border-top-color:#f0d38a; animation:mlspin .9s linear infinite; }
+  @keyframes mlspin{ to{ transform:rotate(360deg); } }
+  /* Zoom da câmera (31/10/2026) */
+  .zoom-row{ display:flex; align-items:center; gap:6px; margin:4px 0 2px; }
+  .zoom-row .settings-menu-btn{ width:auto; min-width:34px; margin:0; padding:4px 10px; text-align:center; }
+  .zoom-row b{ min-width:52px; text-align:center; }
+  #zoom-toast{ position:fixed; left:50%; top:96px; transform:translateX(-50%); z-index:9999; padding:6px 14px; border-radius:8px; background:rgba(10,8,6,.82); border:1px solid rgba(240,211,138,.45); color:#f0d38a; font:600 13px "JetBrains Mono", monospace; pointer-events:none; opacity:0; transition:opacity .25s; }
+  #zoom-toast.show{ opacity:1; }
+
   /* ============ TEMAS DE INTERFACE (30/10/2026) ============
      O jogador escolhe em Configurações (⚙️ > Tema da interface): Clássico
      (o visual de sempre), Sombra (roxo), Luz (dourado), Terra (verde) ou
@@ -2798,6 +2810,9 @@
           <div class="panel-title" style="margin-bottom:8px;">Configurações<span class="rule"></span></div>
           <button type="button" class="settings-menu-btn" id="settings-back-to-select-btn">🔁 Voltar pra Seleção de Personagem</button>
           <button type="button" class="settings-menu-btn danger" id="settings-exit-game-btn">🚪 Sair do Jogo</button>
+          <div class="ui-theme-title">Zoom da câmera</div>
+          <div class="zoom-row"><button type="button" class="settings-menu-btn" id="zoom-out-btn" title="Afastar">−</button><b id="zoom-val">100%</b><button type="button" class="settings-menu-btn" id="zoom-in-btn" title="Aproximar">+</button><button type="button" class="settings-menu-btn" id="zoom-reset-btn" title="Voltar ao normal">↺</button></div>
+          <div class="italic-note" style="margin:2px 0 8px;">Atalho: Ctrl + rolar o mouse. O zoom fica salvo.</div>
           <div class="ui-theme-title">Tema da interface</div>
           <div class="ui-theme-grid" id="ui-theme-grid"></div>
           <div class="italic-note" style="margin-top:10px;">Configurações do servidor (som, notificações etc.) chegam em breve aqui.</div>
@@ -5702,6 +5717,23 @@
   // recentraliza no próprio jogador, então worldToScreen(player.x,player.y)
   // dá sempre o mesmo ponto — pra detectar movimento de verdade, precisa de
   // uma projeção que não cancele o próprio deslocamento).
+  // ---- ZOOM DA CÂMERA (31/10/2026, pedido do usuário) ----
+  // Ctrl + rolar o mouse aproxima/afasta o mundo. O valor escolhido fica
+  // salvo (localStorage) e NÃO volta sozinho ao normal. Implementação: o
+  // mundo é desenhado numa "tela lógica" de (largura/zoom x altura/zoom) e
+  // ampliado pelo zoom (ctx.setTransform) — câmera, recorte de tiles,
+  // sprites e textos continuam iguais, só tudo fica maior/menor. Cliques no
+  // mundo dividem as coordenadas pelo zoom (ver canvasToLogical).
+  const WORLD_ZOOM_MIN = 0.6, WORLD_ZOOM_MAX = 2.5, WORLD_ZOOM_KEY = 'elemental_world_zoom';
+  let worldZoom = 1;
+  try{ const z = parseFloat(localStorage.getItem(WORLD_ZOOM_KEY)); if(isFinite(z) && z > 0) worldZoom = Math.max(WORLD_ZOOM_MIN, Math.min(WORLD_ZOOM_MAX, z)); }catch(_){ }
+  function canvasToLogical(x, y){ const z = (pvpScene && pvpScene.active) ? 1 : worldZoom; return { x: x / z, y: y / z }; }
+  // roda fn com viewW/viewH da "tela lógica" do zoom (mesma que o draw usa)
+  function withZoomView(fn){
+    const z = (pvpScene && pvpScene.active) ? 1 : worldZoom; if(z === 1) return fn();
+    const rw = viewW, rh = viewH; viewW = rw / z; viewH = rh / z;
+    try { return fn(); } finally { viewW = rw; viewH = rh; }
+  }
   function worldToScreenRaw(cx, cy){ return { x: cx*WORLD_SCALE, y: cy*WORLD_SCALE }; }
   function worldToScreen(cx, cy){ const off = getCameraOffset(); const p = worldToScreenRaw(cx,cy); return { x:p.x+off.x, y:p.y+off.y }; }
   function screenToWorld(sx, sy){
@@ -7096,6 +7128,20 @@
     return 1 + (Math.floor(st.dist / per) % walkN);
   }
 
+  // Tela "Carregando o mapa" (31/10/2026): cobre o jogo enquanto o mapa
+  // real (cidade ou caçada) ainda não chegou — em vez de mostrar o mapa de
+  // teste e depois o real "entrando por cima".
+  const mapLoadingOverlay = (()=>{ const d = document.createElement('div'); d.id = 'map-loading';
+    d.innerHTML = '<div class="ml-spin"></div><div class="ml-txt">Carregando o mapa...</div>';
+    document.body.appendChild(d); return d; })();
+  let mapLoadingSince = 0, mapLoadingShown = false;
+  function mapLoadGaveUp(){ return mapLoadingSince > 0 && Date.now() - mapLoadingSince > 20000; }
+  function mapLoadingTick(waiting){
+    if(waiting){ if(!mapLoadingSince) mapLoadingSince = Date.now(); }
+    else mapLoadingSince = 0;
+    const show = waiting && !mapLoadGaveUp();
+    if(show !== mapLoadingShown){ mapLoadingShown = show; mapLoadingOverlay.classList.toggle('show', show); }
+  }
   function draw(){
     applyHuntZoom();
     ctx.fillStyle = location==='city' ? '#161008' : '#0a0806';
@@ -7151,7 +7197,13 @@
       if(sp.loaded){ const s = toScreen(TELEPORT_WORLD_POS.x, TELEPORT_WORLD_POS.y), box = TILE_SCREEN_PX*1.7; ctx.globalAlpha = .9; ctx.drawImage(sp.img, s.x-box/2, s.y-box/2, box, box); ctx.globalAlpha = 1; }
     }
     huntMapDecorThisFrame = null;
-    if(!cityTilesDrawn){
+    // 31/10/2026 (pedido do usuário): enquanto o mapa REAL da cidade não
+    // carregou, nada de piso xadrez/cenário de teste — fundo escuro e a tela
+    // "Carregando o mapa" (ver mapLoadingOverlay). Só cai no mapa de teste se
+    // o mapa real não chegar em 20s (rede ruim), pra nunca travar o jogo.
+    const cityWaitingMap = location==='city' && !isTowerArena && !cityTilesDrawn && !mapLoadGaveUp();
+    if(cityWaitingMap){ ctx.fillStyle = '#0a0806'; ctx.fillRect(0, 0, viewW, viewH); huntMapDecorThisFrame = []; }
+    else if(!cityTilesDrawn){
       // Grade presa em múltiplos de TILE_STEP (20/10/2026, movimento por
       // tiles): o servidor põe jogador e monstros no CENTRO de cada tile
       // (k*34), então o piso precisa estar alinhado nesses mesmos centros —
@@ -7167,6 +7219,7 @@
         huntMapDecorThisFrame = [];
         if(!huntRealThisFrame){ ctx.fillStyle = '#0d0b08'; ctx.fillRect(0, 0, viewW, viewH); }
       } else huntMapDecorThisFrame = hmap ? drawHuntMapGround(hmap, toScreen, footOff) : null;
+      mapLoadingTick(!!(hmap && hmap.real && !huntRealThisFrame));
       if(!huntMapDecorThisFrame) for(let gy=minY; gy<=maxY; gy+=TILE_STEP){
         for(let gx=minX; gx<=maxX; gx+=TILE_STEP){
           const s = toScreen(gx,gy-footOff);
@@ -7226,6 +7279,8 @@
         draw:()=>{ const s = toScreen(d.tx*TILE_STEP, d.ty*TILE_STEP - footOffD); drawAtlasSpriteAtTile(d.id, s.x, s.y); }
       }));
     }
+    if(location==='city' || isTowerArena) mapLoadingTick(cityWaitingMap);
+    else if(location!=='dungeon') mapLoadingTick(false);
     const scenery = huntMapDecorThisFrame ? [] : isTowerArena ? buildTowerArenaScenery(activeHunt.lurePoints[0], arenaTower, towerThemeReady ? towerTheme.wall : null) : (location==='city' ? (cityTilesDrawn ? [] : SCENERY_CITY) : SCENERY_DUNGEON);
     scenery.forEach(s=> drawList.push({
       baseCart:{x:s.x,y:s.y},
@@ -8091,7 +8146,14 @@
     updateTrainingVisual();
     spawnAuraParticles(dt);
     updateStatusLine();
-    if(pvpScene.active){ try { drawPvpScene(); } catch(e){ console.error('[arena]', e); } requestAnimationFrame(loop); } else draw(); // arena do torneio substitui o mundo enquanto a luta passa (draw() é quem pede o próximo quadro)
+    if(pvpScene.active){ try { drawPvpScene(); } catch(e){ console.error('[arena]', e); } requestAnimationFrame(loop); }
+    else if(worldZoom === 1) draw();
+    else {
+      const rw = viewW, rh = viewH, dpr = window.devicePixelRatio || 1;
+      viewW = rw / worldZoom; viewH = rh / worldZoom;
+      ctx.setTransform(dpr*worldZoom, 0, 0, dpr*worldZoom, 0, 0);
+      try { draw(); } finally { viewW = rw; viewH = rh; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    } // arena do torneio substitui o mundo enquanto a luta passa (draw() é quem pede o próximo quadro)
   }
   requestAnimationFrame(loop);
 
@@ -11861,6 +11923,36 @@
   settingsPopover.addEventListener('mouseenter', openSettingsPopover);
   settingsPopover.addEventListener('mouseleave', scheduleCloseSettingsPopover);
 
+  // ---- Zoom da câmera (31/10/2026): Ctrl + roda do mouse, botões em Configurações ----
+  (function(){
+    const toast = document.createElement('div'); toast.id = 'zoom-toast'; document.body.appendChild(toast);
+    let toastT = 0;
+    const label = () => Math.round(worldZoom*100) + '%';
+    function setZoom(z, show){
+      z = Math.max(WORLD_ZOOM_MIN, Math.min(WORLD_ZOOM_MAX, Math.round(z*100)/100));
+      worldZoom = z;
+      try{ localStorage.setItem(WORLD_ZOOM_KEY, String(z)); }catch(_){ }
+      const v = document.getElementById('zoom-val'); if(v) v.textContent = label();
+      if(show){ toast.textContent = '🔍 Zoom ' + label(); toast.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=> toast.classList.remove('show'), 900); }
+    }
+    window.addEventListener('wheel', e=>{
+      if(!e.ctrlKey) return;
+      e.preventDefault(); // não deixa o navegador dar zoom na página inteira
+      setZoom(worldZoom * (e.deltaY < 0 ? 1.1 : 1/1.1), true);
+    }, { passive:false });
+    // Ctrl + / Ctrl - / Ctrl 0 também (senão o navegador amplia a interface toda)
+    window.addEventListener('keydown', e=>{
+      if(!e.ctrlKey || e.altKey) return;
+      if(e.key === '+' || e.key === '=' ){ e.preventDefault(); setZoom(worldZoom*1.1, true); }
+      else if(e.key === '-'){ e.preventDefault(); setZoom(worldZoom/1.1, true); }
+      else if(e.key === '0'){ e.preventDefault(); setZoom(1, true); }
+    });
+    const bind = (id, fn) => { const b = document.getElementById(id); if(b) b.addEventListener('click', ev=>{ ev.stopPropagation(); fn(); }); };
+    bind('zoom-in-btn', ()=> setZoom(worldZoom*1.1, true));
+    bind('zoom-out-btn', ()=> setZoom(worldZoom/1.1, true));
+    bind('zoom-reset-btn', ()=> setZoom(1, true));
+    setZoom(worldZoom, false);
+  })();
   // ---- Tema da interface (30/10/2026) — ver CSS "TEMAS DE INTERFACE".
   // Preferência por navegador (localStorage), aplicada já na carga.
   const UI_THEME_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/';
@@ -17084,8 +17176,8 @@
     playerMenu.style.display = 'none';
     if(location !== 'city') return; // na Dungeon o movimento é 100% do Bot autoritativo do servidor
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
-    const world = screenToWorld(clickX, clickY);
+    const lp = canvasToLogical(e.clientX - rect.left, e.clientY - rect.top);
+    const world = withZoomView(()=> screenToWorld(lp.x, lp.y));
     // Bug reportado: clicar no mapa TELEPORTAVA na hora (player.x/y setado
     // direto) em vez de andar até lá. Agora anda de verdade (mesma
     // velocidade do WASD, via autoWalk) -- interruptible:true deixa
@@ -17098,8 +17190,8 @@
   // (preventDefault só quando realmente acertou alguém).
   canvas.addEventListener('contextmenu', (e)=>{
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
-    const hitUsername = hitTestRemotePlayer(clickX, clickY);
+    const lp = canvasToLogical(e.clientX - rect.left, e.clientY - rect.top);
+    const hitUsername = withZoomView(()=> hitTestRemotePlayer(lp.x, lp.y));
     if(hitUsername){ e.preventDefault(); showPlayerMenu(hitUsername, e.clientX, e.clientY); }
   });
 
