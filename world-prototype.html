@@ -1385,6 +1385,10 @@
     border-image-source:var(--theme-frame); border-image-slice:21% fill;
     border-image-width:52px; border-image-outset:10px; border-image-repeat:stretch;
     padding-top:16px;
+    /* 01/11/2026: sem o desfoque do .glass — ele vazava pela borda
+       transparente da moldura (faixa borrada em volta, mudando enquanto o
+       mapa rola atrás) */
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
   }
   html body.ui-theme-terra .glass.win{ border-image-slice:19% fill; border-image-width:48px; border-image-repeat:round; }
   html body.ui-theme-raio .glass.win{ border-image-slice:14% fill; border-image-width:36px; border-image-outset:8px; }
@@ -5852,6 +5856,27 @@
   // próprio sprite (rd_9383..rd_9392) não recebem a asa comprada por cima —
   // ela continua equipada e volta a aparecer ao trocar de traje.
   const OUTFITS_WITH_BUILTIN_WINGS = new Set(['rd_9383','rd_9384','rd_9385','rd_9386','rd_9387','rd_9388','rd_9389','rd_9390','rd_9391','rd_9392']);
+  // contexto "de mentira": mede onde o quadro do corpo SERIA desenhado
+  const NULL_CTX = { drawImage(){} };
+  // caixa do conteúdo (pixels visíveis) de cada linha de uma folha Exodus
+  // (asas/auras), união de todas as fases, em px da célula. Calculada 1x.
+  function exodusContentBoxes(e, cs){
+    if(e._boxes !== undefined) return e._boxes;
+    try{
+      const w = e.img.naturalWidth, h = e.img.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'); g.drawImage(e.img, 0, 0); const d = g.getImageData(0, 0, w, h).data;
+      const rows = [];
+      for(let r=0; r<4; r++){
+        let x0 = cs, y0 = cs, x1 = -1, y1 = -1;
+        for(let y=r*cs; y<Math.min(h,(r+1)*cs); y++) for(let x=0; x<w; x++){
+          if(d[(y*w+x)*4+3] > 24){ const lx = x % cs, ly = y - r*cs; if(lx<x0)x0=lx; if(lx>x1)x1=lx; if(ly<y0)y0=ly; if(ly>y1)y1=ly; }
+        }
+        rows.push(x1 < 0 ? null : { x0, y0, x1: x1+1, y1: y1+1 });
+      }
+      e._boxes = rows;
+    }catch(_){ e._boxes = null; }
+    return e._boxes;
+  }
   function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim, cosmeticColorsArg){
     if(wingId && OUTFITS_WITH_BUILTIN_WINGS.has(outfitId)) wingId = null;
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
@@ -5936,24 +5961,33 @@
       const col = Math.floor(Date.now()/AURA_FRAME_MS) % cols;
       if(bodyL){
         const k = bodyL.s;
+        // 01/11/2026 (usuário: "não estão centralizadas com o personagem"):
+        // asas e auras centralizadas na CAIXA VISÍVEL do corpo parado naquela
+        // direção (o recorte real do quadro), e o conteúdo de cada folha
+        // também pela própria caixa — não mais pela âncora estilo Tibia, que
+        // nos trajes "inclinados" do isométrico deixava tudo pra <<.
+        const fr = SpriteManager.drawBodyDirFrame(NULL_CTX, archetypeArmor, dir, -1, s.x, s.y + breathe, 48*scl*oScaleL, 64*scl*oScaleL, false);
+        const box = exodusContentBoxes(e, cs);
+        const cb = box && box[anchor ? 0 : row];
+        if(!fr || !cb){ return; }
+        const bcx = fr.dx + fr.dw/2;
         if(anchor){
-          // aura: sempre no PÉ (ou no meio do corpo) do traje, igual em
-          // toda direção — não acompanha mais a folga de cada linha
-          const tx = s.x, ty = anchor.at === 'feet' ? (s.y + breathe) - 2*k : (s.y + breathe) - bodyL.bodyH*0.5;
-          tctx.drawImage(e.img, col*cs, 0, cs, cs, tx - anchor.cx*k, ty - anchor.cy*k, cs*k, cs*k);
+          // aura: alinhada à CÉLULA do traje igual ao Tibia (a aura e o traje
+          // são folhas do mesmo padrão: o "pé"/base do boneco é o centro do
+          // tile de baixo-direita da célula de 64). Traje de célula maior
+          // (96/128) tem o boneco no canto de baixo-direita da célula.
+          const off = (bodyL.cell - 64)*k;
+          if(anchor.at === 'feet') tctx.drawImage(e.img, col*cs, 0, cs, cs, bodyL.ox + off + (64 - cs)*k, bodyL.oy + off + (64 - cs)*k, cs*k, cs*k);
+          else {
+            const acx = (cb.x0 + cb.x1)/2, acy = (cb.y0 + cb.y1)/2;
+            tctx.drawImage(e.img, col*cs, 0, cs, cs, bcx - acx*k, fr.dy + fr.dh*0.5 - acy*k, cs*k, cs*k);
+          }
         } else {
-          // asa: as folhas são do padrão Tibia (célula 64, canto inferior-
-          // direito alinhado com o do boneco). Traje de célula 64 = encaixe
-          // direto. Traje de célula maior (96/128/160, boneco solto no meio
-          // da célula): monta uma célula 64 "virtual" levando o centro de
-          // massa do traje ao centro de massa médio dos trajes de 64 na
-          // mesma direção. Mesma escala de pixel do corpo.
-          const SC = { down:[42.3,42.4], up:[42.8,43.9], right:[42.3,42.4], left:[43.6,42.5] }[dir] || [42.3,42.4];
-          const ms = archetypeArmor.dirFrames.mass && archetypeArmor.dirFrames.mass[dir];
-          let vx = bodyL.ox, vy = bodyL.oy;
-          if(bodyL.cell !== 64 && ms){ vx = bodyL.ox + (ms.x - SC[0])*k; vy = bodyL.oy + (ms.y - SC[1])*k; }
-          else if(bodyL.cell !== 64){ vx = bodyL.ox + (bodyL.cell - 64)*k; vy = bodyL.oy + (bodyL.cell - 64)*k; }
-          tctx.drawImage(e.img, col*cs, row*cs, cs, cs, vx + (64 - cs)*k, vy + (64 - cs)*k, cs*k, cs*k);
+          // asa: centro da asa no centro do corpo (horizontal) e na altura
+          // do peito (~40% do recorte, de cima pra baixo)
+          const wcx = (cb.x0 + cb.x1)/2, wcy = (cb.y0 + cb.y1)/2;
+          const ty = fr.dy + fr.dh*0.40;
+          tctx.drawImage(e.img, col*cs, row*cs, cs, cs, bcx - wcx*k, ty - wcy*k, cs*k, cs*k);
         }
         return;
       }
@@ -5973,7 +6007,11 @@
     // aura de chão: desenhada antes de tudo (fica embaixo do pé, atrás do corpo)
     if(exAuraAnchor && exAuraAnchor.at === 'feet') drawExodusAttached(`exodus/auras/${auraId}.png`, 'xa_'+auraId, exDir, exAuraAnchor);
     const isExWing = !!wingId && String(wingId).startsWith('ex_wing_');
-    if(isExWing && exDir !== 'up') drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
+    // 01/11/2026: as folhas Exodus/Tibia desenham << como a vista de COSTAS
+    // (transposta da linha ^), então nessas duas direções a asa vai NA FRENTE
+    // do corpo — atrás dele ela sumia/sobrava pra cima-direita do personagem.
+    const exWingFront = exDir === 'up' || exDir === 'left';
+    if(isExWing && !exWingFront) drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
     if(wingId && !isExWing){
       const wing = SpriteManager.wingSprite(wingId);
       if(wing.loaded) SpriteManager.drawClippedFrame(tctx, wing, 64,64, 0,0, s.x-30*scl, s.y-46*scl+breathe, 60*scl,52*scl);
@@ -6069,7 +6107,7 @@
     drewHead = isArchetypeHeadIncluded ? true : !!headDraw;
     if(!drewBody){ tctx.beginPath(); tctx.ellipse(s.x, s.y+breathe, 11*scl, 15*scl, 0, 0, Math.PI*2); tctx.fillStyle = fallbackColor || '#3a4a6a'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
     if(!drewHead){ tctx.beginPath(); tctx.arc(s.x, s.y-13*scl+breathe, 13*scl, 0, Math.PI*2); tctx.fillStyle = '#d3ab54'; tctx.fill(); tctx.strokeStyle='#000'; tctx.stroke(); }
-    if(isExWing && exDir === 'up') drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
+    if(isExWing && exWingFront) drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
     if(mirror){ tctx.restore(); }
     // Aura desenha por ÚLTIMO, por cima de tudo (envolve o personagem) — cicla
     // os 4 quadros por tempo real (Date.now()), então todo mundo vendo o mesmo
@@ -6504,6 +6542,19 @@
   function huntRealDrawArr(arr, tlx, tly, k, size){
     for(let q=0; q<arr.length; q+=3) huntRealSprite(arr[q], Math.round(tlx + arr[q+1]*k), Math.round(tly + arr[q+2]*k), size);
   }
+  // chãos mais comuns de um andar (tiles só com chão, sem objeto), pra cobrir
+  // o vazio fora do recorte do mapa. Calculado 1x por andar.
+  function huntGroundPool(F, z, D){
+    D.groundPool = D.groundPool || {};
+    if(D.groundPool[z] !== undefined) return D.groundPool[z];
+    const cnt = new Map();
+    for(const t of F.values()){ if(t[1] && t[1].length === 3 && !t[2].length && !t[3].length) cnt.set(t[1][0], (cnt.get(t[1][0])||0) + 1); }
+    const top = [...cnt.entries()].sort((a,b)=> b[1]-a[1]).slice(0, 4);
+    const pool = [];
+    // proporcional à frequência (o mais comum aparece mais)
+    top.forEach(([idx, n])=>{ const reps = Math.max(1, Math.round(8 * n / top[0][1])); for(let i=0; i<reps; i++) pool.push(idx); });
+    return (D.groundPool[z] = pool.length ? pool : null);
+  }
   // Desenha o mapa real: devolve { objs, upper } (objs entram no drawList; upper = telhados por cima)
   function drawHuntRealMap(map, toScreen, footOff){
     const D = huntRealLoad(map);
@@ -6539,11 +6590,25 @@
     for(let z=bottom; z>pz; z--) drawFloorAll(z);
     // andar do jogador: chão agora; objetos no drawList
     const F = D.floors[pz], objs = [];
+    // 01/11/2026 (usuário: "área enorme preta"): no térreo (andar 7), onde o
+    // mapa original não tem tile nenhum (borda do 1098.otbm), preenche com o chão mais comum do
+    // próprio mapa em vez de deixar o preto do vazio. Subsolo continua preto
+    // (é o normal de caverna). Só visual: fora do recorte ninguém anda.
+    const voidPool = pz === 7 ? huntGroundPool(F, pz, D) : null;
     for(let Y=ry0; Y<=ry1; Y++){
-      if(Y < meta.y0 || Y >= meta.y0+meta.h) continue;
+      const inY = !(Y < meta.y0 || Y >= meta.y0+meta.h);
+      if(!inY && !voidPool) continue;
       for(let X=rx0; X<=rx1; X++){
-        if(X < meta.x0 || X >= meta.x0+meta.w) continue;
-        const t = F.get((Y-meta.y0)*meta.w + (X-meta.x0)); if(!t) continue;
+        const inside = inY && !(X < meta.x0 || X >= meta.x0+meta.w);
+        const t = inside ? F.get((Y-meta.y0)*meta.w + (X-meta.x0)) : null;
+        if(!t){
+          if(voidPool){
+            const w0 = toW(X, Y, pz), s0 = toScreen(w0.x, w0.y - footOff);
+            const hsh = ((X * 73856093) ^ (Y * 19349663)) >>> 0;
+            huntRealSprite(voidPool[hsh % voidPool.length], Math.round(s0.x-half), Math.round(s0.y-half), size);
+          }
+          continue;
+        }
         const w = toW(X, Y, pz), s = toScreen(w.x, w.y - footOff);
         huntRealDrawArr(t[1], s.x-half, s.y-half, k, size);
         if(t[2].length) objs.push({ baseCart:{ x:w.x, y:w.y - 1 }, draw:()=>{ const s2 = toScreen(w.x, w.y - footOff); huntRealDrawArr(t[2], s2.x-half, s2.y-half, k, size); } });
@@ -7890,6 +7955,17 @@
               const ref = walkEntry.frame;
               const ps = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
               drew = !!SpriteManager.drawBodyDirFrame(ctx, walkEntry, dir, mFrame, s.x, s.y, /* sem balanço: o atlas real já tem quadro parado/andar */ ref.sw*pxS, ref.sh*pxS, false);
+              // 01/11/2026: flash ao tomar dano = a PRÓPRIA silhueta do monstro
+              // clareando (antes era um círculo branco por cima dele).
+              const hitAt0 = monsterHitFlash.get(m.id);
+              if(drew && hitAt0 != null && ('filter' in ctx)){
+                const age0 = now() - hitAt0;
+                if(age0 < MONSTER_HIT_FLASH_MS){
+                  ctx.save(); ctx.filter = 'brightness(0) invert(1)'; ctx.globalAlpha = 0.6 * (1 - age0/MONSTER_HIT_FLASH_MS);
+                  SpriteManager.drawBodyDirFrame(ctx, walkEntry, dir, mFrame, s.x, s.y, ref.sw*pxS, ref.sh*pxS, false);
+                  ctx.restore();
+                }
+              }
               ctx.imageSmoothingEnabled = ps;
             }
             if(!drew) drew = sprite && sprite.loaded && SpriteManager.drawClippedFrame(ctx, sprite, 64,64, 0,0, s.x-34*SPRITE_SCALE*bScale, s.y-68*SPRITE_SCALE*bScale+bob, 68*SPRITE_SCALE*bScale,68*SPRITE_SCALE*bScale);
@@ -7905,9 +7981,7 @@
             if(hitAt != null){
               const flashAge = now() - hitAt;
               if(flashAge < MONSTER_HIT_FLASH_MS){
-                ctx.globalAlpha = 1 - flashAge/MONSTER_HIT_FLASH_MS;
-                ctx.beginPath(); ctx.arc(s.x, s.y-30*SPRITE_SCALE*bScale+bob, 26*SPRITE_SCALE*bScale, 0, Math.PI*2);
-                ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(); ctx.globalAlpha = 1;
+                // (o clarão agora é desenhado na silhueta, logo depois do sprite)
               } else {
                 monsterHitFlash.delete(m.id);
               }
@@ -12823,7 +12897,11 @@
     if(!chat || !v || !v.offsetParent || chat.style.top) return;
     const gap = document.body.classList.contains('ui-themed') ? 26 : 12;
     const want = Math.max(185, Math.round(window.innerHeight - v.getBoundingClientRect().top + gap));
-    if(chat.style.bottom !== want + 'px') chat.style.bottom = want + 'px';
+    // 01/11/2026: só SOBE quando o painel cresce; pra descer precisa encolher
+    // bastante (o painel muda de altura toda hora na caçada e o chat ficava
+    // pulando enquanto o personagem andava).
+    const cur = parseInt(chat.style.bottom, 10) || 0;
+    if(want > cur || want < cur - 60) chat.style.bottom = want + 'px';
   }
   window.addEventListener('resize', ()=> requestAnimationFrame(()=>{ centerBagShortcut(); keepChatAboveVitals(); }));
   setInterval(keepChatAboveVitals, 1000);
