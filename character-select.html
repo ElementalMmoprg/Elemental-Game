@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+  // 31/10/2026: endereços limpos no Render (/jogar, /personagens); no GitHub Pages continuam os .html
+  window.ELEM_ROUTE = (function(){
+    var clean = /onrender\.com$/.test(location.hostname) || location.port === '8787';
+    var r = clean ? { portal:'/', personagens:'/personagens', jogar:'/jogar' } : { portal:'index.html', personagens:'character-select.html', jogar:'world-prototype.html' };
+    if(clean){ var map = { '/index.html':'/', '/character-select.html':'/personagens', '/world-prototype.html':'/jogar' }; var p = location.pathname; if(map[p]) try{ history.replaceState(null, '', map[p] + location.search + location.hash); }catch(e){} }
+    return r;
+  })();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Elemental Online — Seleção de Personagem</title>
@@ -347,14 +357,14 @@
 
   const token = localStorage.getItem(LS_TOKEN);
   const username = localStorage.getItem(LS_USERNAME);
-  if(!token || !username){ window.location.href = 'index.html'; return; }
+  if(!token || !username){ window.location.href = ELEM_ROUTE.portal; return; }
   document.getElementById('account-name').textContent = username;
 
   document.getElementById('logout-link').addEventListener('click', ()=>{
     localStorage.removeItem(LS_TOKEN);
     localStorage.removeItem(LS_USERNAME);
     localStorage.removeItem(LS_CHARACTER);
-    window.location.href = 'index.html';
+    window.location.href = ELEM_ROUTE.portal;
   });
 
   async function api(path, opts={}){
@@ -364,7 +374,7 @@
     });
     let data; try{ data = await res.json(); }catch(e){ data = { ok:false, error:'resposta_invalida' }; }
     // 22/10/2026: o login agora expira (7 dias) — sessão vencida volta pro login em vez de cair na tela de criar personagem
-    if(res.status === 401){ localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = 'index.html'; return new Promise(()=>{}); }
+    if(res.status === 401){ localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.portal; return new Promise(()=>{}); }
     return data;
   }
 
@@ -1013,7 +1023,7 @@
     document.getElementById('connect-btn').disabled = serverDown;
     document.getElementById('connect-btn').addEventListener('click', ()=>{
       localStorage.setItem(LS_CHARACTER, JSON.stringify(characters[selectedIdx]));
-      window.location.href = 'world-prototype.html';
+      window.location.href = ELEM_ROUTE.jogar;
     });
     document.getElementById('new-char-link').addEventListener('click', ()=>{
       view.style.display = 'none';
@@ -1206,7 +1216,7 @@
       msgEl.textContent = `Herói ${data.character.nick} criado! Entrando...`;
       msgEl.className = 'msg show ok';
       localStorage.setItem(LS_CHARACTER, JSON.stringify(data.character));
-      setTimeout(()=>{ window.location.href = 'world-prototype.html'; }, 900);
+      setTimeout(()=>{ window.location.href = ELEM_ROUTE.jogar; }, 900);
     });
   }
 

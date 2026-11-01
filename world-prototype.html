@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+  // 31/10/2026: endereços limpos no Render (/jogar, /personagens); no GitHub Pages continuam os .html
+  window.ELEM_ROUTE = (function(){
+    var clean = /onrender\.com$/.test(location.hostname) || location.port === '8787';
+    var r = clean ? { portal:'/', personagens:'/personagens', jogar:'/jogar' } : { portal:'index.html', personagens:'character-select.html', jogar:'world-prototype.html' };
+    if(clean){ var map = { '/index.html':'/', '/character-select.html':'/personagens', '/world-prototype.html':'/jogar' }; var p = location.pathname; if(map[p]) try{ history.replaceState(null, '', map[p] + location.search + location.hash); }catch(e){} }
+    return r;
+  })();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Elemental Online — Huntera</title>
+<title>Elemental Online</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Spectral:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -4157,13 +4167,13 @@
   // Sem sessão nenhuma (nunca logou / deslogou) — manda pro login em vez de
   // deixar o mundo abrir em "modo solo offline" sem o jogador saber por quê.
   if (!AUTH_TOKEN || !AUTH_USERNAME) {
-    window.location.href = 'index.html';
+    window.location.href = ELEM_ROUTE.portal;
     return;
   }
   let SELECTED_CHARACTER = null;
   try { SELECTED_CHARACTER = JSON.parse(localStorage.getItem(LS_CHARACTER) || 'null'); } catch (e) {}
   if (AUTH_TOKEN && !SELECTED_CHARACTER) {
-    window.location.href = 'character-select.html';
+    window.location.href = ELEM_ROUTE.personagens;
     return;
   }
   const PLAYER_NICK = SELECTED_CHARACTER ? SELECTED_CHARACTER.nick : 'Você';
@@ -9363,15 +9373,15 @@
         }
         case 'error':
           // 22/10/2026 (auditoria): login vencido / personagem que não é desta conta
-          if(msg.error === 'token_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = 'index.html'; break; }
+          if(msg.error === 'token_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.portal; break; }
           if(msg.error === 'conta_banida' || msg.error === 'expulso'){
             netState.stopReconnect = true;
             const txt = msg.error === 'expulso' ? 'Você foi desconectado por um moderador.' : `Conta banida${msg.until ? ` até ${new Date(msg.until).toLocaleString('pt-BR')}` : ' permanentemente'}.${msg.reason ? ' Motivo: ' + msg.reason : ''}`;
             try{ sessionStorage.setItem('elemental_kick_msg', txt); }catch(e){}
-            localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = 'index.html'; break;
+            localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.portal; break;
           }
           if(msg.error === 'manutencao'){ showServerDown({ message: msg.message, etaAt: msg.etaAt }, true); break; } // continua tentando sozinho
-          if(msg.error === 'personagem_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_CHARACTER); window.location.href = 'character-select.html'; break; }
+          if(msg.error === 'personagem_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.personagens; break; }
           logLoot(`⚠️ ${msg.error}`); break;
       }
     });
@@ -12764,7 +12774,7 @@
   // (LS_TOKEN/LS_USERNAME) logada; não precisa de confirmação, é reversível
   // (character-select.html deixa entrar de novo em qualquer personagem).
   document.getElementById('settings-back-to-select-btn').addEventListener('click', ()=>{
-    window.location.href = 'character-select.html';
+    window.location.href = ELEM_ROUTE.personagens;
   });
   // Sair do Jogo -- desloga de verdade (mesmo comportamento do "Sair" da
   // tela de seleção de personagem: limpa token/username/character do
@@ -12781,7 +12791,7 @@
     localStorage.removeItem(LS_TOKEN);
     localStorage.removeItem(LS_USERNAME);
     localStorage.removeItem(LS_CHARACTER);
-    window.location.href = 'index.html';
+    window.location.href = ELEM_ROUTE.portal;
   });
   document.getElementById('wiki-item-search').addEventListener('input', renderWikiItems);
   document.getElementById('wiki-monster-search').addEventListener('input', renderWikiMonsters);

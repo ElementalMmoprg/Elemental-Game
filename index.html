@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+  // 31/10/2026: endereços limpos no Render (/jogar, /personagens); no GitHub Pages continuam os .html
+  window.ELEM_ROUTE = (function(){
+    var clean = /onrender\.com$/.test(location.hostname) || location.port === '8787';
+    var r = clean ? { portal:'/', personagens:'/personagens', jogar:'/jogar' } : { portal:'index.html', personagens:'character-select.html', jogar:'world-prototype.html' };
+    if(clean){ var map = { '/index.html':'/', '/character-select.html':'/personagens', '/world-prototype.html':'/jogar' }; var p = location.pathname; if(map[p]) try{ history.replaceState(null, '', map[p] + location.search + location.hash); }catch(e){} }
+    return r;
+  })();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Elemental Online — Portal</title>
@@ -498,7 +508,7 @@ function loop(agora){   // requestAnimationFrame + delta time: mesma velocidade 
   function saveSessionAndEnter(token, username){
     localStorage.setItem(LS_TOKEN, token);
     localStorage.setItem(LS_USERNAME, username);
-    setTimeout(()=>{ window.location.href = 'character-select.html'; }, 1600);
+    setTimeout(()=>{ window.location.href = ELEM_ROUTE.personagens; }, 1600);
   }
   // pega a Recovery Key no outbox mockado (modo dev) só pra mostrar na tela
   async function rkDoOutbox(email, re){
