@@ -271,6 +271,18 @@
   #hunts-modal{ top:50%; left:50%; transform:translate(-50%,-50%); width:920px; max-width:94vw; height:600px; max-height:88vh; display:none; flex-direction:column; overflow:hidden; z-index:10; }
   #hunts-modal.open{ display:flex; }
   #hunts-tabs{ display:flex; border-bottom:1px solid var(--gold-deep); align-items:center; }
+  /* 01/11/2026: dentro de Caçadas, cada rank tem o seu lugar */
+  .hunt-rank-tabs{ display:flex; flex-direction:column; gap:4px; margin:0 0 8px; }
+  .hunt-rank-tabs:empty{ display:none; }
+  .hunt-rank-tab{ display:flex; align-items:center; justify-content:space-between; gap:5px; padding:6px 10px; min-width:0; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); font-family:var(--font-display); font-size:10px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .hunt-rank-tab:hover{ color:var(--gold-bright); border-color:var(--gold); }
+  .hunt-rank-tab.on{ color:var(--gold-bright); border-color:var(--gold-bright); background:rgba(191,161,95,.14); box-shadow:0 0 8px rgba(240,211,138,.2); }
+  .hunt-rank-tab[data-rank="bronze"].on{ color:#e0a070; border-color:#c07a45; background:rgba(192,122,69,.15); }
+  .hunt-rank-tab[data-rank="prata"].on{ color:#e2e8ef; border-color:#a9b4c0; background:rgba(169,180,192,.13); }
+  .hunt-rank-tab[data-rank="ouro"].on{ color:#ffd84a; border-color:#d4a72c; background:rgba(212,167,44,.14); }
+  .hunt-rank-tab[data-rank="diamante"].on{ color:#a8f0ff; border-color:#5fd0e8; background:rgba(95,208,232,.13); }
+  .hunt-rank-tab .n{ font-family:var(--font-mono); font-size:9px; opacity:.7; }
+  .hunt-rank-note{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); line-height:1.4; margin:0 0 6px; padding:6px 8px; border:1px dashed var(--gold-deep); border-radius:5px; }
   .hunts-tab{ padding:12px 20px; font-family:var(--font-display); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
   .hunts-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); background:rgba(191,161,95,.06); }
   .hunts-tab.disabled{ opacity:.4; cursor:default; }
@@ -1449,6 +1461,15 @@
   html body.ui-themed #city-services-bar{ gap:12px; margin-bottom:4px; }
   html body.ui-themed .service-plate-btn{ min-width:0 !important; padding:9px 18px !important; }
   html body.ui-themed.in-city #hotbar-hint{ bottom:150px; }
+  /* 01/11/2026: texto no MEIO da placa do botão do tema — a arte tem o
+     enfeite de cima maior que o de baixo (o miolo fica um pouco abaixo do
+     centro) e os losangos laterais comem ~14% de cada lado. */
+  html body.ui-themed #city-services-bar .service-plate-btn{ padding:11px 30px 8px !important; line-height:1; min-height:36px; }
+  html body.ui-themed :is(#tb-gold-pill, #btn-open-rank, #tb-coin-pill){ padding:9px 30px 6px !important; line-height:1; min-height:36px; box-sizing:border-box; align-items:center; }
+  /* Banco: botões cabem na caixa */
+  html body.ui-themed #bank-popover{ width:270px; }
+  html body.ui-themed #bank-popover .treino-inline-btn{ padding:10px 14px 7px !important; min-height:34px; font-size:10px; border-image-outset:0 3px; }
+  html body.ui-themed #bank-popover > div[style*="display:flex"]{ gap:12px !important; padding:0 4px; }
   html body.ui-themed #hotbar-wrap{ gap:14px; }
   html body.ui-themed #party-invite-row{ gap:10px; align-items:center; }
   /* seletor de tema dentro do popover de Configurações */
@@ -1613,6 +1634,24 @@
 
   /* ============ AMIGOS ============ */
   #friends-panel{ top:60px; right:730px; width:230px; display:none; z-index:6; }
+  #friends-add-input{ flex:1; min-width:0; }
+  /* 01/11/2026: par de botões lado a lado sempre do mesmo tamanho */
+  .btn-pair{ display:flex; gap:10px; align-items:stretch; }
+  .btn-pair > button{ flex:1 1 0 !important; min-width:0; margin:0 !important; width:auto !important; height:38px; min-height:38px !important; line-height:1 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  html body.ui-themed .btn-pair{ gap:16px; padding:0 4px; }
+  html body.ui-themed #friends-panel{ width:330px; overflow:hidden; }
+  html body.ui-themed #friends-list{ max-height:260px; overflow-y:auto; }
+  /* 01/11/2026: barra de rolagem na cor do tema (Chrome/Edge e Firefox) */
+  :root{ --sb-thumb:var(--gold); --sb-thumb2:var(--gold-deep); --sb-track:rgba(0,0,0,.35); }
+  html body.ui-theme-elemental{ --sb-thumb:#5a5a61; --sb-thumb2:#3a3a3f; }
+  html body.ui-themed{ --sb-thumb:var(--theme-accent); --sb-thumb2:var(--gold-deep); }
+  *{ scrollbar-width:thin; scrollbar-color:var(--sb-thumb2) var(--sb-track); }
+  *::-webkit-scrollbar{ width:9px; height:9px; }
+  *::-webkit-scrollbar-track{ background:var(--sb-track); border-radius:6px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); }
+  *::-webkit-scrollbar-thumb{ background:linear-gradient(180deg, var(--sb-thumb), var(--sb-thumb2)); border-radius:6px; border:2px solid transparent; background-clip:padding-box; }
+  *::-webkit-scrollbar-thumb:hover{ background:var(--sb-thumb); background-clip:padding-box; }
+  *::-webkit-scrollbar-corner{ background:transparent; }
+  html body.ui-themed *::-webkit-scrollbar-thumb{ box-shadow:0 0 6px var(--theme-glow); }
   #friends-panel.open{ display:block; }
   .friend-row{ display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; padding:6px 0; border-bottom:1px dashed rgba(191,161,95,.15); font-family:var(--font-mono); font-size:10.5px; }
   .friend-row .fdot{ width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:6px; background:#5a5348; }
@@ -3956,6 +3995,7 @@
     </div>
     <div id="hunts-body">
       <div id="hunts-left">
+        <div class="hunt-rank-tabs" id="hunt-rank-tabs"></div>
         <input id="hunts-search" placeholder="Buscar caçada...">
         <div id="hunts-list"></div>
       </div>
@@ -4430,7 +4470,7 @@
   // Ravendawn (ver RC / assets/city/ravencrest). Origem = canto do recorte.
   const CITY_TILE_ORIGIN = { minX:5015, minY:5010 };
   const TEMPLE_SPAWN_TILE = { x:5132, y:5092 }; // centro do templo (rosa dos ventos), andar 6
-  const TELEPORT_TILE = { x:5132, y:5109 };     // praça ao sul do templo, no lugar da antiga fonte azul (21/10)
+  const TELEPORT_TILE = { x:5146, y:5108 };     // 01/11/2026: dentro da casa ao lado da praça (no nicho onde ficava a estante)
   const CITY_MAIN_Z = 6;
   // Em Ravencrest 1 tile do mapa = 17 unidades de mundo (metade do SQM de
   // caçada): assim o personagem fica na proporção certa da arte do Ravendawn
@@ -10497,6 +10537,7 @@
   document.getElementById('open-hunts-btn').addEventListener('click', ()=>{
     huntsModal.classList.add('open');
     document.getElementById('party-mode-chip').classList.toggle('show', !!(party && party.leaderUsername===AUTH_USERNAME));
+    if(huntListMode !== 'material' && !huntMatchesMode(selectedHunt)){ huntRankMode = huntListMode = huntRankOf(selectedHunt) || 'normal'; } // abre no rank da caçada selecionada
     renderHuntsList(); selectHunt(selectedHunt);
   });
   document.getElementById('hunts-close').addEventListener('click', ()=> huntsModal.classList.remove('open'));
@@ -10506,8 +10547,8 @@
       document.querySelectorAll('.hunts-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
       const tab = t.dataset.tab, isCacadas = tab === 'cacadas' || tab === 'material';
       if(isCacadas){
-        huntListMode = tab === 'material' ? 'material' : 'normal';
-        if(!!selectedHunt.material !== (huntListMode==='material')){ const first = HUNTS.filter(h=>!!h.material===(huntListMode==='material')).sort((a,b)=>huntLevelSortKey(a)-huntLevelSortKey(b))[0]; if(first) selectedHunt = first; }
+        huntListMode = tab === 'material' ? 'material' : (huntRankMode || 'normal');
+        if(!huntMatchesMode(selectedHunt)){ const first = huntsForMode().sort((a,b)=>huntLevelSortKey(a)-huntLevelSortKey(b))[0]; if(first) selectedHunt = first; }
         renderHuntsList(document.getElementById('hunts-search').value); renderHuntCenter(); renderHuntLoot();
       }
       document.getElementById('hunts-left').style.display = isCacadas ? '' : 'none';
@@ -10687,10 +10728,33 @@
     const m = String(h.level||'').match(/\d+/);
     return m ? parseInt(m[0], 10) : 0;
   }
-  let huntListMode = 'normal'; // 'material' = aba Caça de Material
+  let huntListMode = 'normal'; // 'material' = aba Caça de Material; 'bronze'/'prata'/'ouro' = Caça de Bronze/Prata/Ouro
+  let huntRankMode = 'normal';
+  // rank pela id (b_ Bronze, p_ Prata, o_ Ouro) — igual ao servidor (HUNTS[].rank)
+  function huntRankOf(h){ if(!h || h.material) return null; const m = /^(b|p|o|d)_/.exec(h.id||''); return m ? ({ b:'bronze', p:'prata', o:'ouro', d:'diamante' })[m[1]] : null; }
+  function huntMatchesMode(h){ if(!h) return false; if(huntListMode === 'material') return !!h.material; if(h.material) return false; const r = huntRankOf(h); return huntListMode === 'normal' ? !r : r === huntListMode; }
+  function huntsForMode(){ return HUNTS.filter(huntMatchesMode); }
+  const HUNT_RANK_TABS = [['normal','Caçadas'],['bronze','🥉 Caça de Bronze'],['prata','🥈 Caça de Prata'],['ouro','🥇 Caça de Ouro'],['diamante','💎 Caça de Diamante']];
+  function renderHuntRankTabs(){
+    const el = document.getElementById('hunt-rank-tabs'); if(!el) return;
+    if(huntListMode === 'material'){ el.innerHTML = ''; return; }
+    el.innerHTML = HUNT_RANK_TABS.map(([k,l])=>{ const n = HUNTS.filter(h=> !h.material && (k==='normal' ? !huntRankOf(h) : huntRankOf(h)===k)).length; return `<div class="hunt-rank-tab ${huntListMode===k?'on':''}" data-rank="${k}">${l}<span class="n">${n}</span></div>`; }).join('');
+  }
+  document.getElementById('hunt-rank-tabs').addEventListener('click', e=>{
+    const t = e.target.closest('[data-rank]'); if(!t) return;
+    huntRankMode = huntListMode = t.dataset.rank;
+    if(!huntMatchesMode(selectedHunt)){ const first = huntsForMode().sort((a,b)=>huntLevelSortKey(a)-huntLevelSortKey(b))[0]; if(first) selectedHunt = first; }
+    renderHuntsList(document.getElementById('hunts-search').value); renderHuntCenter(); renderHuntLoot();
+  });
   function renderHuntsList(filter=''){
     const listEl = document.getElementById('hunts-list');
     listEl.innerHTML = '';
+    renderHuntRankTabs();
+    if(['bronze','prata','ouro','diamante'].includes(huntListMode)){
+      const NOTE = { bronze:'Caças do rank <b>Bronze</b> (nível 100–200). Libera ao conquistar a <b>1ª estrela</b> no Altar de Evolução.', prata:'Caças do rank <b>Prata</b> (nível 200–300). Libera ao conquistar a <b>1ª estrela de Prata</b> no Altar.', ouro:'Caças do rank <b>Ouro</b> (nível 300–400). Libera ao conquistar a <b>1ª estrela de Ouro</b> no Altar.', diamante:'Caças do rank <b>Diamante</b> (nível 400–500). Libera ao chegar ao rank <b>Diamante</b> no Altar.' };
+      const tip = document.createElement('div'); tip.className = 'hunt-rank-note'; tip.innerHTML = NOTE[huntListMode]; listEl.appendChild(tip);
+      if(!huntsForMode().length){ const e = document.createElement('div'); e.className = 'hunt-rank-note'; e.style.borderStyle = 'solid'; e.innerHTML = 'Em breve: as caçadas deste rank ainda estão sendo preparadas.'; listEl.appendChild(e); }
+    }
     if(huntListMode === 'material'){
       const tip = document.createElement('div');
       tip.className = 'hunt-material-tip';
@@ -10698,7 +10762,7 @@
       tip.innerHTML = 'Monstros que dão <b>matéria-prima</b> pra Profissão (sem troféus). A faixa de nível muda o material: <b>I</b> cobre/estanho/tora pequena · <b>II</b> ferro/carvão/tora pesada · <b>III</b> cobalto/tora robusta · <b>IV</b> titânio/tora fina + Aether e Catalisador.';
       listEl.appendChild(tip);
     }
-    HUNTS.filter(h=> !!h.material === (huntListMode === 'material') && h.name.toLowerCase().includes(filter.toLowerCase()))
+    HUNTS.filter(h=> huntMatchesMode(h) && h.name.toLowerCase().includes(filter.toLowerCase()))
       .sort((a,b)=> huntLevelSortKey(a) - huntLevelSortKey(b))
       .forEach(h=>{
       const el = document.createElement('div');
@@ -11346,7 +11410,7 @@
       // 20/10/2026: trajes pagos em Gold saíram da venda -- só aparecem pra
       // quem já tem. Seções: "Seus trajes" (possuídos + grátis) e "Loja".
       const isGoldPriced = o => o.cost > 0 && o.currency !== 'elementalCoin';
-      const mine = outfitCatalog.filter(o => ownedOutfits.includes(o.id) || (o.cost === 0 && !isGoldPriced(o)));
+      const mine = outfitCatalog.filter(o => !o.hidden && (ownedOutfits.includes(o.id) || (o.cost === 0 && !isGoldPriced(o))));
       const shop = outfitCatalog.filter(o => !ownedOutfits.includes(o.id) && o.currency === 'elementalCoin');
       const card = (o) => {
         const owned = ownedOutfits.includes(o.id);
@@ -12278,7 +12342,7 @@
         <span class="btp-count">${tracked.length}/${BESTIARY_TRACKED_MAX_CLIENT}</span>
       </div>
       ${rows}
-      <div style="display:flex;gap:6px;">
+      <div class="btn-pair">
         <button class="treino-inline-btn" id="btp-add-btn" style="flex:1;"${tracked.length>=BESTIARY_TRACKED_MAX_CLIENT?' disabled':''}>+ Adicionar criatura</button>
         <button class="treino-inline-btn" id="btp-float-btn" style="flex:1;">${trackerWin.classList.contains('open') ? '📌 Tirar da tela' : '📌 Deixar na tela'}</button>
       </div>
@@ -12698,6 +12762,7 @@
     const hs = UI_THEME_HUE[id]; if(!hs){ tag.textContent = ''; uiThemeRecolorFn = null; recolorInlineStyles(document.body); return; }
     const [H, S] = hs;
     const recolor = (txt)=> txt.replace(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)/g, (m,r,g,b,a)=>{
+      if(+r === 245 && +g === 184 && +b === 0) return m; // amarelo do Lendário (RARITY_COLORS) nunca muda com o tema
       const [h,s,l] = rgbToHsl(+r,+g,+b);
       if(!(h >= 33 && h <= 52 && s >= .25 && l >= .08 && l <= .96)) return m;
       const [R,G,B] = hslToRgb(H, Math.min(1, s*S/.6), l).map(v=>Math.round(v));
