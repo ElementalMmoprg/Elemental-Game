@@ -172,12 +172,82 @@
   .msg.ok{ background:rgba(127,174,94,.12); border:1px solid var(--ok); color:#b9dba0; }
 
   #loading-view{ font-family:var(--font-mono); color:var(--ink-dim); font-size:12px; }
+
+  /* ===== SELEÇÃO DE PERSONAGEM v2 + TEMAS (31/10/2026) — mesmos temas do
+     jogo (Elemental, Clássico, Sombra, Luz, Terra, Raio), salvos na mesma
+     chave (elemental_ui_theme), então o jogo já abre com o tema escolhido. */
+  body{ --acc:#f0d38a; --acc-glow:rgba(240,211,138,.35); --line:rgba(191,161,95,.35); --tint:rgba(191,161,95,.10); --tint2:rgba(90,60,20,.10); }
+  body.theme-elemental{ --acc:#3fd28a; --acc-glow:rgba(63,210,138,.35); --line:#3a3a3f; --tint:rgba(63,210,138,.06); --tint2:rgba(60,70,90,.12); --gold-bright:#f1efe9; --gold:#8c8c93; --gold-deep:#3a3a3f; --ink-dim:#a9a69e; }
+  body.theme-sombra{ --acc:#c8a2ff; --acc-glow:rgba(168,110,255,.6); --line:rgba(154,114,214,.45); --tint:rgba(140,90,230,.16); --tint2:rgba(60,30,110,.18); --gold-bright:#d6b8ff; --gold:#9a72d6; --gold-deep:#4b3577; --ink-dim:#a99cc6; --frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/sombra/frame.png); --btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/sombra/button.png); }
+  body.theme-luz{ --acc:#ffe08a; --acc-glow:rgba(255,214,90,.6); --line:rgba(216,187,106,.45); --tint:rgba(255,220,120,.14); --tint2:rgba(90,110,180,.14); --gold-bright:#fff0b8; --gold:#d8bb6a; --gold-deep:#8a7440; --ink-dim:#bcb08e; --frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/luz/frame.png); --btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/luz/button.png); }
+  body.theme-terra{ --acc:#9fe8a8; --acc-glow:rgba(60,230,120,.55); --line:rgba(110,190,120,.45); --tint:rgba(60,200,110,.14); --tint2:rgba(90,70,30,.18); --gold-bright:#c9f5c4; --gold:#6fbf78; --gold-deep:#2f6b3a; --ink-dim:#9fb89a; --frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/frame.png); --btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/button.png); }
+  body.theme-raio{ --acc:#9fd2ff; --acc-glow:rgba(70,160,255,.6); --line:rgba(100,160,230,.45); --tint:rgba(70,150,255,.16); --tint2:rgba(20,40,90,.2); --gold-bright:#cfe8ff; --gold:#6fa8e6; --gold-deep:#2c4f80; --ink-dim:#97acc6; --frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/frame.png); --btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/button.png); }
+  body{ background:radial-gradient(ellipse 900px 600px at 25% 20%, var(--tint), transparent 60%), radial-gradient(ellipse 800px 560px at 80% 85%, var(--tint2), transparent 55%), radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.0), #000 70%), #050403; transition:background .3s; }
+  body.theme-elemental .glass{ background:#1d1d20; border-color:#3b3b40; border-radius:6px; box-shadow:0 20px 60px rgba(0,0,0,.65); backdrop-filter:none; }
+  body.theme-elemental h1.title{ font-family:'Poppins','Segoe UI',system-ui,sans-serif; font-weight:600; letter-spacing:.06em; text-shadow:none; }
+  body:is(.theme-sombra,.theme-luz,.theme-terra,.theme-raio) .glass{ background:none; border-style:solid; border-width:0; border-radius:0; border-image-source:var(--frame); border-image-slice:21% fill; border-image-width:52px; border-image-outset:10px; border-image-repeat:stretch; box-shadow:none; backdrop-filter:none; }
+  body.theme-terra .glass{ border-image-slice:19% fill; border-image-repeat:round; }
+  body.theme-raio .glass{ border-image-slice:14% fill; border-image-width:22px; }
+  body:is(.theme-sombra,.theme-luz,.theme-terra,.theme-raio) :is(#connect-btn,#create-btn){ background:none; border-style:solid; border-width:0; border-image-source:var(--btn); border-image-slice:30% 16% fill; border-image-width:14px 22px; border-image-outset:3px 6px; color:var(--gold-bright); text-shadow:0 0 8px var(--acc-glow); }
+  h1.title{ color:var(--gold-bright); text-shadow:0 0 14px var(--acc-glow); }
+  /* seletor de tema (barra do topo) */
+  #top-bar{ align-items:center; }
+  .cs-themes{ display:flex; gap:6px; align-items:center; }
+  .cs-themes .lbl{ margin-right:4px; }
+  .cs-theme{ display:flex; align-items:center; gap:5px; height:26px; padding:0 9px 0 5px; border:1px solid rgba(255,255,255,.12); border-radius:13px; background:rgba(0,0,0,.35); color:var(--ink-dim); cursor:pointer; font:600 10.5px/1 var(--font-mono); }
+  .cs-theme img, .cs-theme .sw{ width:18px; height:18px; object-fit:contain; font-size:13px; line-height:18px; text-align:center; }
+  .cs-theme:hover{ color:var(--gold-bright); border-color:var(--line); }
+  .cs-theme.on{ color:var(--gold-bright); border-color:var(--acc); box-shadow:0 0 10px var(--acc-glow); }
+  /* layout novo: herói grande + lista */
+  #char-select-view{ width:820px; padding:26px 30px; }
+  .cs-main{ display:flex; gap:18px; }
+  .cs-hero{ width:300px; flex:none; position:relative; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:radial-gradient(ellipse 70% 55% at 50% 62%, var(--acc-glow), transparent 70%), radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.04), rgba(0,0,0,.5) 75%); display:flex; flex-direction:column; align-items:center; }
+  body.theme-elemental .cs-hero{ background:radial-gradient(ellipse 70% 50% at 50% 64%, rgba(63,210,138,.18), transparent 70%), #141416; }
+  .cs-hero canvas{ width:220px; height:282px; image-rendering:pixelated; margin-top:16px; filter:drop-shadow(0 6px 12px rgba(0,0,0,.6)); }
+  .cs-hero .pedestal{ width:170px; height:22px; margin-top:-26px; border-radius:50%; background:radial-gradient(ellipse, var(--acc-glow), transparent 70%); opacity:.9; }
+  .cs-hero .hname{ font-family:var(--font-display); font-size:20px; color:var(--gold-bright); margin-top:8px; text-shadow:0 0 10px var(--acc-glow); }
+  .cs-hero .hsub{ display:flex; align-items:center; gap:8px; margin:4px 0 14px; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); }
+  .cs-hero .hsub img{ width:22px; height:22px; image-rendering:pixelated; }
+  .cs-hero .lvl{ position:absolute; top:12px; left:12px; width:44px; height:44px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 40%, #2a2a30, #0e0e10); border:2px solid var(--acc); box-shadow:0 0 10px var(--acc-glow); }
+  .cs-hero .lvl b{ font:700 15px/1 var(--font-mono); color:#fff; }
+  .cs-hero .lvl small{ font:600 7.5px/1 var(--font-mono); color:var(--ink-dim); margin-top:2px; letter-spacing:.06em; }
+  .cs-hero .stars{ position:absolute; top:16px; right:12px; font-size:12px; color:#ffd84a; text-shadow:0 0 6px rgba(255,216,74,.6); }
+  .cs-side{ flex:1; min-width:0; display:flex; flex-direction:column; gap:10px; }
+  .cs-list{ display:flex; flex-direction:column; gap:6px; max-height:236px; overflow-y:auto; padding-right:2px; }
+  .cs-row{ display:flex; align-items:center; gap:10px; padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:rgba(0,0,0,.28); cursor:pointer; transition:border-color .12s, background .12s; }
+  .cs-row:hover{ border-color:var(--gold); background:rgba(255,255,255,.03); }
+  .cs-row.selected{ border-color:var(--acc); box-shadow:0 0 0 1px var(--acc) inset, 0 0 12px var(--acc-glow); background:rgba(255,255,255,.04); }
+  .cs-row canvas{ width:46px; height:58px; image-rendering:pixelated; flex:none; }
+  .cs-row .info{ flex:1; min-width:0; }
+  .cs-row .nm{ font-family:var(--font-display); font-size:14px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cs-row.selected .nm{ color:var(--gold-bright); }
+  .cs-row .meta{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin-top:2px; }
+  .cs-row .arch{ width:26px; height:26px; image-rendering:pixelated; opacity:.9; }
+  .cs-row.new{ justify-content:center; border-style:dashed; color:var(--ink-dim); font-family:var(--font-mono); font-size:11px; min-height:44px; }
+  .cs-row.new:hover{ color:var(--gold-bright); }
+  .cs-stats{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:rgba(0,0,0,.25); }
+  .cs-bar{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  .cs-bar .top{ display:flex; justify-content:space-between; margin-bottom:3px; }
+  .cs-bar .top b{ color:var(--ink); font-weight:600; }
+  .cs-bar .track{ height:7px; border-radius:4px; background:#0b0b0d; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,.6); }
+  .cs-bar .track i{ display:block; height:100%; border-radius:4px; }
+  .cs-bar.hp i{ background:linear-gradient(90deg,#8e1f1f,#e0483d); }
+  .cs-bar.mp i{ background:linear-gradient(90deg,#1d3f8e,#4d8ff0); }
+  .cs-kv{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); }
+  .cs-kv b{ color:var(--gold-bright); }
+  #char-select-view .char-slots-row, #char-select-view #status-panel{ display:none; }
+  .cs-side #connect-btn{ margin-top:auto; }
+  .cs-hero .hsub{ text-align:center; justify-content:center; flex-wrap:wrap; padding:0 12px; }
+  body.theme-elemental :is(#connect-btn,#create-btn){ background:linear-gradient(#1f3a2b,#142219); border-color:#3fd28a; color:#9ff0c4; font-family:'Poppins','Segoe UI',system-ui,sans-serif; font-weight:600; border-radius:4px; }
+  body.theme-elemental :is(.cs-hero .hname, .cs-row .nm){ font-family:'Poppins','Segoe UI',system-ui,sans-serif; font-weight:600; }
+  body.theme-elemental :is(.toggle-btn.active, .archetype-card.selected, .hair-color-dot.active, .outfit-color-dot.active){ border-color:#3fd28a; box-shadow:0 0 0 1px #3fd28a, 0 0 8px rgba(63,210,138,.35); }
 </style>
 </head>
 <body>
 
 <div id="top-bar">
   <span>Conta: <b id="account-name">—</b></span>
+  <span class="cs-themes" id="cs-themes"></span>
   <span id="logout-link">Sair</span>
 </div>
 
@@ -198,8 +268,15 @@
     <button class="slot-arrow" id="slots-next">▶</button>
   </div>
   <div class="status-panel" id="status-panel"></div>
-  <button id="connect-btn" disabled>Conectar</button>
-  <div id="new-char-link">+ Criar novo herói</div>
+  <div class="cs-main">
+    <div class="cs-hero" id="cs-hero"></div>
+    <div class="cs-side">
+      <div class="cs-list" id="cs-list"></div>
+      <div class="cs-stats" id="cs-stats"></div>
+      <button id="connect-btn" disabled>Conectar</button>
+    </div>
+  </div>
+  <div id="new-char-link" style="display:none">+ Criar novo herói</div>
 </div>
 
 <!-- SEM PERSONAGEM (ou criando um novo): tela ÚNICA de criação. A antiga
@@ -664,6 +741,24 @@
      Árvore de Habilidades in-game, ver RAVENDAWN_SPELLS em
      world-prototype.html) — 2 Ativas + 1 Legacy por arquétipo, não é texto
      inventado. */
+
+  /* ---- Temas (mesma chave do jogo) ---- */
+  const CS_THEMES = [['elemental','Elemental'],['classico','Clássico'],['sombra','Sombra'],['luz','Luz'],['terra','Terra'],['raio','Raio']];
+  const CS_THEME_BASE = URL_BASE + 'ui/themes/';
+  function csApplyTheme(id){
+    if(!CS_THEMES.some(t=>t[0]===id)) id = 'elemental';
+    CS_THEMES.forEach(t=> document.body.classList.remove('theme-'+t[0]));
+    document.body.classList.add('theme-'+id);
+    try{ localStorage.setItem('elemental_ui_theme', id); }catch(_){}
+    document.querySelectorAll('.cs-theme').forEach(b=> b.classList.toggle('on', b.dataset.theme===id));
+  }
+  (function(){
+    const box = document.getElementById('cs-themes');
+    box.innerHTML = '<span class="lbl">Tema:</span>' + CS_THEMES.map(([id,n])=>`<span class="cs-theme" data-theme="${id}" title="Tema ${n}">${id==='classico' ? '<span class="sw">⚜️</span>' : id==='elemental' ? '<span class="sw" style="filter:grayscale(1) brightness(1.4)">⚜️</span>' : `<img src="${CS_THEME_BASE}${id}/icons/settings.png" alt="">`}${n}</span>`).join('');
+    box.addEventListener('click', e=>{ const b = e.target.closest('.cs-theme'); if(b) csApplyTheme(b.dataset.theme); });
+    let saved = 'elemental'; try{ saved = localStorage.getItem('elemental_ui_theme') || 'elemental'; }catch(_){}
+    csApplyTheme(saved);
+  })();
   function archetypeIconUrl(id){ return `${URL_BASE}ravendawn/icons/archetypes/90x90/${id}.png`; }
   const ARCHETYPE_INFO = {
     holy: {
@@ -878,63 +973,37 @@
 
     function fmtPct(cur, max){ return max ? Math.round(cur/max*100) : 0; }
 
+    const heroEl = document.getElementById('cs-hero'), listEl = document.getElementById('cs-list'), statsEl = document.getElementById('cs-stats');
+    function archOf(c){ const p = c.progress || {}; const ch = p.archetypes && Array.isArray(p.archetypes.chosen) ? p.archetypes.chosen.find(Boolean) : null; const o = p.cosmetics && p.cosmetics.outfit; return ch || (ARCHETYPE_INFO[o] ? o : null); }
+    function starsOf(c){ const pr = (c.progress && c.progress.prestige) || {}; return (pr.bronzeStars||0) + (pr.silverStars||0) + (pr.goldStars||0); }
+    function drawChar(canvas, c){ const outfitId = c.progress && c.progress.cosmetics ? c.progress.cosmetics.outfit : null; const colors = c.progress ? c.progress.cosmeticColors : null; const d = ()=> drawCharacterPreview(canvas, c.gender, c.hairId, c.hairStyleId, outfitId, colors); d(); scheduleRedraw(d); }
     function renderStatus(c){
-      const p = c.progress || {};
-      const stars = (p.prestige && (p.prestige.bronzeStars+p.prestige.silverStars+p.prestige.goldStars)) || 0;
-      statusPanel.innerHTML = `
-        <div class="status-col">
-          <div class="status-row big"><span>Nome</span><span>${c.nick}</span></div>
-          <div class="status-row"><span>Gênero</span><span>${c.gender==='female'?'Feminino':'Masculino'}</span></div>
-          <div class="status-row"><span>Nível</span><span>${c.level||1}</span></div>
-          <div class="status-row"><span>Estrelas</span><span>${'★'.repeat(stars)||'—'}</span></div>
-        </div>
-        <div class="status-col">
-          <div class="status-row"><span>HP</span><span>${p.hp!=null?`${Math.floor(p.hp)}/${p.hpMax}`:'—'}</span></div>
-          <div class="status-row"><span>MP</span><span>${p.mp!=null?`${Math.floor(p.mp)}/${p.mpMax}`:'—'}</span></div>
-          <div class="status-row"><span>Gold</span><span>${p.gold!=null?p.gold.toLocaleString('pt-BR'):'—'}</span></div>
-          <div class="status-row"><span>XP</span><span>${p.xp!=null?p.xp.toLocaleString('pt-BR'):'—'}</span></div>
-        </div>
-      `;
+      const p = c.progress || {}, arch = archOf(c), info = arch ? ARCHETYPE_INFO[arch] : null, st = starsOf(c);
+      heroEl.innerHTML = `<div class="lvl"><b>${c.level||1}</b><small>NÍVEL</small></div>${st?`<div class="stars">${'★'.repeat(Math.min(st,10))}${st>10?` ${st}`:''}</div>`:''}<canvas width="110" height="141"></canvas><div class="pedestal"></div><div class="hname">${c.nick}</div><div class="hsub">${info?`<img src="${archetypeIconUrl(arch)}" alt="" onerror="this.style.display='none'">${info.label} · ${info.role}`:''}${info?' · ':''}${c.gender==='female'?'Feminino':'Masculino'}</div>`;
+      drawChar(heroEl.querySelector('canvas'), c);
+      const pct = (a,b)=> b ? Math.max(0, Math.min(100, a/b*100)) : 0;
+      statsEl.innerHTML = `
+        <div class="cs-bar hp"><div class="top"><span>Vida</span><b>${p.hp!=null?`${Math.floor(p.hp)} / ${p.hpMax}`:'—'}</b></div><div class="track"><i style="width:${pct(p.hp,p.hpMax)}%"></i></div></div>
+        <div class="cs-bar mp"><div class="top"><span>Mana</span><b>${p.mp!=null?`${Math.floor(p.mp)} / ${p.mpMax}`:'—'}</b></div><div class="track"><i style="width:${pct(p.mp,p.mpMax)}%"></i></div></div>
+        <div class="cs-kv"><span>Ouro</span><b>${p.gold!=null?Math.round(p.gold).toLocaleString('pt-BR'):'—'}</b></div>
+        <div class="cs-kv"><span>Experiência</span><b>${p.xp!=null?Math.round(p.xp).toLocaleString('pt-BR'):'—'}</b></div>`;
     }
-
     function renderSlots(){
-      slotsWrap.innerHTML = '';
-      const visibleChars = characters.slice(windowStart, windowStart+VISIBLE);
-      visibleChars.forEach((c, i)=>{
-        const realIdx = windowStart+i;
-        const slot = document.createElement('div');
-        slot.className = 'char-slot' + (realIdx===selectedIdx ? ' selected' : '');
-        slot.innerHTML = `<span class="select-tag">Select</span><canvas width="90" height="115"></canvas><div class="slot-nick">${c.nick}</div>`;
-        slot.addEventListener('click', ()=>{ selectedIdx = realIdx; renderSlots(); renderStatus(characters[selectedIdx]); });
-        slotsWrap.appendChild(slot);
-        const canvas = slot.querySelector('canvas');
-        // BUG (reportado pelo usuário): a sprite real do traje de Arquétipo
-        // nunca aparecia aqui -- drawCharacterPreview só cai no boneco
-        // genérico (bolinha colorida + retângulo) quando outfitId não é
-        // passado (ver comentário grandão dentro da função), e essa chamada
-        // não passava nem outfitId nem colors. O personagem JÁ sai da
-        // criação com um traje de verdade equipado (createCharacter em
-        // db.js chama applyStartingArchetype, que seta
-        // progress.cosmetics.outfit = archetypeId) e as cores escolhidas na
-        // criação ficam em progress.cosmeticColors -- só faltava ler esses
-        // 2 campos do personagem e repassar pra função que já sabia desenhar
-        // o traje real (a mesma usada no preview de criação).
-        const outfitId = c.progress && c.progress.cosmetics ? c.progress.cosmetics.outfit : null;
-        const cosmeticColors = c.progress ? c.progress.cosmeticColors : null;
-        const draw = ()=> drawCharacterPreview(canvas, c.gender, c.hairId, c.hairStyleId, outfitId, cosmeticColors);
-        draw(); scheduleRedraw(draw);
+      listEl.innerHTML = '';
+      characters.forEach((c, idx)=>{
+        const arch = archOf(c), info = arch ? ARCHETYPE_INFO[arch] : null;
+        const row = document.createElement('div');
+        row.className = 'cs-row' + (idx===selectedIdx ? ' selected' : '');
+        row.innerHTML = `<canvas width="90" height="115"></canvas><div class="info"><div class="nm">${c.nick}</div><div class="meta">Nível ${c.level||1}${info?` · ${info.label}`:''}${starsOf(c)?` · ★${starsOf(c)}`:''}</div></div>${arch?`<img class="arch" src="${archetypeIconUrl(arch)}" alt="" onerror="this.style.display='none'">`:''}`;
+        row.addEventListener('click', ()=>{ selectedIdx = idx; renderSlots(); renderStatus(characters[selectedIdx]); });
+        row.addEventListener('dblclick', ()=>{ const b = document.getElementById('connect-btn'); if(!b.disabled) b.click(); });
+        listEl.appendChild(row);
+        drawChar(row.querySelector('canvas'), c);
       });
-      // preenche slots vazios até completar VISIBLE, igual à referência (3 caixas fixas)
-      for(let i=visibleChars.length; i<VISIBLE; i++){
-        const slot = document.createElement('div');
-        slot.className = 'char-slot empty';
-        slot.innerHTML = `<span class="plus">+</span>`;
-        slotsWrap.appendChild(slot);
-      }
-      document.getElementById('slots-prev').disabled = windowStart <= 0;
-      document.getElementById('slots-next').disabled = windowStart+VISIBLE >= characters.length;
+      const nw = document.createElement('div'); nw.className = 'cs-row new'; nw.textContent = '+ Criar novo herói';
+      nw.addEventListener('click', ()=> document.getElementById('new-char-link').click());
+      listEl.appendChild(nw);
     }
-
     document.getElementById('slots-prev').addEventListener('click', ()=>{ windowStart = Math.max(0, windowStart-VISIBLE); renderSlots(); });
     document.getElementById('slots-next').addEventListener('click', ()=>{ if(windowStart+VISIBLE < characters.length){ windowStart += VISIBLE; renderSlots(); } });
 
