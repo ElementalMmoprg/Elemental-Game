@@ -5264,6 +5264,16 @@
         const isArchetypeOutfitAtlas = key.charAt(0)==='a' && key.charAt(1)==='_' && (key.slice(-5)==='_base' || key.slice(-5)==='_mask');
         if(isArchetypeOutfitAtlas){
           entry.dirFrames = computeOutfitCellFrames(entry.img);
+          // 03/11/2026 (vídeo do usuário: andando << / >> o traje Witchcraft
+          // "não segue o sqm"): na folha do Witchcraft (masc. e fem.) as linhas
+          // de >> e << vêm trocadas — andando pra esquerda o boneco ia de costas
+          // pra cima-direita. Só ele: os outros trajes estão certos.
+          if(entry.dirFrames && /^a_witchcraft(_f)?_(base|mask)$/.test(key)){
+            const D = entry.dirFrames;
+            for(const k of ['foot','mass','idle']) if(D[k]){ const t = D[k].right; D[k].right = D[k].left; D[k].left = t; }
+            const t = D.right; D.right = D.left; D.left = t;
+            D.lrSwapped = true;
+          }
           entry.frame = entry.dirFrames && entry.dirFrames.down && entry.dirFrames.down[0];
           // fullWalkFrames: essa linha inteira do atlas é ciclo de andar
           // puro (sem pose/ação misturada depois, ao contrário do atlas
@@ -5958,6 +5968,8 @@
     // mesma escala/âncora do corpo que vai ser desenhado logo abaixo.
     const oScaleL = (outfitDef && outfitDef.scale) || 1;
     const bodyL = archetypeArmor ? SpriteManager.bodyCellLayout(archetypeArmor, exDir, s.x, s.y + breathe, 48*scl*oScaleL, 64*scl*oScaleL) : null;
+    const exLrSwap = !!(archetypeArmor && archetypeArmor.dirFrames && archetypeArmor.dirFrames.lrSwapped);
+    const exRowFor = d => ({ down:0, up:1, right: exLrSwap ? 3 : 2, left: exLrSwap ? 2 : 3 })[d] ?? 0;
     const drawExodusAttached = (relPath, key, dir, anchor) => {
       const e = SpriteManager.load(key, relPath);
       if(!e.loaded || !e.img.naturalWidth) return;
@@ -5965,7 +5977,7 @@
       // como 64 cortava os quadros das asas grandes)
       const cs = Math.max(1, Math.round(e.img.naturalHeight/4));
       const cols = Math.max(1, Math.round(e.img.naturalWidth/cs));
-      const row = { down:0, up:1, right:2, left:3 }[dir] ?? 0;
+      const row = exRowFor(dir);
       const col = Math.floor(Date.now()/AURA_FRAME_MS) % cols;
       if(bodyL){
         const k = bodyL.s;
@@ -6015,10 +6027,10 @@
     // aura de chão: desenhada antes de tudo (fica embaixo do pé, atrás do corpo)
     if(exAuraAnchor && exAuraAnchor.at === 'feet') drawExodusAttached(`exodus/auras/${auraId}.png`, 'xa_'+auraId, exDir, exAuraAnchor);
     const isExWing = !!wingId && String(wingId).startsWith('ex_wing_');
-    // 01/11/2026: as folhas Exodus/Tibia desenham << como a vista de COSTAS
-    // (transposta da linha ^), então nessas duas direções a asa vai NA FRENTE
-    // do corpo — atrás dele ela sumia/sobrava pra cima-direita do personagem.
-    const exWingFront = exDir === 'up' || exDir === 'left';
+    // Asa vai NA FRENTE do corpo quando a linha da folha é a vista de costas
+    // (linhas ^ e << da folha). Traje com >>/<< trocados (Witchcraft) troca
+    // a linha da asa junto, pra asa e corpo olharem pro mesmo lado.
+    const exWingFront = exRowFor(exDir) === 1 || exRowFor(exDir) === 3;
     if(isExWing && !exWingFront) drawExodusAttached(`exodus/wings/${wingId}.png`, 'xw_'+wingId, exDir);
     if(wingId && !isExWing){
       const wing = SpriteManager.wingSprite(wingId);
