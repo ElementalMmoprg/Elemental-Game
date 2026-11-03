@@ -1380,7 +1380,7 @@
   html body.ui-theme-terra{ --theme-accent:#9fe8a8; --theme-glow:rgba(60,230,120,.7); --theme-frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/frame.png); --theme-close:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/close.png); --theme-btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/terra/button.png); }
   html body.ui-theme-raio{ --theme-accent:#9fd2ff; --theme-glow:rgba(70,160,255,.8); --theme-frame:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/frame.png); --theme-close:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/close.png); --theme-btn:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ui/themes/raio/button.png); }
   html body.ui-themed .glass.win{
-    background:none; box-shadow:0 18px 46px rgba(0,0,0,.65);
+    background:none; box-shadow:none !important; /* 01/11: a sombra da caixa aparecia como névoa em volta da moldura */
     border-style:solid; border-width:0; border-radius:0;
     border-image-source:var(--theme-frame); border-image-slice:21% fill;
     border-image-width:52px; border-image-outset:10px; border-image-repeat:stretch;
@@ -1427,7 +1427,7 @@
   html body.ui-theme-terra{ --gold-deep:#3d6b3f; --gold:#6fbf6a; --gold-bright:#b5f0a8; --premium:#b5f0a8; --glass-1:rgba(12,22,15,.74); --glass-2:rgba(5,10,7,.9); --ink-dim:#97b293; }
   html body.ui-theme-raio{ --gold-deep:#2d4f80; --gold:#5f9ae0; --gold-bright:#a8d6ff; --premium:#a8d6ff; --glass-1:rgba(10,16,30,.74); --glass-2:rgba(4,7,15,.9); --ink-dim:#91a6c4; }
   html body.ui-themed :is(#vitals-block, #hotbar, #tactics-bar, #hunt-action-row, #confirm-modal, #tut-card, .split-box, .sdo-card, #skill-node-modal, #bestiary-track-search-modal, #bestiary-reward-modal, #profile-popover, #bank-popover, #settings-popover, #dispatch-popover, #exit-popover, #stam-recharge-popover){
-    background:none; box-shadow:0 10px 30px rgba(0,0,0,.55); backdrop-filter:none; -webkit-backdrop-filter:none;
+    background:none; box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
     border-style:solid; border-width:0; border-radius:0;
     border-image-source:var(--theme-frame); border-image-slice:21% fill; border-image-width:30px; border-image-outset:6px; border-image-repeat:stretch;
   }
@@ -6128,7 +6128,14 @@
     // topY = topo real do que foi desenhado (corpo/traje ou cabeça) — usado pra
     // nick/barra de vida nunca ficarem por cima de um traje mais alto que o padrão.
     const drawnTopY = Math.min(bodyDraw && bodyDraw.topY != null ? bodyDraw.topY : Infinity, headDraw && headDraw.topY != null ? headDraw.topY : Infinity);
-    return { drewBody, drewHead, topY: isFinite(drawnTopY) ? drawnTopY : null };
+    // 01/11/2026: centro horizontal do corpo DESENHADO (nos trajes do
+    // isométrico o boneco fica deslocado do ponto do pé) — nick e barra de
+    // vida centralizam nele.
+    // quadro PARADO da direção (estável: não treme a cada passo do andar)
+    const idleBox = (archetypeArmor && bodyDraw) ? SpriteManager.drawBodyDirFrame(NULL_CTX, archetypeArmor, (drawWalkAnim && drawWalkAnim.dir) || 'down', -1, s.x, s.y + breathe, 48*scl*((outfitDef && outfitDef.scale) || 1), 64*scl*((outfitDef && outfitDef.scale) || 1), false) : null;
+    let bodyCx = (idleBox && isFinite(idleBox.dx)) ? idleBox.dx + idleBox.dw/2 : null;
+    if(bodyCx != null && mirror) bodyCx = 2*s.x - bodyCx;
+    return { drewBody, drewHead, topY: isFinite(drawnTopY) ? drawnTopY : null, cx: bodyCx };
   }
 
   /* =========================================================
@@ -6590,11 +6597,21 @@
     for(let z=bottom; z>pz; z--) drawFloorAll(z);
     // andar do jogador: chão agora; objetos no drawList
     const F = D.floors[pz], objs = [];
-    // 01/11/2026 (usuário: "área enorme preta"): no térreo (andar 7), onde o
-    // mapa original não tem tile nenhum (borda do 1098.otbm), preenche com o chão mais comum do
+    // 01/11/2026 (usuário: "área enorme preta"): na superfície, onde o mapa
+    // original não tem tile nenhum (borda do 1098.otbm), preenche com o chão mais comum do
     // próprio mapa em vez de deixar o preto do vazio. Subsolo continua preto
     // (é o normal de caverna). Só visual: fora do recorte ninguém anda.
-    const voidPool = pz === 7 ? huntGroundPool(F, pz, D) : null;
+    const voidPool = pz <= 7 ? (D.floors[7] ? huntGroundPool(D.floors[7], 7, D) : huntGroundPool(F, pz, D)) : null;
+    // acima do térreo: só preenche onde nenhum andar de baixo aparece (o de
+    // baixo é desenhado deslocado 1 tile por andar)
+    const lowerShows = (X, Y)=>{
+      for(let d=1; pz+d<=7; d++){
+        const Fl = D.floors[pz+d]; if(!Fl) continue;
+        const lx = X - d - meta.x0, ly = Y - d - meta.y0;
+        if(lx >= 0 && ly >= 0 && lx < meta.w && ly < meta.h && Fl.has(ly*meta.w + lx)) return true;
+      }
+      return false;
+    };
     for(let Y=ry0; Y<=ry1; Y++){
       const inY = !(Y < meta.y0 || Y >= meta.y0+meta.h);
       if(!inY && !voidPool) continue;
@@ -6602,7 +6619,7 @@
         const inside = inY && !(X < meta.x0 || X >= meta.x0+meta.w);
         const t = inside ? F.get((Y-meta.y0)*meta.w + (X-meta.x0)) : null;
         if(!t){
-          if(voidPool){
+          if(voidPool && (pz === 7 || !lowerShows(X, Y))){
             const w0 = toW(X, Y, pz), s0 = toScreen(w0.x, w0.y - footOff);
             const hsh = ((X * 73856093) ^ (Y * 19349663)) >>> 0;
             huntRealSprite(voidPool[hsh % voidPool.length], Math.round(s0.x-half), Math.round(s0.y-half), size);
@@ -6894,6 +6911,7 @@
     ctx.textAlign = 'center';
   }
 
+  const drawnCxByKey = {}; // deslocamento X (px) do centro do corpo desenhado em relação ao pé
   const drawnTopByKey = {}; // topo real (px de tela) do último desenho de cada personagem — ver drawCharacterLayers.topY
   const auraState = { equipped:true };
   const auraParticles = [];
@@ -8010,7 +8028,7 @@
         const s = toScreen(rp.x,rp.y);
         const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
         const dr = drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
-        drawnTopByKey['rp:'+uname] = dr ? dr.topY : null;
+        drawnTopByKey['rp:'+uname] = dr ? dr.topY : null; drawnCxByKey['rp:'+uname] = (dr && dr.cx != null) ? dr.cx - s.x : null;
       }, topKey:'rp:'+uname, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
       // Barra de vida flutuante (pedido do usuário, 26/09/2026) -- hp/hpMax
       // de QUALQUER jogador só chegam aqui a partir de agora (ver
@@ -8043,7 +8061,7 @@
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true, idle: anim.idle }
         : anim;
       const dr = drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
-      drawnTopByKey['__player__'] = dr ? dr.topY : null;
+      drawnTopByKey['__player__'] = dr ? dr.topY : null; drawnCxByKey['__player__'] = (dr && dr.cx != null) ? dr.cx - s.x : null;
     }, topKey:'__player__', headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK, ornament: cosmetics.ornament || null,
     // Barra de vida flutuante do próprio jogador (pedido do usuário,
     // 26/09/2026) -- antes só existia o HP fixo do canto inferior esquerdo;
@@ -8052,6 +8070,18 @@
     hpPct: (player.hpMax ? player.hp/player.hpMax : null) });
 
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
+    // 01/11/2026 (vídeo do usuário: personagem "sumia" embaixo do Chefe da
+    // Área): o chefe é desenhado 1,55x maior e cobria o jogador encostado nele.
+    // Jogador colado num chefe vai pra frente dele na ordem de desenho.
+    (function playerOverBoss(){
+      const pi = drawList.findIndex(it => it.isPlayer); if(pi < 0) return;
+      const pl = drawList[pi]; let last = -1;
+      for(let i=pi+1; i<drawList.length; i++){
+        const it = drawList[i];
+        if(it.kind === 'monster' && it.monsterIsBoss && it.headCart && Math.hypot(it.headCart.x - pl.headCart.x, it.headCart.y - pl.headCart.y) < TILE_STEP*2.6) last = i;
+      }
+      if(last > pi){ drawList.splice(pi, 1); drawList.splice(last, 0, pl); }
+    })();
     drawList.forEach(item=> item.draw());
     if(location==='city' && rcUpperThisFrame) rcUpperThisFrame(); // andares de cima (telhados) por cima de tudo
     if(location==='dungeon' && huntRealThisFrame && huntRealThisFrame.upper) huntRealThisFrame.upper();
@@ -8071,6 +8101,8 @@
       // trajes mais altos que o padrão: sobe nick/barra pra ficarem acima do topo real desenhado
       if(item.topKey && drawnTopByKey[item.topKey] != null) headY = Math.min(headY, drawnTopByKey[item.topKey] - 2*SPRITE_SCALE);
       ctx.textAlign = 'center';
+      // nick/barra centralizados no corpo desenhado (deslocamento medido no draw)
+      if(item.topKey && drawnCxByKey[item.topKey] != null && item.kind !== 'monster') s.x += drawnCxByKey[item.topKey];
       if(item.nick) drawNickAndStar(s.x, headY-10*SPRITE_SCALE, item.nick, item.dimNick);
       if(item.nick && item.ornament) drawOrnament(s.x, headY-10*SPRITE_SCALE, item.ornament);
       if(item.kind==='monster' && item.hpPct!=null){
