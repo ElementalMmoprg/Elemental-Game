@@ -5264,16 +5264,6 @@
         const isArchetypeOutfitAtlas = key.charAt(0)==='a' && key.charAt(1)==='_' && (key.slice(-5)==='_base' || key.slice(-5)==='_mask');
         if(isArchetypeOutfitAtlas){
           entry.dirFrames = computeOutfitCellFrames(entry.img);
-          // 03/11/2026 (vídeo do usuário: andando << / >> o traje Witchcraft
-          // "não segue o sqm"): na folha do Witchcraft (masc. e fem.) as linhas
-          // de >> e << vêm trocadas — andando pra esquerda o boneco ia de costas
-          // pra cima-direita. Só ele: os outros trajes estão certos.
-          if(entry.dirFrames && /^a_witchcraft(_f)?_(base|mask)$/.test(key)){
-            const D = entry.dirFrames;
-            for(const k of ['foot','mass','idle']) if(D[k]){ const t = D[k].right; D[k].right = D[k].left; D[k].left = t; }
-            const t = D.right; D.right = D.left; D.left = t;
-            D.lrSwapped = true;
-          }
           entry.frame = entry.dirFrames && entry.dirFrames.down && entry.dirFrames.down[0];
           // fullWalkFrames: essa linha inteira do atlas é ciclo de andar
           // puro (sem pose/ação misturada depois, ao contrário do atlas
