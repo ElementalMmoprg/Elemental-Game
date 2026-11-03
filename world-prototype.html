@@ -5205,6 +5205,14 @@
           }
           out.mass[name] = n >= 15 ? { x: sx/n + 0.5, y: sy/n + 0.5 } : (n2 ? { x: sx2/n2 + 0.5, y: sy2/n2 + 0.5 } : { x: cell*0.66, y: cell*0.66 });
         });
+        // 02/11/2026 (usuário: traje "pula de tile" ao virar ^ ou pros lados):
+        // o X do pé (mediana da faixa mais baixa) pegava a barra do manto ou
+        // a lâmina da arma, que em cada direção cai num canto diferente da
+        // célula (ex.: rd_9460 ia de 84 a 51 px) — o boneco saltava ao virar.
+        // O X da âncora passa a ser o CENTRO DE MASSA do corpo (sem armas
+        // finas) de cada direção: virar não tira mais o corpo do lugar. O Y
+        // continua sendo a linha mais baixa (pé no chão).
+        dirNames.forEach(name=>{ if(out.foot[name] && out.mass[name]) out.foot[name] = { x: out.mass[name].x, y: out.foot[name].y }; });
         return out;
       }catch(e){ return null; }
     }
