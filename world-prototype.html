@@ -6965,9 +6965,16 @@
     const a0 = getAnchor(), t0 = now();
     const near = floatingTexts.filter(f => t0 - f.bornAt < 420 && f.ax != null && Math.abs(f.ax - a0.x) < 24 && Math.abs(f.ay - a0.y) < 24 && !f.yOffset).length;
     floatingTexts.push({ getAnchor, text: String(text).replace(FLOAT_EMOJI_RE, '').replace(/\d+\.\d+/g, m => String(Math.max(1, Math.round(+m)))).trim(), color, bornAt: t0, yOffset: (opts.yOffset||0) + (opts.yOffset ? 0 : near*11),
-      big: !!opts.big, kind: opts.kind || null, ax: a0.x, ay: a0.y, dx: opts.yOffset ? 0 : ((near % 2) ? 7 : -7) * (near ? 1 : 0) });
+      big: !!opts.big, kind: opts.kind || null, icon: opts.icon ? floatIconImg(opts.icon) : null, ax: a0.x, ay: a0.y, dx: opts.yOffset ? 0 : ((near % 2) ? 7 : -7) * (near ? 1 : 0) });
   }
   const FLOAT_LIFETIME_MS = 1100;
+  // ícone ao lado do texto (habilidade / poção), igual o "exori hur" do Tibia
+  const floatIconCache = {};
+  function floatIconImg(url){
+    let e = floatIconCache[url]; if(e) return e;
+    e = floatIconCache[url] = { img:new Image(), ok:false }; e.img.crossOrigin = 'anonymous';
+    e.img.onload = ()=>{ e.ok = true; }; e.img.src = url; return e;
+  }
   let lastGold = 0, lastXp = 0, lastHp = player.hp;
 
   // ---- COMBAT FX: dano/cura/crítico/esquiva/ataque especial + o "flash" de
@@ -7176,7 +7183,7 @@
         const aoeKey = (isMagic && fx.aoe) ? (fx.spellName||'') + '|' + (fx.archetypeId||'') : null;
         const firstOfCast = !aoeKey || !aoeSeen.has(aoeKey);
         if(aoeKey) aoeSeen.add(aoeKey);
-        if(firstOfCast && isMagic && fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 34, kind: 'spell' });
+        if(firstOfCast && isMagic && fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 42, kind: 'spell', icon: spellIconUrl(fx.spellName) });
         // pulso saindo do jogador em direção ao golpe — dá o feedback visual
         // de "usei uma habilidade/ataquei" que estava faltando por completo.
         if(firstOfCast && isMagic) spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
@@ -7204,7 +7211,7 @@
         const mm = findMonsterById(fx.monsterId);
         const ec = fx.element ? (MONSTER_FX_ELEM_COLOR[fx.element] || '#ff8a3d') : '#ff5a5a';
         spawnFloatingText(()=>({x:player.x,y:player.y}), `${fx.ability?(MONSTER_FX_ELEM_ICON[fx.element]||'💢')+' ':''}-${fx.dmg}`, fx.ability || fx.element ? ec : '#ff4b4b');
-        if(fx.ability && fx.abilityName && mm) spawnFloatingText(()=>({x:mm.x,y:mm.y}), fx.abilityName, ec, { yOffset: 34, kind: 'spell' });
+        if(fx.ability && fx.abilityName && mm) spawnFloatingText(()=>({x:mm.x,y:mm.y}), fx.abilityName, ec, { yOffset: 42, kind: 'spell' });
         // (o efeito aplicado já aparece como ícone em cima do personagem — sem texto extra)
         // ataque DE LONGE (arqueiro/mago): um rastro do monstro até o jogador
         if(mm && fx.style && fx.style !== 'melee' && !fx.aoe) spawnMonsterShot(mm.x, mm.y, fx.style === 'caster' || fx.element ? ec : '#e8dcc0');
@@ -7234,9 +7241,16 @@
         if(fx.spellName){ const hk = fx.spellName, hm = (processCombatFx._hot = processCombatFx._hot || {}); if(!(now() - (hm[hk] || 0) < 2500)){ hm[hk] = now(); spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})); } }
       } else if(fx.t === 'blocked'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), fx.immune ? '✨ Invulnerável' : '🌪️ Bloqueado!', fx.immune ? '#fff2a8' : '#bfe8ff');
+      } else if(fx.t === 'manaRestore'){
+        if(fx.amount > 0) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#6fb8ff');
+        if(fx.potion) spawnFloatingText(()=>({x:player.x,y:player.y}), 'Aaaah...', '#ffb347', { yOffset: 42, kind: 'spell', icon: URL_BASE + 'items/potions/' + fx.potion + '.png' });
+      } else if(fx.t === 'heal' && fx.potion){
+        // 03/11/2026 (pedido do usuário, estilo Tibia): poção = ícone da poção + "Aaaah..."
+        if(fx.amount > 0) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
+        spawnFloatingText(()=>({x:player.x,y:player.y}), 'Aaaah...', '#ffb347', { yOffset: 42, kind: 'spell', icon: URL_BASE + 'items/potions/' + fx.potion + '.png' });
       } else if(fx.t === 'heal'){
         if(fx.amount > 0) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
-        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 34, kind: 'spell' });
+        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 42, kind: 'spell', icon: spellIconUrl(fx.spellName) });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
         castPoseUntil = now() + CAST_POSE_MS;
         if(!spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})) && fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'heal', player.x, player.y, fx.element);
@@ -7250,7 +7264,7 @@
         logLoot(fx.amount > 0 ? `💚 Você curou <b>${escapeHtml(fx.targetNick||'um aliado')}</b> em +${fx.amount}${fx.spellName?` (${escapeHtml(fx.spellName)})`:''}.` : `💚 ${escapeHtml(fx.spellName||'Cura')} em <b>${escapeHtml(fx.targetNick||'um aliado')}</b> (cura contínua).`);
       } else if(fx.t === 'shield'){
         spawnFloatingText(()=>({x:player.x,y:player.y}), 'Escudo!', '#8fd0ff');
-        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 34, kind: 'spell' });
+        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 42, kind: 'spell', icon: spellIconUrl(fx.spellName) });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(143,208,255,.75)', 34, 420);
         castPoseUntil = now() + CAST_POSE_MS;
         if(!spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})) && fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
@@ -7262,7 +7276,7 @@
         const buffLabel = { atkPct: 'Ataque', defPct: 'Defesa', magicDmgPct: 'Magia', healingPowerPct: 'Cura', moveSpeedPct: 'Velocidade', basicExtraPct: 'Ataque básico', airAura: 'Aura de Vento', windWall: 'Parede de Vento', push: 'Empurrão', taunt: 'Provocar', blink: 'Piscar!', flow: 'Fluxo de Magia', purify: '✨ Purificado!', evade: '👤 Ilusório!', cast: '✦', dmgZone: '🏹 Chuva de Flechas', safeguard: '🛡️ Salvaguarda', banner: '🚩 Estandarte', earthZone: '🌍 Terra Abençoada', unchained: '⛓️‍💥 Livre!', unbreakable: '🛡️ Inquebrável', mirror: fx.archetypeId === 'archery' ? '🏹 Patrulheiros Espirituais' : '🪞 Imagem Espelhada', witchZone: '🐦‍⬛ Chamado da Bruxa', stalk: '🗡️ Espreitar!', venomousWeapons: '🧪 Armas Venenosas', livingSaint: `+${fx.pct}% Defesa e Cura`, holyZone: '☀️ Círculo de Luz', apotheosis: '🌅 Avatar da Alvorada' }[fx.statKey] || 'Buff';
         spawnFloatingText(()=>({x:player.x,y:player.y}), ['airAura','windWall','push','taunt','blink','purify','livingSaint','holyZone','apotheosis','evade','stalk','venomousWeapons','mirror','witchZone','cast','dmgZone','safeguard','banner','earthZone','unchained','unbreakable'].includes(fx.statKey) ? buffLabel : `+${fx.pct}% ${buffLabel}`, '#ffd27a');
         if(fx.statKey === 'holyZone') spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,240,160,.8)', 80, 900);
-        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 34, kind: 'spell' });
+        if(fx.spellName) spawnFloatingText(()=>({x:player.x,y:player.y}), fx.spellName, '#ffb347', { yOffset: 42, kind: 'spell', icon: spellIconUrl(fx.spellName) });
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(255,210,122,.75)', 32, 420);
         castPoseUntil = now() + CAST_POSE_MS;
         if(!spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})) && fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'defense', player.x, player.y, fx.element);
@@ -8183,8 +8197,16 @@
       ctx.font = `bold ${Math.round(fsz*Math.max(1, SPRITE_SCALE*0.85))}px Verdana, "JetBrains Mono", sans-serif`;
       ctx.textAlign='center'; ctx.lineJoin = 'round';
       const tx = s.x + (ft.dx||0), ty = s.y - 26 - rise - (ft.yOffset||0);
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.9)'; ctx.strokeText(ft.text, tx, ty);
-      ctx.fillStyle = ft.color; ctx.fillText(ft.text, tx, ty); ctx.globalAlpha = 1;
+      let txx = tx;
+      if(ft.icon && ft.icon.ok){
+        const isz = Math.round(15*Math.max(1, SPRITE_SCALE*0.85)), tw = ctx.measureText(ft.text).width;
+        txx = tx + (isz + 3)/2;
+        const ix = Math.round(txx - tw/2 - isz - 3), iy = Math.round(ty - isz + 3);
+        ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(ix-1, iy-1, isz+2, isz+2);
+        ctx.drawImage(ft.icon.img, ix, iy, isz, isz);
+      }
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.9)'; ctx.strokeText(ft.text, txx, ty);
+      ctx.fillStyle = ft.color; ctx.fillText(ft.text, txx, ty); ctx.globalAlpha = 1;
     }
 
     // pulso de ataque/magia (anel que expande e some — ver spawnFxRing em processCombatFx)
