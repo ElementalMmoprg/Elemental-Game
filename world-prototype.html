@@ -18489,7 +18489,7 @@
     { id:'destaques', tab:'loja', name:'Destaques', icon:'⭐' },
     { id:'outfits', tab:'loja', name:'Outfits', icon:'👘', count:()=> shCoinOutfits().length },
     { id:'ornamentos', tab:'loja', name:'Ornamentos', icon:'🏵️', count:()=> ornamentCatalog.length },
-    { id:'asas', tab:'loja', name:'Asas', icon:'🪽', count:()=> wingCatalog.length },
+    { id:'asas', tab:'loja', name:'Asas (em breve)', icon:'🪽', count:()=> 0 }, // 06/11/2026: sistema de asas parado até a revisão
     { id:'auras', tab:'loja', name:'Auras', icon:'✨', count:()=> auraCatalog.length },
     { id:'montarias', tab:'loja', name:'Montarias', icon:'🐎', count:()=> mountCatalog.length },
     { id:'premium', tab:'loja', name:'Tempo de Premium', icon:'👑', count:()=> PREMIUM_PACKAGES.length },
@@ -18776,8 +18776,10 @@
         if(shConfirmId !== 'or:'+id){ shConfirmId = 'or:'+id; renderStoreHub(false); return; }
         shConfirmId = null; sendWS({ type:'ornament:buy', ornamentId:id });
       }));
-    } else if(shCat === 'asas' || shCat === 'auras'){
-      const isW = shCat === 'asas';
+    } else if(shCat === 'asas'){
+      main.innerHTML = H('Asas', 'Em breve.') + `<div style="padding:40px 10px;text-align:center;font-family:var(--font-mono);color:var(--ink-dim);"><div style="font-size:42px;margin-bottom:10px;">🪽</div><b style="color:var(--gold-bright);font-size:14px;">Em breve</b><br><br>O sistema de asas está sendo refeito e volta numa próxima atualização.</div>`;
+    } else if(shCat === 'auras'){
+      const isW = false;
       // todas as asas (as de Gold antigas também — tinham sumido por causa do filtro forSale)
       const list = (isW ? wingCatalog.slice().sort((a,b)=> (a.currency==='elementalCoin') - (b.currency==='elementalCoin') || a.cost - b.cost) : auraCatalog);
       const owned = isW ? ownedWings : ownedAuras, eqId = isW ? cosmetics.wings : cosmetics.aura;
