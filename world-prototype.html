@@ -1532,7 +1532,11 @@
   #trade-status-line{ padding:0 16px 10px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
 
   /* ============ TOASTS (convites de party/trade) ============ */
-  #toast-stack{ top:80px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; z-index:50; align-items:center; }
+  /* 06/11/2026 (teste com jogadores: convite de PT escondido atrás de outra
+     caixa): os avisos com botão (convite de grupo, troca...) ficam por cima de
+     TUDO e com largura limitada, pra nunca entrar embaixo do card do tutorial. */
+  #toast-stack{ top:80px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; z-index:100000; align-items:center; width:min(520px, calc(100vw - 32px)); }
+  #toast-stack > .toast{ max-width:100%; box-shadow:0 10px 30px rgba(0,0,0,.6); }
   .toast{ padding:10px 16px; border-radius:6px; font-family:var(--font-mono); font-size:11px; display:flex; align-items:center; gap:10px; }
   .toast button{ padding:4px 10px; border-radius:4px; border:1px solid var(--gold-bright); background:rgba(191,161,95,.15); color:var(--gold-bright); font-family:var(--font-mono); font-size:10px; cursor:pointer; }
   .toast button.decline{ border-color:var(--danger); color:#ff9a80; background:rgba(226,84,43,.1); }
@@ -11443,7 +11447,10 @@
     const diff = DIFFICULTIES[msg.difficulty];
     const el = document.createElement('div');
     el.className = 'glass ornate';
-    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:80;padding:18px 22px;min-width:280px;text-align:center;';
+    // 06/11/2026 (teste com jogadores): o convite ficava escondido embaixo do
+    // quadro "Aguardando o grupo aceitar…" (mesmo lugar e mesma camada). Agora
+    // o convite fica por cima e o quadro de progresso vai pro alto da tela.
+    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100001;padding:18px 22px;min-width:280px;text-align:center;';
     el.innerHTML = `
       <div class="panel-title" style="padding:0 0 10px;">⚔️ Convite de Caçada em Grupo<span class="rule"></span></div>
       <div style="font-family:var(--font-mono);font-size:12px;margin-bottom:14px;">
@@ -11478,12 +11485,14 @@
     if(!huntPartyModalEl){
       const el = document.createElement('div');
       el.className = 'glass ornate';
-      el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:80;padding:18px 22px;min-width:240px;text-align:center;';
+      el.style.cssText = 'position:fixed;top:190px;left:50%;transform:translateX(-50%);z-index:90;padding:14px 20px;min-width:240px;text-align:center;';
       document.body.appendChild(el);
       huntPartyModalEl = el;
     }
     const title = phase === 'convite' ? 'Aguardando o grupo aceitar…' : 'Aguardando o grupo chegar no teleporte…';
-    const rows = totalList.map(u=> `<div style="text-align:left;font-family:var(--font-mono);font-size:12px;padding:2px 0;">${doneList.includes(u) ? '✅' : '⏳'} ${escapeHtml(u)}</div>`).join('');
+    // nick do personagem (não o número da conta)
+    const nickOf = u => u === AUTH_USERNAME ? (PLAYER_NICK || u) : ((party && party.nicks && party.nicks[u]) || ((remotePlayers.get(u)||{}).nick) || u);
+    const rows = totalList.map(u=> `<div style="text-align:left;font-family:var(--font-mono);font-size:12px;padding:2px 0;">${doneList.includes(u) ? '✅' : '⏳'} ${escapeHtml(nickOf(u))}</div>`).join('');
     huntPartyModalEl.innerHTML = `<div class="panel-title" style="padding:0 0 10px;">🏹 ${title}<span class="rule"></span></div>${rows}`;
   }
 
