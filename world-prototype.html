@@ -8012,7 +8012,8 @@
               // na última direção de MOVIMENTO, que podia não apontar pro
               // alvo -- era o bug "monstro não vira pro alvo"). Fallback pro
               // anim.dir só cobre o instante antes do 1º snapshot chegar.
-              const anim = updateWalkAnim('mon:'+m.id, s.x, s.y);
+              const mRaw = worldToScreenRaw(m.x, m.y); // sem a câmera: o jogador andando não faz o monstro "andar" junto
+              const anim = updateWalkAnim('mon:'+m.id, mRaw.x, mRaw.y);
               const dir = m.facingDir || anim.dir;
               const mFrame = monsterAnimFrame(m, walkEntry);
               // 22/10/2026 (usuário: "monstro gigante e embaçado"): antes o
@@ -8076,12 +8077,20 @@
       // rodando no servidor — ver broadcastPositions) continua sendo desenhado
       // normalmente, só com o nick marcado "(offline)" pro grupo saber que
       // ninguém está mais controlando aquele personagem ativamente.
-      drawList.push({ baseCart:{x:rp.x,y:rp.y}, draw:()=>{
-        const s = toScreen(rp.x,rp.y);
-        const anim = updateWalkAnim('rp:'+uname, s.x, s.y);
+      // 06/11/2026 (teste com jogadores): posição SUAVIZADA — o servidor
+      // manda a posição dos outros a cada ~200 ms; desenhar direto fazia eles
+      // "teleportarem" de ponto em ponto. Agora o boneco anda até a última
+      // posição recebida na velocidade necessária pra chegar antes da próxima.
+      const sm = remoteSmoothPos(uname, rp);
+      drawList.push({ baseCart:{x:sm.x,y:sm.y}, draw:()=>{
+        const s = toScreen(sm.x,sm.y);
+        // animação pelo movimento no MUNDO (sem a câmera): antes, quando o
+        // jogador local andava, todo mundo em volta "andava" junto na tela
+        const rRaw = worldToScreenRaw(sm.x, sm.y);
+        const anim = updateWalkAnim('rp:'+uname, rRaw.x, rRaw.y);
         const dr = drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
         drawnTopByKey['rp:'+uname] = dr ? dr.topY : null; drawnCxByKey['rp:'+uname] = (dr && dr.cx != null) ? dr.cx - s.x : null;
-      }, topKey:'rp:'+uname, headCart:{x:rp.x,y:rp.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
+      }, topKey:'rp:'+uname, headCart:{x:sm.x,y:sm.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
       // Barra de vida flutuante (pedido do usuário, 26/09/2026) -- hp/hpMax
       // de QUALQUER jogador só chegam aqui a partir de agora (ver
       // broadcastPositions em server.js); null/null em snapshots antigos ou
@@ -8546,6 +8555,25 @@
   }
 
   let lastT = now();
+  // posição desenhada dos outros jogadores (ver drawList dos remotePlayers)
+  const remoteSmooth = new Map();
+  function remoteSmoothPos(uname, rp){
+    const t = now();
+    let e = remoteSmooth.get(uname);
+    if(!e || Math.hypot(rp.x - e.x, rp.y - e.y) > TILE_STEP * 8 || (rp.z != null && e.z !== rp.z)){
+      e = { x: rp.x, y: rp.y, z: rp.z, t, tx: rp.x, ty: rp.y, gotAt: t };
+      remoteSmooth.set(uname, e); return e;
+    }
+    if(e.tx !== rp.x || e.ty !== rp.y){ e.tx = rp.x; e.ty = rp.y; e.gotAt = t; e.z = rp.z; }
+    const dt = Math.min(0.1, (t - e.t) / 1000); e.t = t;
+    const dx = e.tx - e.x, dy = e.ty - e.y, d = Math.hypot(dx, dy);
+    if(d > 0.01){
+      const speed = Math.max(d / 0.22, 30); // chega no ponto em ~220 ms (intervalo do servidor)
+      const stp = Math.min(d, speed * dt);
+      e.x += dx / d * stp; e.y += dy / d * stp;
+    }
+    return e;
+  }
 
   /* =====================================================================
      ARENA DO TORNEIO NO MUNDO (24/10/2026, pedido do usuário): a luta do
@@ -9607,10 +9635,16 @@
     // envia posição periodicamente — só importa de fato na Cidade (Dungeon é o
     // servidor quem move o Bot); mandar sempre é inofensivo, o servidor ignora
     // 'move' quando location !== 'city'.
+    // 06/11/2026: a cada 200 ms (antes 400) e só quando mudou — os outros
+    // jogadores veem o movimento mais fluido sem mandar mensagem à toa.
+    let lastSentMove = '';
     setInterval(()=>{
       if(ws.readyState !== WebSocket.OPEN) return;
+      const k = Math.round(player.x) + ',' + Math.round(player.y) + ',' + player.z;
+      if(k === lastSentMove && Math.random() > 0.1) return; // de vez em quando reenvia mesmo parado
+      lastSentMove = k;
       ws.send(JSON.stringify({ type:'move', x:player.x, y:player.y, z:player.z }));
-    }, 400);
+    }, 200);
   }
 
   /* =====================================================================
