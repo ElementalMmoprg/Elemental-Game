@@ -8306,6 +8306,13 @@
      400ms que já existia (connectToServer), então nada muda no protocolo.
      ========================================================= */
   const WASD_SPEED_PX_S = 115; // Ravencrest: 1 tile = 17 de mundo -> ~6-7 tiles/s, ritmo de Tibia
+  // sqm/s = velocidade / 55 (mesma conta do servidor, ver playerStepMs) —
+  // 220 (nível 1) = 4 sqm/s; 1 sqm da cidade = CITY_TILE_STEP de mundo
+  function cityWalkPxPerS(){
+    let v = 0; try{ v = (combatStats && combatStats.moveSpeed) || 0; }catch(_){}
+    if(!v) v = 220 + 2 * Math.max(0, (player.level || 1) - 1);
+    return v / 55 * CITY_TILE_STEP;
+  }
   const heldKeys = {};
   window.addEventListener('keydown', e=>{
     if(document.activeElement && document.activeElement.id === 'chat-input') return;
@@ -8490,7 +8497,7 @@
     if(autoWalk.path && autoWalk.path.length){
       const wp = autoWalk.path[0];
       const wx = wp.x - player.x, wy = wp.y - player.y, wd = Math.hypot(wx, wy);
-      const stepLen = WASD_SPEED_PX_S * dt;
+      const stepLen = cityWalkPxPerS() * dt;
       if(wd <= Math.max(3, stepLen)){ player.x = wp.x; player.y = wp.y; autoWalk.path.shift(); if(autoWalk.path.length) return; }
       else { player.x += (wx/wd) * stepLen; player.y += (wy/wd) * stepLen; return; }
       // fim do caminho: se o alvo é um tile bloqueado (boneco), já chegou
@@ -8503,8 +8510,8 @@
       const cb = autoWalk.onArrive; autoWalk = null; if(cb) cb();
       return;
     }
-    player.x += (dx/dist) * WASD_SPEED_PX_S * dt;
-    player.y += (dy/dist) * WASD_SPEED_PX_S * dt;
+    player.x += (dx/dist) * cityWalkPxPerS() * dt;
+    player.y += (dy/dist) * cityWalkPxPerS() * dt;
   }
   function updateWasdMovement(dt){
     if(location !== 'city') return; // Dungeon: movimento é 100% do Bot no servidor
@@ -8524,10 +8531,12 @@
     if(!sx && !sy) return;
     if(autoWalk && autoWalk.interruptible) cancelAutoWalk(); // apertou WASD -- cancela o "andar até o clique" e devolve o controle na hora
     const slen = Math.hypot(sx,sy); sx/=slen; sy/=slen; // vetor UNITÁRIO — mesma velocidade aparente em qualquer uma das 8 direções, incluindo diagonais
-    const dx = sx / WORLD_SCALE;
-    const dy = sy / WORLD_SCALE;
-    const nx = player.x + dx*WASD_SPEED_PX_S*dt;
-    const ny = player.y + dy*WASD_SPEED_PX_S*dt;
+    // 06/11/2026: antes dividia por WORLD_SCALE e andava ~2,9 sqm/s pelas
+    // teclas (o clique andava 6,8). Agora os dois usam a VELOCIDADE do
+    // personagem (estilo Tibia, vem do servidor em combatStats.moveSpeed).
+    const sp = cityWalkPxPerS();
+    const nx = player.x + sx*sp*dt;
+    const ny = player.y + sy*sp*dt;
     // Colisão com os tiles reais da Cidade Elemental (pilares do templo etc.
     // — ver CITY_BLOCKED/isCityWorldPosBlocked). Testa cada eixo separado
     // (em vez do ponto (nx,ny) direto) pra poder "deslizar" na parede em vez
