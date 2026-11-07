@@ -418,7 +418,7 @@
   .outfit-card:hover{ transform:translateY(-1px); border-color:var(--gold-bright); }
   .outfit-card .oc-art{ height:64px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:6px; }
   .outfit-card .oc-art img{ max-width:64px; max-height:64px; image-rendering:pixelated; }
-  .outfit-card .oc-art canvas{ width:48px; height:80px; image-rendering:pixelated; margin-bottom:-14px; }
+  .outfit-card .oc-art canvas{ width:64px; height:72px; image-rendering:pixelated; margin-bottom:-6px; }
   .outfit-card .oc-badge{ position:absolute; top:6px; right:6px; font-family:var(--font-mono); font-size:8.5px; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,.55); color:var(--ink-dim); border:1px solid rgba(191,161,95,.3); }
   .outfit-card .oc-badge.coin{ color:#8fd0ff; border-color:rgba(143,208,255,.45); }
   .outfit-card .oc-badge.on{ color:#1b1406; background:var(--gold-bright); border-color:var(--gold-bright); }
@@ -763,6 +763,8 @@
   .rdinv .rdchar-tabs button:hover{ color:#f1efe9; }
   .rdinv .rdchar-body{ flex:1; position:relative; overflow:hidden; display:flex; }
   .rdinv #inv-equip-col{ width:100%; border:0; padding:10px 8px; background:url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/character/equipment_background.png) center 46%/88% auto no-repeat; }
+  /* 07/11/2026: arte da classe (a mesma da Árvore de Habilidades) atrás do equipamento */
+  .rdinv #inv-equip-col.has-arch-bg{ background:linear-gradient(180deg, rgba(12,12,16,.35), rgba(12,12,16,.62)), url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/character/equipment_background.png) center 46%/88% auto no-repeat, var(--arch-bg) center 30%/cover no-repeat, #0d0d12; }
   .rdinv #inv-stats-col{ width:100%; border:0; display:none; padding:10px 14px; }
   .rdinv [data-rdtab="stats"] #inv-equip-col{ display:none; }
   .rdinv [data-rdtab="stats"] #inv-stats-col{ display:flex; }
@@ -1100,7 +1102,7 @@
      destrava depois de 1 ponto investido numa Ativa da linha anterior — e
      um bloco de Legacy/Ultimate no topo e Passivas no fim, todos com nível
      e custo crescentes reais). */
-  #skilltree-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:800px; max-width:96vw; height:560px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #skilltree-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:860px; max-width:96vw; height:880px; max-height:94vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
   #skilltree-panel.open{ display:flex; }
   #skilltree-panel .panel-title{ flex-shrink:0; }
   .skilltree-body{ flex:1; display:flex; flex-direction:column; overflow:hidden; padding:0 14px 14px; position:relative; }
@@ -1137,7 +1139,7 @@
   .skill-points-row b{ color:var(--gold-bright); }
   #skill-list-wrap{ flex:1; overflow-y:auto; overflow-x:hidden; border:1px solid var(--gold-deep); border-radius:6px; background:radial-gradient(circle at 50% 20%, #16110b, #0a0805 72%); padding:8px; }
   /* 25/10/2026: arte do arquétipo atrás da árvore (assets/ui/archetype_bg/<arquétipo>.png) */
-  #skill-list-wrap.has-arch-bg{ background:var(--arch-bg) center 6px / auto 470px no-repeat local, radial-gradient(circle at 50% 20%, #16110b, #0a0805 72%); }
+  #skill-list-wrap.has-arch-bg{ background:var(--arch-bg) center 6px / auto 680px no-repeat local, radial-gradient(circle at 50% 20%, #16110b, #0a0805 72%); }
   .spell-row-label{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.08em; margin:8px 0 4px; }
   .spell-row-label:first-child{ margin-top:0; }
   .spell-row-cards{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:8px; margin-bottom:4px; }
@@ -1993,6 +1995,32 @@
   .sh-soon b{ display:block; font-family:var(--font-display); font-size:24px; color:#b9a6ff; letter-spacing:.2em; margin-bottom:8px; }
   .sh-search{ margin:8px 14px 12px; padding:8px 12px; background:#11131c; border:1px solid #2c3042; border-radius:4px; color:var(--ink); font-size:12px; }
   .sh-note{ font-family:var(--font-mono); font-size:10px; color:#ffb48a; margin-top:12px; }
+  /* Loja de Elemental Coin (07/11/2026) — pacotes com bônus por valor + valor livre + código de indicação */
+  .ecs-intro{ display:flex; align-items:center; gap:12px; background:#151722; border:1px solid #2c3042; border-radius:8px; padding:10px 14px; font-size:12px; color:var(--ink); margin-bottom:12px; }
+  .ecs-intro img{ width:40px; height:40px; }
+  .ecs-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .ecs-pkg{ position:relative; background:#151722; border:2px solid #2c3042; border-radius:10px; padding:12px 6px 10px; text-align:center; cursor:pointer; transition:border-color .12s, transform .12s; }
+  .ecs-pkg:hover{ border-color:#5a4a26; transform:translateY(-1px); }
+  .ecs-pkg.sel{ border-color:var(--gold-bright); background:linear-gradient(180deg,#2a2210,#171722); box-shadow:0 0 10px rgba(240,211,138,.25); }
+  .ecs-pkg .brl{ font-family:var(--font-mono); font-weight:700; font-size:15px; color:var(--ink); }
+  .ecs-pkg .amt{ display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px; font-family:var(--font-mono); font-weight:700; font-size:17px; color:#8fe0a0; }
+  .ecs-pkg .amt img{ width:22px; height:22px; }
+  .ecs-pkg .bonus{ position:absolute; top:-9px; right:-6px; background:#e0742a; color:#fff; font-family:var(--font-mono); font-size:10px; font-weight:700; padding:2px 7px; border-radius:9px; }
+  .ecs-tiers{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:12px 0; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); }
+  .ecs-tiers span.t{ border:1px solid #3a3f55; border-radius:10px; padding:2px 8px; color:var(--ink); }
+  .ecs-form{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .ecs-form label{ display:block; font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:4px; }
+  .ecs-form input{ width:100%; box-sizing:border-box; background:#0f1018; border:1px solid #3a3f55; border-radius:8px; padding:9px 10px; color:var(--ink); font-size:14px; font-family:var(--font-mono); }
+  .ecs-form input:focus{ outline:none; border-color:var(--gold-bright); }
+  .ecs-get{ display:flex; align-items:center; gap:14px; margin-top:12px; background:#0b0b10; border:1px solid #2c3042; border-radius:10px; padding:12px 16px; }
+  .ecs-get img{ width:46px; height:46px; }
+  .ecs-get .lbl{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); letter-spacing:.08em; }
+  .ecs-get .big{ font-size:26px; font-weight:700; color:var(--gold-bright); line-height:1.1; }
+  .ecs-get .big small{ font-size:13px; color:#8fe0a0; margin-left:6px; }
+  .ecs-get .tier{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:#ffcf8a; border:1px solid #5a4a26; border-radius:10px; padding:3px 9px; text-align:right; }
+  .ecs-buy{ margin-top:12px; width:100%; padding:11px; border-radius:8px; border:1px solid var(--gold-bright); background:linear-gradient(180deg,#3a2e12,#221a0a); color:var(--gold-bright); font-family:var(--font-mono); font-weight:700; font-size:13px; cursor:pointer; }
+  .ecs-buy:disabled{ opacity:.45; cursor:not-allowed; }
+  @media (max-width:700px){ .ecs-grid{ grid-template-columns:repeat(2,1fr); } .ecs-form{ grid-template-columns:1fr; } }
   .sh-res{ display:flex; align-items:center; gap:10px; padding:8px 10px; background:#151722; border:1px solid #2c3042; border-radius:4px; margin-bottom:6px; cursor:pointer; }
   .sh-res:hover{ border-color:#7d93e8; }
   .sh-res .w{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
@@ -4082,7 +4110,6 @@
       <div class="rdchar-tabs">
         <button type="button" data-rdtab="equip" class="on"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/character/equipment_icon.png" alt="">Equipamento</button>
         <button type="button" data-rdtab="stats"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/character/stats_icon.png" alt="">Status</button>
-        <button type="button" data-rdtab="custom"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/character/customization_icon.png" alt="">Visual</button>
       </div>
       <div class="rdchar-body">
       <div id="inv-equip-col">
@@ -4427,8 +4454,8 @@
           <div id="outfit-main">
             <div id="outfit-subtabs">
               <div class="outfit-subtab active" data-osub="outfits">Outfits</div>
-              <div class="outfit-subtab" data-osub="mounts">Montarias</div>
-              <div class="outfit-subtab" data-osub="wings">Asas</div>
+              <div class="outfit-subtab" data-osub="mounts" style="display:none">Montarias</div>
+              <div class="outfit-subtab" data-osub="wings" style="display:none">Asas</div>
               <div class="outfit-subtab" data-osub="auras">Auras</div>
               <div class="outfit-subtab" data-osub="cores">Cores</div>
             </div>
@@ -7562,7 +7589,7 @@
         if(firstOfCast && isMagic) spawnFxRing(()=>({x:player.x,y:player.y}), isMagic ? 'rgba(143,208,255,.8)' : 'rgba(240,225,180,.75)', isMagic?34:24, isMagic?420:260);
         castPoseUntil = now() + CAST_POSE_MS;
         // animação própria da magia (SPELL_FX) — se não tiver, cai no visual antigo por arquétipo
-        const sfxDone = isMagic && m && spellFxOnHit(fx.spellName, player.x, player.y, m.x, m.y, !!aoeKey, firstOfCast, player.x, player.y, ()=>({x:player.x,y:player.y}));
+        const sfxDone = isMagic && m && spellFxOnHit(fx.spellName, player.x, player.y, m.x, m.y, !!aoeKey, firstOfCast && !(fx.hitIdx > 0), player.x, player.y, ()=>({x:player.x,y:player.y}));
         if(!sfxDone && aoeKey && firstOfCast && fx.archetypeId){
           // estouro grande no centro da área (em volta do conjurador, igual o servidor calcula a área)
           SpellFxManager.spawnAreaEffect(fx.archetypeId, 'aoe', player.x, player.y, fx.element, 4.5);
@@ -7866,7 +7893,7 @@
      ========================================================= */
   const SFX_BASE = 'https://elementalmmoprg.github.io/Elemental_assets/assets/spellfx/';
   const SFX_META = {"e":{"621":[3,3,16,0.26,0.19],"622":[3,3,16,0.35,0.35],"623":[3,3,16,0.16,0.01],"624":[3,3,16,0.38,0.38],"293":[3,3,12,-0.74,-0.67],"300":[5,5,18,-0.33,-0.33],"307":[7,5,16,0.18,-0.38],"311":[5,5,10,-0.48,-0.46],"328":[2,2,9,-0.19,-0.24],"334":[2,2,9,0.03,-0.04],"344":[2,2,10,-0.4,-0.42],"345":[1,1,10,-0.04,-0.04],"424":[3,3,16,0.03,0.03],"426":[2,2,11,0.14,0.22],"427":[2,2,11,0.14,0.22],"432":[2,2,8,-0.01,-0.12],"447":[2,2,15,0.02,0.01],"448":[2,2,6,-0.03,-0.09],"454":[2,2,12,-0.28,-0.29],"455":[2,2,10,-0.14,-0.14],"459":[2,2,10,-0.14,-0.14],"464":[2,2,7,-0.05,-0.04],"485":[2,2,17,-0.0,0.01],"487":[2,2,8,0.1,0.13],"489":[2,2,5,-0.09,0.01],"490":[2,2,5,-0.0,0.01],"493":[2,2,7,-0.31,-0.27],"500":[3,3,14,-0.14,-0.17],"580":[2,2,8,-0.26,-0.27],"625":[4,4,12,-0.1,-0.07],"1028":[8,8,8,0.19,-0.16],"1105":[5,5,7,-0.05,-0.05],"1107":[5,5,8,-0.14,-0.14],"1108":[7,7,7,-0.09,-0.09],"1110":[7,7,8,-0.14,-0.14],"1111":[9,9,7,-0.1,-0.08],"1142":[4,4,9,-0.06,-0.06],"1189":[3,3,8,0.04,-0.06],"1192":[4,4,8,-0.4,-0.47],"1194":[4,4,8,-0.4,-0.47],"1241":[6,7,9,0,0],"1242":[7,6,9,0,0],"1243":[7,6,9,0,0],"1244":[6,7,9,0,0],"1286":[3,3,4,0.01,0.01],"1288":[9,9,9,0.14,0.03],"1289":[7,7,9,0.02,-0.18],"1291":[3,3,5,0,0],"1292":[3,3,5,0,0],"1293":[3,3,5,0,0],"1294":[3,3,5,0,0],"1299":[3,3,6,0,0],"1300":[3,3,6,0,0],"1301":[3,3,6,0,0],"1302":[3,3,6,0,0],"1303":[7,7,7,-0.21,0.01],"1527":[7,7,18,0.16,0.15],"1528":[5,5,13,0.2,0.15],"1540":[3,3,5,-0.0,0.03],"1582":[5,5,14,-0.29,-0.34],"1584":[5,5,10,0.09,0.11],"1706":[4,4,5,-0.06,0.0],"1710":[13,13,11,-1.28,-1.22],"1713":[13,13,11,0.01,0.03],"1714":[13,13,11,0.94,0.78],"1716":[8,8,16,0.75,0.74],"1717":[8,8,5,0.13,0.28],"1753":[9,9,5,-0.0,0.01],"1758":[3,3,10,-0.22,-0.31],"1759":[3,3,10,0.21,0.21],"1791":[9,9,4,0.01,0.06],"1795":[3,3,8,-0.15,-0.41],"1796":[3,3,8,-0.41,-0.15],"1797":[3,3,8,-0.46,-0.31],"1801":[3,3,8,-0.41,-0.43],"1820":[9,9,9,0.01,0.06],"1906":[4,4,8,-0.4,-0.47],"2106":[7,7,9,-0.38,0.0],"2110":[5,5,8,-0.73,-0.92],"2111":[5,5,8,-0.33,-0.24],"2113":[5,5,8,0.24,0.66],"2135":[7,7,14,0.23,0.22],"2177":[7,7,8,0.01,0.02],"2181":[7,7,8,0.21,0.18],"2187":[7,7,10,0.44,-0.01],"2190":[3,3,16,0.16,0.07],"2194":[6,6,10,-0.41,-0.4],"2209":[3,3,8,0.04,-0.06],"2236":[4,4,9,-0.33,-0.6],"2273":[9,9,9,0.0,0.05],"2275":[9,9,17,0.0,0.04],"2276":[9,9,17,0.0,0.04],"2432":[3,3,8,0.04,-0.06],"2434":[3,3,8,0.04,-0.06],"2435":[3,3,13,0.14,0.33],"2436":[3,3,13,0.12,0.29],"2437":[3,3,13,0.13,0.31],"2499":[7,7,8,0.12,0.16],"2504":[5,4,9,0.14,-0.27],"2366":[5,5,7,-0.01,0.1],"379":[1,5,14,0,0],"380":[1,5,14,0,0],"381":[5,1,14,0,0],"382":[5,1,14,0,0],"418":[2,2,12,0.0,0.06],"419":[2,2,12,0.09,0.17],"2182":[6,6,8,-0.56,-0.6]},"m":{"55":1,"94":1,"74":1,"173":1,"136":2,"80":1,"20":1,"22":1,"24":1,"29":1,"30":1,"31":1,"33":1,"34":1,"40":1,"41":1,"50":1,"52":1,"56":1,"61":1,"87":2,"88":1,"93":2,"162":2}};
-  const SPELL_FX = {"fireball":{"m":52,"i":307,"is":0.5},"frostbolt":{"m":93,"i":334},"erupt":{"i":1194},"frost_shards":{"m":50,"i":328},"combustion":{"a":2499,"i":311,"ai":311},"frost_lance":{"m":162,"i":1142},"flame_tornado":{"a":1194,"tor":1},"coldblast":{"a":1028,"ai":334},"meteor_strike":{"i":300,"ai":300},"icestorm":{"a":1528,"ai":1527},"pyroblast":{"m":87,"i":307,"is":0.55},"teleport":{"s":493},"cataclysm":{"a":2499,"ai":300},"brutal_strike":{"i":2111},"guillotine":{"i":2110},"shieldbreak":{"i":1286,"d":[1292,1293,1294,1291]},"bull_rush":{"ai":432,"d":[1300,1302,1301,1299]},"pummel":{"i":432},"feasting_strike":{"i":2113,"s":1706},"bladestorm":{"a":1584,"ai":2111},"fissure":{"ai":1286,"d":[1242,1241,1243,1244]},"spiked_chains":{"i":1710,"is":0.55},"earthquake":{"a":1289,"ai":1189},"fierce_leap":{"a":1288,"ai":1189},"berserk":{"s":1706},"chaos_chains":{"a":1713,"ai":1710,"ais":0.5},"bash":{"i":448},"spirits_resolve":{"s":426,"ss":1.8},"smiting_smash":{"a":1192,"ai":448},"provoke":{"a":1906},"revenge":{"a":464,"ai":448},"shield_throw":{"m":20,"i":448},"safeguard":{"s":2273},"banner_of_protection":{"a":1107},"spirit_shield":{"s":2275},"blessed_earth":{"a":2432,"ai":2437},"unchained":{"s":1286},"unbreakable":{"s":2276},"eternal_retribution":{"a":1303,"ai":1286},"quick_slash":{"i":487},"shadowstrike":{"i":489},"shadow_kick":{"i":580},"coup_de_grace":{"a":1582,"ai":489},"stalk":{"s":493},"crippling_dagger":{"m":22,"i":489},"shadowbind":{"i":1540,"ai":1540},"anti_healing_venom":{"i":2435},"venomous_weapons":{"s":2436},"sinister_plot":{"s":2106},"death_blossom":{"i":1582,"is":0.75},"illusive":{"s":490},"reapers_eclipse":{"a":1714,"ai":580},"wind_arrow":{"m":30,"i":454,"i0":5},"viper_arrow":{"m":31,"i":455,"i0":5},"concussive_shot":{"m":33,"i":459,"i0":5},"quick_fire":{"m":29,"i":454,"i0":5},"precision_shot":{"m":40,"i":447},"snaring_shot":{"m":41,"i":2209},"disengage":{"m":34,"i":293},"rain_of_arrows":{"rain":[454,2,9],"ai":454},"dawn_arrow":{"m":33,"i":464,"ai":464},"venom_grenade":{"m":61,"i":2435,"ai":2435},"dragons_arrow":{"m":87,"i":307,"is":0.8},"spirit_rangers":{"s":625},"celestial_barrage":{"a":2504,"rain":[459,3,14],"ai":459},"flash_heal":{"s":1105},"smite":{"i":2504,"is":1.4},"mend":{"s":426,"ss":1.8},"holy_shackles":{"i":500},"healing_channel":{"s":1758,"ss":1.6},"devotion":{"s":424},"holy_force":{"s":1105,"ss":0.5,"ai":2504},"purify":{"s":2236,"ss":1.6},"circle_of_light":{"a":1110,"ai":426},"generous_influence":{"s":1105},"living_saint":{"s":1107},"dawns_apotheosis":{"a":1111,"s":1105},"cyclone":{"i":1717},"regenerate":{"s":1759,"ss":1.6},"whirlwind":{"a":1716,"ai":1717},"barrier":{"s":1795},"windstrike_spirit":{"s":1797},"force_push":{"a":1189,"d":[1300,1302,1301,1299]},"wind_wall":{"a":1716},"party_recovery":{"s":427,"ss":1.8},"air_aura":{"s":1796},"haste":{"s":1801},"healing_air_sphere":{"a":1753,"s":1759},"typhoon":{"a":1716,"ai":1717},"eye_of_the_storm":{"a":1303,"ai":1286},"arcane_pulse":{"i":344},"curse":{"i":1192,"is":0.6},"arcane_torrent":{"m":24,"i":345},"leech":{"m":56,"i":419,"is":1.6,"s":418,"ss":1.25},"eternal_worms":{"worms":[621,622,623,624]},"siphon":{"m":88,"i":2366,"is":0.8},"magic_rupture":{"s":1540,"i":1192,"is":0.7},"shackles_of_pain":{"d":[379,381,380,382],"dm":1,"i":419},"dispel":{"s":1192},"mirror_image":{"s":485},"death_touch":{"a":2187,"ai":2135},"hex":{"i":2194,"is":0.55},"witchs_call":{"a":2177}};
+  const SPELL_FX = {"fireball":{"m":52,"i":307,"is":0.5},"frostbolt":{"m":93,"i":334},"erupt":{"i":1194},"frost_shards":{"m":50,"i":328},"combustion":{"a":2499,"i":311,"ai":311},"frost_lance":{"m":162,"i":1142},"flame_tornado":{"a":1194,"tor":1},"coldblast":{"a":1028,"ai":334},"meteor_strike":{"i":300,"ai":300},"icestorm":{"a":1528,"ai":1527},"pyroblast":{"m":87,"i":307,"is":0.55},"teleport":{"s":493},"cataclysm":{"a":2499,"ai":300},"brutal_strike":{"i":2111},"guillotine":{"i":2110},"shieldbreak":{"i":1286,"d":[1292,1293,1294,1291]},"bull_rush":{"ai":432,"d":[1300,1302,1301,1299]},"pummel":{"i":432},"feasting_strike":{"i":2113,"s":1706},"bladestorm":{"a":1584,"ai":2111},"fissure":{"ai":1286,"d":[1242,1241,1243,1244]},"spiked_chains":{"i":1710,"is":0.55},"earthquake":{"a":1289,"ai":1189},"fierce_leap":{"a":1288,"ai":1189},"berserk":{"s":1706},"chaos_chains":{"a":1713,"ai":1710,"ais":0.5},"bash":{"i":448},"spirits_resolve":{"s":426,"ss":1.8},"smiting_smash":{"a":1192,"ai":448},"provoke":{"a":1906},"revenge":{"a":464,"ai":448},"shield_throw":{"m":20,"i":448},"safeguard":{"s":2273},"banner_of_protection":{"a":1107},"spirit_shield":{"s":2275},"blessed_earth":{"a":2432,"ai":2437},"unchained":{"s":1286},"unbreakable":{"s":2276},"eternal_retribution":{"a":1303,"ai":1286},"quick_slash":{"i":487},"shadowstrike":{"i":489},"shadow_kick":{"i":580},"coup_de_grace":{"a":1582,"ai":489},"stalk":{"s":493},"crippling_dagger":{"m":22,"i":489},"shadowbind":{"i":1540,"ai":1540},"anti_healing_venom":{"i":2435},"venomous_weapons":{"s":2436},"sinister_plot":{"s":2106},"death_blossom":{"i":1582,"is":0.75},"illusive":{"s":490},"reapers_eclipse":{"a":1714,"ai":580},"wind_arrow":{"m":30,"i":454,"i0":5},"viper_arrow":{"m":31,"i":455,"i0":5},"concussive_shot":{"m":33,"i":459,"i0":5},"quick_fire":{"m":29,"i":454,"i0":5},"precision_shot":{"m":40,"i":447},"snaring_shot":{"m":41,"i":2209},"disengage":{"m":34,"i":293},"rain_of_arrows":{"rain":[454,2,9],"ai":454},"dawn_arrow":{"m":33,"i":464,"ai":464},"venom_grenade":{"m":61,"i":2435,"ai":2435},"dragons_arrow":{"m":87,"i":307,"is":0.8},"spirit_rangers":{"s":625},"celestial_barrage":{"a":2504,"rain":[459,3,14],"ai":459},"flash_heal":{"s":1105},"smite":{"i":2504,"is":1.4},"mend":{"s":426,"ss":1.8},"holy_shackles":{"i":500},"healing_channel":{"s":1758,"ss":1.6},"devotion":{"s":424},"holy_force":{"s":1105,"ss":0.5,"ai":2504},"purify":{"s":2236,"ss":1.6},"circle_of_light":{"a":1110,"ai":426},"generous_influence":{"s":1105},"living_saint":{"s":1107},"dawns_apotheosis":{"a":1111,"s":1105},"cyclone":{"i":1717},"regenerate":{"s":1759,"ss":1.6},"whirlwind":{"a":1716,"ai":1717},"barrier":{"s":1795},"windstrike_spirit":{"s":1797},"force_push":{"a":1189,"d":[1300,1302,1301,1299]},"wind_wall":{"a":1716},"party_recovery":{"s":427,"ss":1.8},"air_aura":{"s":1796},"haste":{"s":1801},"healing_air_sphere":{"a":1753,"s":1759},"typhoon":{"a":1716,"ai":1717},"eye_of_the_storm":{"a":1303,"ai":1286},"arcane_pulse":{"i":344},"curse":{"i":1192,"is":0.6},"arcane_torrent":{"m":24,"i":344,"rep":[5,600]},"leech":{"m":56,"i":419,"is":1.6,"s":418,"ss":1.25},"eternal_worms":{"worms":[621,622,623,624]},"siphon":{"m":88,"i":2366,"is":0.8},"magic_rupture":{"s":1540,"i":1192,"is":0.7},"shackles_of_pain":{"s":2181,"ss":0.9,"i":1582},"dispel":{"s":1192},"mirror_image":{"s":485},"death_touch":{"a":2187,"ai":2135},"hex":{"i":2194,"is":0.55},"witchs_call":{"a":2177}};
   const SFX_FRAME_MS = 100;
   function spellSlug(name){ return String(name||'').toLowerCase().replace(/['’]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
   function spellFxConf(name){ return name ? SPELL_FX[spellSlug(name)] || null : null; }
@@ -7982,6 +8009,18 @@
   // golpe de magia num alvo: devolve true se a magia tem animação própria
   function spellFxOnHit(name, fx, fy, tx, ty, aoe, firstOfCast, cx, cy, follow){
     const conf = spellFxConf(name); if(!conf) return false;
+    // 07/11/2026: magia canalizada (Arcane Torrent) — rep:[n, ms] = n mísseis
+    // seguidos, um a cada ms (no Ravendawn são 5 raios arcanos em ~3 s). Os
+    // outros golpes da mesma conjuração não desenham nada (já estão na fila).
+    if(conf.rep){
+      if(!firstOfCast && !aoe) return true;
+      const [n, ms] = conf.rep, at = follow ? null : { x: fx, y: fy };
+      for(let k = 0; k < n; k++) setTimeout(()=>{
+        const from = follow ? follow() : at;
+        SpellFxManager.strips.push(new SpellStripMissile(conf.m, from.x, from.y, tx, ty, ()=> sfxImpact(conf, from.x, from.y, tx, ty, false)));
+      }, k * ms);
+      return true;
+    }
     if(firstOfCast){
       if(conf.a) sfxSpawn(conf.a, cx, cy);
       sfxRain(conf, cx, cy);
@@ -11275,7 +11314,7 @@
       renderSkillTreeIfOpen();
     }
     if(msg.forType === 'shop:buyElementalCoins'){
-      if(msg.ok){ logLoot(`💎 Compra confirmada (modo teste): ${msg.granted} Elemental Coin enviados pro ✉️ Correio.`); partySimpleToast(`💎 ${msg.granted} Elemental Coin chegaram no ✉️ Correio — abra e colete.`); }
+      if(msg.ok){ logLoot(`💎 Compra confirmada (modo teste): ${msg.granted} Elemental Coin enviados pro ✉️ Correio.`); if(msg.referral) logLoot(msg.referral.nick ? `🤝 Indicação: ${msg.referral.nick} ganhou ${msg.referral.coins} Elemental Coin.` : `⚠️ Indicação não aplicada: personagem não encontrado.`); partySimpleToast(`💎 ${msg.granted} Elemental Coin chegaram no ✉️ Correio — abra e colete.`); }
       else logLoot(`⚠️ Não foi possível comprar: ${msg.reason}`);
       renderCoinShopIfOpen();
     }
@@ -12476,7 +12515,19 @@
       renderCharacterModal();
     });
   });
-  function renderCharacterModalIfOpen(){ if(characterModal.classList.contains('open')) renderCharacterModal(); }
+  let charModalSig = '';
+  function renderCharacterModalIfOpen(){
+    if(!characterModal.classList.contains('open')) return;
+    // 07/11/2026: a aba Outfit era refeita a cada atualização do servidor -- as
+    // imagens/prévias eram recriadas e sumiam. Agora só refaz se algo mudou.
+    const tab = document.querySelector('.char-tab.active').dataset.ctab;
+    if(tab === 'outfit'){
+      const sig = JSON.stringify([outfitSubTab, outfitTryOn, auraTryOn, cosmetics, cosmeticColors, ownedOutfits, ownedAuras, ownedWings, Math.round(elementalCoins||0), outfitCatalog.length, auraCatalog.length, typeof coresPart !== 'undefined' ? coresPart : null]);
+      if(sig === charModalSig) return;
+      charModalSig = sig;
+    } else charModalSig = '';
+    renderCharacterModal();
+  }
   function renderCharacterModal(){
     const tab = document.querySelector('.char-tab.active').dataset.ctab;
     if(tab === 'personagem') renderCharPersonagem(); else renderCharOutfit();
@@ -12538,6 +12589,7 @@
   // do retrato do Inventário. outfitTryOn = traje que o jogador clicou mas
   // ainda não comprou: aparece na prévia ("provador"); 2º clique compra.
   let outfitTryOn = null;
+  let auraTryOn = null; // 07/11/2026: 1º clique numa aura não comprada = provar na prévia; 2º = comprar
   function outfitPortraitArgs(){
     return {
       genero: SELECTED_CHARACTER ? SELECTED_CHARACTER.gender : 'male',
@@ -12549,12 +12601,14 @@
     if(!canvas) return;
     const c2 = canvas.getContext('2d'); c2.clearRect(0,0,canvas.width,canvas.height);
     const a = outfitPortraitArgs();
-    drawCharacterLayers({ x: canvas.width/2, y: 130 }, 0, a.genero, a.hairId, outfitId, withExtras ? cosmetics.wings : null, withExtras ? cosmetics.aura : null, '#d3ab54', c2, a.hairStyleId, null, cosmeticColors);
+    drawCharacterLayers({ x: canvas.width/2, y: canvas.height >= 150 ? 130 : canvas.height - 8 }, 0, a.genero, a.hairId, outfitId, withExtras ? cosmetics.wings : null, withExtras ? cosmetics.aura : null, '#d3ab54', c2, a.hairStyleId, null, cosmeticColors);
   }
   function drawOutfitPreview(){
     const cv = document.getElementById('outfit-preview-canvas');
     const showId = outfitTryOn || cosmetics.outfit;
     drawOutfitOn(cv, showId, !outfitTryOn);
+    if(auraTryOn && !outfitTryOn){ const c2 = cv.getContext('2d'); c2.clearRect(0,0,cv.width,cv.height); const a = outfitPortraitArgs();
+      drawCharacterLayers({ x: cv.width/2, y: cv.height - 20 }, 0, a.genero, a.hairId, showId, cosmetics.wings, auraTryOn, '#d3ab54', c2, a.hairStyleId, null, cosmeticColors); }
     const def = outfitCatalog.find(o => o.id === showId);
     document.getElementById('outfit-preview-name').textContent = PLAYER_NICK || '—';
     document.getElementById('outfit-preview-sub').textContent = outfitTryOn ? `Provando: ${def ? def.name : ''}` : (def ? def.name : 'Traje Padrão');
@@ -12572,13 +12626,14 @@
   }
   function outfitCardArt(o){
     if(String(o.id).startsWith('rd_')) return `<img src="${URL_BASE}player/outfits_template/${o.id}_icon.png" onerror="this.replaceWith(document.createTextNode('🧍'))" />`;
-    if(o.looks) return `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`; // desenhado já com a cor/gênero do personagem
-    return `<canvas width="90" height="150" data-draw-outfit="${o.id}"></canvas>`;
+    if(o.looks) return `<canvas width="64" height="72" data-draw-outfit="${o.id}"></canvas>`; // 07/11/2026: 1:1 (antes 90x150 encolhido p/ 48x80 = boneco minúsculo) // desenhado já com a cor/gênero do personagem
+    return `<canvas width="64" height="72" data-draw-outfit="${o.id}"></canvas>`;
   }
   function renderCharOutfit(){
     const grid = document.getElementById('outfit-grid');
     grid.classList.toggle('cores-mode', outfitSubTab === 'cores');
     if(outfitSubTab !== 'outfits') outfitTryOn = null;
+    if(outfitSubTab !== 'auras') auraTryOn = null;
     if(outfitSubTab === 'outfits'){
       // 20/10/2026: trajes pagos em Gold saíram da venda -- só aparecem pra
       // quem já tem. Seções: "Seus trajes" (possuídos + grátis) e "Loja".
@@ -12665,18 +12720,20 @@
       grid.innerHTML = noneOwned + auraCatalog.map(a=>{
         const owned = ownedAuras.includes(a.id);
         const equipped = cosmetics.aura === a.id;
-        return `<div class="outfit-card${owned?' owned':''}${equipped?' equipped':''}" data-aura="${a.id}">
+        const trying = auraTryOn === a.id;
+        return `<div class="outfit-card${owned?' owned':''}${equipped||trying?' equipped':''}" data-aura="${a.id}">
           <div class="oc-art"><img src="${String(a.id).startsWith('ex_aura_') ? `${URL_BASE}exodus/auras/${a.id}_icon.png` : `${URL_BASE}auras/${a.id}/f00.png`}" /></div>
           <div class="oc-name">${escapeHtml(a.name)}</div>
-          <div class="oc-price">${owned ? (equipped?'Equipada':'Clique p/ vestir') : `${a.cost.toLocaleString('pt-BR')} ${a.currency==='elementalCoin'?EC+' Coin':'Gold'}`}</div>
+          <div class="oc-price">${owned ? (equipped?'Equipada':'Clique p/ vestir') : trying ? `<b style="color:#8fd0ff">Clique de novo p/ comprar (${a.cost} ${a.currency==='elementalCoin'?'Coin':'Gold'})</b>` : `${a.cost.toLocaleString('pt-BR')} ${a.currency==='elementalCoin'?EC+' Coin':'Gold'} · clique p/ provar`}</div>
         </div>`;
       }).join('');
       grid.querySelectorAll('[data-aura]').forEach(el=>{
         el.addEventListener('click', ()=>{
           const id = el.dataset.aura;
-          if(id === '__none__') { sendWS({ type:'aura:equip', auraId:null }); return; }
-          if(ownedAuras.includes(id)) sendWS({ type:'aura:equip', auraId:id });
-          else sendWS({ type:'aura:buy', auraId:id });
+          if(id === '__none__') { auraTryOn = null; sendWS({ type:'aura:equip', auraId:null }); renderCharOutfit(); return; }
+          if(ownedAuras.includes(id)) { auraTryOn = null; sendWS({ type:'aura:equip', auraId:id }); return; }
+          if(auraTryOn !== id){ auraTryOn = id; renderCharOutfit(); return; }
+          auraTryOn = null; sendWS({ type:'aura:buy', auraId:id });
         });
       });
     } else {
@@ -14536,7 +14593,9 @@
   }
   function fmtTimeLeft(ms){ const m = Math.max(0, Math.ceil(ms/60000)); const h = Math.floor(m/60); return h ? `${h}h ${String(m%60).padStart(2,'0')}min` : `${m}min`; }
   function renderInventory(){
-    queueMicrotask(applyRdInventoryExtras); // filtro/rodapé do layout Ravendawn (depois que a grade é montada)
+    queueMicrotask(applyRdInventoryExtras);
+    { const col = document.getElementById('inv-equip-col'), arch = (archetypes && archetypes.chosen && archetypes.chosen[0]) || (SELECTED_CHARACTER && SELECTED_CHARACTER.archetypeId) || null;
+      if(col && arch && col.dataset.arch !== arch){ col.dataset.arch = arch; col.classList.add('has-arch-bg'); col.style.setProperty('--arch-bg', `url("${URL_BASE}ui/archetype_bg/${arch}.png")`); } } // filtro/rodapé do layout Ravendawn (depois que a grade é montada)
     // Item 5 da lista de tarefas (20/09/2026): não reconstrói NADA enquanto
     // um item estiver sendo arrastado -- ver comentário em
     // itemDragInProgress. O snapshot só fica ~250ms atrasado na UI, o que é
@@ -15088,7 +15147,7 @@
   // Medium/Strong cobram ouro DE VERDADE a cada cura real (sem comprar
   // estoque antes, ver autoUsePotions no huntEngine.js).
   const POTIONS = [
-    { id:'lesser_health', icon: URL_BASE+'items/potions/lesser_health.png', name:'Lesser Health', minLevel:1,  kind:'health', cost:0,  healPercent:0.25 },
+    { id:'lesser_health', icon: URL_BASE+'items/potions/lesser_health.png', name:'Lesser Health', minLevel:1,  kind:'health', cost:0,  healPercent:0.10 },
     { id:'medium_health', icon: URL_BASE+'items/potions/medium_health.png', name:'Medium Health', minLevel:25, kind:'health', cost:12, healPercent:0.45 },
     { id:'strong_health', icon: URL_BASE+'items/potions/strong_health.png', name:'Strong Health', minLevel:50, kind:'health', cost:22, healPercent:0.70 },
     // 25/10/2026: mana recupera valor FIXO (restoreFlat) — igual huntEngine POTION_CATALOG
@@ -17162,15 +17221,13 @@
      de verdade é sempre huntEngine.ELEMENTAL_COIN_PACKAGES no servidor.
      ========================================================= */
   const coinshopModal = document.getElementById('coinshop-modal');
-  // 07/11/2026: 1 Elemental Coin = R$ 1,00 (espelho de huntEngine.ELEMENTAL_COIN_PACKAGES)
-  const ELEMENTAL_COIN_PACKAGES = [
-    { id:'coin_10', coins:10, bonusCoins:0, priceBRL:10 },
-    { id:'coin_25', coins:25, bonusCoins:0, priceBRL:25 },
-    { id:'coin_50', coins:50, bonusCoins:0, priceBRL:50 },
-    { id:'coin_100', coins:100, bonusCoins:0, priceBRL:100 },
-    { id:'coin_250', coins:250, bonusCoins:0, priceBRL:250 },
-  ];
-  document.getElementById('tb-coin-pill').addEventListener('click', ()=>{ coinshopModal.classList.toggle('open'); renderCoinShop(); });
+  // 07/11/2026: 1 Elemental Coin = R$ 1,00 + bônus por valor (espelho de huntEngine)
+  const EC_MIN_BRL = 10, EC_MAX_BRL = 5000;
+  const EC_BONUS_TIERS = [{ min:400, pct:15 }, { min:200, pct:12 }, { min:100, pct:8 }, { min:20, pct:5 }];
+  const ecBonusPct = (brl)=> { const t = EC_BONUS_TIERS.find(t=> brl >= t.min); return t ? t.pct : 0; };
+  const ecForBRL = (brl)=> { const c = Math.floor(brl); return { coins:c, bonusCoins: Math.floor(c * ecBonusPct(c) / 100) }; };
+  const ELEMENTAL_COIN_PACKAGES = [10, 20, 100, 150, 200, 300, 400, 500].map(v=> ({ id:'coin_'+v, priceBRL:v, ...ecForBRL(v) }));
+  document.getElementById('tb-coin-pill').addEventListener('click', ()=>{ if(typeof openStoreHub === 'function') openStoreHub('coins'); else { coinshopModal.classList.toggle('open'); renderCoinShop(); } }); // 07/11/2026: abre a Loja Elemental na aba de Coin
   function renderCoinShopIfOpen(){ if(coinshopModal.classList.contains('open')) renderCoinShop(); }
   // Premium por tempo — vendida na mesma loja cash (mesmo catálogo espelho
   // de huntEngine.js PREMIUM_PACKAGES; quem credita de verdade é o servidor).
@@ -19971,6 +20028,44 @@
         btn: conf ? `Confirmar ${p.costCoin} ${EC}` : (poor ? 'Coin insuficiente' : 'Comprar'), btnClass: conf ? 'confirm' : '', btnDisabled: poor && !conf, data: `data-sh-premium="${p.id}"` });
     }).join('');
   }
+  // Loja de Elemental Coin (07/11/2026, no formato que o usuário mandou)
+  let ecsAmount = 10, ecsRef = '';
+  const fmtBRL = (v)=> Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+  function ecsResultHtml(){
+    const v = Math.floor(Number(ecsAmount)||0), ok = v >= EC_MIN_BRL && v <= EC_MAX_BRL;
+    const r = ecForBRL(ok ? v : 0), pct = ecBonusPct(v);
+    const next = EC_BONUS_TIERS.slice().reverse().find(t=> v < t.min);
+    const tier = pct ? `Bônus de valor: +${pct}%${next ? `<br>A partir de ${fmtBRL(next.min)}: +${next.pct}%` : ''}` : (next ? `A partir de ${fmtBRL(next.min)}: +${next.pct}%` : '');
+    return `<img src="${EC_PACK_URL(v >= 400 ? 5 : v >= 200 ? 4 : v >= 100 ? 3 : v >= 20 ? 2 : 1)}"><div><div class="lbl">VOCÊ RECEBE</div><div class="big">${ok ? (r.coins + r.bonusCoins).toLocaleString('pt-BR') : '—'} <small>Elemental Coin</small></div>${ok && r.bonusCoins ? `<div class="lbl" style="color:#8fe0a0">${r.coins} + ${r.bonusCoins} de bônus</div>` : (!ok ? `<div class="lbl" style="color:#ff9a80">Valor entre ${fmtBRL(EC_MIN_BRL)} e ${fmtBRL(EC_MAX_BRL)}</div>` : '')}</div>${tier ? `<div class="tier">${tier}</div>` : ''}`;
+  }
+  function shCoinShopHtml(){
+    const v = Math.floor(Number(ecsAmount)||0);
+    return `<div class="ecs-intro"><img src="${EC_IMG_URL}"><div>1 Elemental Coin = R$ 1,00. Use em outfits, auras, Premium, Chave da Torre, Kit de Treino e resets. As Coins chegam pelo ✉️ Correio assim que o pagamento for confirmado.</div></div>
+      <div class="ecs-grid">${ELEMENTAL_COIN_PACKAGES.map(p=>{ const pct = ecBonusPct(p.priceBRL);
+        return `<div class="ecs-pkg ${v===p.priceBRL?'sel':''}" data-ecs-amt="${p.priceBRL}">${pct?`<span class="bonus">+${pct}%</span>`:''}<div class="brl">${fmtBRL(p.priceBRL)}</div><div class="amt"><img src="${EC_IMG_URL}">${(p.coins+p.bonusCoins).toLocaleString('pt-BR')}</div></div>`; }).join('')}</div>
+      <div class="ecs-tiers">Bônus por valor: ${EC_BONUS_TIERS.slice().reverse().map(t=> `<span class="t">${fmtBRL(t.min)}+ · +${t.pct}%</span>`).join('')}</div>
+      <div class="ecs-form">
+        <div><label>Quanto você quer comprar (R$)</label><input id="ecs-amount" type="number" min="${EC_MIN_BRL}" max="${EC_MAX_BRL}" step="1" value="${v||''}"></div>
+        <div><label>Código de quem te indicou (opcional) · ele ganha 2%</label><input id="ecs-ref" type="text" maxlength="24" placeholder="nick do personagem que te indicou" value="${escapeHtml(ecsRef)}"></div>
+      </div>
+      <div class="ecs-get" id="ecs-get">${ecsResultHtml()}</div>
+      <button class="ecs-buy" id="ecs-buy" ${v >= EC_MIN_BRL && v <= EC_MAX_BRL ? '' : 'disabled'}>Comprar ${v >= EC_MIN_BRL ? fmtBRL(v) : ''}</button>
+      <div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real; a compra credita na hora, sem cobrança. Confira o valor e as Coins antes de pagar.</div>`;
+  }
+  function shBindCoinShop(main){
+    const upd = ()=>{ const g = main.querySelector('#ecs-get'); if(g) g.innerHTML = ecsResultHtml();
+      const v = Math.floor(Number(ecsAmount)||0), ok = v >= EC_MIN_BRL && v <= EC_MAX_BRL, b = main.querySelector('#ecs-buy');
+      if(b){ b.disabled = !ok; b.textContent = 'Comprar ' + (ok ? fmtBRL(v) : ''); }
+      main.querySelectorAll('[data-ecs-amt]').forEach(el=> el.classList.toggle('sel', Number(el.dataset.ecsAmt) === v)); };
+    main.querySelectorAll('[data-ecs-amt]').forEach(el=> el.addEventListener('click', ()=>{ ecsAmount = Number(el.dataset.ecsAmt); const i = main.querySelector('#ecs-amount'); if(i) i.value = ecsAmount; upd(); }));
+    const ai = main.querySelector('#ecs-amount'); if(ai) ai.addEventListener('input', ()=>{ ecsAmount = ai.value; upd(); });
+    const ri = main.querySelector('#ecs-ref'); if(ri) ri.addEventListener('input', ()=>{ ecsRef = ri.value; });
+    const bb = main.querySelector('#ecs-buy'); if(bb) bb.addEventListener('click', ()=>{
+      const v = Math.floor(Number(ecsAmount)||0); if(!(v >= EC_MIN_BRL && v <= EC_MAX_BRL)) return;
+      const pkg = ELEMENTAL_COIN_PACKAGES.find(p=> p.priceBRL === v);
+      sendWS(Object.assign({ type:'shop:buyElementalCoins', ref: ecsRef.trim() || undefined }, pkg ? { packageId: pkg.id } : { amountBRL: v }));
+    });
+  }
   function shCoinCards(){
     return ELEMENTAL_COIN_PACKAGES.map((p,i)=> shCard({ tag: 'Pacote', feat: false,
       art: `<img src="${EC_PACK_URL(Math.min(5,i+1))}">`, name: `${p.coins.toLocaleString('pt-BR')} Elemental Coin`, price: p.priceBRL.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),
@@ -20082,8 +20177,8 @@
       const st = isPremium ? `<div class="sh-sub" style="color:var(--ok);">👑 Premium ativo${premiumExpiresAt ? ` — até ${new Date(premiumExpiresAt).toLocaleDateString('pt-BR')}` : ''}</div>` : '';
       main.innerHTML = H('Tempo de Premium', 'Vantagens de VIP pelo período escolhido, pago com Elemental Coin.') + st + `<div class="sh-grid">${shPremiumCards()}</div>`;
     } else if(shCat === 'coins'){
-      main.innerHTML = H('Elemental Coin', '1 Elemental Coin = R$ 1,00. Usada em outfits, Premium, Chave da Torre, Kit de Treino e resets.') + `<div class="sh-grid">${shCoinCards()}</div>`
-        + `<div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real; a compra credita na hora, sem cobrança.</div>`;
+      main.innerHTML = H('Elemental Coin', '') + shCoinShopHtml();
+      shBindCoinShop(main);
     } else if(shCat === 'itens'){
       main.innerHTML = H('Itens', 'Consumíveis comprados com Elemental Coin.') + `<div class="sh-grid">${shItemCards()}</div>`;
     } else if(shCat === 'treino'){
