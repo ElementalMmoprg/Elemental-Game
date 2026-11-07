@@ -130,9 +130,14 @@
   .tb-icon{ flex-shrink:0; width:var(--tbi,44px); height:var(--tbi,44px); border-radius:7px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:21px; cursor:pointer; } /* 20/10/2026: era 34px — usuário achou pequeno */
   .tb-icon.tb-hidden{ display:none !important; } /* Refinamento/Infusão/Fusão agora ficam dentro da Forja */
   .tb-icon:hover{ border-color:var(--gold-bright); box-shadow:0 0 10px rgba(240,211,138,.2); }
+  /* 07/11/2026: ícones-medalhão padronizados (ui/menu2) — sem caixa em volta */
+  .tb-icon.tb-med{ border:none; background:none; box-shadow:none; }
+  .tb-icon.tb-med > img:not(.theme-ico){ width:100% !important; height:100% !important; filter:drop-shadow(0 2px 3px rgba(0,0,0,.7)); transition:filter .15s; }
+  .tb-icon.tb-med:hover{ box-shadow:none; } .tb-icon.tb-med:hover > img:not(.theme-ico){ filter:brightness(1.2) drop-shadow(0 0 7px rgba(240,211,138,.55)); }
+  .tb-pill .menu-ico{ width:20px !important; height:20px !important; vertical-align:-5px !important; }
   .tb-icon img{ width:calc(var(--tbi,44px) * .64); height:calc(var(--tbi,44px) * .64); object-fit:contain; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
   .menu-ico{ width:14px; height:14px; object-fit:contain; vertical-align:-2px; margin-right:2px; }
-  #bag-shortcut img.menu-ico{ width:26px; height:26px; margin:0; vertical-align:middle; }
+  #bag-shortcut img.menu-ico{ width:46px; height:46px; margin:0; vertical-align:middle; }
 
   #ws-status{ top:56px; right:16px; font-family:var(--font-mono); font-size:9px; color:var(--ink-dim); z-index:9; }
   #build-tag{ bottom:2px; right:4px; font-family:var(--font-mono); font-size:8px; color:rgba(169,152,114,.4); z-index:9; pointer-events:none; }
@@ -1319,7 +1324,11 @@
   .bzp-sub img{ width:20px; height:20px; }
   .bzp-tabs{ display:flex; gap:5px; flex-wrap:wrap; }
   .bzp-tabs button{ font-family:var(--font-mono); font-size:10.5px; padding:6px 10px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
-  .bzp-tabs button img{ width:16px; height:16px; } .bzp-tabs button.on{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); }
+  .bzp-tabs button img{ width:18px; height:18px; }
+  img.bzi{ vertical-align:middle; object-fit:contain; }
+  #bz-tabs button{ display:inline-flex; align-items:center; gap:5px; }
+  .bzp-chip{ display:inline-flex; align-items:center; gap:5px; }
+  .bzp-chip img{ width:20px; height:20px; object-fit:contain; } .bzp-tabs button.on{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); }
   .bzp-pane{ flex:1; min-height:0; overflow:auto; border:1px solid var(--gold-deep); border-radius:8px; padding:12px; background:rgba(0,0,0,.22); }
   .bzp-doll{ display:grid; grid-template-columns:repeat(3, auto); justify-content:center; align-items:center; gap:6px 30px; }
   .bzp-col{ display:flex; flex-direction:column; gap:8px; }
@@ -3405,30 +3414,30 @@
       </div>
     </div>
     <div class="tb-pill" id="tb-coin-pill" title="Elemental Coin — comprada com Moeda Real, usada pra Reset da Árvore e Refinamento. Clique pra comprar mais."><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/silver.png" class="tb-gold-icon tb-coin-icon" alt="" onerror="this.replaceWith(document.createTextNode('🪙'));" /> <span id="tb-elementalcoins">0</span></div>
-    <div class="tb-pill tb-shop" id="btn-open-shop"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/shop.png" alt=""> Loja</div>
-    <div class="tb-pill" id="btn-open-rank" title="Rank Geral"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/rank.png" alt=""> Rank</div>
+    <div class="tb-pill tb-shop" id="btn-open-shop"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_shop.png" alt=""> Loja</div>
+    <div class="tb-pill" id="btn-open-rank" title="Rank Geral"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_rank.png" alt=""> Rank</div>
     <div id="tb-online">— jogadores online</div>
     <div id="matchmaking-pill" class="tb-pill searching" title="Clique para cancelar a busca por time" style="display:none;">🔎 Buscando time...</div>
     <div id="training-pill" class="tb-pill searching" title="Treinando no boneco (1 ponto a cada ~40min, mais rápido que caçar) — clique para parar" style="display:none;">🏋️ Treinando...</div>
     <button id="tb-icons-toggle" class="hud-mini-btn" title="Esconder os ícones">▶</button>
     <div id="tb-icons">
-      <div class="tb-icon" id="open-hunts-btn" title="Caçadas"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/combat.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-party" title="Grupo"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/party.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-guild" title="Guilda"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/guild.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-friends" title="Amigos"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/friends.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-altar" title="Altar de Evolução"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/altar.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-attrs" title="Atributos Livres"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/attributes.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-skilltree" title="Árvore de Habilidades"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/skilltree.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-towers" title="Torres Elementais"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/tower.png" alt=""></div>
+      <div class="tb-icon tb-med" id="open-hunts-btn" title="Caçadas"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_hunts.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-party" title="Grupo"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_party.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-guild" title="Guilda"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_guild.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-friends" title="Amigos"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_friends.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-altar" title="Altar de Evolução"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_altar.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-attrs" title="Atributos Livres"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_attrs.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-skilltree" title="Árvore de Habilidades"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_skilltree.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-towers" title="Torres Elementais"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_towers.png" alt=""></div>
       <!-- Loja de PvP + Central do Torneio (Torneio PvP Semanal) — pedido do
            usuário em 26/09/2026: as 2 telas já existiam prontas/testadas
            (ver claude/pvp-torneio-semanal-notas.md) mas nunca tinham ganhado
            ícone/integração aqui, por isso não apareciam pra ele no jogo. Sem
            asset de ícone próprio ainda, seguindo o mesmo padrão de emoji já
            usado em Infusão (🔮) e Wiki (📖) logo abaixo. -->
-      <div class="tb-icon" id="btn-open-pvp-tournament" title="Central do Torneio PvP">🏆</div>
-      <div class="tb-icon" id="btn-open-pvp-shop" title="Loja de PvP">🏪</div>
-      <div class="tb-icon" id="btn-open-forge" title="Forja (Refinamento, Infusão e Fusão)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-pvp-tournament" title="Central do Torneio PvP"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_tournament.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-pvp-shop" title="Loja de PvP"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_pvpshop.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-forge" title="Forja (Refinamento, Infusão e Fusão)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_forge.png" alt=""></div>
       <div class="tb-icon tb-hidden" id="btn-open-enchant" title="Refinamento"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/enchant.png" alt=""></div>
       <div class="tb-icon tb-hidden" id="btn-open-infusion" title="Infusão (Tier + Grade)">🔮</div>
       <!-- Fusão de Equipamentos — pedido do usuário (26/09/2026): funde N
@@ -3436,14 +3445,14 @@
            raridade, até chegar em Mítica. Sem asset próprio ainda, mesmo
            padrão de emoji já usado em Infusão/Wiki/Torneio acima. -->
       <div class="tb-icon tb-hidden" id="btn-open-fusion" title="Fusão de Equipamentos">⚗️</div>
-      <div class="tb-icon" id="btn-open-pets" title="Pets"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/pets.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-pets" title="Pets"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_pets.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_battlepass.png" alt=""></div>
       <div class="tb-icon tb-hidden" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/analyzer.png" alt=""></div>
-      <div class="tb-icon" id="btn-open-merc" title="Mercenários">🗡️</div>
-      <div class="tb-icon" id="btn-open-bazaar" title="Bazar de Personagens">⚖️</div>
-      <div class="tb-icon" id="btn-open-mail" title="Correio">✉️<span class="tb-badge" id="mail-badge" style="display:none;">0</span></div>
-      <div class="tb-icon" id="btn-open-wiki" title="Wiki (itens e bestiário)">📖</div>
+      <div class="tb-icon tb-med" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_analyzer.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-merc" title="Mercenários"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/bazaar/menu_merc.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-bazaar" title="Bazar de Personagens"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/bazaar/menu_bazaar.png" alt=""></div>
+      <div class="tb-icon tb-med" id="btn-open-mail" title="Correio"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/bazaar/menu_mail.png" alt=""><span class="tb-badge" id="mail-badge" style="display:none;">0</span></div>
+      <div class="tb-icon tb-med" id="btn-open-wiki" title="Wiki (itens e bestiário)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_wiki.png" alt=""></div>
       <!-- Item 11 da lista de tarefas (2026-09-20): antes eram 2 ícones soltos
            ("Voltar pra Seleção de Personagem" e "Sair do Jogo") direto na
            barra -- juntados num único botão de Configurações (engrenagem),
@@ -3451,8 +3460,8 @@
            (som, notificações etc. -- ainda não definidas, ver nota dentro
            do popover). Segue o mesmo padrão de popover-por-hover já usado
            no Robô de Venda/Sair da Caçada (ver dispatchPill/exitHuntPill). -->
-      <div class="tb-icon hover-trigger" id="btn-open-settings" title="Configurações">
-        ⚙️
+      <div class="tb-icon tb-med hover-trigger" id="btn-open-settings" title="Configurações">
+        <img src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_settings.png" alt="">
         <div class="popover glass" id="settings-popover">
           <div class="panel-title" style="margin-bottom:8px;">Configurações<span class="rule"></span></div>
           <button type="button" class="settings-menu-btn" id="settings-back-to-select-btn">🔁 Voltar pra Seleção de Personagem</button>
@@ -3577,7 +3586,7 @@
     <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Bazar de Personagens<span class="rule"></span><span class="win-close-x" data-close-win="bazaar-panel">✕</span></div>
     <div class="merc-body">
       <div class="mail-tabs" id="bz-tabs">
-        <button data-bt="active" class="on">⚖️ Leilões</button><button data-bt="sold">📈 Vendidos</button><button data-bt="sell">💰 Vender este personagem</button>
+        <button data-bt="active" class="on"><img class="bzi" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/bazaar/bz_auctions.png" style="width:18px;height:18px;" alt=""> Leilões</button><button data-bt="sold"><img class="bzi" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/bazaar/bz_sold.png" style="width:18px;height:18px;" alt=""> Vendidos</button><button data-bt="sell"><img class="bzi" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/bazaar/bz_sell.png" style="width:18px;height:18px;" alt=""> Vender este personagem</button>
       </div>
       <div id="bz-content" class="merc-content"></div>
     </div>
@@ -4266,7 +4275,7 @@
         <input type="checkbox" id="toggle-aura" checked style="accent-color:var(--gold);"> Aura equipada
       </label>
     </div>
-    <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/inventory.png" alt=""></div>
+    <div id="bag-shortcut" class="glass" title="Inventário (Bolsa/Mochila)"><img class="menu-ico" src="https://elementalmmoprg.github.io/Elemental_assets/assets/ui/menu2/menu_inventory.png" alt=""></div>
     </div>
     <div id="hotbar-wrap">
       <!-- BARRA DE AÇÃO DA CAÇADA — Detalhes / Robô de Venda (Despacho) / Sair.
@@ -10405,15 +10414,15 @@
       : `<div class="bz-bidbox">
           <div>Termina em <b>${bzLeft(a.endsAt-Date.now())}</b> · ${a.bidsCount} lance(s)</div>
           <div>${a.currentBid?'Lance atual':'Lance mínimo'}: <span class="big">${bzCoin(a.currentBid||a.minBid)}</span>${a.bidderNick?` <span class="bz-bids">por ${escapeHtml(a.bidderNick)}${a.myBid?' (você)':''}</span>`:''}</div>
-          <div style="display:flex;gap:8px;align-items:center;"><input type="number" id="bz-amount" min="${a.nextMin}" value="${a.nextMin}"><button id="bz-bid">Dar lance</button><span class="bz-bids">mín. ${a.nextMin.toLocaleString('pt-BR')} · você tem ${(me.coins||0).toLocaleString('pt-BR')}</span></div>
+          <div style="display:flex;gap:8px;align-items:center;"><input type="number" id="bz-amount" min="${a.nextMin}" value="${a.nextMin}"><button id="bz-bid">${BZI('bz_bid',16)} Dar lance</button><span class="bz-bids">mín. ${a.nextMin.toLocaleString('pt-BR')} · você tem ${(me.coins||0).toLocaleString('pt-BR')}</span></div>
           <div class="bz-bids">O Coin do lance fica guardado; se alguém cobrir, ele volta pelo Correio. Lance nos últimos 5 min estende o leilão em 5 min.</div>
         </div>`;
     return `<div style="display:flex;gap:10px;align-items:center;">${bzArch(sn,34)}<div><h3>${escapeHtml(a.nick)}</h3><div class="bz-bids">Nv. ${sn.level}${sn.className?' · '+escapeHtml(sn.className):''} · ${star} · ${sn.gender==='female'?'Feminino':'Masculino'}</div></div></div>
       ${box}
-      <button class="bz-open" data-bz-profile="${a.id}">👁️ Ver perfil completo (equipamento, status, bestiário, mochila...)</button>
+      <button class="bz-open" data-bz-profile="${a.id}">${BZI('bz_profile',22)} Ver perfil completo (equipamento, status, bestiário, mochila...)</button>
       <div class="bz-sec">Resumo</div>
       <div class="bz-kv"><span>⚔️ Ataque <b>${(sn.dps||0).toLocaleString('pt-BR')}</b></span><span>🛡️ Defesa <b>${(sn.armor||0).toLocaleString('pt-BR')}</b></span><span>❤️ Vida <b>${(sn.hpMax||0).toLocaleString('pt-BR')}</b></span>
-        <span>🪙 Ouro <b>${((sn.gold||0)+(sn.bankGold||0)).toLocaleString('pt-BR')}</b></span><span>💎 Coin <b>${(sn.elementalCoins||0).toLocaleString('pt-BR')}</b></span><span>⏱️ Jogo <b>${Math.round((sn.playTimeMs||0)/3600000)}h</b></span></div>
+        <span>${BZ_GOLD} Ouro <b>${((sn.gold||0)+(sn.bankGold||0)).toLocaleString('pt-BR')}</b></span><span>${BZ_COIN} Coin <b>${(sn.elementalCoins||0).toLocaleString('pt-BR')}</b></span><span>${BZI('chip_time',16)} Jogo <b>${Math.round((sn.playTimeMs||0)/3600000)}h</b></span></div>
       <div class="bz-sec">Torres</div><div>${towers}</div>
       ${(a.bids||[]).length?`<div class="bz-sec">Últimos lances</div><div class="bz-bids">${a.bids.map(b=>`${escapeHtml(b.nick)} — ${b.amount.toLocaleString('pt-BR')} (${new Date(b.at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})})`).join('<br>')}</div>`:''}`;
   }
@@ -10459,6 +10468,8 @@
   /* Perfil completo do personagem à venda (07/11/2026, pedido do usuário) */
   let bzpId = null, bzpTab = 'equip';
   const bzpEl = document.getElementById('bz-profile');
+  const BZI = (n, sz)=> `<img class="bzi" src="${URL_BASE}ui/bazaar/${n}.png" style="width:${sz||20}px;height:${sz||20}px;" alt="" onerror="this.style.display='none'">`;
+  const BZ_GOLD = `<img class="bzi" src="${URL_BASE}ravendawn-ui/gold.png" style="width:16px;height:16px;">`, BZ_COIN = `<img class="bzi tb-coin-icon" src="${URL_BASE}ravendawn-ui/silver.png" style="width:16px;height:16px;">`;
   document.getElementById('bzp-close').addEventListener('click', ()=>{ bzpEl.style.display = 'none'; bzpId = null; });
   function openBzProfile(id){ bzpId = id; bzpTab = 'equip'; bzpEl.style.display = 'flex'; renderBzProfile(); }
   const BZP_SLOT_PH = { helmet:'helmet', armor:'armor', legs:'legs', boots:'boots', amulet:'amulet', accessory1:'left_ring', accessory2:'right_ring', weapon:'right_hand', offhand:'left_hand' };
@@ -10481,7 +10492,7 @@
     const a = all.find(x=> x.id === bzpId); if(!a){ bzpEl.style.display = 'none'; return; }
     const sn = a.snapshot || {}; const me = bzData.me || {};
     const star = sn.star && sn.star.totalStars ? ` · ★ ${sn.star.totalStars}` : '';
-    const tabs = [['equip','equipment_icon','Equipamento'],['stats','stats_icon','Status'],['bestiary',null,'📖 Bestiário'],['bag',null,'🎒 Mochila'],['depot',null,'📦 Armazém'],['towers',null,'🏛️ Torres e Chefes'],['visual','customization_icon','Visual']];
+    const tabs = [['equip','equipment_icon','Equipamento'],['stats','stats_icon','Status'],['bestiary','@tab_bestiary','Bestiário'],['bag','@tab_bag','Mochila'],['depot','@tab_depot','Armazém'],['towers','@tab_towers','Torres e Chefes'],['visual','customization_icon','Visual']];
     let pane = '';
     if(bzpTab === 'equip'){
       const eq = {}; (sn.equipment||[]).forEach(it=> eq[it.key] = it);
@@ -10516,38 +10527,38 @@
       const cat = new Map(getWikiMonsterCatalog().map(m=>[m.name, m]));
       const names = Object.keys(kc).filter(n=> kc[n] > 0).sort((x,y)=> kc[y]-kc[x]);
       const rnd = Object.entries(bb.random||{}).map(([k,v])=>`<span class="bzp-chip">+${v}% <b>${escapeHtml({critChancePct:'Chance de Crítico',critDmgPct:'Dano Crítico',dodgePct:'Esquiva',physicalDmgPct:'Dano Físico',magicDmgPct:'Dano Mágico',hpBonusPct:'Vida',mpBonusPct:'Mana',defPct:'Defesa'}[k]||k)}</b></span>`).join('');
-      pane = `<div class="bzp-chips"><span class="bzp-chip">📖 <b>${names.length}</b> espécies</span><span class="bzp-chip">⚔️ Dano do Bestiário <b>+${bb.dmgPct||0}%</b></span><span class="bzp-chip">✨ XP dos marcos <b>+${bb.expPct||0}%</b></span><span class="bzp-chip">✨ XP por espécies <b>+${bb.listXpPct||0}%</b></span>${rnd}</div>
+      pane = `<div class="bzp-chips"><span class="bzp-chip">${BZI('tab_bestiary')} <b>${names.length}</b> espécies</span><span class="bzp-chip">⚔️ Dano do Bestiário <b>+${bb.dmgPct||0}%</b></span><span class="bzp-chip">✨ XP dos marcos <b>+${bb.expPct||0}%</b></span><span class="bzp-chip">✨ XP por espécies <b>+${bb.listXpPct||0}%</b></span>${rnd}</div>
         <div class="bzp-mons">${names.map(n=>{ const m = cat.get(n) || {}; const c = cl[n] ?? -1;
           return `<div class="bzp-mon" title="${escapeHtml(n)}: ${kc[n].toLocaleString('pt-BR')} abates">${m.img?`<img data-crop="${m.img}" src="${towerCropCache[m.img]||m.img}" onerror="this.outerHTML='<span style=&quot;font-size:26px&quot;>${m.icon||'👾'}</span>'">`:`<span style="font-size:26px">${m.icon||'👾'}</span>`}
             <span class="n">${escapeHtml(n)}</span><span class="k">${kc[n].toLocaleString('pt-BR')}</span><div class="dots">${[0,1,2,3].map(i=>`<span class="${i<=c?'on':''}"></span>`).join('')}</div></div>`; }).join('') || '<div class="italic-note">Nenhum monstro abatido.</div>'}</div>`;
     } else if(bzpTab === 'bag' || bzpTab === 'depot'){
       const list = (bzpTab === 'bag' ? sn.bag : sn.depot) || [];
       pane = list.length ? `<div class="bzp-items">${list.map(it=> bzpSlot(it, null, null)).join('')}</div>` : `<div class="italic-note">${bzpTab==='bag'?'Mochila':'Armazém'} vazio.</div>`;
-      pane = `<div class="bzp-chips"><span class="bzp-chip">🪙 Ouro <b>${(sn.gold||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">🏦 Banco <b>${(sn.bankGold||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">💎 Coin <b>${(sn.elementalCoins||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">${bzpTab==='bag'?'🎒':'📦'} <b>${list.length}</b> item(ns)</span></div>` + pane;
+      pane = `<div class="bzp-chips"><span class="bzp-chip">${BZ_GOLD} Ouro <b>${(sn.gold||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">${BZI('chip_bank')} Banco <b>${(sn.bankGold||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">${BZ_COIN} Coin <b>${(sn.elementalCoins||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">${BZI(bzpTab==='bag'?'tab_bag':'tab_depot')} <b>${list.length}</b> item(ns)</span></div>` + pane;
     } else if(bzpTab === 'towers'){
       const tw = sn.towers || {}; const bk = sn.bossKillCounts || {};
       const bosses = Object.keys(bk).filter(n=> bk[n] > 0).sort((x,y)=> bk[y]-bk[x]);
       const bossSprite = n=>{ const b = BOSSTIARY ? [...BOSSTIARY.area, ...BOSSTIARY.tower].find(x=> x.name === n) : null; return b; };
       pane = `<div class="bzp-sec">Torres Elementais</div><div class="bzp-towers">${TOWERS_CATALOG_CLIENT.map(t=>{ const f = tw[t.id]||0;
           return `<div class="bzp-tower" style="--twc:${t.color}"><img src="${URL_BASE}ui/towers/tower_${t.id}.png" onerror="this.outerHTML='<span style=&quot;font-size:26px&quot;>${t.icon}</span>'"><div style="flex:1;"><div style="font-size:12px;color:var(--gold-bright);">${t.name}</div><div class="bz-bids">Andar ${f}/100</div><div class="bar"><i style="width:${f}%"></i></div></div></div>`; }).join('')}</div>
-        <div class="bzp-sec" style="margin-top:14px;">Chefes derrotados</div>
+        <div class="bzp-sec" style="margin-top:14px;display:flex;align-items:center;gap:6px;">${BZI('chip_bosses',18)} Chefes derrotados</div>
         <div class="bzp-mons">${bosses.map(n=>{ const b = bossSprite(n); return `<div class="bzp-mon">${b ? bossImgHtml(b, 40) : '<span style="font-size:26px">👑</span>'}<span class="n">${escapeHtml(n)}</span><span class="k">${bk[n].toLocaleString('pt-BR')}x</span></div>`; }).join('') || '<div class="italic-note">Nenhum chefe derrotado.</div>'}</div>`;
     } else {
       pane = `<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;"><canvas id="bzp-visual-canvas" width="90" height="100" style="width:270px;height:300px;image-rendering:pixelated;"></canvas>
         <div style="flex:1;min-width:240px;"><div class="bzp-chips">
-          <span class="bzp-chip">👕 Trajes <b>${(sn.ownedOutfits||[]).length}</b></span><span class="bzp-chip">🪽 Asas <b>${(sn.ownedWings||[]).length}</b></span><span class="bzp-chip">✨ Auras <b>${(sn.ownedAuras||[]).length}</b></span>
-          <span class="bzp-chip">🐎 Montarias <b>${(sn.ownedMounts||[]).length}</b></span><span class="bzp-chip">🐾 Pets <b>${(sn.ownedPets||[]).length}</b></span></div>
+          <span class="bzp-chip">${BZI('chip_outfits')} Trajes <b>${(sn.ownedOutfits||[]).length}</b></span><span class="bzp-chip">${BZI('chip_wings')} Asas <b>${(sn.ownedWings||[]).length}</b></span><span class="bzp-chip">${BZI('chip_auras')} Auras <b>${(sn.ownedAuras||[]).length}</b></span>
+          <span class="bzp-chip">${BZI('chip_mounts')} Montarias <b>${(sn.ownedMounts||[]).length}</b></span><span class="bzp-chip">${BZI('chip_pets')} Pets <b>${(sn.ownedPets||[]).length}</b></span></div>
           ${sn.cosmetics && sn.cosmetics.ornament ? `<div class="bzp-sec">Ornamento</div><img src="${URL_BASE}ornaments/${sn.cosmetics.ornament}.png" style="max-height:40px;">` : ''}
           <div class="bzp-sec">Usando agora</div><div class="bz-bids">Traje: ${escapeHtml((sn.cosmetics||{}).outfit||'padrão')} · Asas: ${escapeHtml((sn.cosmetics||{}).wings||'nenhuma')} · Aura: ${escapeHtml((sn.cosmetics||{}).aura||'nenhuma')}</div></div></div>`;
     }
     const bidBox = a.status !== 'active' ? `<div class="bzp-bid">${a.status==='sold'?`Vendido por <span class="big">${bzCoin(a.currentBid)}</span> para ${escapeHtml(a.bidderNick||'')}`:'Leilão encerrado'}</div>`
       : a.mine ? `<div class="bzp-bid">Seu anúncio · lance atual <span class="big">${a.currentBid?bzCoin(a.currentBid):'sem lances'}</span> · termina em <b>${bzLeft(a.endsAt-Date.now())}</b></div>`
       : `<div class="bzp-bid"><div>${a.currentBid?'Lance atual':'Lance mínimo'} <span class="big">${bzCoin(a.currentBid||a.minBid)}</span>${a.bidderNick?` <span class="bz-bids">por ${escapeHtml(a.bidderNick)}${a.myBid?' (você)':''}</span>`:''}<div class="bz-bids">Termina em ${bzLeft(a.endsAt-Date.now())} · ${a.bidsCount} lance(s)</div></div>
-          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;"><input type="number" id="bzp-amount" min="${a.nextMin}" value="${a.nextMin}"><button id="bzp-bid">Dar lance</button></div>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;"><input type="number" id="bzp-amount" min="${a.nextMin}" value="${a.nextMin}"><button id="bzp-bid">${BZI('bz_bid',18)} Dar lance</button></div>
           <div class="bz-bids" style="width:100%;">Você tem ${(me.coins||0).toLocaleString('pt-BR')} Coin · mín. ${a.nextMin.toLocaleString('pt-BR')} · o Coin fica guardado e volta pelo Correio se alguém cobrir.</div></div>`;
     document.getElementById('bzp-body').innerHTML = `<div class="bzp-head"><canvas id="bzp-head-canvas" width="70" height="80" style="width:70px;height:80px;"></canvas><div class="bzp-lvl"><b>${sn.level||1}</b><small>NÍVEL</small></div>
-        <div><div class="bzp-name">${escapeHtml(a.nick)}</div><div class="bzp-sub">${bzArch(sn,20)} ${escapeHtml(sn.className||'')}${star} · ${sn.gender==='female'?'Feminino':'Masculino'} · ${Math.round((sn.playTimeMs||0)/3600000)}h de jogo</div></div></div>
-      <div class="bzp-tabs">${tabs.map(([k,ic,l])=>`<button data-bzpt="${k}" class="${bzpTab===k?'on':''}">${ic?`<img src="${RD_CHAR_ICON(ic)}">`:''}${l}</button>`).join('')}</div>
+        <div><div class="bzp-name">${escapeHtml(a.nick)}</div><div class="bzp-sub">${bzArch(sn,20)} ${escapeHtml(sn.className||'')}${star} · ${sn.gender==='female'?'Feminino':'Masculino'} · ${BZI('chip_time',16)} ${Math.round((sn.playTimeMs||0)/3600000)}h de jogo</div></div></div>
+      <div class="bzp-tabs">${tabs.map(([k,ic,l])=>`<button data-bzpt="${k}" class="${bzpTab===k?'on':''}">${ic?(ic[0]==='@'?BZI(ic.slice(1),18):`<img src="${RD_CHAR_ICON(ic)}">`):''}${l}</button>`).join('')}</div>
       <div class="bzp-pane">${pane}</div>${bidBox}`;
     bzpPortrait(document.getElementById('bzp-head-canvas'), sn, false);
     const dc = document.getElementById('bzp-doll-canvas'); if(dc) bzpPortrait(dc, sn, false);
