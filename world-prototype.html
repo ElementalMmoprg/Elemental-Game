@@ -1275,6 +1275,56 @@
   .skill-node-tip .hint{ display:block; margin-top:4px; color:#7fbf6a; }
   .skill-node-tip .tt-price{ display:block; margin-top:4px; color:var(--gold-bright); }
 
+  /* ===== CORREIO ===== */
+  .tb-icon{ position:relative; }
+  .tb-badge{ position:absolute; top:-5px; right:-5px; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#d63a2a; color:#fff; font:700 10.5px/18px var(--font-mono); text-align:center; box-shadow:0 0 0 2px #120c08; pointer-events:none; z-index:2; }
+  #mail-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:760px; max-width:96vw; height:540px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #mail-panel.open{ display:flex; }
+  .mail-body{ flex:1; min-height:0; display:flex; flex-direction:column; padding:6px 14px 12px; gap:8px; }
+  .mail-tabs{ display:flex; gap:6px; flex-wrap:wrap; }
+  .mail-tabs button, .mail-foot button, .mail-actions button, .mail-adm button{ font-family:var(--font-mono); font-size:10.5px; padding:6px 10px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .mail-tabs button.on{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); }
+  .mail-tabs button:hover, .mail-foot button:hover, .mail-actions button:hover, .mail-adm button:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .mail-wrap{ flex:1; min-height:0; display:flex; gap:10px; }
+  .mail-list{ width:270px; flex:0 0 270px; overflow:auto; display:flex; flex-direction:column; gap:4px; padding-right:2px; }
+  .mail-row{ display:flex; gap:8px; align-items:center; padding:7px 8px; border:1px solid rgba(191,161,95,.2); border-radius:6px; background:rgba(0,0,0,.25); cursor:pointer; }
+  .mail-row:hover{ border-color:var(--gold-deep); }
+  .mail-row.sel{ border-color:var(--gold-bright); background:rgba(191,161,95,.12); }
+  .mail-row .ci{ font-size:20px; width:26px; text-align:center; flex:0 0 26px; }
+  .mail-row .tx{ flex:1; min-width:0; }
+  .mail-row .t{ display:block; font-size:11.5px; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mail-row.unread .t{ color:var(--gold-bright); font-weight:700; }
+  .mail-row .f{ display:block; font-family:var(--font-mono); font-size:9.5px; color:#8a887f; margin-top:2px; }
+  .mail-row .dot{ width:8px; height:8px; border-radius:50%; background:#d63a2a; flex:0 0 8px; }
+  .mail-row .att{ font-size:13px; }
+  .mail-read{ flex:1; min-width:0; overflow:auto; border:1px solid var(--gold-deep); border-radius:8px; padding:14px 16px; background:rgba(0,0,0,.22); display:flex; flex-direction:column; }
+  .mail-read h3{ margin:0 0 4px; font-size:16px; color:var(--gold-bright); }
+  .mail-read .meta{ font-family:var(--font-mono); font-size:10px; color:#8a887f; margin-bottom:12px; }
+  .mail-read .txt{ font-size:12.5px; line-height:1.55; color:var(--ink); white-space:pre-wrap; }
+  .mail-read .empty{ margin:auto; color:#8a887f; font-size:12px; text-align:center; }
+  .mail-att{ margin-top:16px; border-top:1px solid rgba(191,161,95,.25); padding-top:10px; }
+  .mail-att .lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
+  .mail-att .grid{ display:flex; flex-wrap:wrap; gap:6px; }
+  .mail-att .it{ position:relative; width:48px; height:48px; border:1px solid var(--rc, rgba(191,161,95,.35)); border-radius:6px; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .mail-att .it img{ width:40px; height:40px; object-fit:contain; }
+  .mail-att .it .q{ position:absolute; right:2px; bottom:0; font:700 10px var(--font-mono); color:#fff; text-shadow:0 0 3px #000, 0 0 3px #000; }
+  .mail-att.done{ opacity:.45; }
+  .mail-actions{ margin-top:auto; padding-top:12px; display:flex; gap:8px; }
+  .mail-actions .claim{ flex:2; border-color:var(--ok) !important; color:var(--ok) !important; font-weight:700; padding:9px !important; }
+  .mail-actions .claim:disabled{ opacity:.4; cursor:default; }
+  .mail-foot{ display:flex; gap:6px; align-items:center; }
+  .mail-foot span{ margin-right:auto; font-family:var(--font-mono); font-size:10px; color:#8a887f; }
+  .mail-adm{ display:flex; flex-direction:column; gap:7px; font-size:11px; }
+  .mail-adm label{ font-family:var(--font-mono); font-size:9.5px; color:var(--gold); text-transform:uppercase; letter-spacing:.06em; }
+  .mail-adm input, .mail-adm select, .mail-adm textarea{ background:#0d0a08; border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:5px 7px; font:12px var(--font-body, inherit); }
+  .mail-adm textarea{ min-height:80px; resize:vertical; }
+  .mail-adm .row{ display:flex; gap:8px; } .mail-adm .row > div{ flex:1; display:flex; flex-direction:column; gap:3px; }
+  .mail-adm .row > div{ min-width:0; } .mail-adm .row input, .mail-adm .row select{ width:100%; box-sizing:border-box; min-width:0; }
+  .mail-adm .irow{ display:flex; gap:6px; align-items:center; } .mail-adm .irow input:first-child{ flex:1; } .mail-adm .irow input[type=number]{ width:70px; }
+  .mail-adm .iname{ font-family:var(--font-mono); font-size:10px; min-width:120px; }
+  .mail-adm .send{ border-color:var(--ok) !important; color:var(--ok) !important; font-weight:700; padding:9px !important; }
+  @media (max-width:640px){ .mail-wrap{ flex-direction:column; } .mail-list{ width:auto; flex:0 0 160px; } }
+
   /* ===== TORRES ELEMENTAIS ===== */
   #towers-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:780px; max-width:96vw; height:590px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
   #towers-panel.open{ display:flex; }
@@ -3263,6 +3313,7 @@
       <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
       <div class="tb-icon tb-hidden" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
       <div class="tb-icon" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/analyzer.png" alt=""></div>
+      <div class="tb-icon" id="btn-open-mail" title="Correio">✉️<span class="tb-badge" id="mail-badge" style="display:none;">0</span></div>
       <div class="tb-icon" id="btn-open-wiki" title="Wiki (itens e bestiário)">📖</div>
       <!-- Item 11 da lista de tarefas (2026-09-20): antes eram 2 ícones soltos
            ("Voltar pra Seleção de Personagem" e "Sair do Jogo") direto na
@@ -3391,6 +3442,25 @@
     </div>
   </div>
   <div class="skill-node-tip" id="skill-node-tip"></div>
+
+  <!-- CORREIO (07/11/2026) -->
+  <div id="mail-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Correio<span class="rule"></span><span class="win-close-x" data-close-win="mail-panel">✕</span></div>
+    <div class="mail-body">
+      <div class="mail-tabs" id="mail-tabs">
+        <button data-mf="all" class="on">Todas</button><button data-mf="loja">🛒 Loja</button><button data-mf="presente">🎁 Presentes</button><button data-mf="aviso">📢 Avisos</button>
+        <button data-mf="adm" id="mail-adm-tab" style="display:none;margin-left:auto;">✏️ Escrever (ADM)</button>
+      </div>
+      <div class="mail-wrap">
+        <div class="mail-list" id="mail-list"></div>
+        <div class="mail-read" id="mail-read"></div>
+      </div>
+      <div class="mail-foot">
+        <span id="mail-count"></span>
+        <button id="mail-claim-all">📥 Coletar tudo</button><button id="mail-read-all">✔️ Marcar lidas</button><button id="mail-del-read">🗑️ Excluir lidas</button>
+      </div>
+    </div>
+  </div>
 
   <!-- TORRES ELEMENTAIS -->
   <div id="towers-panel" class="glass ornate win">
@@ -9276,6 +9346,8 @@
     location = msg.location;
     if(location === 'dungeon' && matchmakingActive){ matchmakingActive = false; matchmakingKey = null; } // saiu da fila (entrou em caçada por outro caminho)
     bag = msg.bag; bagCapacity = msg.bagCapacity;
+    if(msg.mailUnread != null) setMailUnread(msg.mailUnread);
+    if(msg.mailRev != null && msg.mailRev !== mailRevSeen){ const first = mailRevSeen == null; mailRevSeen = msg.mailRev; if(!first && mailPanel.classList.contains('open')) sendWS({ type:'mail:list' }); }
     trash = msg.trash || trash; trashCapacity = msg.trashCapacity || trashCapacity;
     depot = msg.depot || depot; depotCapacity = msg.depotCapacity || depotCapacity;
     if(Date.now() > qsLocalUntil){ quickSellMarks = msg.quickSellMarks || quickSellMarks; depotMarks = msg.depotMarks || depotMarks; lootSkip = msg.lootSkip || lootSkip; } // (ver qsApplyLocal)
@@ -9573,6 +9645,11 @@
         }
         case 'hunt:map': if(msg.map){ HUNT_MAPS[msg.map.id] = msg.map; const hk = activeHunt && activeHunt.running ? huntMapKey() : null; if(hk && hk !== msg.map.id) HUNT_MAPS[hk] = msg.map; } break; // Caçada de Material: 4 faixas usam o mesmo mapa (id do mapa != id da caçada)
         case 'hunt:ack': handleAck(msg); break;
+        case 'mail:hello': mailIsMod = !!msg.isMod; setMailUnread(msg.unread||0, true); break;
+        case 'mail:new':
+          partySimpleToast(`${MAIL_CAT_ICON[msg.cat]||'✉️'} <b>Nova carta no Correio:</b> ${escapeHtml(msg.title||'')}`);
+          if(mailPanel.classList.contains('open')) sendWS({ type:'mail:list' });
+          break;
         case 'party:invite': showPartyInviteToast(msg); break;
         case 'party:declined': logLoot(`👥 <b>${escapeHtml(msg.by)}</b> recusou o convite pro grupo.`); break;
         case 'bank:transferReceived':
@@ -10143,7 +10220,147 @@
     if(msg.reason === 'membro_nivel_insuficiente') return `${msg.username || 'Um membro do grupo'} ainda não tem o nível ${msg.requiredLevel} necessário para essa caçada.`;
     return null;
   }
+
+  /* ===== CORREIO (07/11/2026, item 10) — compras da Loja, presentes do ADM
+     e avisos (atualização, evento...). Servidor é dono de tudo (mail:*). ===== */
+  const MAIL_CAT_ICON = { loja:'🛒', presente:'🎁', aviso:'📢', atualizacao:'🔧', evento:'🎉', sistema:'⚙️' };
+  const MAIL_CAT_NAME = { loja:'Loja', presente:'Presente', aviso:'Aviso', atualizacao:'Atualização', evento:'Evento', sistema:'Sistema' };
+  const mailPanel = document.getElementById('mail-panel');
+  let mailList = [], mailSelId = null, mailFilter = 'all', mailIsMod = false, mailUnread = 0, mailRevSeen = null;
+  let mailAdmDraft = { to:'todos', cat:'aviso', title:'', body:'', items:[{id:'',qty:1}], gold:0, coins:0, premiumDays:0 };
+  function setMailUnread(n, silent){
+    n = n||0;
+    mailUnread = n;
+    const b = document.getElementById('mail-badge'); if(!b) return;
+    b.style.display = n>0 ? '' : 'none'; b.textContent = n>99 ? '99+' : n;
+  }
+  document.getElementById('btn-open-mail').addEventListener('click', ()=>{
+    mailPanel.classList.toggle('open');
+    if(mailPanel.classList.contains('open')){ sendWS({ type:'mail:list' }); renderMail(); }
+  });
+  document.getElementById('mail-tabs').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-mf]'); if(!b) return;
+    mailFilter = b.dataset.mf; renderMail();
+  });
+  document.getElementById('mail-claim-all').addEventListener('click', ()=> sendWS({ type:'mail:claimAll' }));
+  document.getElementById('mail-read-all').addEventListener('click', ()=> sendWS({ type:'mail:readAll' }));
+  document.getElementById('mail-del-read').addEventListener('click', ()=>{ if(confirm('Excluir todas as cartas já lidas e coletadas?')) sendWS({ type:'mail:deleteRead' }); });
+  function mailMatches(m){
+    if(mailFilter==='all') return true;
+    if(mailFilter==='aviso') return ['aviso','atualizacao','evento','sistema'].includes(m.cat);
+    return m.cat === mailFilter;
+  }
+  function fmtMailDate(t){ const d = new Date(t); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+  const MAIL_RARITY_COLOR = { comum:'#9d9d9d', incomum:'#3fbf5a', rara:'#3d8fe0', 'épica':'#a35ee0', epica:'#a35ee0', 'lendária':'#e89a2a', lendaria:'#e89a2a', 'mítica':'#e0452a' };
+  function mailItemIcon(it){
+    const gem = (typeof GEM_ICON_URL!=='undefined') && GEM_ICON_URL[it.id];
+    let src = gem || null;
+    if(!src && it.icon && typeof equipIconUrl==='function') src = equipIconUrl(it.icon);
+    if(!src) src = it.kind === 'trainboost' ? null : itemIconUrl(it.id);
+    return src ? `<img src="${src}" alt="" onerror="this.outerHTML='📦'">` : (it.kind==='trainboost' ? '⚡' : '📦');
+  }
+  function mailAttachHtml(m){
+    const parts = [];
+    (m.items||[]).forEach(it=> parts.push(`<div class="it" style="--rc:${MAIL_RARITY_COLOR[it.rarity]||'rgba(191,161,95,.35)'}" title="${escapeHtml(it.name||it.id)}${(it.qty||1)>1?' x'+it.qty:''}">${mailItemIcon(it)}${(it.qty||1)>1?`<span class="q">${it.qty}</span>`:''}</div>`));
+    if(m.gold>0) parts.push(`<div class="it" title="${m.gold.toLocaleString('pt-BR')} Gold">🪙<span class="q">${m.gold>=1000?Math.round(m.gold/1000)+'k':m.gold}</span></div>`);
+    if(m.coins>0) parts.push(`<div class="it" title="${m.coins.toLocaleString('pt-BR')} Elemental Coin"><img src="${URL_BASE}ravendawn-ui/silver.png" class="tb-coin-icon" style="width:30px;height:30px;" alt=""><span class="q">${m.coins}</span></div>`);
+    if(m.premiumDays>0) parts.push(`<div class="it" title="Premium ${m.premiumDays} dias">⭐<span class="q">${m.premiumDays}d</span></div>`);
+    return parts.join('');
+  }
+  function renderMail(){
+    if(!mailPanel.classList.contains('open')) return;
+    document.getElementById('mail-adm-tab').style.display = mailIsMod ? '' : 'none';
+    document.querySelectorAll('#mail-tabs button').forEach(b=> b.classList.toggle('on', b.dataset.mf===mailFilter));
+    const listEl = document.getElementById('mail-list'), readEl = document.getElementById('mail-read');
+    const shown = mailList.filter(mailMatches);
+    document.getElementById('mail-count').textContent = `${mailList.length} carta(s) · ${mailList.filter(m=>!m.read).length} não lida(s) · ${mailList.filter(m=>!m.claimed).length} com anexo`;
+    listEl.innerHTML = shown.length ? shown.map(m=>`<div class="mail-row${m.read?'':' unread'}${m.id===mailSelId?' sel':''}" data-mail-id="${m.id}">
+        <span class="ci">${MAIL_CAT_ICON[m.cat]||'✉️'}</span>
+        <span class="tx"><span class="t">${escapeHtml(m.title)}</span><span class="f">${escapeHtml(m.from)} · ${fmtMailDate(m.createdAt)}</span></span>
+        ${!m.claimed?'<span class="att" title="Anexo pra coletar">📎</span>':''}${!m.read?'<span class="dot"></span>':''}
+      </div>`).join('') : '<div class="italic-note" style="padding:10px;">Nenhuma carta aqui.</div>';
+    listEl.querySelectorAll('[data-mail-id]').forEach(r=> r.addEventListener('click', ()=>{
+      mailSelId = r.dataset.mailId; if(mailFilter==='adm') mailFilter='all';
+      const m = mailList.find(x=>x.id===mailSelId);
+      if(m && !m.read){ m.read = true; sendWS({ type:'mail:read', id:m.id }); }
+      renderMail();
+    }));
+    if(mailFilter==='adm' && mailIsMod){ readEl.innerHTML = mailAdmFormHtml(); bindMailAdmForm(); return; }
+    const m = mailList.find(x=>x.id===mailSelId);
+    if(!m){ readEl.innerHTML = `<div class="empty">✉️<br>Selecione uma carta pra ler.<br><br>Tudo que você compra na Loja chega aqui,<br>junto com presentes e avisos da equipe.</div>`; return; }
+    const att = m.hasAttach ? `<div class="mail-att${m.claimed?' done':''}"><div class="lbl">${m.claimed?'Anexo coletado ✓':'Anexo'}</div><div class="grid">${mailAttachHtml(m)}</div></div>` : '';
+    readEl.innerHTML = `<h3>${MAIL_CAT_ICON[m.cat]||'✉️'} ${escapeHtml(m.title)}</h3>
+      <div class="meta">De: ${escapeHtml(m.from)} · ${MAIL_CAT_NAME[m.cat]||''} · ${fmtMailDate(m.createdAt)}${m.expiresAt?` · some em ${Math.max(1,Math.ceil((m.expiresAt-Date.now())/86400000))} dia(s)`:''}</div>
+      <div class="txt">${escapeHtml(m.body||'')}</div>${att}
+      <div class="mail-actions">
+        ${m.hasAttach?`<button class="claim" id="mail-claim-btn" ${m.claimed?'disabled':''}>${m.claimed?'✓ Coletado':'📥 Coletar'}</button>`:''}
+        <button id="mail-del-btn" ${m.claimed?'':'disabled title="Colete o anexo antes de excluir"'}>🗑️ Excluir</button>
+      </div>`;
+    const cb = document.getElementById('mail-claim-btn'); if(cb && !m.claimed) cb.addEventListener('click', ()=> sendWS({ type:'mail:claim', id:m.id }));
+    const db = document.getElementById('mail-del-btn'); if(db && m.claimed) db.addEventListener('click', ()=> sendWS({ type:'mail:delete', id:m.id }));
+  }
+  function mailAdmFormHtml(){
+    const d = mailAdmDraft;
+    const cats = ['aviso','atualizacao','evento','presente','sistema'].map(c=>`<option value="${c}" ${d.cat===c?'selected':''}>${MAIL_CAT_ICON[c]} ${MAIL_CAT_NAME[c]}</option>`).join('');
+    return `<div class="mail-adm">
+      <h3 style="margin:0;color:var(--gold-bright);font-size:15px;">✏️ Escrever carta (ADM)</h3>
+      <div class="row"><div><label>Para</label><input id="madm-to" value="${escapeHtml(d.to)}" placeholder="todos ou nick do personagem"></div>
+        <div><label>Tipo</label><select id="madm-cat">${cats}</select></div></div>
+      <div style="display:flex;flex-direction:column;gap:3px;"><label>Título</label><input id="madm-title" maxlength="80" value="${escapeHtml(d.title)}"></div>
+      <div style="display:flex;flex-direction:column;gap:3px;"><label>Texto</label><textarea id="madm-body" maxlength="2000">${escapeHtml(d.body)}</textarea></div>
+      <label>Itens (id do item + quantidade)</label>
+      ${d.items.map((it,i)=>`<div class="irow"><input data-ii="${i}" class="madm-iid" value="${escapeHtml(it.id)}" placeholder="ex.: gema_fogo, tower_key, kit_treino"><input type="number" min="1" data-iq="${i}" class="madm-iq" value="${it.qty}"><span class="iname" id="madm-iname-${i}">${it.name?`<span style="color:${MAIL_RARITY_COLOR[it.rarity]||'#ccc'}">${escapeHtml(it.name)}</span>`:(it.bad?'<span style="color:#ff7a6a">id não existe</span>':'')}</span></div>`).join('')}
+      <div style="display:flex;gap:6px;"><button id="madm-add">+ Item</button><button id="madm-check">🔎 Conferir itens</button></div>
+      <div class="row"><div><label>Gold</label><input type="number" min="0" id="madm-gold" value="${d.gold}"></div><div><label>Elemental Coin</label><input type="number" min="0" id="madm-coins" value="${d.coins}"></div><div><label>Dias de Premium</label><input type="number" min="0" id="madm-prem" value="${d.premiumDays}"></div></div>
+      <button class="send" id="madm-send">📨 Enviar carta</button>
+      <div class="italic-note" style="font-size:10.5px;">"todos" = todos os personagens (inclusive quem estiver offline, recebe ao entrar). Presente pra todos com item só chega pra quem já existia no envio.</div>
+    </div>`;
+  }
+  function readMailAdmForm(){
+    const d = mailAdmDraft, v = id=> document.getElementById(id);
+    if(!v('madm-to')) return;
+    d.to = v('madm-to').value.trim(); d.cat = v('madm-cat').value; d.title = v('madm-title').value; d.body = v('madm-body').value;
+    document.querySelectorAll('.madm-iid').forEach(inp=>{ const it = d.items[+inp.dataset.ii]; if(it.id !== inp.value.trim()){ it.id = inp.value.trim(); it.name = null; it.bad = false; } });
+    document.querySelectorAll('.madm-iq').forEach(inp=>{ d.items[+inp.dataset.iq].qty = Math.max(1, parseInt(inp.value,10)||1); });
+    d.gold = Math.max(0, parseInt(v('madm-gold').value,10)||0); d.coins = Math.max(0, parseInt(v('madm-coins').value,10)||0); d.premiumDays = Math.max(0, parseInt(v('madm-prem').value,10)||0);
+  }
+  function bindMailAdmForm(){
+    document.getElementById('madm-add').addEventListener('click', ()=>{ readMailAdmForm(); if(mailAdmDraft.items.length<12) mailAdmDraft.items.push({id:'',qty:1}); renderMail(); });
+    document.getElementById('madm-check').addEventListener('click', ()=>{ readMailAdmForm(); sendWS({ type:'mail:admItemCheck', ids: mailAdmDraft.items.map(i=>i.id).filter(Boolean) }); });
+    document.getElementById('madm-send').addEventListener('click', ()=>{
+      readMailAdmForm(); const d = mailAdmDraft;
+      if(!d.to || !d.title.trim()){ partySimpleToast('⚠️ Preencha o destinatário e o título.'); return; }
+      const items = d.items.filter(i=>i.id).map(i=>({ id:i.id, qty:i.qty }));
+      const resumo = [items.length?items.length+' item(ns)':'', d.gold?d.gold+' gold':'', d.coins?d.coins+' coin':'', d.premiumDays?d.premiumDays+'d premium':''].filter(Boolean).join(', ');
+      if(!confirm(`Enviar "${d.title}" para ${d.to.toLowerCase()==='todos'?'TODOS os personagens':d.to}${resumo?' com '+resumo:''}?`)) return;
+      sendWS({ type:'mail:admSend', to:d.to, cat:d.cat, title:d.title, body:d.body, items, gold:d.gold, coins:d.coins, premiumDays:d.premiumDays });
+    });
+  }
+  const MAIL_REASON = { mochila_cheia:'Mochila cheia — libere espaço e colete de novo.', anexo_pendente:'Colete o anexo antes de excluir.', ja_coletada:'Já coletado.', carta_nao_existe:'Essa carta não existe mais.',
+    sem_permissao:'Só ADM.', sem_titulo:'Falta o título.', sem_destinatario:'Falta o destinatário.', personagem_nao_existe:'Esse personagem não existe.', item_invalido:'Item com id inválido.' };
+  function handleMailAck(msg){
+    if(msg.forType === 'mail:list'){ mailList = msg.mail||[]; if(msg.isMod != null) mailIsMod = !!msg.isMod; setMailUnread(mailList.filter(m=>!m.read||!m.claimed).length); renderMail(); return; }
+    if(msg.forType === 'mail:admItemCheck'){
+      (msg.items||[]).forEach(r=>{ mailAdmDraft.items.forEach(it=>{ if(it.id===r.id){ it.name = r.name; it.rarity = r.rarity; it.bad = !r.name; } }); });
+      renderMail(); return;
+    }
+    if(msg.forType === 'mail:admSend'){
+      if(msg.ok){ partySimpleToast(`📨 Carta enviada para ${escapeHtml(msg.nick||msg.to)}${msg.delivered!=null?` (${msg.delivered} online já receberam)`:msg.online===false?' (offline — recebe ao entrar)':''}.`); mailAdmDraft = { to:mailAdmDraft.to, cat:mailAdmDraft.cat, title:'', body:'', items:[{id:'',qty:1}], gold:0, coins:0, premiumDays:0 }; renderMail(); }
+      else partySimpleToast(`⚠️ Não enviou: ${MAIL_REASON[msg.reason]||msg.reason}${msg.bad?' ('+msg.bad.join(', ')+')':''}`);
+      return;
+    }
+    if(msg.forType === 'mail:claim' && msg.ok){
+      const got = [...(msg.items||[]).map(i=>`${i.qty>1?i.qty+'x ':''}${escapeHtml(i.name)}`), msg.gold?msg.gold.toLocaleString('pt-BR')+' Gold':'', msg.coins?msg.coins+' Elemental Coin':'', msg.premiumDays?msg.premiumDays+' dias de Premium':''].filter(Boolean).join(', ');
+      partySimpleToast(`📥 Coletado: ${got}`); logLoot(`📥 Correio: ${got}`);
+    }
+    if(msg.forType === 'mail:claimAll' && msg.count) partySimpleToast(`📥 ${msg.count} carta(s) coletada(s).`);
+    if(!msg.ok && msg.reason) partySimpleToast(`⚠️ ${MAIL_REASON[msg.reason]||msg.reason}`);
+    else if(msg.forType === 'mail:claimAll' && msg.reason) partySimpleToast(`⚠️ ${MAIL_REASON[msg.reason]}`);
+    if(msg.forType === 'mail:delete' && msg.ok) mailSelId = null;
+    sendWS({ type:'mail:list' });
+  }
   function handleAck(msg){
+    if(msg.forType && msg.forType.indexOf('mail:')===0){ handleMailAck(msg); return; }
     if(msg.forType === 'bag:openBox'){
       if(msg.ok && msg.activated){
         const b = msg.boost || {};
@@ -10160,7 +10377,7 @@
       else logLoot(`⚠️ Não deu pra abrir: ${msg.reason}`);
     }
     if(msg.forType === 'shop:buyTrainingBoost'){
-      if(msg.ok) partySimpleToast(`⚡ ${escapeHtml(msg.name)} comprado! Está na sua Mochila — ative com 2 cliques quando for treinar.`);
+      if(msg.ok) partySimpleToast(`⚡ ${escapeHtml(msg.name)} comprado! Chegou no seu ✉️ Correio — colete e ative com 2 cliques quando for treinar.`);
       else logLoot(`⚠️ Não deu pra comprar: ${msg.reason === 'moedas_insuficientes' ? 'Elemental Coin insuficiente' : msg.reason === 'mochila_cheia' ? 'Mochila cheia' : msg.reason}`);
     }
     if((msg.forType === 'shop:quickSell' || msg.forType === 'loot:dispatchCity') && msg.ok) tutorialFlags.sold = true;
@@ -10238,7 +10455,7 @@
       renderTowersIfOpen();
     }
     if(msg.forType === 'tower:buyKey'){
-      if(msg.ok) logLoot(`🗝️ Compradas ${msg.qty} Chave(s) da Torre por ${msg.cost} 💎${msg.wentToTrash ? ' (mochila cheia — foi pra Lixeira)' : ''}.`);
+      if(msg.ok){ logLoot(`🗝️ Compradas ${msg.qty} Chave(s) da Torre por ${msg.cost} 💎 — chegaram no ✉️ Correio.`); partySimpleToast(`🗝️ ${msg.qty} Chave(s) da Torre chegaram no ✉️ Correio.`); }
       else logLoot(`⚠️ Não foi possível comprar: ${TOWER_REASON_MSG[msg.reason] || msg.reason}`);
       renderTowersIfOpen();
     }
@@ -10468,12 +10685,12 @@
       renderSkillTreeIfOpen();
     }
     if(msg.forType === 'shop:buyElementalCoins'){
-      if(msg.ok) logLoot(`💎 Compra confirmada (modo teste): +${msg.granted} Elemental Coin.`);
+      if(msg.ok){ logLoot(`💎 Compra confirmada (modo teste): ${msg.granted} Elemental Coin enviados pro ✉️ Correio.`); partySimpleToast(`💎 ${msg.granted} Elemental Coin chegaram no ✉️ Correio — abra e colete.`); }
       else logLoot(`⚠️ Não foi possível comprar: ${msg.reason}`);
       renderCoinShopIfOpen();
     }
     if(msg.forType === 'shop:buyPremium'){
-      if(msg.ok){ isPremium = true; premiumExpiresAt = msg.premiumExpiresAt; logLoot(`✨ Premium ativado (modo teste) por ${msg.package.days} dias!`); }
+      if(msg.ok){ logLoot(`✨ Premium ${msg.package.days} dias comprado (modo teste) — colete no ✉️ Correio pra ativar.`); partySimpleToast(`✨ Premium ${msg.package.days} dias chegou no ✉️ Correio — colete pra ativar.`); }
       else logLoot(`⚠️ Não foi possível ativar Premium: ${msg.reason}`);
       renderCoinShopIfOpen();
       renderAltar();
@@ -13144,7 +13361,7 @@
     'btn-open-skilltree':'skilltree', 'btn-open-towers':'tower', 'btn-open-pvp-tournament':'tournament',
     'btn-open-pvp-shop':'pvpshop', 'btn-open-forge':'forge', 'btn-open-enchant':'forge', 'btn-open-infusion':'infusion',
     'btn-open-fusion':'fusion', 'btn-open-pets':'pets', 'btn-open-battlepass':'battlepass', 'btn-open-partydps':'dps',
-    'btn-open-analyzer':'analyzer', 'btn-open-wiki':'wiki', 'btn-open-settings':'settings', 'bag-shortcut':'backpack',
+    'btn-open-analyzer':'analyzer', 'btn-open-wiki':'wiki', 'btn-open-mail':'mail', 'btn-open-settings':'settings', 'bag-shortcut':'backpack',
   };
   const LS_UI_THEME = 'elemental_ui_theme';
   function prepThemeIcons(){
