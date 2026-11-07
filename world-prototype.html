@@ -1276,25 +1276,64 @@
   .skill-node-tip .tt-price{ display:block; margin-top:4px; color:var(--gold-bright); }
 
   /* ===== TORRES ELEMENTAIS ===== */
-  #towers-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; height:460px; max-height:90vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #towers-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:780px; max-width:96vw; height:540px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
   #towers-panel.open{ display:flex; }
-  .towers-body{ flex:1; overflow:auto; padding:0 14px 14px; }
-  .tower-row{ border:1px solid var(--gold-deep); border-radius:6px; padding:8px 10px; margin-bottom:8px; }
-  .tower-row .top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
-  .tower-row h3{ font-size:12px; margin:0; color:var(--gold-bright); }
-  .tower-row .floor{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
-  .tower-bar-track{ height:7px; background:#0a0705; border:1px solid var(--gold-deep); border-radius:3px; overflow:hidden; margin-bottom:6px; }
-  .tower-bar-fill{ height:100%; background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright)); }
-  .tower-btns{ display:flex; gap:6px; }
-  .tower-btns button{ flex:1; font-family:var(--font-mono); font-size:9.5px; padding:5px; border:1px solid var(--gold-deep); border-radius:4px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .towers-body{ flex:1; min-height:0; display:flex; flex-direction:column; padding:6px 14px 14px; }
+  .tower-attempts-line{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); padding:2px 2px 8px; border-bottom:1px solid var(--gold-deep); margin-bottom:8px; display:flex; gap:12px; flex-wrap:wrap; }
+  .tw-wrap{ flex:1; min-height:0; display:flex; gap:12px; }
+  .tw-list{ width:200px; flex:0 0 200px; overflow:auto; display:flex; flex-direction:column; gap:6px; padding-right:2px; }
+  .tw-item{ display:flex; align-items:center; gap:8px; padding:7px 8px; border:1px solid rgba(191,161,95,.25); border-left:4px solid var(--twc); border-radius:6px; background:rgba(0,0,0,.28); cursor:pointer; text-align:left; color:var(--ink); font-family:inherit; }
+  .tw-item:hover{ border-color:var(--twc); background:rgba(255,255,255,.04); }
+  .tw-item.sel{ border-color:var(--twc); background:linear-gradient(90deg, color-mix(in srgb, var(--twc) 28%, transparent), rgba(0,0,0,.25)); box-shadow:0 0 0 1px var(--twc) inset; }
+  .tw-item .ic{ font-size:20px; width:24px; text-align:center; }
+  .tw-item .nm{ font-size:11.5px; color:var(--gold-bright); display:block; }
+  .tw-item .fl{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); display:block; margin-top:2px; }
+  .tw-item .mini{ height:3px; background:#0a0705; border-radius:2px; overflow:hidden; margin-top:4px; }
+  .tw-item .mini i{ display:block; height:100%; background:var(--twc); }
+  .tw-item .live{ color:var(--ok); }
+  .tw-detail{ flex:1; min-width:0; overflow:auto; border:1px solid var(--gold-deep); border-radius:8px; padding:12px 14px; background:linear-gradient(180deg, color-mix(in srgb, var(--twc) 14%, transparent), rgba(0,0,0,.2) 120px); }
+  .tw-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .tw-head .big{ font-size:30px; }
+  .tw-head h3{ margin:0; font-size:16px; color:var(--gold-bright); }
+  .tw-head .sub{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); margin-top:2px; }
+  .tw-head .pct{ margin-left:auto; text-align:right; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .tw-head .pct b{ display:block; font-size:18px; color:var(--twc); filter:brightness(1.35); }
+  .tw-sec{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin:12px 0 6px; }
+  .tw-track{ position:relative; height:10px; background:#0a0705; border:1px solid var(--gold-deep); border-radius:5px; overflow:hidden; }
+  .tw-track .fill{ height:100%; background:linear-gradient(90deg, color-mix(in srgb, var(--twc) 55%, #000), var(--twc)); }
+  .tw-track .tick{ position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,.22); }
+  .tw-bosses{ display:grid; grid-template-columns:repeat(10, 1fr); gap:4px; margin-top:6px; }
+  .tw-boss{ position:relative; display:flex; flex-direction:column; align-items:center; padding:3px 0 2px; border:1px solid rgba(191,161,95,.2); border-radius:5px; background:rgba(0,0,0,.3); }
+  .tw-boss img, .tw-boss .em{ width:30px; height:30px; object-fit:contain; image-rendering:pixelated; filter:grayscale(1) brightness(.55); font-size:18px; text-align:center; line-height:30px; }
+  .tw-boss .f{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-dim); }
+  .tw-boss.done{ border-color:color-mix(in srgb, var(--twc) 60%, transparent); }
+  .tw-boss.done img, .tw-boss.done .em{ filter:none; }
+  .tw-boss.done::after{ content:'✓'; position:absolute; top:1px; right:3px; font-size:9px; color:var(--ok); }
+  .tw-boss.next{ border-color:#ff6a4a; box-shadow:0 0 6px rgba(255,90,60,.45); }
+  .tw-boss.next img, .tw-boss.next .em{ filter:none; }
+  .tw-boss.key::before{ content:'🗝️'; position:absolute; top:0; left:2px; font-size:9px; }
+  .tw-boss, .tw-mon, .tw-nextboss{ overflow:hidden; }
+  .tw-cols{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .tw-card{ border:1px solid rgba(191,161,95,.25); border-radius:6px; padding:8px; background:rgba(0,0,0,.25); }
+  .tw-nextboss{ display:flex; gap:10px; align-items:center; }
+  .tw-nextboss img, .tw-nextboss .em{ width:56px; height:56px; object-fit:contain; image-rendering:pixelated; font-size:34px; text-align:center; line-height:56px; flex:0 0 56px; }
+  .tw-nextboss .n{ color:#ff9a80; font-size:12.5px; }
+  .tw-nextboss .d{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); line-height:1.5; }
+  .tw-mons{ display:flex; flex-wrap:wrap; gap:4px; }
+  .tw-mon{ width:38px; height:38px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(191,161,95,.2); border-radius:5px; background:rgba(0,0,0,.3); }
+  .tw-mon img{ width:34px; height:34px; object-fit:contain; image-rendering:pixelated; }
+  .tw-loot{ display:flex; flex-direction:column; gap:3px; font-size:11px; }
+  .tw-loot .r-rara{ color:#4aa3ff; } .tw-loot .r-épica{ color:#c27bff; } .tw-loot .r-lendária{ color:#ffb43a; }
+  .tw-loot .dim{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .tower-btns{ display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+  .tower-btns button{ flex:1 1 auto; font-family:var(--font-mono); font-size:10.5px; padding:8px 6px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
   .tower-btns button:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
   .tower-btns button:disabled{ opacity:.4; cursor:not-allowed; }
-  .tower-attempts-line{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); padding:2px 2px 10px; border-bottom:1px solid var(--gold-deep); margin-bottom:8px; }
-  .tower-extra-btns{ margin-top:6px; flex-wrap:wrap; }
-  .tower-extra-btns button{ flex:1 1 auto; }
+  .tower-btns .tower-climb-btn{ flex:2 1 auto; border-color:var(--twc); color:var(--gold-bright); background:color-mix(in srgb, var(--twc) 22%, rgba(0,0,0,.4)); font-weight:700; }
   .tower-boss-btn{ border-color:#ff3b30 !important; color:#ff9a80 !important; }
   .tower-boss-btn:hover{ background:rgba(226,84,43,.15) !important; }
-  .tower-reset-btn:hover{ border-color:#ff9a80; color:#ff9a80; }
+  .tower-reset-btn:hover{ border-color:#ff9a80 !important; color:#ff9a80 !important; }
+  @media (max-width:640px){ .tw-wrap{ flex-direction:column; } .tw-list{ width:auto; flex:0 0 auto; flex-direction:row; overflow-x:auto; } .tw-item{ flex:0 0 150px; } .tw-cols{ grid-template-columns:1fr; } .tw-bosses{ grid-template-columns:repeat(5,1fr); } }
   #attrs-panel .cap-line{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-bottom:8px; display:flex; justify-content:space-between; }
   .attr-row{ display:flex; align-items:center; gap:6px; margin-bottom:6px; font-family:var(--font-mono); font-size:10.5px; }
   .attr-row .name{ width:56px; }
@@ -12539,8 +12578,8 @@
   function loadBosstiary(){
     if(BOSSTIARY || bosstiaryLoading) return;
     bosstiaryLoading = true;
-    fetch(API_BASE + '/api/bosstiary').then(r=>r.json()).then(j=>{ if(j && j.ok){ BOSSTIARY = { area:j.area||[], tower:j.tower||[] }; } })
-      .catch(()=>{}).finally(()=>{ bosstiaryLoading = false; if(wikiModal.classList.contains('open')) renderWiki(); });
+    fetch(API_BASE + '/api/bosstiary').then(r=>r.json()).then(j=>{ if(j && j.ok){ BOSSTIARY = { area:j.area||[], tower:j.tower||[], towerMonsters:j.towerMonsters||{}, towerLoot:j.towerLoot||[] }; } })
+      .catch(()=>{}).finally(()=>{ bosstiaryLoading = false; if(wikiModal.classList.contains('open')) renderWiki(); if(typeof renderTowersIfOpen==='function'){ lastTowersRenderSig = null; renderTowersIfOpen(); } });
   }
   loadBosstiary();
   function bosstiaryUniqueCount(){ return BOSSTIARY ? BOSSTIARY.area.length + BOSSTIARY.tower.length : 0; }
@@ -15659,6 +15698,7 @@
   // eliminando a janela de corrida quase por completo (bem mais robusto que
   // só esperar o throttle de 250ms "torcer" pra não coincidir com o clique).
   let lastTowersRenderSig = null;
+  let towerSelectedId = null; // UI da Torre (07/11/2026): torre selecionada na lista
   document.getElementById('btn-open-towers').addEventListener('click', ()=>{
     towersPanel.classList.toggle('open');
     lastTowersRenderSig = null; // força reconstrução ao abrir, garantindo que mostra o estado atual
@@ -15673,6 +15713,27 @@
     // 21/10/2026: Sala do Chefe = entrada grátis 1x/dia OU chave (ver aba Bosses)
     return (towerBosses||[]).filter(b=> b.towerId===towerId && (b.freeToday || b.keys>0)).map(b=> b.floor);
   }
+  // Ícones de monstro têm muita borda transparente (âncora do Tibia) — recorta
+  // pelo conteúdo real pra o sprite ocupar a caixinha inteira (cache por URL).
+  const towerCropCache = {};
+  function towerCropImg(el){
+    const url = el.dataset.crop; if(!url) return;
+    if(towerCropCache[url]){ el.src = towerCropCache[url]; return; }
+    const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = ()=>{ try{
+      const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      const x = c.getContext('2d'); x.drawImage(im,0,0);
+      const d = x.getImageData(0,0,c.width,c.height).data;
+      let x0=c.width,y0=c.height,x1=-1,y1=-1;
+      for(let y=0;y<c.height;y++) for(let xx=0;xx<c.width;xx++) if(d[(y*c.width+xx)*4+3]>8){ if(xx<x0)x0=xx; if(xx>x1)x1=xx; if(y<y0)y0=y; if(y>y1)y1=y; }
+      if(x1<0) return;
+      const w=x1-x0+1, h=y1-y0+1, sz=Math.max(w,h)+2, o=document.createElement('canvas'); o.width=o.height=sz;
+      o.getContext('2d').drawImage(c, x0,y0,w,h, Math.floor((sz-w)/2), Math.floor((sz-h)/2), w,h);
+      towerCropCache[url] = o.toDataURL();
+      document.querySelectorAll('#towers-body img[data-crop]').forEach(e=>{ if(e.dataset.crop===url) e.src = towerCropCache[url]; });
+    }catch(e){} };
+    im.src = url;
+  }
   function renderTowers(){
     if(!towersPanel.classList.contains('open')) return;
     // Assinatura de tudo que influencia o HTML abaixo (ver comentário no
@@ -15685,36 +15746,83 @@
       towers: towers,
       hunt: [activeHunt.running, activeHunt.isTower, activeHunt.towerMode, activeHunt.towerId, activeHunt.climbFloor],
       bossKeyIds, bosses: (towerBosses||[]).map(b=>b.towerId+b.floor+(b.freeToday?'f':'')+b.keys).join(','),
+      sel: towerSelectedId, bt: !!BOSSTIARY,
     });
     if(towersSig === lastTowersRenderSig) return;
     lastTowersRenderSig = towersSig;
     const body = document.getElementById('towers-body');
-    const attemptsLine = `<div class="tower-attempts-line">Tentativas de Escalada hoje: <b style="color:${towerClimb.remaining>0?'var(--ok)':'#ff9a80'}">${towerClimb.usedToday}/${towerClimb.limit}</b>`
-      + (towerClimb.towerKeys>0 ? ` · <span style="color:var(--gold-bright)">🗝️ ${towerClimb.towerKeys} Chave(s) da Torre</span>` : '')
-      + `</div>`;
-    body.innerHTML = attemptsLine + TOWERS_CATALOG_CLIENT.map(t=>{
+    if(!towerSelectedId || !TOWERS_CATALOG_CLIENT.some(t=>t.id===towerSelectedId)){
+      towerSelectedId = (activeHunt.running && activeHunt.isTower && activeHunt.towerId) || 'central';
+    }
+    const attemptsLine = `<div class="tower-attempts-line"><span>Tentativas de Escalada hoje: <b style="color:${towerClimb.remaining>0?'var(--ok)':'#ff9a80'}">${towerClimb.usedToday}/${towerClimb.limit}</b></span>`
+      + (towerClimb.towerKeys>0 ? `<span style="color:var(--gold-bright)">🗝️ ${towerClimb.towerKeys} Chave(s) da Torre</span>` : '')
+      + `<span>👑 Chefe a cada 10 andares</span></div>`;
+    const listHtml = TOWERS_CATALOG_CLIENT.map(t=>{
       const floor = (towers && towers[t.id]) || 0;
-      const climbing = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && activeHunt.towerId===t.id;
-      const statusLine = climbing
-        ? `<div class="floor" style="color:var(--gold-bright);">⛰️ Escalando agora — andar ${activeHunt.climbFloor}/100</div>`
-        : '';
-      const bossFloors = towerBossKeysFor(t.id, floor);
-      const canClimb = towerClimb.remaining>0 || towerClimb.towerKeys>0;
-      const climbBtnLabel = floor>0 ? 'Continuar Escalada' : 'Subir a Torre';
-      const climbBtnTitle = canClimb ? '' : 'title="Sem tentativas hoje — compre uma Chave da Torre na Loja de Elemental Coin"';
-      return `<div class="tower-row">
-        <div class="top"><h3>${t.icon} ${t.name}</h3><span class="floor">Andar salvo: ${floor}/100</span></div>
-        <div class="tower-bar-track"><div class="tower-bar-fill" style="width:${floor}%"></div></div>
-        ${statusLine}
-        <div class="tower-btns">
-          <button data-tower="${t.id}" data-mode="boss" ${(activeHunt.running||!canClimb)?'disabled':''} ${climbBtnTitle}>${climbBtnLabel}</button>
-        </div>
-        <div class="tower-btns tower-extra-btns">
-          ${bossFloors.map(f=>`<button class="tower-boss-btn" data-boss-tower="${t.id}" data-boss-floor="${f}" ${activeHunt.running?'disabled':''}>👑 Desafiar Chefe (andar ${f})</button>`).join('')}
-          <button class="tower-reset-btn" data-reset-tower="${t.id}" ${(activeHunt.running||floor===0)?'disabled':''} title="Reseta o andar salvo desta torre pro 1">↺ Resetar Torre</button>
-        </div>
-      </div>`;
+      const live = activeHunt.running && activeHunt.isTower && activeHunt.towerId===t.id;
+      return `<button class="tw-item${t.id===towerSelectedId?' sel':''}" data-tw-sel="${t.id}" style="--twc:${t.color}">
+        <span class="ic">${t.icon}</span>
+        <span style="flex:1;min-width:0;"><span class="nm">${t.name}</span>
+          <span class="fl">${live?'<span class="live">● Escalando · </span>':''}Andar ${floor}/100</span>
+          <span class="mini"><i style="width:${floor}%"></i></span></span>
+      </button>`;
     }).join('');
+    const t = TOWERS_CATALOG_CLIENT.find(x=>x.id===towerSelectedId);
+    const floor = (towers && towers[t.id]) || 0;
+    const climbing = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && activeHunt.towerId===t.id;
+    const bossFloors = towerBossKeysFor(t.id, floor);
+    const canClimb = towerClimb.remaining>0 || towerClimb.towerKeys>0;
+    const climbBtnLabel = floor>0 ? `⛰️ Continuar Escalada (andar ${Math.min(100,floor+1)})` : '⛰️ Subir a Torre';
+    const climbBtnTitle = canClimb ? '' : 'title="Sem tentativas hoje — compre uma Chave da Torre na Loja de Elemental Coin"';
+    const bossList = BOSSTIARY ? BOSSTIARY.tower.filter(b=>b.towerId===t.id).sort((a,b)=>a.floor-b.floor) : [];
+    const bossByFloor = {}; bossList.forEach(b=> bossByFloor[b.floor]=b);
+    const nextBossFloor = floor>=100 ? null : (Math.floor(floor/10)+1)*10;
+    const nextBoss = nextBossFloor ? bossByFloor[nextBossFloor] : null;
+    const imgOr = (b, cls)=> (b && b.spriteId) ? `<img data-crop="${URL_BASE}monsters/${b.spriteId}.png" src="${towerCropCache[URL_BASE+'monsters/'+b.spriteId+'.png']||URL_BASE+'monsters/'+b.spriteId+'.png'}" alt="" onerror="this.outerHTML='<span class=&quot;em&quot;>${(b&&b.icon)||'👑'}</span>'">` : `<span class="em">${(b&&b.icon)||'👑'}</span>`;
+    const bossesHtml = Array.from({length:10},(_,i)=>{
+      const f=(i+1)*10, b=bossByFloor[f];
+      const cls = (floor>=f?' done':'') + (f===nextBossFloor?' next':'') + (bossFloors.includes(f)?' key':'');
+      return `<div class="tw-boss${cls}" title="${b?escapeHtml(b.name)+' · ':''}Andar ${f}${bossFloors.includes(f)?' · desafiável':''}">${imgOr(b)}<span class="f">${f}</span></div>`;
+    }).join('');
+    const ticks = Array.from({length:9},(_,i)=>`<span class="tick" style="left:${(i+1)*10}%"></span>`).join('');
+    const mons = (BOSSTIARY && BOSSTIARY.towerMonsters && BOSSTIARY.towerMonsters[t.id]) || [];
+    const monsHtml = mons.length ? mons.map(m=>`<div class="tw-mon" title="${escapeHtml(m.name)}${m.weakTo&&m.weakTo.length?' · fraco a '+m.weakTo.join(', '):''}">${m.spriteId?`<img data-crop="${URL_BASE}monsters/${m.spriteId}.png" src="${towerCropCache[URL_BASE+'monsters/'+m.spriteId+'.png']||URL_BASE+'monsters/'+m.spriteId+'.png'}" alt="" onerror="this.outerHTML='${m.icon||'👾'}'">`:(m.icon||'👾')}</div>`).join('') : '<span class="italic-note">Carregando...</span>';
+    const loot = (BOSSTIARY && BOSSTIARY.towerLoot) || [];
+    const keyPct = bossList[0] ? bossList[0].keyDropPct : null;
+    const weak = mons[0] && mons[0].weakTo ? mons[0].weakTo.join(', ') : '';
+    const detail = `<div class="tw-detail" style="--twc:${t.color}">
+      <div class="tw-head"><span class="big">${t.icon}</span>
+        <div><h3>${t.name}</h3><div class="sub">${t.id==='central'?'Sem elemento · monstros variados':'Monstros fracos a '+escapeHtml(weak||'—')}</div></div>
+        <div class="pct">Andar salvo<b>${floor}/100</b></div></div>
+      ${climbing?`<div class="floor" style="color:var(--gold-bright);font-family:var(--font-mono);font-size:10.5px;margin-bottom:6px;">⛰️ Escalando agora — andar ${activeHunt.climbFloor}/100</div>`:''}
+      <div class="tw-track"><div class="fill" style="width:${floor}%"></div>${ticks}</div>
+      <div class="tw-sec">Chefes da torre</div>
+      <div class="tw-bosses">${bossesHtml}</div>
+      <div class="tw-cols" style="margin-top:12px;">
+        <div class="tw-card"><div class="tw-sec" style="margin-top:0;">Próximo chefe</div>
+          ${nextBoss ? `<div class="tw-nextboss">${imgOr(nextBoss)}<div><div class="n">${escapeHtml(nextBoss.name)}</div>
+            <div class="d">Andar ${nextBoss.floor} · Nv. ${escapeHtml(String(nextBoss.level))}<br>❤️ ${Number(nextBoss.hp||0).toLocaleString('pt-BR')} de vida<br>Faltam ${nextBoss.floor-floor} andar(es)</div></div></div>`
+            : (floor>=100 ? '<div class="d" style="color:var(--ok);font-size:11px;">🏆 Torre concluída!</div>' : '<span class="italic-note">Carregando...</span>')}
+        </div>
+        <div class="tw-card"><div class="tw-sec" style="margin-top:0;">Recompensas dos chefes</div>
+          <div class="tw-loot">${loot.map(it=>`<span class="r-${it.rarity}">◆ ${escapeHtml(it.name)} <span class="dim">(${it.rarity})</span></span>`).join('')}
+            ${keyPct!=null?`<span class="dim">🗝️ ${keyPct}% de chance de dropar a Chave do Chefe</span>`:''}
+            <span class="dim">Sala do Chefe: 1 entrada grátis por dia</span></div>
+        </div>
+      </div>
+      <div class="tw-sec">Monstros da torre</div>
+      <div class="tw-mons">${monsHtml}</div>
+      <div class="tower-btns">
+        <button class="tower-climb-btn" data-tower="${t.id}" data-mode="boss" ${(activeHunt.running||!canClimb)?'disabled':''} ${climbBtnTitle}>${climbBtnLabel}</button>
+        ${bossFloors.map(f=>`<button class="tower-boss-btn" data-boss-tower="${t.id}" data-boss-floor="${f}" ${activeHunt.running?'disabled':''}>👑 Desafiar Chefe (andar ${f})</button>`).join('')}
+        <button class="tower-reset-btn" data-reset-tower="${t.id}" ${(activeHunt.running||floor===0)?'disabled':''} title="Reseta o andar salvo desta torre pro 1">↺ Resetar</button>
+      </div>
+    </div>`;
+    body.innerHTML = attemptsLine + `<div class="tw-wrap"><div class="tw-list">${listHtml}</div>${detail}</div>`;
+    body.querySelectorAll('img[data-crop]').forEach(towerCropImg);
+    body.querySelectorAll('[data-tw-sel]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ towerSelectedId = btn.dataset.twSel; lastTowersRenderSig = null; renderTowers(); });
+    });
     body.querySelectorAll('button[data-tower]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         lastTowerEnterMode = btn.dataset.mode;
