@@ -2528,6 +2528,15 @@
   /* ============ CHAT FLUTUANTE (Global/Local/Guild/Sistema/Combate) ============ */
   #chat-window{ left:14px; bottom:185px; width:370px; height:190px; min-width:260px; min-height:130px; display:flex; flex-direction:column; overflow:hidden; z-index:5; }
   #chat-titlebar{ padding:6px 10px; display:flex; align-items:center; justify-content:space-between; cursor:move; border-bottom:1px solid var(--gold-deep); user-select:none; }
+  /* 06/11/2026: botões de esconder o chat e os ícones do topo */
+  .hud-mini-btn{ width:22px; height:22px; padding:0; border-radius:4px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.45); color:var(--gold-bright); font-size:12px; line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .hud-mini-btn:hover{ border-color:var(--gold-bright); box-shadow:0 0 8px var(--theme-glow, rgba(240,211,138,.4)); }
+  #tb-icons-toggle{ margin-left:auto; margin-right:6px; align-self:center; height:44px; width:18px; }
+  #tb-icons-toggle + #tb-icons{ margin-left:0; }
+  body.hide-tb-icons #tb-icons{ display:none; }
+  body.hide-chat #chat-window{ display:none !important; }
+  #chat-show-btn{ position:fixed; left:14px; z-index:6; width:42px; height:42px; font-size:20px; border-radius:8px; display:none; }
+  body.hide-chat #chat-show-btn{ display:flex; }
   #chat-titlebar span{ font-family:var(--font-display); font-size:10.5px; letter-spacing:.08em; color:var(--gold-bright); text-transform:uppercase; }
   #chat-tabs{ display:flex; background:rgba(0,0,0,.25); border-bottom:1px solid var(--gold-deep); overflow-x:auto; flex-shrink:0; }
   .chat-tab{ padding:5px 10px; font-size:10.5px; font-family:var(--font-mono); color:var(--ink-dim); border-right:1px solid rgba(191,161,95,.15); cursor:pointer; white-space:nowrap; }
@@ -3179,6 +3188,7 @@
     <div id="tb-online">— jogadores online</div>
     <div id="matchmaking-pill" class="tb-pill searching" title="Clique para cancelar a busca por time" style="display:none;">🔎 Buscando time...</div>
     <div id="training-pill" class="tb-pill searching" title="Treinando no boneco (1 ponto a cada ~40min, mais rápido que caçar) — clique para parar" style="display:none;">🏋️ Treinando...</div>
+    <button id="tb-icons-toggle" class="hud-mini-btn" title="Esconder os ícones">▶</button>
     <div id="tb-icons">
       <div class="tb-icon" id="open-hunts-btn" title="Caçadas"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/combat.png" alt=""></div>
       <div class="tb-icon" id="btn-open-party" title="Grupo"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/party.png" alt=""></div>
@@ -3233,6 +3243,7 @@
     </div>
   </div>
 
+  <button id="chat-show-btn" class="hud-mini-btn" title="Mostrar o chat">💬</button>
   <div id="ws-status">● conectando...</div>
   <div id="build-tag">build 2026-09-02-r2</div>
 
@@ -3742,7 +3753,7 @@
 
   <!-- CHAT — sempre visível, em qualquer área do jogo (Cidade/Caçada/Torre) -->
   <div id="chat-window" class="glass win">
-    <div id="chat-titlebar" class="win-drag"><span>Chat</span></div>
+    <div id="chat-titlebar" class="win-drag"><span>Chat</span><button id="chat-hide-btn" class="hud-mini-btn" title="Esconder o chat">–</button></div>
     <div id="chat-tabs"></div>
     <div id="chat-messages"></div>
     <div id="chat-input-row">
@@ -9456,7 +9467,7 @@
 
     ws.addEventListener('open', ()=>{
       netState.connected = true;
-      statusEl.textContent = `● online — ${AUTH_USERNAME}`;
+      statusEl.textContent = `● online — ${PLAYER_NICK || 'conectado'}`; // nick, nunca o nº da conta
       ws.send(JSON.stringify({ type:'join', token:AUTH_TOKEN, x:player.x, y:player.y, characterId: SELECTED_CHARACTER && SELECTED_CHARACTER.id, nick:PLAYER_NICK, deviceId: (()=>{ try{ let d = localStorage.getItem('elemental_device'); if(!d){ d = Array.from(crypto.getRandomValues(new Uint8Array(16)), b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem('elemental_device', d); } return d; }catch(e){ return undefined; } })() }));
     });
     ws.addEventListener('close', ()=>{ netState.connected = false; if(netState.stopReconnect) return; statusEl.textContent = '● offline (reconectando em breve)'; showServerDown(null); setTimeout(connectToServer, srvDown.info && srvDown.info.etaAt ? 5000 : 3000); });
@@ -11953,7 +11964,7 @@
         <thead><tr><th>Nome</th><th>Rank</th><th>Nível</th><th>Contribuição</th><th>Status</th><th>Entrou</th><th></th></tr></thead>
         <tbody>${g.members.map(m=>`
           <tr>
-            <td>${escapeHtml(m.username)}${m.username===AUTH_USERNAME?' (você)':''}</td>
+            <td>${escapeHtml(m.nick || m.username)}${m.username===AUTH_USERNAME?' (você)':''}</td>
             <td>${escapeHtml(g.rankTitles[m.rank]||m.rank)}</td>
             <td>${m.level ?? '—'}</td>
             <td>${Math.round(m.contribution||0).toLocaleString('pt-BR')}</td>
@@ -13198,6 +13209,21 @@
     if(want > cur || want < cur - 60) chat.style.bottom = want + 'px';
   }
   window.addEventListener('resize', ()=> requestAnimationFrame(()=>{ centerBagShortcut(); keepChatAboveVitals(); }));
+  // 06/11/2026: esconder/mostrar o chat e os ícones do topo (lembra a escolha)
+  (function hudToggles(){
+    const LS_HIDE_CHAT = 'elemental_hide_chat', LS_HIDE_ICONS = 'elemental_hide_icons';
+    const get = k => { try{ return localStorage.getItem(k) === '1'; }catch(_){ return false; } };
+    const set = (k, v) => { try{ localStorage.setItem(k, v ? '1' : '0'); }catch(_){} };
+    const placeChatBtn = ()=>{ const v = document.getElementById('vitals-block'), b = document.getElementById('chat-show-btn'); if(v && b && v.offsetParent) b.style.bottom = Math.round(window.innerHeight - v.getBoundingClientRect().top + 10) + 'px'; };
+    const applyChat = h => { document.body.classList.toggle('hide-chat', h); if(h) placeChatBtn(); };
+    const applyIcons = h => { document.body.classList.toggle('hide-tb-icons', h); const t = document.getElementById('tb-icons-toggle'); t.textContent = h ? '◀' : '▶'; t.title = h ? 'Mostrar os ícones' : 'Esconder os ícones'; };
+    applyChat(get(LS_HIDE_CHAT)); applyIcons(get(LS_HIDE_ICONS));
+    document.getElementById('chat-hide-btn').addEventListener('mousedown', e=> e.stopPropagation()); // não arrasta a janela
+    document.getElementById('chat-hide-btn').addEventListener('click', ()=>{ set(LS_HIDE_CHAT, true); applyChat(true); });
+    document.getElementById('chat-show-btn').addEventListener('click', ()=>{ set(LS_HIDE_CHAT, false); applyChat(false); });
+    document.getElementById('tb-icons-toggle').addEventListener('click', ()=>{ const h = !document.body.classList.contains('hide-tb-icons'); set(LS_HIDE_ICONS, h); applyIcons(h); });
+    setInterval(()=>{ if(document.body.classList.contains('hide-chat')) placeChatBtn(); }, 1000);
+  })();
   setInterval(keepChatAboveVitals, 1000);
   setInterval(centerBagShortcut, 1500);
   (function initUiThemePicker(){
