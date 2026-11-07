@@ -9101,6 +9101,7 @@
      WEBSOCKET — conexão real com o servidor (multiplayer/motor de jogo)
      ========================================================= */
   const netState = { ws:null, connected:false };
+  let bootGotWelcome = false;
   let lastHuntSnap = null; // snapshot completo acumulado (o servidor manda só o que mudou)
   function sendWS(obj){
     try{ tutorialOnSend(obj); }catch(_){}
@@ -9472,6 +9473,7 @@
           break;
         case 'chat:notice': logChat(CHAT_SENDABLE.includes(activeChatTab) || (chatTabsData[activeChatTab] && chatTabsData[activeChatTab].pm) ? activeChatTab : 'sistema', `<span style="color:#ffb35c">${escapeHtml(msg.text)}</span>`); break; // avisos do anti-spam/moderação, no canal onde ele está digitando
         case 'welcome':
+          bootGotWelcome = true;
           wasdPositionSynced = false; // (re)conectou: aceita a posição do servidor (depois de queda/manutenção = Templo)
           hideServerDown();
           setTimeout(()=>{ try{ syncPotionAutoUse(); }catch(_){} }, 300); // poção automática = só as que estão na barra
@@ -15810,7 +15812,45 @@
     showLoading({ kicker, title });
     loadingState.pending = true; // ainda não trocou de área
   }
+  // 06/11/2026 (teste com jogadores): TELA DE CARREGAMENTO AO ENTRAR NO JOGO —
+  // cobre tudo desde o 1º quadro até: conectar, receber o personagem e o mapa
+  // da área (cidade ou caçada) e os gráficos do personagem estarem prontos.
+  let bootLoading = { start: Date.now(), shown: 0 };
+  function bootSteps(){
+    const steps = [];
+    steps.push([netState.connected ? 1 : 0, 'Conectando ao servidor…']);
+    steps.push([(bootGotWelcome && lastHuntSnap) ? 1 : 0, 'Recebendo o personagem…']);
+    if(location === 'dungeon' && activeHunt.running){
+      const [d, t] = areaLoadSteps(); steps.push([t ? d / t : 1, 'Carregando a caçada…']);
+    } else {
+      const pages = RC.meta && RC.meta.atlas ? RC.meta.atlas.pages.length : 0; let got = 0; for(let i=0;i<pages;i++) if(RC.pages[i]) got++;
+      steps.push([RC.meta ? (pages ? got / pages : 1) : 0, `Carregando a cidade${pages ? ` (${got}/${pages})` : ''}…`]);
+      steps.push([rcReady() ? 1 : 0, 'Montando o mapa…']);
+    }
+    let ch = 1; try{ const od = outfitCatalog.find(o=>o.id===cosmetics.outfit); if(od && (od.recolorable || od.fixedColor)) ch = getRecoloredArmor(cosmetics.outfit, cosmeticColors, colorPalette, outfitSpriteIdFor(cosmetics.outfit, (SELECTED_CHARACTER||{}).gender)) ? 1 : 0; }catch(_){}
+    steps.push([ch, 'Preparando o personagem…']);
+    const done = steps.reduce((a, x)=> a + x[0], 0), cur = steps.find(x => x[0] < 1);
+    return [done / steps.length, cur ? cur[1] : 'Pronto'];
+  }
+  function tickBootLoading(){
+    loadingEl = loadingEl || document.getElementById('loading-screen'); if(!loadingEl) return true;
+    if(!loadingEl.classList.contains('show')){
+      document.getElementById('ls-kicker').textContent = 'Entrando no mundo';
+      document.getElementById('ls-title').textContent = (SELECTED_CHARACTER && SELECTED_CHARACTER.nick) || PLAYER_NICK || 'Elemental Online';
+      document.getElementById('ls-tip').textContent = '💡 ' + LOADING_TIPS[Math.floor(Math.random()*LOADING_TIPS.length)];
+      loadingEl.classList.add('show', 'visible');
+    }
+    const el = Date.now() - bootLoading.start;
+    const [real, step] = bootSteps();
+    bootLoading.shown = Math.max(bootLoading.shown, Math.min(real >= 1 ? 100 : 96, Math.max(real * 100, Math.min(60, el / 80))));
+    document.getElementById('ls-fill').style.width = bootLoading.shown + '%';
+    document.getElementById('ls-pct').textContent = Math.round(bootLoading.shown) + '%';
+    document.getElementById('ls-step').textContent = step;
+    if((real >= 1 && el >= 900) || el >= 30000){ bootLoading = null; lastAreaKey = currentAreaKey(); hideLoading(); return true; }
+    return false;
+  }
   function tickLoading(){
+    if(bootLoading && !tickBootLoading()) return;
     const key = currentAreaKey();
     if(lastAreaKey !== null && key !== lastAreaKey){
       if(!loadingState || loadingState.pending) showLoading(currentAreaLabel());
@@ -19205,7 +19245,7 @@
      ao entrar na caçada, na Torre, trocar de andar, ir pra Sala do Chefe e
      voltar pra cidade. Só cliente — espera o mapa/atlas/andar da área nova
      chegarem de verdade (nada a mais no servidor). -->
-<div id="loading-screen" aria-hidden="true">
+<div id="loading-screen" class="show visible" aria-hidden="true">
   <div class="ls-box">
     <div class="ls-kicker" id="ls-kicker">Carregando</div>
     <div class="ls-title" id="ls-title">Elemental Online</div>
@@ -19215,8 +19255,8 @@
   </div>
 </div>
 <style>
-  #loading-screen{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;
-    background:radial-gradient(ellipse at center, rgba(28,22,12,.94) 0%, rgba(6,5,3,.985) 70%);opacity:0;transition:opacity .25s ease;}
+  #loading-screen{position:fixed;inset:0;z-index:2147483100;display:none;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at center, #1c160c 0%, #060503 70%);opacity:0;transition:opacity .25s ease;}
   #loading-screen.show{display:flex;}
   #loading-screen.visible{opacity:1;}
   #loading-screen .ls-box{width:min(460px,86vw);text-align:center;}
