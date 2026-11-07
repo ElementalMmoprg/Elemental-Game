@@ -121,11 +121,16 @@
      agora usa gold.png de verdade), estilo "moeda-gema" premium. */
   .tb-coin-icon{ filter:hue-rotate(190deg) saturate(3.2) brightness(1.08); }
   #tb-online{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); white-space:nowrap; }
-  #tb-icons{ margin-left:auto; display:flex; gap:6px; }
-  .tb-icon{ width:44px; height:44px; border-radius:7px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:21px; cursor:pointer; } /* 20/10/2026: era 34px — usuário achou pequeno */
+  #tb-icons{ margin-left:auto; display:flex; gap:var(--tbg,6px); }
+  /* 07/11/2026 (item 11): barra do topo se ajusta à largura da tela (ver fitHud) */
+  #top-bar > *{ flex-shrink:0; }
+  body.tb-tight #tb-online{ display:none; }
+  body.tb-tight #top-bar{ gap:8px; padding:0 8px; }
+  body.tb-scroll #tb-icons{ flex-shrink:1; min-width:0; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; padding-bottom:2px; }
+  .tb-icon{ flex-shrink:0; width:var(--tbi,44px); height:var(--tbi,44px); border-radius:7px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:21px; cursor:pointer; } /* 20/10/2026: era 34px — usuário achou pequeno */
   .tb-icon.tb-hidden{ display:none !important; } /* Refinamento/Infusão/Fusão agora ficam dentro da Forja */
   .tb-icon:hover{ border-color:var(--gold-bright); box-shadow:0 0 10px rgba(240,211,138,.2); }
-  .tb-icon img{ width:28px; height:28px; object-fit:contain; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+  .tb-icon img{ width:calc(var(--tbi,44px) * .64); height:calc(var(--tbi,44px) * .64); object-fit:contain; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
   .menu-ico{ width:14px; height:14px; object-fit:contain; vertical-align:-2px; margin-right:2px; }
   #bag-shortcut img.menu-ico{ width:26px; height:26px; margin:0; vertical-align:middle; }
 
@@ -664,6 +669,9 @@
   .tactics-group{ display:flex; align-items:center; gap:5px; }
   .tactics-group.tactics-alvo{ flex-direction:column; align-items:stretch; gap:3px; }
   .tactics-alvo .alvo-top{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  /* 07/11/2026: botão Lure no MEIO da caixa do alvo (Mais Próximo) */
+  .tactics-alvo .alvo-top{ position:relative; min-height:15px; }
+  .tactics-alvo .alvo-top .lure-toggle{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
   .lure-toggle{ display:inline-flex; align-items:center; justify-content:center; line-height:1; height:15px; min-width:46px; box-sizing:border-box; font-family:var(--font-mono); font-size:8px; letter-spacing:.04em; text-transform:uppercase; padding:0 7px; border-radius:9px; border:1px solid var(--gold-deep); background:rgba(0,0,0,.35); color:var(--ink-dim); cursor:pointer; }
   .lure-toggle.on{ color:#1a1206; background:linear-gradient(180deg,#f3d58a,#c79a3c); border-color:#f3d58a; box-shadow:0 0 8px rgba(243,213,138,.45); }
   .tactics-group + .tactics-group{ padding-left:10px; border-left:1px solid rgba(191,161,95,.2); }
@@ -13453,7 +13461,8 @@
     const lb = left.getBoundingClientRect(), hr = hb.getBoundingClientRect(), br = bag.getBoundingClientRect();
     const target = (lb.right + hr.left) / 2 - br.width / 2;
     const dx = Math.round(target - br.left);
-    if(dx > 0 && dx < 400) bag.style.transform = `translateX(${dx}px)`;
+    const sc = (typeof hudScale !== 'undefined' && hudScale) || 1;
+    if(dx > 0 && dx < 400 * sc) bag.style.transform = `translateX(${Math.round(dx / sc)}px)`;
   }
   // Chat sempre ACIMA do painel de vida/mana (30/10/2026): o painel cresce
   // conforme o conteúdo (afinidade, caçada…) e a moldura dos temas sai um
@@ -13470,7 +13479,88 @@
     const cur = parseInt(chat.style.bottom, 10) || 0;
     if(want > cur || want < cur - 60) chat.style.bottom = want + 'px';
   }
-  window.addEventListener('resize', ()=> requestAnimationFrame(()=>{ centerBagShortcut(); keepChatAboveVitals(); }));
+
+  /* ===== UI EM QUALQUER TELA (07/11/2026, item 11) =====
+     1) Topo: diminui os ícones (44→30px), esconde "jogadores online" e, se
+        ainda não couber, a fileira de ícones vira rolável.
+     2) Rodapé (vida/mochila/hotbar/postura) e chat: encolhem juntos
+        (scale) quando a tela é estreita ou baixa — nada sai da tela nem
+        fica um em cima do outro.
+     3) Janelas arrastadas voltam pra dentro da tela quando ela diminui. */
+  var hudScale = 1;
+  function topBarNeeds(){
+    const tb = document.getElementById('top-bar'); if(!tb) return 0;
+    const cs = getComputedStyle(tb); const gap = parseFloat(cs.columnGap||cs.gap)||0;
+    const kids = Array.from(tb.children).filter(k=> k.offsetParent !== null && getComputedStyle(k).position !== 'absolute');
+    let w = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + gap * Math.max(0, kids.length-1);
+    kids.forEach(k=>{ w += (k.id === 'tb-icons') ? k.scrollWidth : k.getBoundingClientRect().width; });
+    return w;
+  }
+  function fitTopBar(){
+    const root = document.documentElement, body = document.body, W = window.innerWidth;
+    body.classList.remove('tb-tight','tb-scroll');
+    const sizes = [44, 40, 36, 33, 30];
+    for(const tight of [false, true]){
+      body.classList.toggle('tb-tight', tight);
+      for(const sz of sizes){
+        root.style.setProperty('--tbi', sz+'px'); root.style.setProperty('--tbg', (sz>=40?6:4)+'px');
+        if(topBarNeeds() <= W) return;
+      }
+    }
+    body.classList.add('tb-scroll'); // nem no menor tamanho: rola os ícones
+  }
+  function fitFooter(){
+    const fb = document.getElementById('footer-bar'); if(!fb) return;
+    const W = window.innerWidth, H = window.innerHeight;
+    fb.style.transform = ''; fb.style.width = ''; fb.style.right = '';
+    const left = document.getElementById('footer-left'), mid = document.getElementById('hotbar-wrap'), tac = document.getElementById('tactics-bar');
+    const tacW = tac ? Array.from(tac.children).reduce((a,c)=> a + (c.offsetParent!==null ? c.getBoundingClientRect().width : 0), 0) + 20 + 10*Math.max(0,tac.children.length-1) : 0;
+    const leftW = left ? Array.from(left.children).reduce((a,c)=> a + (c.offsetParent!==null ? c.getBoundingClientRect().width : 0), 0) + 12 : 0;
+    const midW = mid ? mid.scrollWidth : 0;
+    const need = midW + 2*Math.max(leftW, tacW) + 24 + 24;
+    const zW = (W) / need, zH = H / 700;
+    const z = Math.max(0.55, Math.min(1, zW, zH));
+    hudScale = Math.round(z*1000)/1000;
+    if(hudScale < 1){
+      fb.style.right = 'auto';
+      fb.style.width = ((W - 24) / hudScale) + 'px';
+      fb.style.transformOrigin = 'left bottom';
+      fb.style.transform = `scale(${hudScale})`;
+    }
+    const chat = document.getElementById('chat-window');
+    const chatScale = Math.max(0.75, hudScale);
+    if(chat){ chat.style.transformOrigin = 'left bottom'; chat.style.transform = chatScale < 1 ? `scale(${chatScale})` : ''; }
+    const hint = document.getElementById('hotbar-hint'); if(hint) hint.style.visibility = hudScale < 1 ? 'hidden' : '';
+  }
+  function clampWindows(){
+    const W = window.innerWidth, H = window.innerHeight;
+    document.querySelectorAll('.win').forEach(win=>{
+      if(!win.style.left && !win.style.top) return;
+      const r = win.getBoundingClientRect(); if(!r.width) return;
+      let dx = 0, dy = 0;
+      if(r.right > W) dx = W - r.right; if(r.left + dx < 0) dx = -r.left;
+      if(r.bottom > H) dy = H - r.bottom; if(r.top + dy < 0) dy = -r.top;
+      if(dx) win.style.left = (parseFloat(win.style.left)||r.left) + dx + 'px';
+      if(dy) win.style.top = (parseFloat(win.style.top)||r.top) + dy + 'px';
+    });
+  }
+  function fitHud(){
+    try{ fitTopBar(); }catch(e){ console.warn('fitTopBar', e); }
+    try{ fitFooter(); }catch(e){ console.warn('fitFooter', e); }
+    try{ clampWindows(); }catch(e){}
+    centerBagShortcut(); keepChatAboveVitals();
+  }
+  let fitHudRaf = 0;
+  function fitHudSoon(){ cancelAnimationFrame(fitHudRaf); fitHudRaf = requestAnimationFrame(fitHud); }
+  window.addEventListener('resize', fitHudSoon);
+  // ícones do topo roláveis: a rodinha do mouse rola pro lado
+  document.getElementById('tb-icons').addEventListener('wheel', e=>{ if(!document.body.classList.contains('tb-scroll')) return; const el = e.currentTarget; el.scrollLeft += (e.deltaY || e.deltaX); e.preventDefault(); }, { passive:false });
+  setTimeout(fitHud, 300); setTimeout(fitHud, 2000);
+  // conteúdo da barra muda (entra/sai da caçada, botões da cidade, ícones novos): reajusta
+  try{
+    const ro = new ResizeObserver(()=> fitHudSoon());
+    ['tb-icons','footer-left','hotbar-wrap','tactics-bar'].forEach(id=>{ const el = document.getElementById(id); if(el) ro.observe(el); });
+  }catch(e){}
   // 06/11/2026: esconder/mostrar o chat e os ícones do topo (lembra a escolha)
   (function hudToggles(){
     const LS_HIDE_CHAT = 'elemental_hide_chat', LS_HIDE_ICONS = 'elemental_hide_icons';
