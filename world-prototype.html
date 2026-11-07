@@ -1283,6 +1283,82 @@
   .skill-node-tip .hint{ display:block; margin-top:4px; color:#7fbf6a; }
   .skill-node-tip .tt-price{ display:block; margin-top:4px; color:var(--gold-bright); }
 
+  /* ===== BAZAR DE PERSONAGENS ===== */
+  #bazaar-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:880px; max-width:96vw; height:580px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #bazaar-panel.open{ display:flex; }
+  .bz-wrap{ display:flex; gap:10px; height:100%; min-height:0; }
+  .bz-list{ width:300px; flex:0 0 300px; overflow:auto; display:flex; flex-direction:column; gap:6px; }
+  .bz-row{ display:flex; gap:8px; align-items:center; padding:8px; border:1px solid rgba(191,161,95,.22); border-radius:7px; background:rgba(0,0,0,.25); cursor:pointer; }
+  .bz-row:hover{ border-color:var(--gold-deep); } .bz-row.sel{ border-color:var(--gold-bright); background:rgba(191,161,95,.1); }
+  .bz-row .arch img{ width:26px; height:26px; }
+  .bz-row .nm{ font-size:12.5px; color:var(--gold-bright); font-weight:700; }
+  .bz-row .sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .bz-row .bid{ margin-left:auto; text-align:right; font-size:12px; color:var(--gold-bright); }
+  .bz-detail{ flex:1; min-width:0; overflow:auto; border:1px solid var(--gold-deep); border-radius:8px; padding:12px 14px; background:rgba(0,0,0,.22); font-size:12px; }
+  .bz-detail h3{ margin:0; font-size:17px; color:var(--gold-bright); }
+  .bz-sec{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin:12px 0 5px; }
+  .bz-kv{ display:grid; grid-template-columns:repeat(3, 1fr); gap:4px 12px; font-size:11.5px; } .bz-kv span{ color:var(--ink-dim); } .bz-kv b{ color:var(--ink); font-weight:600; }
+  .bz-items{ display:flex; flex-wrap:wrap; gap:4px; }
+  .bz-items .it{ width:40px; height:40px; border:1px solid var(--rc, rgba(191,161,95,.3)); border-radius:5px; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; position:relative; }
+  .bz-items .it img{ width:34px; height:34px; object-fit:contain; } .bz-items .it .q{ position:absolute; right:2px; bottom:0; font:700 9px var(--font-mono); color:#fff; text-shadow:0 0 3px #000; }
+  .bz-bidbox{ margin-top:12px; padding:10px; border:1px solid var(--gold-deep); border-radius:7px; background:rgba(191,161,95,.06); display:flex; flex-direction:column; gap:7px; }
+  .bz-bidbox .big{ font-size:18px; color:var(--gold-bright); font-weight:700; }
+  .bz-bidbox input{ background:#0d0a08; border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; width:140px; font-size:13px; }
+  .bz-bidbox button, .bz-detail button{ font-family:var(--font-mono); font-size:10.5px; padding:8px 12px; border:1px solid var(--ok); color:var(--ok); border-radius:5px; background:rgba(0,0,0,.3); cursor:pointer; font-weight:700; }
+  .bz-bids{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
+  .bz-table{ width:100%; border-collapse:collapse; font-size:11.5px; } .bz-table th{ text-align:left; font-family:var(--font-mono); font-size:9.5px; color:var(--gold); padding:5px; border-bottom:1px solid var(--gold-deep); } .bz-table td{ padding:6px 5px; border-bottom:1px solid rgba(191,161,95,.12); }
+
+  #bz-profile{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:920px; max-width:97vw; height:640px; max-height:94vh; flex-direction:column; overflow:hidden; z-index:30; }
+  #bzp-body{ flex:1; min-height:0; display:flex; flex-direction:column; padding:8px 14px 12px; gap:8px; }
+  .bzp-head{ display:flex; align-items:center; gap:12px; }
+  .bzp-head canvas{ image-rendering:pixelated; }
+  .bzp-lvl{ width:46px; height:46px; border-radius:50%; border:2px solid var(--gold-bright); display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(circle,#3a2e1d,#0d0a06 75%); }
+  .bzp-lvl b{ font-size:17px; color:var(--gold-bright); line-height:1; } .bzp-lvl small{ font-size:7.5px; color:var(--ink-dim); letter-spacing:.1em; }
+  .bzp-name{ font-size:20px; color:var(--gold-bright); font-weight:700; }
+  .bzp-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .bzp-sub img{ width:20px; height:20px; }
+  .bzp-tabs{ display:flex; gap:5px; flex-wrap:wrap; }
+  .bzp-tabs button{ font-family:var(--font-mono); font-size:10.5px; padding:6px 10px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .bzp-tabs button img{ width:16px; height:16px; } .bzp-tabs button.on{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); }
+  .bzp-pane{ flex:1; min-height:0; overflow:auto; border:1px solid var(--gold-deep); border-radius:8px; padding:12px; background:rgba(0,0,0,.22); }
+  .bzp-doll{ display:grid; grid-template-columns:repeat(3, auto); justify-content:center; align-items:center; gap:6px 30px; }
+  .bzp-col{ display:flex; flex-direction:column; gap:8px; }
+  .bzp-slot{ position:relative; width:56px; height:56px; border-radius:6px; background:#0b0907 url(https://elementalmmoprg.github.io/Elemental_assets/assets/ravendawn-ui/character/bgIcon.png) center/100% 100% no-repeat; border:1px solid rgba(191,161,95,.25); display:flex; align-items:center; justify-content:center; }
+  .bzp-slot > img.ic{ width:46px; height:46px; object-fit:contain; position:relative; z-index:1; }
+  .bzp-slot > img.ph{ width:34px; height:34px; opacity:.28; }
+  .bzp-slot .rarity-frame{ position:absolute; inset:0; width:100%; height:100%; z-index:2; pointer-events:none; }
+  .bzp-slot .enc{ position:absolute; right:3px; top:1px; z-index:3; font:700 10px var(--font-mono); color:#7fe07a; text-shadow:0 0 3px #000,0 0 3px #000; }
+  .bzp-slot .q{ position:absolute; right:3px; bottom:1px; z-index:3; font:700 10px var(--font-mono); color:#fff; text-shadow:0 0 3px #000,0 0 3px #000; }
+  .bzp-slot .tag{ position:absolute; left:0; right:0; bottom:-14px; text-align:center; font-family:var(--font-mono); font-size:8.5px; color:#8a887f; }
+  .bzp-doll .bzp-slot .tag{ display:none; }
+  .bzp-eqwrap{ display:flex; gap:30px; align-items:center; justify-content:center; height:100%; }
+  .bzp-eqwrap .bzp-power{ flex-direction:column; gap:16px; }
+  .bzp-portrait{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .bzp-portrait canvas{ width:150px; height:180px; image-rendering:pixelated; }
+  .bzp-power{ display:flex; gap:22px; justify-content:center; }
+  .bzp-power .pw{ text-align:center; } .bzp-power .num{ font-size:22px; color:#fff; display:flex; align-items:center; gap:6px; } .bzp-power .num img{ width:26px; height:26px; } .bzp-power .lbl{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); }
+  .bzp-grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .bzp-sec{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin:4px 0 6px; padding-bottom:4px; border-bottom:1px solid rgba(191,161,95,.2); }
+  .bzp-row{ display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:4px; font-size:12px; } .bzp-row:nth-child(odd){ background:rgba(255,255,255,.025); }
+  .bzp-row img{ width:22px; height:22px; } .bzp-row b{ margin-left:auto; color:#fff; font-weight:600; }
+  .bzp-items{ display:grid; grid-template-columns:repeat(auto-fill, 52px); gap:6px; }
+  .bzp-items .bzp-slot{ width:52px; height:52px; } .bzp-items .bzp-slot > img.ic{ width:42px; height:42px; }
+  .bzp-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .bzp-chip{ padding:6px 10px; border:1px solid var(--gold-deep); border-radius:16px; background:rgba(191,161,95,.08); font-size:11.5px; } .bzp-chip b{ color:var(--gold-bright); }
+  .bzp-mons{ display:grid; grid-template-columns:repeat(auto-fill, minmax(104px, 1fr)); gap:6px; }
+  .bzp-mon{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; border:1px solid rgba(191,161,95,.22); border-radius:6px; background:rgba(0,0,0,.3); text-align:center; }
+  .bzp-mon img{ width:48px; height:48px; object-fit:contain; image-rendering:pixelated; }
+  .bzp-mon .n{ font-size:10.5px; color:var(--ink); line-height:1.2; } .bzp-mon .k{ font-family:var(--font-mono); font-size:9.5px; color:var(--gold-bright); }
+  .bzp-mon .dots{ display:flex; gap:3px; } .bzp-mon .dots span{ width:7px; height:7px; border-radius:50%; background:#2a241a; border:1px solid #5a4a2a; } .bzp-mon .dots span.on{ background:#ffcf4a; }
+  .bzp-towers{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:8px; }
+  .bzp-tower{ display:flex; gap:10px; align-items:center; padding:8px; border:1px solid rgba(191,161,95,.22); border-left:4px solid var(--twc); border-radius:6px; background:rgba(0,0,0,.3); }
+  .bzp-tower img{ width:40px; height:40px; } .bzp-tower .bar{ height:5px; background:#0a0705; border-radius:3px; overflow:hidden; margin-top:4px; } .bzp-tower .bar i{ display:block; height:100%; background:var(--twc); }
+  .bzp-bid{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--gold-deep); border-radius:8px; background:rgba(191,161,95,.07); flex-wrap:wrap; }
+  .bzp-bid .big{ font-size:19px; color:var(--gold-bright); font-weight:700; }
+  .bzp-bid input{ background:#0d0a08; border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:6px 8px; width:130px; font-size:13px; }
+  .bzp-bid button, .bz-detail .bz-open{ font-family:var(--font-mono); font-size:11px; padding:8px 14px; border:1px solid var(--ok); color:var(--ok); border-radius:5px; background:rgba(0,0,0,.3); cursor:pointer; font-weight:700; }
+  .bz-detail .bz-open{ border-color:var(--gold-bright); color:var(--gold-bright); width:100%; margin-top:10px; padding:11px; font-size:12px; }
+
   /* ===== MERCENÁRIOS ===== */
   #merc-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:820px; max-width:96vw; height:560px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
   #merc-panel.open{ display:flex; }
@@ -3365,6 +3441,7 @@
       <div class="tb-icon tb-hidden" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
       <div class="tb-icon" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/analyzer.png" alt=""></div>
       <div class="tb-icon" id="btn-open-merc" title="Mercenários">🗡️</div>
+      <div class="tb-icon" id="btn-open-bazaar" title="Bazar de Personagens">⚖️</div>
       <div class="tb-icon" id="btn-open-mail" title="Correio">✉️<span class="tb-badge" id="mail-badge" style="display:none;">0</span></div>
       <div class="tb-icon" id="btn-open-wiki" title="Wiki (itens e bestiário)">📖</div>
       <!-- Item 11 da lista de tarefas (2026-09-20): antes eram 2 ícones soltos
@@ -3494,6 +3571,22 @@
     </div>
   </div>
   <div class="skill-node-tip" id="skill-node-tip"></div>
+
+  <!-- BAZAR DE PERSONAGENS (07/11/2026) -->
+  <div id="bazaar-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Bazar de Personagens<span class="rule"></span><span class="win-close-x" data-close-win="bazaar-panel">✕</span></div>
+    <div class="merc-body">
+      <div class="mail-tabs" id="bz-tabs">
+        <button data-bt="active" class="on">⚖️ Leilões</button><button data-bt="sold">📈 Vendidos</button><button data-bt="sell">💰 Vender este personagem</button>
+      </div>
+      <div id="bz-content" class="merc-content"></div>
+    </div>
+  </div>
+
+  <div id="bz-profile" class="glass ornate win" style="display:none;">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Perfil do personagem<span class="rule"></span><span class="win-close-x" id="bzp-close">✕</span></div>
+    <div id="bzp-body"></div>
+  </div>
 
   <!-- MERCENÁRIOS (07/11/2026) -->
   <div id="merc-panel" class="glass ornate win">
@@ -9901,6 +9994,7 @@
             localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.portal; break;
           }
           if(msg.error === 'manutencao'){ showServerDown({ message: msg.message, etaAt: msg.etaAt }, true); break; } // continua tentando sozinho
+          if(msg.error === 'personagem_em_leilao'){ netState.stopReconnect = true; try{ sessionStorage.setItem('elemental_cs_msg', '⚖️ Este personagem está à venda no Bazar e fica travado até o leilão acabar. Entre com outro personagem.'); }catch(e){} window.location.href = ELEM_ROUTE.personagens; break; }
           if(msg.error === 'mercenario_ativo'){ netState.stopReconnect = true; try{ sessionStorage.setItem('elemental_cs_msg', `🗡️ Este personagem está trabalhando como mercenário para ${msg.hirer||'outro jogador'} até ${new Date(msg.until).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}. Entre com outro personagem ou espere o contrato acabar.`); }catch(e){} window.location.href = ELEM_ROUTE.personagens; break; }
           if(msg.error === 'personagem_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.personagens; break; }
           logLoot(`⚠️ ${msg.error}`); break;
@@ -10287,6 +10381,197 @@
   }
 
 
+
+  /* ===== BAZAR DE PERSONAGENS (07/11/2026, item 15) ===== */
+  const bazaarPanel = document.getElementById('bazaar-panel');
+  let bzData = { active:[], sold:[], mine:[], me:null }, bzTab = 'active', bzSel = null, bzSell = { days:3, minBid:500 };
+  const BZ_TOWER_NAME = { central:'Central', fogo:'Fogo', agua:'Água', terra:'Terra', ar:'Ar', luz:'Luz', trevas:'Trevas' };
+  document.getElementById('btn-open-bazaar').addEventListener('click', ()=>{ bazaarPanel.classList.toggle('open'); if(bazaarPanel.classList.contains('open')){ sendWS({ type:'bazaar:list' }); renderBazaar(); } });
+  document.getElementById('bz-tabs').addEventListener('click', e=>{ const b = e.target.closest('button[data-bt]'); if(!b) return; bzTab = b.dataset.bt; renderBazaar(); });
+  setInterval(()=>{ if(bazaarPanel.classList.contains('open')) sendWS({ type:'bazaar:list' }); }, 15000);
+  function bzLeft(ms){ ms = Math.max(0, ms); const d = Math.floor(ms/86400000), h = Math.floor(ms%86400000/3600000), m = Math.floor(ms%3600000/60000); return d ? `${d}d ${h}h` : h ? `${h}h ${m}min` : `${m}min`; }
+  const bzCoin = v => `${(v||0).toLocaleString('pt-BR')} <small style="font-weight:400;color:var(--ink-dim)">Coin</small>`;
+  function bzArch(sn, sz){ return (sn.archetypes||[]).map(a=>`<img src="${archetypeIconUrl(a,'28x28')}" style="width:${sz}px;height:${sz}px;" title="${escapeHtml(ARCHETYPE_LABEL[a]||a)}" onerror="this.style.display='none'">`).join(''); }
+  function bzItem(it){
+    const src = (typeof GEM_ICON_URL!=='undefined' && GEM_ICON_URL[it.id]) || (it.icon ? equipIconUrl(it.icon) : itemIconUrl(it.id));
+    return `<div class="it" style="--rc:${MAIL_RARITY_COLOR[it.rarity]||'rgba(191,161,95,.3)'}" title="${escapeHtml(it.name||'')}${it.enchantLevel?' +'+it.enchantLevel:''}"><img src="${src}" onerror="this.outerHTML='📦'">${it.enchantLevel?`<span class="q">+${it.enchantLevel}</span>`:(it.qty>1?`<span class="q">${it.qty}</span>`:'')}</div>`;
+  }
+  function bzDetailHtml(a){
+    const sn = a.snapshot||{}; const me = bzData.me||{};
+    const towers = Object.entries(sn.towers||{}).filter(([k,v])=>v>0).map(([k,v])=>`${BZ_TOWER_NAME[k]||k} ${v}`).join(' · ') || 'nenhum andar';
+    const star = sn.star && sn.star.totalStars ? `★ ${sn.star.totalStars}` : '—';
+    const box = a.status !== 'active' ? `<div class="bz-bidbox"><div>Status: <b>${a.status==='sold'?`Vendido por ${bzCoin(a.currentBid)} para ${escapeHtml(a.bidderNick||'')}`:a.status==='unsold'?'Terminou sem lances':'Cancelado'}</b></div></div>`
+      : a.mine ? `<div class="bz-bidbox"><div>Seu anúncio · termina em <b>${bzLeft(a.endsAt-Date.now())}</b></div><div>Lance atual: <span class="big">${a.currentBid?bzCoin(a.currentBid):'sem lances'}</span></div>${!a.currentBid?`<div><button id="bz-cancel" style="border-color:#c9573a;color:#ff9a80;">Cancelar anúncio</button> <span class="bz-bids">(a taxa de anúncio não volta)</span></div>`:''}</div>`
+      : `<div class="bz-bidbox">
+          <div>Termina em <b>${bzLeft(a.endsAt-Date.now())}</b> · ${a.bidsCount} lance(s)</div>
+          <div>${a.currentBid?'Lance atual':'Lance mínimo'}: <span class="big">${bzCoin(a.currentBid||a.minBid)}</span>${a.bidderNick?` <span class="bz-bids">por ${escapeHtml(a.bidderNick)}${a.myBid?' (você)':''}</span>`:''}</div>
+          <div style="display:flex;gap:8px;align-items:center;"><input type="number" id="bz-amount" min="${a.nextMin}" value="${a.nextMin}"><button id="bz-bid">Dar lance</button><span class="bz-bids">mín. ${a.nextMin.toLocaleString('pt-BR')} · você tem ${(me.coins||0).toLocaleString('pt-BR')}</span></div>
+          <div class="bz-bids">O Coin do lance fica guardado; se alguém cobrir, ele volta pelo Correio. Lance nos últimos 5 min estende o leilão em 5 min.</div>
+        </div>`;
+    return `<div style="display:flex;gap:10px;align-items:center;">${bzArch(sn,34)}<div><h3>${escapeHtml(a.nick)}</h3><div class="bz-bids">Nv. ${sn.level}${sn.className?' · '+escapeHtml(sn.className):''} · ${star} · ${sn.gender==='female'?'Feminino':'Masculino'}</div></div></div>
+      ${box}
+      <button class="bz-open" data-bz-profile="${a.id}">👁️ Ver perfil completo (equipamento, status, bestiário, mochila...)</button>
+      <div class="bz-sec">Resumo</div>
+      <div class="bz-kv"><span>⚔️ Ataque <b>${(sn.dps||0).toLocaleString('pt-BR')}</b></span><span>🛡️ Defesa <b>${(sn.armor||0).toLocaleString('pt-BR')}</b></span><span>❤️ Vida <b>${(sn.hpMax||0).toLocaleString('pt-BR')}</b></span>
+        <span>🪙 Ouro <b>${((sn.gold||0)+(sn.bankGold||0)).toLocaleString('pt-BR')}</b></span><span>💎 Coin <b>${(sn.elementalCoins||0).toLocaleString('pt-BR')}</b></span><span>⏱️ Jogo <b>${Math.round((sn.playTimeMs||0)/3600000)}h</b></span></div>
+      <div class="bz-sec">Torres</div><div>${towers}</div>
+      ${(a.bids||[]).length?`<div class="bz-sec">Últimos lances</div><div class="bz-bids">${a.bids.map(b=>`${escapeHtml(b.nick)} — ${b.amount.toLocaleString('pt-BR')} (${new Date(b.at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})})`).join('<br>')}</div>`:''}`;
+  }
+  function renderBazaar(){
+    if(!bazaarPanel.classList.contains('open')) return;
+    document.querySelectorAll('#bz-tabs button').forEach(b=> b.classList.toggle('on', b.dataset.bt===bzTab));
+    const el = document.getElementById('bz-content'), me = bzData.me;
+    if(bzTab === 'active'){
+      const list = bzData.active;
+      if(!list.length){ el.innerHTML = '<div class="merc-empty">⚖️<br>Nenhum personagem à venda agora.<br>Jogadores Premium podem vender na aba "Vender este personagem".</div>'; return; }
+      if(!bzSel || !list.some(a=>a.id===bzSel)) bzSel = list[0].id;
+      const a = list.find(x=>x.id===bzSel);
+      el.innerHTML = `<div class="bz-wrap"><div class="bz-list">${list.map(x=>`<div class="bz-row${x.id===bzSel?' sel':''}" data-bz="${x.id}"><span class="arch">${bzArch(x.snapshot,26)}</span><div><div class="nm">${escapeHtml(x.nick)}</div><div class="sub">Nv. ${x.snapshot.level} · ${bzLeft(x.endsAt-Date.now())}${x.mine?' · seu':''}${x.myBid?' · seu lance':''}</div></div><div class="bid">${bzCoin(x.currentBid||x.minBid)}<div class="sub">${x.bidsCount} lance(s)</div></div></div>`).join('')}</div>
+        <div class="bz-detail">${bzDetailHtml(a)}</div></div>`;
+      el.querySelectorAll('[data-bz]').forEach(r=> r.addEventListener('click', ()=>{ bzSel = r.dataset.bz; renderBazaar(); }));
+      el.querySelectorAll('[data-bz-profile]').forEach(b=> b.addEventListener('click', ()=> openBzProfile(b.dataset.bzProfile)));
+      const bb = document.getElementById('bz-bid'); if(bb) bb.addEventListener('click', ()=>{ const v = Math.floor(+document.getElementById('bz-amount').value||0); if(confirm(`Dar lance de ${v.toLocaleString('pt-BR')} Elemental Coin em ${a.nick}? O valor fica guardado até alguém cobrir ou o leilão acabar.`)) sendWS({ type:'bazaar:bid', id:a.id, amount:v }); });
+      const cb = document.getElementById('bz-cancel'); if(cb) cb.addEventListener('click', ()=>{ if(confirm('Cancelar o anúncio? A taxa não volta.')) sendWS({ type:'bazaar:cancel', id:a.id }); });
+    } else if(bzTab === 'sold'){
+      el.innerHTML = bzData.sold.length ? `<table class="bz-table"><tr><th>Personagem</th><th>Nível</th><th>Classe</th><th>Vendido por</th><th>Lances</th><th>Data</th></tr>${bzData.sold.map(a=>`<tr><td>${bzArch(a.snapshot,18)} ${escapeHtml(a.nick)}</td><td>${a.snapshot.level}</td><td>${escapeHtml(a.snapshot.className||'—')}</td><td style="color:var(--gold-bright)">${bzCoin(a.currentBid)}</td><td>${a.bidsCount}</td><td>${new Date(a.soldAt).toLocaleDateString('pt-BR')}</td></tr>`).join('')}</table>`
+        : '<div class="merc-empty">📈<br>Nenhuma venda ainda.</div>';
+    } else {
+      if(!me){ el.innerHTML = '<div class="merc-empty">Carregando...</div>'; return; }
+      const net = Math.floor(bzSell.minBid * (1 - me.tax));
+      const mine = bzData.mine.length ? `<div class="bz-sec">Seus leilões</div><table class="bz-table"><tr><th>Personagem</th><th>Status</th><th>Lance</th><th></th></tr>${bzData.mine.map(a=>`<tr><td>${escapeHtml(a.nick)}</td><td>${a.status==='active'?'Ativo · '+bzLeft(a.endsAt-Date.now()):a.status==='sold'?'Vendido':a.status==='unsold'?'Sem lances':'Cancelado'}</td><td>${a.currentBid?bzCoin(a.currentBid):'—'}</td><td>${a.status==='active'&&!a.currentBid?`<button data-bzc="${a.id}" style="border-color:#c9573a;color:#ff9a80;padding:4px 8px;">Cancelar</button>`:''}</td></tr>`).join('')}</table>` : '';
+      el.innerHTML = `<div class="merc-form" style="max-width:640px;">
+        <div class="note">Venda <b>${escapeHtml(me.nick)}</b> (Nv. ${me.level}) num leilão em Elemental Coin. Quem vencer leva o personagem com tudo: equipamento, mochila, armazém, ouro, banco e visuais. Taxa de anúncio: <b>${me.fee} Coin</b> (não volta). No fim você recebe <b>${Math.round((1-me.tax)*100)}%</b> do lance vencedor pelo Correio — se a conta ficar sem personagem, ele chega no primeiro que você criar.</div>
+        ${!me.isPremium ? '<div class="warn">⭐ Só contas <b>Premium</b> podem vender personagem.</div>' : `
+        <div><label>Duração do leilão</label><div class="opts">${me.days.map(d=>`<button data-bd="${d}" class="${bzSell.days===d?'on':''}">${d} dia${d>1?'s':''}</button>`).join('')}</div></div>
+        <div class="row"><div><label>Lance mínimo (Elemental Coin)</label><input id="bz-minbid" type="number" min="${me.minBid}" value="${bzSell.minBid}" style="width:140px;"></div>
+          <div style="padding-bottom:6px;line-height:1.5;">Vendendo pelo mínimo: recebe <b style="color:var(--ok)">${net.toLocaleString('pt-BR')} Coin</b> (90% do lance)<br><span class="bz-bids">− ${me.fee} Coin da taxa de anúncio, paga agora = saldo de <b>${(net-me.fee).toLocaleString('pt-BR')} Coin</b></span></div></div>
+        <div class="warn">⚠️ Ao anunciar, você volta pra seleção de personagem e <b>${escapeHtml(me.nick)} fica travado</b> até o leilão acabar. Precisa estar na Cidade, fora de guilda, sem ofertas no Mercado e sem contrato de mercenário. Dá pra cancelar só enquanto não tiver lance.</div>
+        <div class="row"><button class="go" id="bz-sell-btn" style="margin-left:0;" ${(me.coins||0)<me.fee?'disabled title="Coin insuficiente pra taxa"':''}>💰 Anunciar ${escapeHtml(me.nick)} (${me.fee} Coin)</button></div>`}
+        ${mine}
+      </div>`;
+      el.querySelectorAll('[data-bd]').forEach(b=> b.addEventListener('click', ()=>{ bzSell.days = +b.dataset.bd; renderBazaar(); }));
+      const mi = document.getElementById('bz-minbid'); if(mi) mi.addEventListener('change', ()=>{ bzSell.minBid = Math.max(me.minBid, Math.floor(+mi.value||0)); renderBazaar(); });
+      const sb = document.getElementById('bz-sell-btn'); if(sb) sb.addEventListener('click', ()=>{ if(confirm(`Anunciar ${me.nick} no Bazar por ${bzSell.days} dia(s), lance mínimo ${bzSell.minBid} Coin? Taxa: ${me.fee} Coin. O personagem fica travado.`)) sendWS({ type:'bazaar:create', days:bzSell.days, minBid:bzSell.minBid }); });
+      el.querySelectorAll('[data-bzc]').forEach(b=> b.addEventListener('click', ()=>{ if(confirm('Cancelar o anúncio? A taxa não volta.')) sendWS({ type:'bazaar:cancel', id:b.dataset.bzc }); }));
+    }
+  }
+
+  /* Perfil completo do personagem à venda (07/11/2026, pedido do usuário) */
+  let bzpId = null, bzpTab = 'equip';
+  const bzpEl = document.getElementById('bz-profile');
+  document.getElementById('bzp-close').addEventListener('click', ()=>{ bzpEl.style.display = 'none'; bzpId = null; });
+  function openBzProfile(id){ bzpId = id; bzpTab = 'equip'; bzpEl.style.display = 'flex'; renderBzProfile(); }
+  const BZP_SLOT_PH = { helmet:'helmet', armor:'armor', legs:'legs', boots:'boots', amulet:'amulet', accessory1:'left_ring', accessory2:'right_ring', weapon:'right_hand', offhand:'left_hand' };
+  const BZP_SLOT_NAME = { helmet:'Elmo', armor:'Armadura', legs:'Calças', boots:'Botas', amulet:'Colar', accessory1:'Acessório', accessory2:'Acessório', weapon:'Arma', offhand:'Offhand' };
+  function bzpIconSrc(it){ return (typeof GEM_ICON_URL!=='undefined' && GEM_ICON_URL[it.id]) || (it.icon ? equipIconUrl(it.icon) : itemIconUrl(it.id)); }
+  function bzpSlot(it, key, tag){
+    if(!it) return `<div class="bzp-slot" title="${BZP_SLOT_NAME[key]||''} (vazio)">${key?`<img class="ph" src="${RD_CHAR_ICON(BZP_SLOT_PH[key]||'trinket')}" onerror="this.style.display='none'">`:''}${tag?`<span class="tag">${tag}</span>`:''}</div>`;
+    const tip = `${it.name||it.id}${it.enchantLevel?' +'+it.enchantLevel:''}${it.tier?' · Tier '+it.tier:''} · ${it.rarity||''}${(it.qty||1)>1?' · x'+it.qty:''}`;
+    return `<div class="bzp-slot" title="${escapeHtml(tip)}"><img class="ic" src="${bzpIconSrc(it)}" onerror="this.outerHTML='<span style=&quot;font-size:22px&quot;>📦</span>'">${rarityFrameHtml(it.rarity)}${it.enchantLevel?`<span class="enc">+${it.enchantLevel}</span>`:''}${(it.qty||1)>1?`<span class="q">${it.qty}</span>`:''}${tag?`<span class="tag">${tag}</span>`:''}</div>`;
+  }
+  function bzpPortrait(canvas, sn, withExtras){
+    try{
+      const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+      const cz = sn.cosmetics || {};
+      drawCharacterLayers({ x: canvas.width/2, y: canvas.height - 8 }, 0, sn.gender || 'male', sn.hairId || 1, cz.outfit || sn.outfit || 'padrao', withExtras ? cz.wings : null, withExtras ? cz.aura : null, '#d3ab54', ctx, sn.hairStyleId || 1, null, sn.cosmeticColors || null);
+    }catch(e){}
+  }
+  function renderBzProfile(){
+    const all = [...bzData.active, ...bzData.sold, ...bzData.mine];
+    const a = all.find(x=> x.id === bzpId); if(!a){ bzpEl.style.display = 'none'; return; }
+    const sn = a.snapshot || {}; const me = bzData.me || {};
+    const star = sn.star && sn.star.totalStars ? ` · ★ ${sn.star.totalStars}` : '';
+    const tabs = [['equip','equipment_icon','Equipamento'],['stats','stats_icon','Status'],['bestiary',null,'📖 Bestiário'],['bag',null,'🎒 Mochila'],['depot',null,'📦 Armazém'],['towers',null,'🏛️ Torres e Chefes'],['visual','customization_icon','Visual']];
+    let pane = '';
+    if(bzpTab === 'equip'){
+      const eq = {}; (sn.equipment||[]).forEach(it=> eq[it.key] = it);
+      const cs = sn.combat || {};
+      pane = `<div class="bzp-eqwrap"><div class="bzp-doll">
+          <div class="bzp-col">${['helmet','armor','legs','boots'].map(k=> bzpSlot(eq[k], k, BZP_SLOT_NAME[k])).join('')}</div>
+          <div class="bzp-portrait">${bzpSlot(eq.amulet,'amulet','Colar')}<canvas id="bzp-doll-canvas" width="75" height="90"></canvas>
+            <div style="display:flex;gap:10px;margin-top:6px;">${bzpSlot(eq.weapon,'weapon','Arma')}${bzpSlot(eq.offhand,'offhand','Offhand')}</div></div>
+          <div class="bzp-col">${bzpSlot(eq.accessory1,'accessory1','Acessório')}${bzpSlot(eq.accessory2,'accessory2','Acessório')}</div>
+        </div>
+        <div class="bzp-power"><div class="pw"><div class="num"><img src="${RD_CHAR_ICON('icon_attack_power')}">${Math.round(cs.dps||sn.dps||0).toLocaleString('pt-BR')}</div><div class="lbl">Poder de Ataque</div></div>
+          <div class="pw"><div class="num"><img src="${RD_CHAR_ICON('icon_defense_power')}">${Math.round(cs.armor||sn.armor||0).toLocaleString('pt-BR')}</div><div class="lbl">Poder de Defesa</div></div></div></div>`;
+    } else if(bzpTab === 'stats'){
+      const cs = sn.combat || {}, at = sn.statAttributes || {}, al = sn.statAllocation || {}, tot = at.primaryTotals || al;
+      const f1 = v=> (Math.round((v||0)*10)/10).toLocaleString('pt-BR');
+      const prim = [['vitality','Vitalidade'],['might','Força'],['intelligence','Inteligência'],['dexterity','Destreza'],['wisdom','Sabedoria']]
+        .map(([k,l])=>`<div class="bzp-row"><img src="${RD_CHAR_ICON(RD_PRIMARY_ICON[k])}">${l}<b>${Math.round(tot[k]||al[k]||0)}</b></div>`).join('');
+      const sec = [['icon_maximum_health','Vida máxima',(sn.hpMax||0).toLocaleString('pt-BR')],['icon_maximum_mana','Mana máxima',(sn.mpMax||0).toLocaleString('pt-BR')],
+        ['icon_spell_power','Poder Mágico',f1(at.spellPowerPct)+'%'],['icon_weapon_power','Poder de Arma',f1(at.weaponPowerPct)+'%'],['icon_healing_power','Poder de Cura',f1(at.healingPowerPct)+'%'],
+        ['icon_precision','Precisão',f1(at.precisionPct)+'%'],['icon_impact','Impacto',f1(at.impactPct)+'%'],['icon_haste','Velocidade',f1(at.hastePct)+'%']]
+        .map(([i,l,v])=>`<div class="bzp-row"><img src="${RD_CHAR_ICON(i)}">${l}<b>${v}</b></div>`).join('');
+      const SI = n=> `${URL_BASE}ui/stats/${n}.png`;
+      const cmb = [['dps','Dano por segundo',f1(cs.dps)],['critchance','Chance de crítico',f1(cs.critChancePct)+'%'],['critdmg','Dano crítico',f1(cs.critDamagePct)+'%'],['dodge','Esquiva',f1(cs.dodgeChancePct)+'%'],
+        ['physdmg','Dano físico',f1(cs.physicalDamagePct)+'%'],['magicdmg','Dano mágico',f1(cs.magicDamagePct)+'%'],['armor','Armadura',f1(cs.armor)]]
+        .map(([i,l,v])=>`<div class="bzp-row"><img src="${SI(i)}" onerror="this.style.visibility='hidden'">${l}<b>${v}</b></div>`).join('');
+      pane = `<div class="bzp-power" style="margin-bottom:14px;"><div class="pw"><div class="num"><img src="${RD_CHAR_ICON('icon_attack_power')}">${Math.round(cs.dps||0).toLocaleString('pt-BR')}</div><div class="lbl">Poder de Ataque</div></div>
+          <div class="pw"><div class="num"><img src="${RD_CHAR_ICON('icon_defense_power')}">${Math.round(cs.armor||0).toLocaleString('pt-BR')}</div><div class="lbl">Poder de Defesa</div></div></div>
+        <div class="bzp-grid2"><div><div class="bzp-sec">Atributos principais</div>${prim}<div class="bzp-sec" style="margin-top:12px;">Combate</div>${cmb}</div>
+          <div><div class="bzp-sec">Atributos secundários</div>${sec}${cs.setBonusLabel?`<div class="bzp-sec" style="margin-top:12px;">Conjunto</div><div class="bzp-row">${escapeHtml(cs.setBonusLabel)}</div>`:''}</div></div>`;
+    } else if(bzpTab === 'bestiary'){
+      const kc = sn.bestiaryKillCounts || {}, cl = sn.bestiaryTierClaims || {}, bb = sn.bestiaryBonus || {};
+      const cat = new Map(getWikiMonsterCatalog().map(m=>[m.name, m]));
+      const names = Object.keys(kc).filter(n=> kc[n] > 0).sort((x,y)=> kc[y]-kc[x]);
+      const rnd = Object.entries(bb.random||{}).map(([k,v])=>`<span class="bzp-chip">+${v}% <b>${escapeHtml({critChancePct:'Chance de Crítico',critDmgPct:'Dano Crítico',dodgePct:'Esquiva',physicalDmgPct:'Dano Físico',magicDmgPct:'Dano Mágico',hpBonusPct:'Vida',mpBonusPct:'Mana',defPct:'Defesa'}[k]||k)}</b></span>`).join('');
+      pane = `<div class="bzp-chips"><span class="bzp-chip">📖 <b>${names.length}</b> espécies</span><span class="bzp-chip">⚔️ Dano do Bestiário <b>+${bb.dmgPct||0}%</b></span><span class="bzp-chip">✨ XP dos marcos <b>+${bb.expPct||0}%</b></span><span class="bzp-chip">✨ XP por espécies <b>+${bb.listXpPct||0}%</b></span>${rnd}</div>
+        <div class="bzp-mons">${names.map(n=>{ const m = cat.get(n) || {}; const c = cl[n] ?? -1;
+          return `<div class="bzp-mon" title="${escapeHtml(n)}: ${kc[n].toLocaleString('pt-BR')} abates">${m.img?`<img data-crop="${m.img}" src="${towerCropCache[m.img]||m.img}" onerror="this.outerHTML='<span style=&quot;font-size:26px&quot;>${m.icon||'👾'}</span>'">`:`<span style="font-size:26px">${m.icon||'👾'}</span>`}
+            <span class="n">${escapeHtml(n)}</span><span class="k">${kc[n].toLocaleString('pt-BR')}</span><div class="dots">${[0,1,2,3].map(i=>`<span class="${i<=c?'on':''}"></span>`).join('')}</div></div>`; }).join('') || '<div class="italic-note">Nenhum monstro abatido.</div>'}</div>`;
+    } else if(bzpTab === 'bag' || bzpTab === 'depot'){
+      const list = (bzpTab === 'bag' ? sn.bag : sn.depot) || [];
+      pane = list.length ? `<div class="bzp-items">${list.map(it=> bzpSlot(it, null, null)).join('')}</div>` : `<div class="italic-note">${bzpTab==='bag'?'Mochila':'Armazém'} vazio.</div>`;
+      pane = `<div class="bzp-chips"><span class="bzp-chip">🪙 Ouro <b>${(sn.gold||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">🏦 Banco <b>${(sn.bankGold||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">💎 Coin <b>${(sn.elementalCoins||0).toLocaleString('pt-BR')}</b></span><span class="bzp-chip">${bzpTab==='bag'?'🎒':'📦'} <b>${list.length}</b> item(ns)</span></div>` + pane;
+    } else if(bzpTab === 'towers'){
+      const tw = sn.towers || {}; const bk = sn.bossKillCounts || {};
+      const bosses = Object.keys(bk).filter(n=> bk[n] > 0).sort((x,y)=> bk[y]-bk[x]);
+      const bossSprite = n=>{ const b = BOSSTIARY ? [...BOSSTIARY.area, ...BOSSTIARY.tower].find(x=> x.name === n) : null; return b; };
+      pane = `<div class="bzp-sec">Torres Elementais</div><div class="bzp-towers">${TOWERS_CATALOG_CLIENT.map(t=>{ const f = tw[t.id]||0;
+          return `<div class="bzp-tower" style="--twc:${t.color}"><img src="${URL_BASE}ui/towers/tower_${t.id}.png" onerror="this.outerHTML='<span style=&quot;font-size:26px&quot;>${t.icon}</span>'"><div style="flex:1;"><div style="font-size:12px;color:var(--gold-bright);">${t.name}</div><div class="bz-bids">Andar ${f}/100</div><div class="bar"><i style="width:${f}%"></i></div></div></div>`; }).join('')}</div>
+        <div class="bzp-sec" style="margin-top:14px;">Chefes derrotados</div>
+        <div class="bzp-mons">${bosses.map(n=>{ const b = bossSprite(n); return `<div class="bzp-mon">${b ? bossImgHtml(b, 40) : '<span style="font-size:26px">👑</span>'}<span class="n">${escapeHtml(n)}</span><span class="k">${bk[n].toLocaleString('pt-BR')}x</span></div>`; }).join('') || '<div class="italic-note">Nenhum chefe derrotado.</div>'}</div>`;
+    } else {
+      pane = `<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;"><canvas id="bzp-visual-canvas" width="90" height="100" style="width:270px;height:300px;image-rendering:pixelated;"></canvas>
+        <div style="flex:1;min-width:240px;"><div class="bzp-chips">
+          <span class="bzp-chip">👕 Trajes <b>${(sn.ownedOutfits||[]).length}</b></span><span class="bzp-chip">🪽 Asas <b>${(sn.ownedWings||[]).length}</b></span><span class="bzp-chip">✨ Auras <b>${(sn.ownedAuras||[]).length}</b></span>
+          <span class="bzp-chip">🐎 Montarias <b>${(sn.ownedMounts||[]).length}</b></span><span class="bzp-chip">🐾 Pets <b>${(sn.ownedPets||[]).length}</b></span></div>
+          ${sn.cosmetics && sn.cosmetics.ornament ? `<div class="bzp-sec">Ornamento</div><img src="${URL_BASE}ornaments/${sn.cosmetics.ornament}.png" style="max-height:40px;">` : ''}
+          <div class="bzp-sec">Usando agora</div><div class="bz-bids">Traje: ${escapeHtml((sn.cosmetics||{}).outfit||'padrão')} · Asas: ${escapeHtml((sn.cosmetics||{}).wings||'nenhuma')} · Aura: ${escapeHtml((sn.cosmetics||{}).aura||'nenhuma')}</div></div></div>`;
+    }
+    const bidBox = a.status !== 'active' ? `<div class="bzp-bid">${a.status==='sold'?`Vendido por <span class="big">${bzCoin(a.currentBid)}</span> para ${escapeHtml(a.bidderNick||'')}`:'Leilão encerrado'}</div>`
+      : a.mine ? `<div class="bzp-bid">Seu anúncio · lance atual <span class="big">${a.currentBid?bzCoin(a.currentBid):'sem lances'}</span> · termina em <b>${bzLeft(a.endsAt-Date.now())}</b></div>`
+      : `<div class="bzp-bid"><div>${a.currentBid?'Lance atual':'Lance mínimo'} <span class="big">${bzCoin(a.currentBid||a.minBid)}</span>${a.bidderNick?` <span class="bz-bids">por ${escapeHtml(a.bidderNick)}${a.myBid?' (você)':''}</span>`:''}<div class="bz-bids">Termina em ${bzLeft(a.endsAt-Date.now())} · ${a.bidsCount} lance(s)</div></div>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;"><input type="number" id="bzp-amount" min="${a.nextMin}" value="${a.nextMin}"><button id="bzp-bid">Dar lance</button></div>
+          <div class="bz-bids" style="width:100%;">Você tem ${(me.coins||0).toLocaleString('pt-BR')} Coin · mín. ${a.nextMin.toLocaleString('pt-BR')} · o Coin fica guardado e volta pelo Correio se alguém cobrir.</div></div>`;
+    document.getElementById('bzp-body').innerHTML = `<div class="bzp-head"><canvas id="bzp-head-canvas" width="70" height="80" style="width:70px;height:80px;"></canvas><div class="bzp-lvl"><b>${sn.level||1}</b><small>NÍVEL</small></div>
+        <div><div class="bzp-name">${escapeHtml(a.nick)}</div><div class="bzp-sub">${bzArch(sn,20)} ${escapeHtml(sn.className||'')}${star} · ${sn.gender==='female'?'Feminino':'Masculino'} · ${Math.round((sn.playTimeMs||0)/3600000)}h de jogo</div></div></div>
+      <div class="bzp-tabs">${tabs.map(([k,ic,l])=>`<button data-bzpt="${k}" class="${bzpTab===k?'on':''}">${ic?`<img src="${RD_CHAR_ICON(ic)}">`:''}${l}</button>`).join('')}</div>
+      <div class="bzp-pane">${pane}</div>${bidBox}`;
+    bzpPortrait(document.getElementById('bzp-head-canvas'), sn, false);
+    const dc = document.getElementById('bzp-doll-canvas'); if(dc) bzpPortrait(dc, sn, false);
+    const vc = document.getElementById('bzp-visual-canvas'); if(vc) bzpPortrait(vc, sn, true);
+    document.querySelectorAll('#bzp-body img[data-crop]').forEach(towerCropImg);
+    document.querySelectorAll('[data-bzpt]').forEach(b=> b.addEventListener('click', ()=>{ bzpTab = b.dataset.bzpt; renderBzProfile(); }));
+    const bb = document.getElementById('bzp-bid'); if(bb) bb.addEventListener('click', ()=>{ const v = Math.floor(+document.getElementById('bzp-amount').value||0); if(confirm(`Dar lance de ${v.toLocaleString('pt-BR')} Elemental Coin em ${a.nick}?`)) sendWS({ type:'bazaar:bid', id:a.id, amount:v }); });
+  }
+  const BZ_REASON = { precisa_premium:'Só contas Premium podem vender.', duracao_invalida:'Duração inválida.', lance_minimo_invalido:'Lance mínimo inválido.', apenas_na_cidade_principal:'Só na Cidade, fora de caçada.',
+    mercenario_ativo:'Encerre o anúncio de mercenário antes.', saia_da_guilda:'Saia da guilda antes de vender.', ofertas_no_mercado:'Cancele suas ofertas no Mercado antes.', ja_anunciado:'Já está à venda.',
+    moedas_insuficientes:'Elemental Coin insuficiente.', leilao_encerrado:'Esse leilão já acabou.', propria_conta:'Você não pode dar lance num personagem da sua própria conta.', lance_baixo:'Lance abaixo do mínimo.',
+    leilao_nao_encontrado:'Leilão não encontrado.', ja_tem_lance:'Já tem lance — não dá pra cancelar.' };
+  function handleBazaarAck(msg){
+    if(msg.forType === 'bazaar:list'){ bzData = { active:msg.active||[], sold:msg.sold||[], mine:msg.mine||[], me:msg.me||null }; renderBazaar(); if(bzpId && bzpEl.style.display !== 'none' && document.activeElement && document.activeElement.id !== 'bzp-amount') renderBzProfile(); return; }
+    if(!msg.ok){ partySimpleToast(`⚠️ ${BZ_REASON[msg.reason]||msg.reason}${msg.min?` (mín. ${msg.min.toLocaleString('pt-BR')})`:''}`); return; }
+    if(msg.forType === 'bazaar:create'){
+      partySimpleToast(`⚖️ ${escapeHtml(msg.nick)} anunciado no Bazar! Voltando pra seleção de personagem...`);
+      try{ sessionStorage.setItem('elemental_cs_msg', `⚖️ ${msg.nick} está à venda no Bazar por ${msg.days} dia(s). O pagamento chega pelo Correio.`); }catch(e){}
+      netState.stopReconnect = true; setTimeout(()=>{ window.location.href = ELEM_ROUTE.personagens; }, 1800); return;
+    }
+    if(msg.forType === 'bazaar:bid') partySimpleToast(`⚖️ Lance de ${msg.amount.toLocaleString('pt-BR')} Coin em ${escapeHtml(msg.nick)}!${msg.extended?' (leilão estendido 5 min)':''}`);
+    if(msg.forType === 'bazaar:cancel') partySimpleToast(`⚖️ Anúncio de ${escapeHtml(msg.nick)} cancelado.`);
+    sendWS({ type:'bazaar:list' });
+  }
   /* ===== MERCENÁRIOS (07/11/2026, item 14) — contratar / meus contratos /
      me cadastrar. Servidor é dono de tudo (merc:*). ===== */
   const mercPanel = document.getElementById('merc-panel');
@@ -10559,6 +10844,7 @@
   function handleAck(msg){
     if(msg.forType && msg.forType.indexOf('mail:')===0){ handleMailAck(msg); return; }
     if(msg.forType && msg.forType.indexOf('merc:')===0){ handleMercAck(msg); return; }
+    if(msg.forType && msg.forType.indexOf('bazaar:')===0){ handleBazaarAck(msg); return; }
     if(msg.forType === 'bag:openBox'){
       if(msg.ok && msg.activated){
         const b = msg.boost || {};
@@ -16235,7 +16521,7 @@
       const w=x1-x0+1, h=y1-y0+1, sz=Math.max(w,h)+2, o=document.createElement('canvas'); o.width=o.height=sz;
       o.getContext('2d').drawImage(c, x0,y0,w,h, Math.floor((sz-w)/2), Math.floor((sz-h)/2), w,h);
       towerCropCache[url] = o.toDataURL();
-      document.querySelectorAll('#towers-body img[data-crop]').forEach(e=>{ if(e.dataset.crop===url) e.src = towerCropCache[url]; });
+      document.querySelectorAll('img[data-crop]').forEach(e=>{ if(e.dataset.crop===url) e.src = towerCropCache[url]; });
     }catch(e){} };
     im.src = url;
   }

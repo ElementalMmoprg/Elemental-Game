@@ -1004,7 +1004,7 @@
         const arch = archOf(c), info = arch ? ARCHETYPE_INFO[arch] : null;
         const row = document.createElement('div');
         row.className = 'cs-row' + (idx===selectedIdx ? ' selected' : '');
-        row.innerHTML = `<canvas width="90" height="115"></canvas><div class="info"><div class="nm">${c.nick}</div><div class="meta">Nível ${c.level||1}${info?` · ${info.label}`:''}${starsOf(c)?` · ★${starsOf(c)}`:''}</div></div>${arch?`<img class="arch" src="${archetypeIconUrl(arch)}" alt="" onerror="this.style.display='none'">`:''}`;
+        row.innerHTML = `<canvas width="90" height="115"></canvas><div class="info"><div class="nm">${c.nick}</div><div class="meta">Nível ${c.level||1}${info?` · ${info.label}`:''}${starsOf(c)?` · ★${starsOf(c)}`:''}${c.bazaarId?' · <span style="color:#ffcf4a">⚖️ Em leilão</span>':''}${c.progress&&c.progress.mercenary?' · <span style="color:#ff9a80">🗡️ Mercenário</span>':''}</div></div>${arch?`<img class="arch" src="${archetypeIconUrl(arch)}" alt="" onerror="this.style.display='none'">`:''}`;
         row.addEventListener('click', ()=>{ selectedIdx = idx; renderSlots(); renderStatus(characters[selectedIdx]); });
         row.addEventListener('dblclick', ()=>{ const b = document.getElementById('connect-btn'); if(!b.disabled) b.click(); });
         listEl.appendChild(row);
