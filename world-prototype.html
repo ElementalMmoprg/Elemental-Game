@@ -8274,7 +8274,7 @@
     if(activeHunt.running){
       activeHunt.lurePoints.forEach((p,i)=>{
         const isCurrent = i===activeHunt.currentIndex;
-        const waitingCooldown = !p.isPortal && p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
+        const waitingCooldown = !p.isPortal && (p.alive!=null ? p.alive : p.monsters.length)===0 && Date.now()<p.respawnCooldownUntil;
         drawList.push({ baseCart:{x:p.x,y:p.y}, draw:()=>{
           // 21/10/2026: círculo do ponto de lure não aparece pro jogador nas caçadas (só Torre/portal)
           if(!p.isPortal && !isLegacyTowerArena()) return;
@@ -8610,7 +8610,7 @@
           ctx.fillText('PORTAL', s.x, s.y-14);
           return;
         }
-        const waitingCooldown = p.monsters.length===0 && Date.now()<p.respawnCooldownUntil;
+        const waitingCooldown = (p.alive!=null ? p.alive : p.monsters.length)===0 && Date.now()<p.respawnCooldownUntil;
         ctx.font = '9px "JetBrains Mono"'; ctx.fillStyle='#a99872'; ctx.textAlign='center';
         ctx.fillText(`Lure ${i+1}`, s.x, s.y-14);
         if(waitingCooldown){
@@ -9178,6 +9178,7 @@
     lastGold = player.gold; lastXp = player.xp; lastHp = player.hp;
     updateWasdMovement(dt);
     updateAutoWalk(dt);
+    huntMonInterp();
     rcAfterMove();
     updateTrainingVisual();
     spawnAuraParticles(dt);
@@ -9261,7 +9262,7 @@
     }
     else {
       const p = activeHunt.lurePoints[activeHunt.currentIndex];
-      el.innerHTML = `<b>${activeHunt.huntName}</b> · ${(DIFFICULTIES[activeHunt.difficulty]||{}).label||activeHunt.difficulty}<br>Ponto ${activeHunt.currentIndex+1}/${activeHunt.lurePoints.length} · ${activeHunt.lurePoints.reduce((a,q)=>a+q.monsters.length,0)} vivos<br>${econ}<br>${lootLog[0]||''}`;
+      el.innerHTML = `<b>${activeHunt.huntName}</b> · ${(DIFFICULTIES[activeHunt.difficulty]||{}).label||activeHunt.difficulty}<br>Ponto ${activeHunt.currentIndex+1}/${activeHunt.lurePoints.length} · ${activeHunt.lurePoints.reduce((a,q)=>a+(q.alive!=null?q.alive:q.monsters.length),0)} vivos<br>${econ}<br>${lootLog[0]||''}`;
     }
     updateDispatchPopover();
   }
@@ -9483,6 +9484,48 @@
     });
   }, 1000);
 
+  // MONSTROS COMPACTOS (07/11/2026 -- ver serializeLurePointsCompact no
+  // server.js): cada monstro tem um número curto (n). O servidor manda só o
+  // número quando nada mudou, e o objeto (só o que mudou) quando mudou; aqui
+  // os objetos ficam guardados por número e são REUSADOS entre snapshots.
+  // Ponto sem 'mv' = mesma lista do snapshot anterior. O andar de casa em casa
+  // é animado aqui (huntMonInterp), não depende mais de 30 snapshots/s.
+  const huntMonCache = new Map();
+  function inflateHuntMonsters(hunt){
+    if(!hunt) return;
+    if(!hunt.running){ huntMonCache.clear(); return; }
+    if(hunt.monReset) huntMonCache.clear();
+    const prev = activeHunt.lurePoints || [];
+    const t = performance.now();
+    if(Array.isArray(hunt.lurePoints)) hunt.lurePoints = hunt.lurePoints.map((p,i)=> p === null ? prev[i] : p).filter(Boolean);
+    (hunt.lurePoints||[]).forEach((p,i)=>{
+      if(p.alive == null || p.monsters) return; // formato antigo, ou ponto reaproveitado do snapshot anterior
+      if(p.mv){
+        p.monsters = p.mv.map(e=>{
+          if(typeof e === 'number') return huntMonCache.get(e);
+          let o = huntMonCache.get(e.n);
+          if(!o){ o = {}; huntMonCache.set(e.n, o); }
+          Object.assign(o, e);
+          if(e.stepping){ o._stepT0 = t - Math.max(0, (e.sd||0) - (e.sl||0)); o._stepDur = e.sd || 1; }
+          return o;
+        }).filter(Boolean);
+        delete p.mv;
+      } else {
+        const pp = prev[i];
+        p.monsters = (pp && pp.index === p.index && pp.monsters) || [];
+      }
+    });
+  }
+  function huntMonInterp(){
+    if(!activeHunt.running) return;
+    const t = performance.now();
+    for(const p of activeHunt.lurePoints||[]) for(const m of p.monsters||[]){
+      if(!m.stepping || m._stepDur == null || m.stepToX == null) continue;
+      const k = Math.max(0, Math.min(1, (t - m._stepT0) / m._stepDur));
+      m.x = (m.tileX + (m.stepToX - m.tileX) * k) * TILE_STEP;
+      m.y = (m.tileY + (m.stepToY - m.tileY) * k) * TILE_STEP;
+    }
+  }
   function applyHuntSnapshot(msg){
     // Cidade = o cliente já é dono da posição (WASD/clique — ver
     // updateWasdMovement); o servidor só ecoa de volta o que o próprio
@@ -9803,13 +9846,21 @@
           break;
         case 'item:mythicAnnounce': handleMythicAnnounce(msg); break;
         case 'positions':
-          remotePlayers.clear();
-          msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
+          if(msg.v === 2){ // 07/11/2026: só quem mudou (+ 'gone' = quem saiu) -- o resto continua igual
+            if(msg.reset) remotePlayers.clear();
+            (msg.gone||[]).forEach(u=> remotePlayers.delete(u));
+            msg.players.forEach(p=>{ if(p.username === AUTH_USERNAME) return; const prev = remotePlayers.get(p.username); if(prev) Object.assign(prev, p); else remotePlayers.set(p.username, p); });
+          } else {
+            remotePlayers.clear();
+            msg.players.forEach(p=>{ if(p.username !== AUTH_USERNAME) remotePlayers.set(p.username, p); });
+          }
           // 22/10/2026: cidade instanciada (até 100 por instância) — o servidor
           // só manda quem está na MESMA instância + a PT; o total vem à parte.
           serverOnlineCount = msg.online != null ? msg.online : null; cityInstanceNo = msg.cityInstance || null;
           break;
         case 'hunt:state': { // 22/10/2026: o servidor só manda o que MUDOU — junta com o último snapshot completo
+          if(msg.hunt && msg.hunt.partial){ const ph = lastHuntSnap && lastHuntSnap.hunt; msg.hunt = ph ? Object.assign({}, ph, { monReset:false }, msg.hunt) : msg.hunt; delete msg.hunt.partial; }
+          inflateHuntMonsters(msg.hunt);
           lastHuntSnap = Object.assign(lastHuntSnap || {}, msg); delete lastHuntSnap.light;
           applyHuntSnapshot(lastHuntSnap); break;
         }
@@ -12002,7 +12053,7 @@
     if(!el) return;
     if(activeHunt.running && activeHunt.huntId===selectedHunt.id){
       const p = activeHunt.lurePoints[activeHunt.currentIndex];
-      el.innerHTML = `Circuito: <b>${activeHunt.lurePoints.length} pontos de lure</b><br>No momento: Lure <b>${activeHunt.currentIndex+1}</b> · ${p?p.monsters.length:0} monstro(s) vivo(s)<br>${lootLog.slice(0,3).join('<br>')}`;
+      el.innerHTML = `Circuito: <b>${activeHunt.lurePoints.length} pontos de lure</b><br>No momento: Lure <b>${activeHunt.currentIndex+1}</b> · ${p?(p.alive!=null?p.alive:p.monsters.length):0} monstro(s) vivo(s)<br>${lootLog.slice(0,3).join('<br>')}`;
     } else {
       el.textContent = isNonLeaderMember() ? 'Aguardando o Líder do grupo clicar em IR.' : 'Selecione a dificuldade e clique em Iniciar Caçada.';
     }
