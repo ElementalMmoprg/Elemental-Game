@@ -2494,6 +2494,10 @@
   .mk-cat.all{ justify-content:center; color:var(--rd-accent); font-weight:600; }
   .mk-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; min-height:0; }
   .mk-bar{ display:flex; gap:6px; align-items:center; }
+  .lf-pill{ font-family:var(--font-mono); font-size:10px; padding:5px 10px; border-radius:14px; border:1px solid #3a3a40; background:#141416; color:#cfccc4; cursor:pointer; white-space:nowrap; }
+  .lf-pill.on{ color:#9be37a; border-color:#3d6a2e; cursor:default; }
+  .mk-cur{ background:#141416; border:1px solid #333338; color:#cfccc4; border-radius:14px; padding:4px 6px; font-size:11px; max-width:112px; flex:0 0 auto; }
+  .mk-pixbtn{ background:linear-gradient(#6fbf3a,#4e9a22) !important; color:#0c160a !important; font-weight:800 !important; }
   .mk-search{ flex:1; max-width:240px; display:flex; align-items:center; gap:6px; height:30px; padding:0 8px; background:#141416; border:1px solid #333338; border-radius:3px; }
   .mk-search img{ width:14px; }
   .mk-search input{ flex:1; min-width:0; background:none; border:0; outline:0; color:#e6e4df; font:12px inherit; }
@@ -9811,6 +9815,7 @@
         }
         case 'hunt:map': if(msg.map){ HUNT_MAPS[msg.map.id] = msg.map; const hk = activeHunt && activeHunt.running ? huntMapKey() : null; if(hk && hk !== msg.map.id) HUNT_MAPS[hk] = msg.map; } break; // Caçada de Material: 4 faixas usam o mesmo mapa (id do mapa != id da caçada)
         case 'hunt:ack': handleAck(msg); break;
+        case 'pix:paid': partySimpleToast(`✅ Pix confirmado! ${escapeHtml(msg.title||'')} — ${msg.kind==='bazaar'?'o personagem já está na sua conta (tela de seleção).':'o item chegou no seu ✉️ Correio.'}`); aucRequest(); break;
         case 'mail:hello': mailIsMod = !!msg.isMod; setMailUnread(msg.unread||0, true); break;
         case 'mail:new':
           partySimpleToast(`${MAIL_CAT_ICON[msg.cat]||'✉️'} <b>Nova carta no Correio:</b> ${escapeHtml(msg.title||'')}`);
@@ -10393,7 +10398,8 @@
 
   /* ===== BAZAR DE PERSONAGENS (07/11/2026, item 15) ===== */
   const bazaarPanel = document.getElementById('bazaar-panel');
-  let bzData = { active:[], sold:[], mine:[], me:null }, bzTab = 'active', bzSel = null, bzSell = { days:3, minBid:500 };
+  let bzData = { active:[], sold:[], mine:[], me:null }, bzTab = 'active', bzSel = null, bzSell = { days:3, minBid:500, cur:'coin', priceBrl:'' };
+  const bzPrice = x => x.currency==='brl' ? `<span style="color:#6fd16a">${fmtBrl(x.priceCents)}</span>` : bzCoin(x.currentBid||x.minBid);
   const BZ_TOWER_NAME = { central:'Central', fogo:'Fogo', agua:'Água', terra:'Terra', ar:'Ar', luz:'Luz', trevas:'Trevas' };
   document.getElementById('btn-open-bazaar').addEventListener('click', ()=>{ bazaarPanel.classList.toggle('open'); if(bazaarPanel.classList.contains('open')){ sendWS({ type:'bazaar:list' }); renderBazaar(); } });
   document.getElementById('bz-tabs').addEventListener('click', e=>{ const b = e.target.closest('button[data-bt]'); if(!b) return; bzTab = b.dataset.bt; renderBazaar(); });
@@ -10409,7 +10415,9 @@
     const sn = a.snapshot||{}; const me = bzData.me||{};
     const towers = Object.entries(sn.towers||{}).filter(([k,v])=>v>0).map(([k,v])=>`${BZ_TOWER_NAME[k]||k} ${v}`).join(' · ') || 'nenhum andar';
     const star = sn.star && sn.star.totalStars ? `★ ${sn.star.totalStars}` : '—';
-    const box = a.status !== 'active' ? `<div class="bz-bidbox"><div>Status: <b>${a.status==='sold'?`Vendido por ${bzCoin(a.currentBid)} para ${escapeHtml(a.bidderNick||'')}`:a.status==='unsold'?'Terminou sem lances':'Cancelado'}</b></div></div>`
+    const pixBox = `<div class="bz-bidbox"><div>Venda direta · termina em <b>${bzLeft(a.endsAt-Date.now())}</b></div><div>Preço: <span class="big" style="color:#6fd16a">${fmtBrl(a.priceCents)}</span> <span class="bz-bids">Pix · Lootfy</span></div>
+        ${a.mine ? '<div class="bz-bids">Seu anúncio. O valor cai na sua conta Lootfy quando alguém comprar.</div>' : `<div><button data-bz-pix="${a.id}" class="mk-pixbtn" ${a.reserved||!lootfyState.enabled?'disabled':''}>${a.reserved?'Reservado por outro comprador':'💠 Comprar com Pix'}</button></div><div class="bz-bids">Abre o pagamento do Lootfy; o personagem fica reservado por 30 min e vai pra sua conta assim que o Pix for confirmado.</div>`}</div>`;
+    const box = (a.status === 'active' && a.currency === 'brl') ? pixBox : a.status !== 'active' ? `<div class="bz-bidbox"><div>Status: <b>${a.status==='sold'?`Vendido por ${bzCoin(a.currentBid)} para ${escapeHtml(a.bidderNick||'')}`:a.status==='unsold'?'Terminou sem lances':'Cancelado'}</b></div></div>`
       : a.mine ? `<div class="bz-bidbox"><div>Seu anúncio · termina em <b>${bzLeft(a.endsAt-Date.now())}</b></div><div>Lance atual: <span class="big">${a.currentBid?bzCoin(a.currentBid):'sem lances'}</span></div>${!a.currentBid?`<div><button id="bz-cancel" style="border-color:#c9573a;color:#ff9a80;">Cancelar anúncio</button> <span class="bz-bids">(a taxa de anúncio não volta)</span></div>`:''}</div>`
       : `<div class="bz-bidbox">
           <div>Termina em <b>${bzLeft(a.endsAt-Date.now())}</b> · ${a.bidsCount} lance(s)</div>
@@ -10435,14 +10443,15 @@
       if(!list.length){ el.innerHTML = '<div class="merc-empty">⚖️<br>Nenhum personagem à venda agora.<br>Jogadores Premium podem vender na aba "Vender este personagem".</div>'; return; }
       if(!bzSel || !list.some(a=>a.id===bzSel)) bzSel = list[0].id;
       const a = list.find(x=>x.id===bzSel);
-      el.innerHTML = `<div class="bz-wrap"><div class="bz-list">${list.map(x=>`<div class="bz-row${x.id===bzSel?' sel':''}" data-bz="${x.id}"><span class="arch">${bzArch(x.snapshot,26)}</span><div><div class="nm">${escapeHtml(x.nick)}</div><div class="sub">Nv. ${x.snapshot.level} · ${bzLeft(x.endsAt-Date.now())}${x.mine?' · seu':''}${x.myBid?' · seu lance':''}</div></div><div class="bid">${bzCoin(x.currentBid||x.minBid)}<div class="sub">${x.bidsCount} lance(s)</div></div></div>`).join('')}</div>
+      el.innerHTML = `<div class="bz-wrap"><div class="bz-list">${list.map(x=>`<div class="bz-row${x.id===bzSel?' sel':''}" data-bz="${x.id}"><span class="arch">${bzArch(x.snapshot,26)}</span><div><div class="nm">${escapeHtml(x.nick)}</div><div class="sub">Nv. ${x.snapshot.level} · ${bzLeft(x.endsAt-Date.now())}${x.mine?' · seu':''}${x.myBid?' · seu lance':''}</div></div><div class="bid">${bzPrice(x)}<div class="sub">${x.currency==='brl'?(x.reserved?'reservado':'Pix · Lootfy'):x.bidsCount+' lance(s)'}</div></div></div>`).join('')}</div>
         <div class="bz-detail">${bzDetailHtml(a)}</div></div>`;
       el.querySelectorAll('[data-bz]').forEach(r=> r.addEventListener('click', ()=>{ bzSel = r.dataset.bz; renderBazaar(); }));
       el.querySelectorAll('[data-bz-profile]').forEach(b=> b.addEventListener('click', ()=> openBzProfile(b.dataset.bzProfile)));
+      el.querySelectorAll('[data-bz-pix]').forEach(b=> b.addEventListener('click', ()=>{ const x = bzData.active.find(y=>y.id===b.dataset.bzPix); if(x && confirm(`Comprar ${x.nick} por ${fmtBrl(x.priceCents)} no Pix (Lootfy)?`)) openPixCheckout('bazaar', x.id); }));
       const bb = document.getElementById('bz-bid'); if(bb) bb.addEventListener('click', ()=>{ const v = Math.floor(+document.getElementById('bz-amount').value||0); if(confirm(`Dar lance de ${v.toLocaleString('pt-BR')} Elemental Coin em ${a.nick}? O valor fica guardado até alguém cobrir ou o leilão acabar.`)) sendWS({ type:'bazaar:bid', id:a.id, amount:v }); });
       const cb = document.getElementById('bz-cancel'); if(cb) cb.addEventListener('click', ()=>{ if(confirm('Cancelar o anúncio? A taxa não volta.')) sendWS({ type:'bazaar:cancel', id:a.id }); });
     } else if(bzTab === 'sold'){
-      el.innerHTML = bzData.sold.length ? `<table class="bz-table"><tr><th>Personagem</th><th>Nível</th><th>Classe</th><th>Vendido por</th><th>Lances</th><th>Data</th></tr>${bzData.sold.map(a=>`<tr><td>${bzArch(a.snapshot,18)} ${escapeHtml(a.nick)}</td><td>${a.snapshot.level}</td><td>${escapeHtml(a.snapshot.className||'—')}</td><td style="color:var(--gold-bright)">${bzCoin(a.currentBid)}</td><td>${a.bidsCount}</td><td>${new Date(a.soldAt).toLocaleDateString('pt-BR')}</td></tr>`).join('')}</table>`
+      el.innerHTML = bzData.sold.length ? `<table class="bz-table"><tr><th>Personagem</th><th>Nível</th><th>Classe</th><th>Vendido por</th><th>Lances</th><th>Data</th></tr>${bzData.sold.map(a=>`<tr><td>${bzArch(a.snapshot,18)} ${escapeHtml(a.nick)}</td><td>${a.snapshot.level}</td><td>${escapeHtml(a.snapshot.className||'—')}</td><td style="color:var(--gold-bright)">${a.currency==='brl'?`<span style="color:#6fd16a">${fmtBrl(a.priceCents)}</span>`:bzCoin(a.currentBid)}</td><td>${a.bidsCount}</td><td>${new Date(a.soldAt).toLocaleDateString('pt-BR')}</td></tr>`).join('')}</table>`
         : '<div class="merc-empty">📈<br>Nenhuma venda ainda.</div>';
     } else {
       if(!me){ el.innerHTML = '<div class="merc-empty">Carregando...</div>'; return; }
@@ -10452,13 +10461,22 @@
         <div class="note">Venda <b>${escapeHtml(me.nick)}</b> (Nv. ${me.level}) num leilão em Elemental Coin. Quem vencer leva o personagem com tudo: equipamento, mochila, armazém, ouro, banco e visuais. Taxa de anúncio: <b>${me.fee} Coin</b> (não volta). No fim você recebe <b>${Math.round((1-me.tax)*100)}%</b> do lance vencedor pelo Correio — se a conta ficar sem personagem, ele chega no primeiro que você criar.</div>
         ${!me.isPremium ? '<div class="warn">⭐ Só contas <b>Premium</b> podem vender personagem.</div>' : `
         <div><label>Duração do leilão</label><div class="opts">${me.days.map(d=>`<button data-bd="${d}" class="${bzSell.days===d?'on':''}">${d} dia${d>1?'s':''}</button>`).join('')}</div></div>
+        ${lootfyState.enabled ? `<div><label>Como vender</label><div class="opts"><button data-bcur="coin" class="${bzSell.cur!=='brl'?'on':''}">⚖️ Leilão em Elemental Coin</button><button data-bcur="brl" class="${bzSell.cur==='brl'?'on':''}">💠 Venda direta em R$ (Pix · Lootfy)</button></div></div>` : ''}
+        ${bzSell.cur==='brl' ? `<div class="row"><div><label>Preço em R$</label><input id="bz-pricebrl" type="number" min="1" max="10000" step="0.01" value="${bzSell.priceBrl}" placeholder="Ex.: 150,00" style="width:140px;"></div>
+          <div style="padding-bottom:6px;">${lootfyState.connected?'<span style="color:#9be37a">● Lootfy conectada</span>':'<button class="lf-pill" data-lootfy-connect>Conectar Lootfy</button>'}</div></div>
+          <div class="note">Quem comprar paga o Pix no Lootfy e o personagem passa na hora pra conta dele. Sem taxa de anúncio no jogo; o valor cai na sua conta Lootfy (menos a taxa do Lootfy). Primeiro que pagar leva.</div>
+          <div class="row"><button class="go" id="bz-sellpix-btn" style="margin-left:0;" ${lootfyState.connected?'':'disabled'}>💠 Anunciar ${escapeHtml(me.nick)} por Pix</button></div>` : `
         <div class="row"><div><label>Lance mínimo (Elemental Coin)</label><input id="bz-minbid" type="number" min="${me.minBid}" value="${bzSell.minBid}" style="width:140px;"></div>
           <div style="padding-bottom:6px;line-height:1.5;">Vendendo pelo mínimo: recebe <b style="color:var(--ok)">${net.toLocaleString('pt-BR')} Coin</b> (90% do lance)<br><span class="bz-bids">− ${me.fee} Coin da taxa de anúncio, paga agora = saldo de <b>${(net-me.fee).toLocaleString('pt-BR')} Coin</b></span></div></div>
         <div class="warn">⚠️ Ao anunciar, você volta pra seleção de personagem e <b>${escapeHtml(me.nick)} fica travado</b> até o leilão acabar. Precisa estar na Cidade, fora de guilda, sem ofertas no Mercado e sem contrato de mercenário. Dá pra cancelar só enquanto não tiver lance.</div>
-        <div class="row"><button class="go" id="bz-sell-btn" style="margin-left:0;" ${(me.coins||0)<me.fee?'disabled title="Coin insuficiente pra taxa"':''}>💰 Anunciar ${escapeHtml(me.nick)} (${me.fee} Coin)</button></div>`}
+        <div class="row"><button class="go" id="bz-sell-btn" style="margin-left:0;" ${(me.coins||0)<me.fee?'disabled title="Coin insuficiente pra taxa"':''}>💰 Anunciar ${escapeHtml(me.nick)} (${me.fee} Coin)</button></div>`}`}
         ${mine}
       </div>`;
       el.querySelectorAll('[data-bd]').forEach(b=> b.addEventListener('click', ()=>{ bzSell.days = +b.dataset.bd; renderBazaar(); }));
+      el.querySelectorAll('[data-bcur]').forEach(b=> b.addEventListener('click', ()=>{ bzSell.cur = b.dataset.bcur; renderBazaar(); }));
+      el.querySelectorAll('[data-lootfy-connect]').forEach(b=> b.addEventListener('click', ()=> sendWS({ type:'lootfy:connect' })));
+      const pb2 = document.getElementById('bz-pricebrl'); if(pb2) pb2.addEventListener('change', ()=>{ bzSell.priceBrl = pb2.value; });
+      const sp = document.getElementById('bz-sellpix-btn'); if(sp) sp.addEventListener('click', ()=>{ const v = Number(document.getElementById('bz-pricebrl').value)||0; if(v < 1 || v > 10000){ partySimpleToast('⚠️ Preço entre R$ 1,00 e R$ 10.000.'); return; } if(confirm(`Anunciar ${me.nick} por ${fmtBrl(Math.round(v*100))} no Pix, por ${bzSell.days} dia(s)? O personagem fica travado.`)) sendWS({ type:'bazaar:create', days:bzSell.days, currency:'brl', priceBrl:v }); });
       const mi = document.getElementById('bz-minbid'); if(mi) mi.addEventListener('change', ()=>{ bzSell.minBid = Math.max(me.minBid, Math.floor(+mi.value||0)); renderBazaar(); });
       const sb = document.getElementById('bz-sell-btn'); if(sb) sb.addEventListener('click', ()=>{ if(confirm(`Anunciar ${me.nick} no Bazar por ${bzSell.days} dia(s), lance mínimo ${bzSell.minBid} Coin? Taxa: ${me.fee} Coin. O personagem fica travado.`)) sendWS({ type:'bazaar:create', days:bzSell.days, minBid:bzSell.minBid }); });
       el.querySelectorAll('[data-bzc]').forEach(b=> b.addEventListener('click', ()=>{ if(confirm('Cancelar o anúncio? A taxa não volta.')) sendWS({ type:'bazaar:cancel', id:b.dataset.bzc }); }));
@@ -10551,7 +10569,8 @@
           ${sn.cosmetics && sn.cosmetics.ornament ? `<div class="bzp-sec">Ornamento</div><img src="${URL_BASE}ornaments/${sn.cosmetics.ornament}.png" style="max-height:40px;">` : ''}
           <div class="bzp-sec">Usando agora</div><div class="bz-bids">Traje: ${escapeHtml((sn.cosmetics||{}).outfit||'padrão')} · Asas: ${escapeHtml((sn.cosmetics||{}).wings||'nenhuma')} · Aura: ${escapeHtml((sn.cosmetics||{}).aura||'nenhuma')}</div></div></div>`;
     }
-    const bidBox = a.status !== 'active' ? `<div class="bzp-bid">${a.status==='sold'?`Vendido por <span class="big">${bzCoin(a.currentBid)}</span> para ${escapeHtml(a.bidderNick||'')}`:'Leilão encerrado'}</div>`
+    const bidBox = (a.status === 'active' && a.currency === 'brl') ? `<div class="bzp-bid"><div>Preço <span class="big" style="color:#6fd16a">${fmtBrl(a.priceCents)}</span> <span class="bz-bids">Pix · Lootfy · termina em ${bzLeft(a.endsAt-Date.now())}</span></div>${a.mine?'':`<div style="margin-left:auto"><button data-bz-pix="${a.id}" class="mk-pixbtn" ${a.reserved||!lootfyState.enabled?'disabled':''}>${a.reserved?'Reservado':'💠 Comprar com Pix'}</button></div>`}</div>`
+      : a.status !== 'active' ? `<div class="bzp-bid">${a.status==='sold'?`Vendido por <span class="big">${bzCoin(a.currentBid)}</span> para ${escapeHtml(a.bidderNick||'')}`:'Leilão encerrado'}</div>`
       : a.mine ? `<div class="bzp-bid">Seu anúncio · lance atual <span class="big">${a.currentBid?bzCoin(a.currentBid):'sem lances'}</span> · termina em <b>${bzLeft(a.endsAt-Date.now())}</b></div>`
       : `<div class="bzp-bid"><div>${a.currentBid?'Lance atual':'Lance mínimo'} <span class="big">${bzCoin(a.currentBid||a.minBid)}</span>${a.bidderNick?` <span class="bz-bids">por ${escapeHtml(a.bidderNick)}${a.myBid?' (você)':''}</span>`:''}<div class="bz-bids">Termina em ${bzLeft(a.endsAt-Date.now())} · ${a.bidsCount} lance(s)</div></div>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center;"><input type="number" id="bzp-amount" min="${a.nextMin}" value="${a.nextMin}"><button id="bzp-bid">${BZI('bz_bid',18)} Dar lance</button></div>
@@ -10565,14 +10584,15 @@
     const vc = document.getElementById('bzp-visual-canvas'); if(vc) bzpPortrait(vc, sn, true);
     document.querySelectorAll('#bzp-body img[data-crop]').forEach(towerCropImg);
     document.querySelectorAll('[data-bzpt]').forEach(b=> b.addEventListener('click', ()=>{ bzpTab = b.dataset.bzpt; renderBzProfile(); }));
+    document.querySelectorAll('#bzp-body [data-bz-pix]').forEach(b=> b.addEventListener('click', ()=>{ if(confirm(`Comprar ${a.nick} por ${fmtBrl(a.priceCents)} no Pix (Lootfy)?`)) openPixCheckout('bazaar', a.id); }));
     const bb = document.getElementById('bzp-bid'); if(bb) bb.addEventListener('click', ()=>{ const v = Math.floor(+document.getElementById('bzp-amount').value||0); if(confirm(`Dar lance de ${v.toLocaleString('pt-BR')} Elemental Coin em ${a.nick}?`)) sendWS({ type:'bazaar:bid', id:a.id, amount:v }); });
   }
   const BZ_REASON = { precisa_premium:'Só contas Premium podem vender.', duracao_invalida:'Duração inválida.', lance_minimo_invalido:'Lance mínimo inválido.', apenas_na_cidade_principal:'Só na Cidade, fora de caçada.',
     mercenario_ativo:'Encerre o anúncio de mercenário antes.', saia_da_guilda:'Saia da guilda antes de vender.', ofertas_no_mercado:'Cancele suas ofertas no Mercado antes.', ja_anunciado:'Já está à venda.',
-    moedas_insuficientes:'Elemental Coin insuficiente.', leilao_encerrado:'Esse leilão já acabou.', propria_conta:'Você não pode dar lance num personagem da sua própria conta.', lance_baixo:'Lance abaixo do mínimo.',
+    moedas_insuficientes:'Elemental Coin insuficiente.', leilao_encerrado:'Esse leilão já acabou.', propria_conta:'Você não pode dar lance num personagem da sua própria conta.', lance_baixo:'Lance abaixo do mínimo.', use_pix:'Este anúncio é em R$ — use Comprar com Pix.', lootfy_desconectado:'Conecte sua conta Lootfy primeiro.', preco_pix_invalido:'Preço em R$ inválido.', pix_indisponivel:'Pix ainda não está disponível.',
     leilao_nao_encontrado:'Leilão não encontrado.', ja_tem_lance:'Já tem lance — não dá pra cancelar.' };
   function handleBazaarAck(msg){
-    if(msg.forType === 'bazaar:list'){ bzData = { active:msg.active||[], sold:msg.sold||[], mine:msg.mine||[], me:msg.me||null }; renderBazaar(); if(bzpId && bzpEl.style.display !== 'none' && document.activeElement && document.activeElement.id !== 'bzp-amount') renderBzProfile(); return; }
+    if(msg.forType === 'bazaar:list'){ bzData = { active:msg.active||[], sold:msg.sold||[], mine:msg.mine||[], me:msg.me||null }; if(msg.lootfy) lootfyState = { ...lootfyState, enabled: msg.lootfy.enabled, connected: !!msg.lootfy.connected }; renderBazaar(); if(bzpId && bzpEl.style.display !== 'none' && document.activeElement && document.activeElement.id !== 'bzp-amount') renderBzProfile(); return; }
     if(!msg.ok){ partySimpleToast(`⚠️ ${BZ_REASON[msg.reason]||msg.reason}${msg.min?` (mín. ${msg.min.toLocaleString('pt-BR')})`:''}`); return; }
     if(msg.forType === 'bazaar:create'){
       partySimpleToast(`⚖️ ${escapeHtml(msg.nick)} anunciado no Bazar! Voltando pra seleção de personagem...`);
@@ -11235,9 +11255,22 @@
       else logLoot(`⚠️ Não foi possível comprar: ${({ ouro_insuficiente:'ouro insuficiente.', oferta_indisponivel:'esse anúncio já foi vendido ou cancelado.', oferta_propria:'esse anúncio é seu.', apenas_na_cidade_principal:'o Leilão só funciona na Cidade Principal.' })[msg.reason] || msg.reason}`);
       aucRequest(); renderInventoryIfOpen();
     }
+    if(msg.forType === 'lootfy:status' || msg.forType === 'lootfy:connect' || msg.forType === 'lootfy:disconnect'){
+      if(msg.ok){ lootfyState = { ...lootfyState, ...(msg.enabled!=null?{enabled:msg.enabled, mode:msg.mode}:{}), connected: !!msg.connected }; if(msg.forType==='lootfy:connect') partySimpleToast('✅ Conta Lootfy conectada! Agora você pode vender em R$ (Pix).'); }
+      else partySimpleToast(`⚠️ Lootfy: ${({ pix_indisponivel:'Pix ainda não está disponível no jogo.', lootfy_nao_configurado:'integração com o Lootfy ainda não configurada.' })[msg.reason]||msg.reason}`);
+      renderMarketIfOpen(); if(typeof renderBazaar==='function') renderBazaar();
+    }
+    if(msg.forType === 'pix:checkout'){
+      if(msg.ok){
+        const url = /^https?:/.test(msg.url) ? msg.url : API_BASE + msg.url;
+        const w = window.open(url, '_blank');
+        partySimpleToast(`💠 Pagamento Pix aberto (${escapeHtml(msg.title)} · ${fmtBrl(msg.amountCents)}). Reservado pra você até ${new Date(msg.expiresAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}.${w?'':` <a href="${url}" target="_blank" style="color:#9be37a">Abrir pagamento</a>`}`);
+      } else partySimpleToast(`⚠️ ${({ pix_indisponivel:'Pix ainda não está disponível no jogo.', reservado_pix:'Outro jogador está pagando este item agora — tente em alguns minutos.', oferta_indisponivel:'esse anúncio já foi vendido.', oferta_propria:'esse anúncio é seu.', propria_conta:'personagem da sua conta.', leilao_encerrado:'esse anúncio acabou.', lootfy_nao_configurado:'integração com o Lootfy ainda não configurada.' })[msg.reason]||msg.reason}`);
+      aucRequest(); if(typeof bazaarPanel!=='undefined' && bazaarPanel.classList.contains('open')) sendWS({ type:'bazaar:list' });
+    }
     if(msg.forType === 'market:listItem'){
-      if(msg.ok){ logLoot(`🔨 Item anunciado no Mercado (taxa de anúncio: ${aucFmt(msg.listingFee||0)}).`); aucTab = 'mine'; sendWS({ type:'market:history' }); }
-      else logLoot(`⚠️ Não foi possível anunciar: ${({ preco_invalido:'defina um preço válido.', preco_minimo:'o preço mínimo é 20 por unidade.', ouro_insuficiente_taxa:`ouro insuficiente para a taxa de anúncio (${aucFmt(msg.fee)}).`, quantidade_invalida:'quantidade inválida.', limite_de_ofertas_atingido:'limite de 10 anúncios ativos.', item_bloqueado:'item bloqueado.', item_invalido:'item inválido.', apenas_na_cidade_principal:'o Leilão só funciona na Cidade Principal.' })[msg.reason] || msg.reason}`);
+      if(msg.ok){ logLoot(msg.listingFee ? `🔨 Item anunciado no Mercado (taxa de anúncio: ${aucFmt(msg.listingFee||0)}).` : '🔨 Item anunciado no Mercado.'); aucTab = 'mine'; sendWS({ type:'market:history' }); }
+      else logLoot(`⚠️ Não foi possível anunciar: ${({ preco_invalido:'defina um preço válido.', preco_minimo:'o preço mínimo é 20 por unidade.', ouro_insuficiente_taxa:`ouro insuficiente para a taxa de anúncio (${aucFmt(msg.fee)}).`, lootfy_desconectado:'conecte sua conta Lootfy pra vender em R$.', preco_pix_invalido:'valor em R$ inválido (R$ 1,00 a R$ 10.000).', pix_indisponivel:'Pix ainda não está disponível.', quantidade_invalida:'quantidade inválida.', limite_de_ofertas_atingido:'limite de 10 anúncios ativos.', item_bloqueado:'item bloqueado.', item_invalido:'item inválido.', apenas_na_cidade_principal:'o Leilão só funciona na Cidade Principal.' })[msg.reason] || msg.reason}`);
       aucRequest(); renderInventoryIfOpen();
     }
     if(msg.forType === 'market:history'){
@@ -18627,11 +18660,21 @@
   function aucRequest(){ sendWS({ type:'market:list' }); sendWS({ type:'market:myOffers' }); }
   document.getElementById('btn-open-market').addEventListener('click', ()=>{
     marketModal.classList.toggle('open');
-    if(marketModal.classList.contains('open')){ aucRequest(); sendWS({ type:'market:history' }); renderMarket(); }
+    if(marketModal.classList.contains('open')){ aucRequest(); sendWS({ type:'market:history' }); sendWS({ type:'lootfy:status' }); renderMarket(); }
   });
   function renderMarketIfOpen(){ if(marketModal.classList.contains('open')) renderMarket(); }
   function selectMarketItem(){ aucRequest(); renderMarket(); } // compat
   function aucFmt(n){ return Math.round(n||0).toLocaleString('pt-BR'); }
+  // Pix via Lootfy (07/11/2026): anúncio em R$ — preço é o valor do lote inteiro
+  const fmtBrl = c => 'R$ ' + ((c||0)/100).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  function mkPriceHtml(o){ return o.currency==='brl' ? `<span style="display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1.1"><b style="color:#6fd16a">${fmtBrl(o.priceCents)}</b><small style="font-size:8.5px;color:#8a887f;letter-spacing:.05em">${o.reserved?'RESERVADO':'PIX · LOOTFY'}</small></span>` : `${MK_SILVER()}${aucFmt(o.pricePerUnit)}`; }
+  let lootfyState = { enabled:false, connected:false, mode:'desligado' }, mkCur = 'all';
+  function lootfyPillHtml(){
+    if(!lootfyState.enabled) return '';
+    return lootfyState.connected ? `<span class="lf-pill on" title="Conta Lootfy ligada — você pode vender em R$ (Pix)">● Lootfy conectada</span>`
+      : `<button type="button" class="lf-pill" data-lootfy-connect title="Ligue sua conta Lootfy pra vender em R$ (Pix)">Conectar Lootfy</button>`;
+  }
+  function openPixCheckout(kind, refId){ sendWS({ type:'pix:checkout', kind, refId }); }
   const MK_SILVER = () => `<img src="${RAVENDAWN_UI_BASE}inventory/icon_silver.png" alt="">`;
   function mkLootNames(){ if(mkLootNames.c) return mkLootNames.c; const m = {}; (typeof HUNTS !== 'undefined' ? HUNTS : []).forEach(h=> (h.possibleLoot||[]).forEach(l=>{ if(l && l.id && !m[l.id]) m[l.id] = { name:l.name, rarity:l.rarity||'comum' }; })); return (mkLootNames.c = m); }
   const MK_INF_NAMES = { infusion_basic:['Infusion','comum'], infusion_warband:['Warband Infusion','comum'], infusion_ancient:['Ancient Infusion','incomum'], infusion_tidal:['Tidal Infusion','incomum'], infusion_carved:['Carved Infusion','rara'], infusion_ghostly:['Ghostly Infusion','rara'], infusion_ornate:['Ornate Infusion','épica'], infusion_oceanic:['Oceanic Infusion','épica'], infusion_abyssal:['Abyssal Infusion','lendária'], infusion_maelstrom:['Maelstrom Infusion','lendária'] };
@@ -18654,6 +18697,7 @@
   }
   function mkFiltered(){
     let list = (marketBookCache||[]).filter(o=> o.type===mkSide && o.qty>0);
+    if(mkCur !== 'all') list = list.filter(o=> (o.currency||'gold') === mkCur);
     if(mkCat !== 'all') list = list.filter(o=> mkCatOf(o.itemId, o.item) === mkCat);
     if(mkQuery) list = list.filter(o=> String(o.itemName||'').toLowerCase().includes(mkQuery));
     return mkSortList(list);
@@ -18662,7 +18706,8 @@
     if(!marketModal.classList.contains('open')) return;
     document.getElementById('rdmk-gold').textContent = aucFmt(mkGold());
     const tabs = document.getElementById('auc-tabs');
-    tabs.innerHTML = [['market','Marketplace'],['mine',`Minhas Ordens (${(marketMyOffersCache||[]).length})`],['done','Ordens Concluídas']].map(([id,l])=>`<div class="auc-tab ${aucTab===id?'active':''}" data-auc-tab="${id}">${l}</div>`).join('');
+    if(!lootfyState._asked){ lootfyState._asked = true; sendWS({ type:'lootfy:status' }); }
+    tabs.innerHTML = [['market','Marketplace'],['mine',`Minhas Ordens (${(marketMyOffersCache||[]).length})`],['done','Ordens Concluídas']].map(([id,l])=>`<div class="auc-tab ${aucTab===id?'active':''}" data-auc-tab="${id}">${l}</div>`).join('') + (lootfyState.enabled ? `<div style="display:flex;align-items:center;margin-left:6px">${lootfyPillHtml()}</div>` : '');
     const body = document.getElementById('market-body');
     const focusedId = document.activeElement && document.activeElement.id, keep = body.querySelector('.mk-rows') ? body.querySelector('.mk-rows').scrollTop : 0;
     const R = RAVENDAWN_UI_BASE;
@@ -18675,16 +18720,17 @@
         <div class="mk-main">
           <div class="mk-bar"><div class="mk-search"><img src="${R}market/search_panel_icon.png" alt=""><input id="mk-q" placeholder="Buscar..." value="${escapeHtml(mkQuery)}"></div>
             <select id="mk-sort"><option value="price_asc">Menor preço</option><option value="price_desc">Maior preço</option><option value="time">Acaba antes</option><option value="qty">Maior quantidade</option><option value="new">Mais recentes</option></select>
+ <select id="mk-cur" class="mk-cur" title="Moeda"><option value="all" ${mkCur==='all'?'selected':''}>Todas as moedas</option><option value="gold" ${mkCur==='gold'?'selected':''}>Ouro</option><option value="brl" ${mkCur==='brl'?'selected':''}>R$ · Pix</option></select>
             <div class="mk-toggle"><button type="button" data-side="sell" class="${mkSide==='sell'?'on':''}">Ofertas de Venda</button><button type="button" data-side="buy" class="${mkSide==='buy'?'on':''}">Ofertas de Compra</button></div></div>
           <div class="mk-table"><div class="mk-th" style="grid-template-columns:${cols}"><span>Item</span><span>${mkSide==='sell'?'Vendedor':'Comprador'}</span><span class="c">Atrib. 1</span><span class="c">Atrib. 2</span><span class="c">Qtd</span><span class="c">Tempo</span><span class="c">Preço p/ un.</span></div>
-            <div class="mk-rows">${rows.length ? rows.map(o=>{ const at = mkAttrs(o); return `<div class="mk-tr" data-offer="${o.id}" style="grid-template-columns:${cols}"><span class="it"><span class="ic">${mkIcon(o)}${o.qty>1?`<span class="q">${o.qty}</span>`:''}</span><span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${o.item&&o.item.slot?`[T${getItemTierClient(o.item)}] `:''}${escapeHtml(o.itemName||'')}${o.item&&o.item.enchantLevel?` +${o.item.enchantLevel}`:''}</span></span><span>${escapeHtml(o.ownerName||'')}</span><span class="c">${at[0]}</span><span class="c">${at[1]}</span><span class="c">${o.qty}</span><span class="c">${mkTimeLeft(o)}</span><span class="r">${MK_SILVER()}${aucFmt(o.pricePerUnit)}</span></div>`; }).join('') : `<div class="mk-empty">${mkSide==='sell'?'Nenhuma oferta de venda':'Nenhuma ordem de compra'}${mkQuery?` com "${escapeHtml(mkQuery)}"`:''} nesta categoria.</div>`}</div></div>
+            <div class="mk-rows">${rows.length ? rows.map(o=>{ const at = mkAttrs(o); return `<div class="mk-tr" data-offer="${o.id}" style="grid-template-columns:${cols}"><span class="it"><span class="ic">${mkIcon(o)}${o.qty>1?`<span class="q">${o.qty}</span>`:''}</span><span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${o.item&&o.item.slot?`[T${getItemTierClient(o.item)}] `:''}${escapeHtml(o.itemName||'')}${o.item&&o.item.enchantLevel?` +${o.item.enchantLevel}`:''}</span></span><span>${escapeHtml(o.ownerName||'')}</span><span class="c">${at[0]}</span><span class="c">${at[1]}</span><span class="c">${o.qty}</span><span class="c">${mkTimeLeft(o)}</span><span class="r">${mkPriceHtml(o)}</span></div>`; }).join('') : `<div class="mk-empty">${mkSide==='sell'?'Nenhuma oferta de venda':'Nenhuma ordem de compra'}${mkQuery?` com "${escapeHtml(mkQuery)}"`:''} nesta categoria.</div>`}</div></div>
           <div class="mk-pag"><b>${mkPage+1}</b> de ${pages}<button type="button" data-pg="-1">‹</button><button type="button" data-pg="1">›</button></div>
         </div></div>`;
     } else if(aucTab === 'mine'){
       const list = mkSortList([...(marketMyOffersCache||[])]);
       const cols = '.8fr .8fr 2.2fr .7fr .7fr .6fr 1fr 1fr .9fr';
       html = `<div class="mk-wrap" style="flex-direction:column"><div class="mk-table"><div class="mk-th" style="grid-template-columns:${cols}"><span>Tipo</span><span class="c">Tempo</span><span>Item</span><span class="c">Atrib. 1</span><span class="c">Atrib. 2</span><span class="c">Qtd</span><span class="c">Preço p/ un.</span><span class="c">Total</span><span></span></div>
-        <div class="mk-rows">${list.length ? list.map(o=>{ const at = mkAttrs(o); return `<div class="mk-tr" style="grid-template-columns:${cols};cursor:default"><span>${o.type==='sell'?'Venda':'Compra'}</span><span class="c">${mkTimeLeft(o)}</span><span class="it"><span class="ic">${mkIcon(o)}</span><span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${escapeHtml(o.itemName||'')}</span></span><span class="c">${at[0]}</span><span class="c">${at[1]}</span><span class="c">${o.qty}</span><span class="r">${MK_SILVER()}${aucFmt(o.pricePerUnit)}</span><span class="r">${MK_SILVER()}${aucFmt(o.pricePerUnit*o.qty)}</span><span class="r"><button type="button" class="mk-btn red" data-cancel="${o.id}">Cancelar</button></span></div>`; }).join('') : '<div class="mk-empty">Você não tem ordens abertas. Clique em Criar Oferta.</div>'}</div></div></div>
+        <div class="mk-rows">${list.length ? list.map(o=>{ const at = mkAttrs(o); return `<div class="mk-tr" style="grid-template-columns:${cols};cursor:default"><span>${o.type==='sell'?'Venda':'Compra'}</span><span class="c">${mkTimeLeft(o)}</span><span class="it"><span class="ic">${mkIcon(o)}</span><span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${escapeHtml(o.itemName||'')}</span></span><span class="c">${at[0]}</span><span class="c">${at[1]}</span><span class="c">${o.qty}</span><span class="r">${mkPriceHtml(o)}</span><span class="r">${MK_SILVER()}${aucFmt(o.pricePerUnit*o.qty)}</span><span class="r"><button type="button" class="mk-btn red" data-cancel="${o.id}">Cancelar</button></span></div>`; }).join('') : '<div class="mk-empty">Você não tem ordens abertas. Clique em Criar Oferta.</div>'}</div></div></div>
         <div class="mk-foot"><button type="button" class="mk-btn" id="mk-create">Criar Oferta</button></div>`;
     } else {
       const TY = { compra:'Compra', venda:'Venda', expirado:'Devolvido (72 h)', compra_expirada:'Ordem vencida' };
@@ -18709,10 +18755,18 @@
     const qtyCtl = (max) => `<div class="mk-qty"><button type="button" data-dq="-1"><img src="${R}market/button_amount_minus.png" alt="-"></button><input id="mk-dq" type="number" min="1" max="${max}" value="${d.qty}"><button type="button" data-dq="1"><img src="${R}market/button_amount_plus.png" alt="+"></button><button type="button" class="max" data-dq="max">máx.</button></div>`;
     if(d.kind === 'buy'){ // comprar de uma oferta de venda
       const o = (marketBookCache||[]).find(x=>x.id===d.offerId); if(!o) return '';
+      if(o.currency === 'brl'){
+        const mineP = o.ownerName === PLAYER_NICK;
+        return `<div class="mk-ov"><div class="mk-dlg small"><div class="mk-dlg-h">Comprar com Pix<span class="x" data-dlg-close></span></div><div class="mk-dlg-b">
+          <div class="mk-card"><div class="hd"><span class="ic">${mkIcon(o)}</span><div><b style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${o.qty>1?o.qty+'x ':''}${escapeHtml(o.itemName)}</b><div style="font-size:11px;color:#a9a69e">Vendedor: ${escapeHtml(o.ownerName||'')}</div></div></div>
+          <div class="mk-line"><span>Valor (lote inteiro)</span><b style="color:#6fd16a;font-size:16px">${fmtBrl(o.priceCents)}</b></div>
+          <div class="mk-note">Ao clicar, abre o pagamento do <b>Lootfy</b> (Pix) numa nova aba e o item fica reservado pra você por 30 min. Assim que o Pix for confirmado, o item chega no seu <b>Correio</b>. Depois da entrega não dá pra desistir.${lootfyState.mode==='teste'?' <b style="color:#ffd84a">(modo teste: nenhum Pix de verdade)</b>':''}</div></div>
+        </div><div class="mk-dlg-f"><button type="button" class="mk-btn mk-pixbtn" id="mk-do-pix" ${(!mineP && !o.reserved && lootfyState.enabled)?'':'disabled'}>${mineP?'Esta oferta é sua':o.reserved?'Reservado por outro comprador':!lootfyState.enabled?'Pix indisponível':'Comprar com Pix'}</button></div></div></div>`;
+      }
       const total = d.qty * o.pricePerUnit, mine = o.ownerName === PLAYER_NICK;
       return `<div class="mk-ov"><div class="mk-dlg small"><div class="mk-dlg-h">Comprar Item<span class="x" data-dlg-close></span></div><div class="mk-dlg-b">
         <div class="mk-table" style="flex:none"><div class="mk-th" style="grid-template-columns:2fr 1fr .6fr 1fr"><span>Item</span><span>Vendedor</span><span class="c">Qtd</span><span class="c">Preço p/ un.</span></div>
-        <div class="mk-tr" style="grid-template-columns:2fr 1fr .6fr 1fr;cursor:default" data-hover-offer="${o.id}"><span class="it"><span class="ic">${mkIcon(o)}</span><span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${escapeHtml(o.itemName)}</span></span><span>${escapeHtml(o.ownerName||'')}</span><span class="c">${o.qty}</span><span class="r">${MK_SILVER()}${aucFmt(o.pricePerUnit)}</span></div></div>
+        <div class="mk-tr" style="grid-template-columns:2fr 1fr .6fr 1fr;cursor:default" data-hover-offer="${o.id}"><span class="it"><span class="ic">${mkIcon(o)}</span><span class="nm" style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${escapeHtml(o.itemName)}</span></span><span>${escapeHtml(o.ownerName||'')}</span><span class="c">${o.qty}</span><span class="r">${mkPriceHtml(o)}</span></div></div>
         <div class="mk-two" style="margin-top:10px;align-items:center">${o.isEquip ? '<div style="flex:1;font-size:11px;color:#a9a69e">Equipamento: 1 unidade</div>' : `<div style="flex:1">${qtyCtl(o.qty)}<input id="mk-slider" type="range" min="1" max="${o.qty}" value="${d.qty}" style="width:100%;accent-color:var(--rd-accent)"></div>`}
           <div style="flex:1"><div class="mk-line"><span>Total</span><b class="${total>gold?'bad':''}">${MK_SILVER()}${aucFmt(total)}</b></div><div class="mk-line"><span>Novo saldo</span><b>${MK_SILVER()}${aucFmt(gold-total)}</b></div></div></div>
       </div><div class="mk-dlg-f"><button type="button" class="mk-btn" id="mk-do-buy" ${(!mine && total<=gold && inCityForShop())?'':'disabled'}>${mine?'Esta oferta é sua':!inCityForShop()?'Só na Cidade Principal':total>gold?'Ouro insuficiente':'Comprar Agora'}</button></div></div></div>`;
@@ -18724,7 +18778,7 @@
       return `<div class="mk-ov"><div class="mk-dlg small"><div class="mk-dlg-h">Vender para a Ordem de Compra<span class="x" data-dlg-close></span></div><div class="mk-dlg-b">
         <div class="mk-card"><div class="hd"><span class="ic">${mkIcon(o)}</span><div><b style="color:${RARITY_COLORS[o.rarity]||'#fff'}">${escapeHtml(o.itemName)}</b><div style="font-size:11px;color:#a9a69e">${escapeHtml(o.ownerName||'')} quer ${o.qty} · você tem ${have}</div></div></div>
         <label>Quantidade</label>${qtyCtl(Math.max(1, Math.min(o.qty, have)))}
-        <div class="mk-line"><span>Preço p/ un.</span><b>${MK_SILVER()}${aucFmt(o.pricePerUnit)}</b></div>
+        <div class="mk-line"><span>Preço p/ un.</span><b>${mkPriceHtml(o)}</b></div>
         <div class="mk-line"><span>Taxas (4% + 4%)</span><b>−${aucFmt(fee)}</b></div>
         <div class="mk-line"><span>Você recebe</span><b>${MK_SILVER()}${aucFmt(gross-fee)}</b></div></div>
       </div><div class="mk-dlg-f"><button type="button" class="mk-btn" id="mk-do-fill" ${(have>=1 && inCityForShop())?'':'disabled'}>${have<1?'Você não tem esse item':!inCityForShop()?'Só na Cidade Principal':'Vender'}</button></div></div></div>`;
@@ -18740,13 +18794,22 @@
       const listFee = Math.ceil(gross*MK_LIST_FEE), saleFee = Math.floor(gross*marketFeeRate);
       ok = sel && price >= MK_MIN_PRICE && listFee <= gold && inCityForShop();
       btnLabel = !sel ? 'Escolha um item' : price < MK_MIN_PRICE ? `Preço mínimo: ${MK_MIN_PRICE}` : listFee > gold ? 'Ouro insuficiente para a taxa' : !inCityForShop() ? 'Só na Cidade Principal' : 'Anunciar Venda';
+      if(d.cur === 'brl'){
+        const v = Number(d.priceBrl)||0;
+        ok = sel && v >= 1 && v <= 10000 && lootfyState.connected && inCityForShop();
+        btnLabel = !sel ? 'Escolha um item' : !lootfyState.connected ? 'Conecte sua conta Lootfy' : v < 1 ? 'Valor mínimo: R$ 1,00' : v > 10000 ? 'Valor máximo: R$ 10.000' : !inCityForShop() ? 'Só na Cidade Principal' : 'Anunciar por Pix';
+      }
       left = `<div class="mk-card">${sel ? `<div class="hd"><span class="ic">${(()=>{try{return resolveItemIconHtml(sel)}catch(e){return ''}})()}</span><div><b style="color:${RARITY_COLORS[sel.rarity]||'#fff'}">${escapeHtml(sel.name||sel.id)}</b><div style="font-size:11px;color:#a9a69e">${sel.slot?`[T${getItemTierClient(sel)}] Equipamento`:`Você tem ${sel.qty||1}`}</div></div></div>` : '<div style="font-size:12px;color:#a9a69e">Escolha abaixo o item da sua Mochila:</div>'}
         <div class="mk-pick">${items.map(({it,idx})=>`<div class="cell ${idx===d.bagIndex?'sel':''}" data-pick-bag="${idx}">${(()=>{try{return resolveItemIconHtml(it)}catch(e){return ''}})()}${it.qty>1?`<span class="q">${it.qty}</span>`:''}</div>`).join('') || '<div style="color:#8a887f;font-size:11px">Mochila vazia.</div>'}</div>
         ${sel ? `<label>Quantidade</label>${sel.slot?'<div style="font-size:12px">1</div>':qtyCtl(maxQ)}
+        <label>Receber em</label><div class="mk-toggle" style="margin:0 0 6px 0;align-self:flex-start"><button type="button" data-dcur="gold" class="${d.cur!=='brl'?'on':''}">Ouro</button>${lootfyState.enabled?`<button type="button" data-dcur="brl" class="${d.cur==='brl'?'on':''}">R$ · Pix (Lootfy)</button>`:''}</div>
+        ${d.cur==='brl' ? `<label>Valor do lote em R$ (todas as unidades)</label><input id="mk-dbrl" class="mk-price" type="number" min="1" max="10000" step="0.01" value="${d.priceBrl||''}" placeholder="Ex.: 10,00">
+          ${lootfyState.connected ? '' : `<div style="margin:6px 0"><button type="button" class="lf-pill" data-lootfy-connect>Conectar Lootfy</button></div>`}
+          <div class="mk-note">Venda em R$ pelo <b>Lootfy</b>: sem taxa em ouro. Quem comprar paga o Pix no Lootfy e recebe o item na hora; o valor cai na sua conta Lootfy (menos a taxa deles). O lote é vendido inteiro.</div>` : `
         <div class="mk-two"><div style="flex:1"><label>Preço p/ un. (mín. ${MK_MIN_PRICE})</label><input id="mk-dp" class="mk-price" type="number" min="${MK_MIN_PRICE}" value="${d.price||''}" placeholder="Seu preço"></div><div style="flex:1"><label>Total a receber</label><div class="mk-line" style="height:30px;align-items:center"><b>${MK_SILVER()}${aucFmt(gross - listFee - saleFee)}</b></div></div></div>
-        <div class="mk-note">O mercado cobra uma taxa de 4% do valor total ao anunciar (agora: ${aucFmt(listFee)}) e mais 4% quando o item é vendido. O anúncio vale 72 h; o que não vender volta para você.</div>` : ''}</div>`;
+        <div class="mk-note">O mercado cobra uma taxa de 4% do valor total ao anunciar (agora: ${aucFmt(listFee)}) e mais 4% quando o item é vendido. O anúncio vale 72 h; o que não vender volta para você.</div>`}` : ''}</div>`;
       const sim = sel && !sel.slot ? mkSortList((marketBookCache||[]).filter(o=>o.type==='sell' && o.itemId===sel.id)) : (sel ? (marketBookCache||[]).filter(o=>o.type==='sell' && o.item && o.item.slot && o.itemName===sel.name) : []);
-      right = `<div class="mk-card"><div style="text-align:center;font-size:11.5px;color:#cfccc4">Ofertas de venda atuais</div><div class="mk-table" style="flex:none"><div class="mk-th" style="grid-template-columns:1fr .6fr 1fr"><span>Item</span><span class="c">Qtd</span><span class="c">Preço p/ un.</span></div>${sim.length ? sim.slice(0,8).map(o=>`<div class="mk-tr" style="grid-template-columns:1fr .6fr 1fr;cursor:default"><span class="it"><span class="ic">${mkIcon(o)}</span></span><span class="c">${o.qty}</span><span class="r">${MK_SILVER()}${aucFmt(o.pricePerUnit)}</span></div>`).join('') : `<div class="mk-empty" style="padding:16px">${sel?'Nenhuma oferta parecida.':'Lista de itens parecidos'}</div>`}</div></div>`;
+      right = `<div class="mk-card"><div style="text-align:center;font-size:11.5px;color:#cfccc4">Ofertas de venda atuais</div><div class="mk-table" style="flex:none"><div class="mk-th" style="grid-template-columns:1fr .6fr 1fr"><span>Item</span><span class="c">Qtd</span><span class="c">Preço p/ un.</span></div>${sim.length ? sim.slice(0,8).map(o=>`<div class="mk-tr" style="grid-template-columns:1fr .6fr 1fr;cursor:default"><span class="it"><span class="ic">${mkIcon(o)}</span></span><span class="c">${o.qty}</span><span class="r">${mkPriceHtml(o)}</span></div>`).join('') : `<div class="mk-empty" style="padding:16px">${sel?'Nenhuma oferta parecida.':'Lista de itens parecidos'}</div>`}</div></div>`;
     } else {
       const list = mkTradeableList(); const q = (d.search||'').toLowerCase();
       const shown = list.filter(x=> !q || x.name.toLowerCase().includes(q)).slice(0, 60);
@@ -18760,7 +18823,7 @@
         <div class="mk-two"><div style="flex:1"><label>Preço p/ un. (mín. ${MK_MIN_PRICE})</label><input id="mk-dp" class="mk-price" type="number" min="${MK_MIN_PRICE}" value="${d.price||''}" placeholder="Quanto paga"></div><div style="flex:1"><label>Custo total (+4%)</label><div class="mk-line" style="height:30px;align-items:center"><b class="${total+fee>gold?'bad':''}">${MK_SILVER()}${aucFmt(total+fee)}</b></div></div></div>
         <div class="mk-note">O ouro fica reservado na ordem. Quem tiver o item vende direto para você; se a ordem vencer (72 h) o ouro volta.</div>` : ''}</div>`;
       const sim = sel ? mkSortList((marketBookCache||[]).filter(o=>o.type==='sell' && o.itemId===sel.id)) : [];
-      right = `<div class="mk-card"><div style="text-align:center;font-size:11.5px;color:#cfccc4">Ofertas de venda atuais</div><div class="mk-table" style="flex:none"><div class="mk-th" style="grid-template-columns:1fr .6fr 1fr"><span>Item</span><span class="c">Qtd</span><span class="c">Preço p/ un.</span></div>${sim.length ? sim.slice(0,8).map(o=>`<div class="mk-tr" style="grid-template-columns:1fr .6fr 1fr" data-offer="${o.id}"><span class="it"><span class="ic">${mkIcon(o)}</span></span><span class="c">${o.qty}</span><span class="r">${MK_SILVER()}${aucFmt(o.pricePerUnit)}</span></div>`).join('') : `<div class="mk-empty" style="padding:16px">${sel?'Ninguém vendendo agora.':'Escolha um item'}</div>`}</div></div>`;
+      right = `<div class="mk-card"><div style="text-align:center;font-size:11.5px;color:#cfccc4">Ofertas de venda atuais</div><div class="mk-table" style="flex:none"><div class="mk-th" style="grid-template-columns:1fr .6fr 1fr"><span>Item</span><span class="c">Qtd</span><span class="c">Preço p/ un.</span></div>${sim.length ? sim.slice(0,8).map(o=>`<div class="mk-tr" style="grid-template-columns:1fr .6fr 1fr" data-offer="${o.id}"><span class="it"><span class="ic">${mkIcon(o)}</span></span><span class="c">${o.qty}</span><span class="r">${mkPriceHtml(o)}</span></div>`).join('') : `<div class="mk-empty" style="padding:16px">${sel?'Ninguém vendendo agora.':'Escolha um item'}</div>`}</div></div>`;
     }
     return `<div class="mk-ov"><div class="mk-dlg"><div class="mk-dlg-h">Criar Oferta<span class="x" data-dlg-close></span></div>
       <div style="display:flex;justify-content:center;padding-top:10px"><div class="mk-toggle" style="margin:0"><button type="button" data-dside="sell" class="${sell?'on':''}">Ofertas de Venda</button><button type="button" data-dside="buy" class="${!sell?'on':''}">Ofertas de Compra</button></div></div>
@@ -18784,6 +18847,14 @@
           renderMarket(); return; }
         if(t.closest('#mk-do-buy')){ const o = (marketBookCache||[]).find(x=>x.id===mkDlg.offerId); if(!o) return; t.closest('#mk-do-buy').disabled = true; sendWS({ type:'market:buyOffer', offerId:o.id, qty: o.isEquip ? 1 : mkDlg.qty }); mkDlg = null; return; }
         if(t.closest('#mk-do-fill')){ const o = (marketBookCache||[]).find(x=>x.id===mkDlg.offerId); if(!o) return; sendWS({ type:'market:createOffer', offerType:'sell', itemId:o.itemId, qty: mkDlg.qty, pricePerUnit: o.pricePerUnit }); mkDlg = null; return; }
+        const dcur = t.closest('[data-dcur]'); if(dcur){ mkDlg.cur = dcur.dataset.dcur; renderMarket(); return; }
+        if(t.closest('[data-lootfy-connect]')){ sendWS({ type:'lootfy:connect' }); return; }
+        if(t.closest('#mk-do-pix')){ const o = (marketBookCache||[]).find(x=>x.id===mkDlg.offerId); if(!o) return; t.closest('#mk-do-pix').disabled = true; openPixCheckout('market', o.id); mkDlg = null; return; }
+        if(t.closest('#mk-do-create') && mkDlg.cur === 'brl'){
+          const bi = m.querySelector('#mk-dbrl'); if(bi) mkDlg.priceBrl = bi.value;
+          const it = bag[mkDlg.bagIndex]; if(!it) return;
+          sendWS({ type:'market:listItem', bagIndex: mkDlg.bagIndex, qty: it.slot ? 1 : Math.min(mkDlg.qty, it.qty||1), currency:'brl', priceBrl: Number(mkDlg.priceBrl)||0 });
+          t.closest('#mk-do-create').disabled = true; mkDlg = null; return; }
         if(t.closest('#mk-do-create')){
           const pr = m.querySelector('#mk-dp'); if(pr) mkDlg.price = parseInt(pr.value)||0;
           if(mkDlg.side === 'buy') sendWS({ type:'market:createOffer', offerType:'buy', itemId: mkDlg.itemId, qty: mkDlg.qty, pricePerUnit: mkDlg.price });
@@ -18792,6 +18863,7 @@
         const ro = t.closest('[data-offer]'); if(ro && mkDlg.kind==='create'){ mkDlg = { kind:'buy', offerId: ro.dataset.offer, qty:1 }; renderMarket(); }
         return;
       }
+      if(t.closest('[data-lootfy-connect]')){ sendWS({ type:'lootfy:connect' }); return; }
       const cat = t.closest('[data-cat]'); if(cat){ mkCat = cat.dataset.cat; mkPage = 0; renderMarket(); return; }
       const sd = t.closest('[data-side]'); if(sd){ mkSide = sd.dataset.side; mkPage = 0; renderMarket(); return; }
       const pg = t.closest('[data-pg]'); if(pg){ mkPage = Math.max(0, mkPage + Number(pg.dataset.pg)); renderMarket(); return; }
@@ -18806,7 +18878,7 @@
       else if(t.id === 'mk-slider' && mkDlg){ mkDlg.qty = Number(t.value)||1; renderMarket(); }
       else if((t.id === 'mk-dq' || t.id === 'mk-dp') && mkDlg){ if(t.id==='mk-dq') mkDlg.qty = Math.max(1, Math.min(Number(t.max)||9999, parseInt(t.value)||1)); else mkDlg.price = parseInt(t.value)||0; clearTimeout(mkDlg._t); mkDlg._t = setTimeout(renderMarket, 450); }
     });
-    m.addEventListener('change', e=>{ if(e.target.id === 'mk-sort'){ mkSort = e.target.value; renderMarket(); } });
+    m.addEventListener('change', e=>{ if(e.target.id === 'mk-sort'){ mkSort = e.target.value; renderMarket(); } if(e.target.id === 'mk-cur'){ mkCur = e.target.value; mkPage = 0; renderMarket(); } if(e.target.id === 'mk-dbrl' && mkDlg){ mkDlg.priceBrl = e.target.value; renderMarket(); } });
     m.addEventListener('mouseover', e=>{
       const r = e.target.closest('[data-offer],[data-hover-offer]'); const pb = e.target.closest('[data-pick-bag]');
       let it = null;
