@@ -6246,14 +6246,20 @@
   // ancorada no pé) dá a posição/escala; montaria e cavaleiro são colados com o
   // canto de baixo-direita alinhado nela. Traje sem pose montado (Arquétipos,
   // rd_*): monta com o Cidadão do Tibia (128/136) nas cores do jogador.
+  // Trajes de classe do RavenDawn com pose sentada própria (ajustada à sela
+  // das montarias do Tibia -- ver claude/montarias-2026-11-07-notas.md): o
+  // atlas <sid>_mounted segue a âncora Tibia do Cidadão montado, então a
+  // posição/escala vem do Cidadão (128/136) em pé.
+  const RD_MOUNTED_RIDERS = new Set(['holy_m','holy_f','warfare_f','archery_f','wizardry_f','witchcraft_m','shadow','wizardry']);
   function mountedRiderSpriteId(outfitId, gender){
     const sid = outfitSpriteIdFor(outfitId, gender);
-    if(/^ex_\d+$/.test(String(sid))) return sid;
+    if(/^ex_\d+$/.test(String(sid)) || RD_MOUNTED_RIDERS.has(String(sid))) return sid;
     return gender === 'female' ? 'ex_136' : 'ex_128';
   }
   function drawMountedCharacter(tctx, s, feetY, scl, mountDef, outfitId, gender, colors, anim){
     const sid = mountedRiderSpriteId(outfitId, gender);
-    const normal = getRecoloredArmor('mnt:'+sid, colors, colorPalette, sid);
+    const refSid = RD_MOUNTED_RIDERS.has(sid) ? (gender === 'female' ? 'ex_136' : 'ex_128') : sid;
+    const normal = getRecoloredArmor('mnt:'+refSid, colors, colorPalette, refSid);
     const rider = getRecoloredArmor('mnt:'+sid+'_mounted', colors, colorPalette, sid+'_mounted');
     const mImg = SpriteManager.load('mt_'+mountDef.cid, `mounts/mount_${mountDef.cid}.png`);
     if(!normal || !rider || !mImg.loaded || !mImg.img.naturalWidth) return null;
