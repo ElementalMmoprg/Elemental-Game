@@ -6237,8 +6237,46 @@
     }catch(_){ e._boxes = null; }
     return e._boxes;
   }
-  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim, cosmeticColorsArg){
+  // ---- MONTARIAS (07/11/2026) ----
+  // Folhas extraídas do Exodus no padrão Tibia: assets/mounts/mount_<cid>.png
+  // (8 quadros x 4 linhas S/N/L/O) e, por traje, a pose MONTADO
+  // (outfits_template/<ex_N>_mounted_base|mask.png, MESMA grade do traje).
+  // No Tibia a montaria e o traje montado são desenhados no MESMO ponto: canto
+  // de baixo-direita da célula. Aqui a célula do traje normal (bodyCellLayout,
+  // ancorada no pé) dá a posição/escala; montaria e cavaleiro são colados com o
+  // canto de baixo-direita alinhado nela. Traje sem pose montado (Arquétipos,
+  // rd_*): monta com o Cidadão do Tibia (128/136) nas cores do jogador.
+  function mountedRiderSpriteId(outfitId, gender){
+    const sid = outfitSpriteIdFor(outfitId, gender);
+    if(/^ex_\d+$/.test(String(sid))) return sid;
+    return gender === 'female' ? 'ex_136' : 'ex_128';
+  }
+  function drawMountedCharacter(tctx, s, feetY, scl, mountDef, outfitId, gender, colors, anim){
+    const sid = mountedRiderSpriteId(outfitId, gender);
+    const normal = getRecoloredArmor('mnt:'+sid, colors, colorPalette, sid);
+    const rider = getRecoloredArmor('mnt:'+sid+'_mounted', colors, colorPalette, sid+'_mounted');
+    const mImg = SpriteManager.load('mt_'+mountDef.cid, `mounts/mount_${mountDef.cid}.png`);
+    if(!normal || !rider || !mImg.loaded || !mImg.img.naturalWidth) return null;
+    const dir = (anim && anim.dir) || 'down';
+    const L = SpriteManager.bodyCellLayout(normal, dir, s.x, feetY, 48*scl, 64*scl);
+    if(!L) return null;
+    const lr = !!(normal.dirFrames && normal.dirFrames.lrSwapped);
+    const row = ({ down:0, up:1, right: lr ? 3 : 2, left: lr ? 2 : 3 })[dir] ?? 0;
+    const k = L.s, cell = L.cell || 64;
+    const mc = Math.round(mImg.img.naturalHeight/4), mcols = Math.max(1, Math.round(mImg.img.naturalWidth/mc));
+    const rImg = rider.img, rc = Math.round((rImg.height || rImg.naturalHeight)/4), rcols = Math.max(1, Math.round((rImg.width || rImg.naturalWidth)/rc));
+    const walking = !!(anim && !anim.idle && !(anim.pose && anim.idle !== false));
+    const f = walking ? Math.max(0, Math.floor(Number(anim.frameIdx)||0)) : 0;
+    const mx = L.ox + (cell - mc)*k, my = L.oy + (cell - mc)*k;
+    tctx.drawImage(mImg.img, (f % mcols)*mc, row*mc, mc, mc, mx, my, mc*k, mc*k);
+    const rx = L.ox + (cell - rc)*k, ry = L.oy + (cell - rc)*k;
+    tctx.drawImage(rImg, (f % rcols)*rc, row*rc, rc, rc, rx, ry, rc*k, rc*k);
+    return { dx: Math.min(mx, rx), dy: Math.min(my, ry), dw: Math.max(mc, rc)*k, dh: Math.max(mc, rc)*k, topY: Math.min(my, ry) + 6*k };
+  }
+  function drawCharacterLayers(s, breathe, gender, hairId, outfitId, wingId, auraId, fallbackColor, targetCtx, hairStyleId, walkAnim, cosmeticColorsArg, mountId){
     if(wingId && OUTFITS_WITH_BUILTIN_WINGS.has(outfitId)) wingId = null;
+    const mountDef = mountId ? (mountCatalog || []).find(m => m.id === mountId) : null;
+    if(mountDef) wingId = null; // asa não encaixa no personagem sentado
     // targetCtx opcional — sem ele, desenha no canvas do mundo (ctx) como
     // sempre; com ele, desenha em QUALQUER outro canvas (usado pelo retrato
     // do personagem no Inventário, que reaproveita esse mesmo desenhista em
@@ -6402,7 +6440,9 @@
     // personagem, a proporção real de cada sprite continua vindo do próprio
     // recorte (ver drawFrameContainFit/drawBodyDirFrame), então não distorce.
     let bodyDraw;
-    if(archetypeArmor){
+    const mountedDraw = mountDef ? drawMountedCharacter(tctx, s, feetY, scl, mountDef, outfitId, gender, cosmeticColorsArg || cosmeticColors, drawWalkAnim) : null;
+    if(mountedDraw){ bodyDraw = mountedDraw; }
+    else if(archetypeArmor){
       const oScale = (outfitDef && outfitDef.scale) || 1; // ex.: Druidesa Mística um pouco maior
       // 31/10/2026: parado (ou golpeando parado) = SEMPRE o quadro de pé da
       // direção. Antes a "pose de golpe" usava o 1º quadro do andar, então a
@@ -6420,7 +6460,7 @@
     // Trajes ANTIGOS (não-Arquétipo, armorSprite: PNG único, camada de roupa
     // de verdade) continuam desenhados por CIMA do corpo padrão que já saiu
     // acima — comportamento inalterado pra 'assassin'/'priest'/etc.
-    if(outfitId && outfitId !== 'padrao' && !isArchetypeOutfit){
+    if(outfitId && outfitId !== 'padrao' && !isArchetypeOutfit && !mountedDraw){
       const armorLegacy = SpriteManager.armorSprite(genero, outfitId);
       if(armorLegacy){
         if(drawWalkAnim) SpriteManager.drawBodyDirFrame(tctx, armorLegacy, drawWalkAnim.dir, drawWalkAnim.frameIdx, s.x, feetY, 48*scl, 64*scl, drawWalkAnim.pose);
@@ -6443,7 +6483,7 @@
     // hasRealLeftFrames (calculado lá em cima, antes do espelho) já É
     // exatamente "Arquétipo + traje carregado" — reaproveitado aqui como
     // isArchetypeHeadIncluded.
-    const isArchetypeHeadIncluded = hasRealLeftFrames;
+    const isArchetypeHeadIncluded = hasRealLeftFrames || !!mountedDraw; // montado: cavaleiro já tem cabeça
     let headDraw = null;
     if(!isArchetypeHeadIncluded){
       const corCabelo = hairColors[(Number(hairId)||1)-1] || 'black';
@@ -6494,7 +6534,7 @@
     // isométrico o boneco fica deslocado do ponto do pé) — nick e barra de
     // vida centralizam nele.
     // quadro PARADO da direção (estável: não treme a cada passo do andar)
-    const idleBox = (archetypeArmor && bodyDraw) ? SpriteManager.drawBodyDirFrame(NULL_CTX, archetypeArmor, (drawWalkAnim && drawWalkAnim.dir) || 'down', -1, s.x, s.y + breathe, 48*scl*((outfitDef && outfitDef.scale) || 1), 64*scl*((outfitDef && outfitDef.scale) || 1), false) : null;
+    const idleBox = mountedDraw ? mountedDraw : (archetypeArmor && bodyDraw) ? SpriteManager.drawBodyDirFrame(NULL_CTX, archetypeArmor, (drawWalkAnim && drawWalkAnim.dir) || 'down', -1, s.x, s.y + breathe, 48*scl*((outfitDef && outfitDef.scale) || 1), 64*scl*((outfitDef && outfitDef.scale) || 1), false) : null;
     let bodyCx = (idleBox && isFinite(idleBox.dx)) ? idleBox.dx + idleBox.dw/2 : null;
     if(bodyCx != null && mirror) bodyCx = 2*s.x - bodyCx;
     return { drewBody, drewHead, topY: isFinite(drawnTopY) ? drawnTopY : null, cx: bodyCx };
@@ -8459,7 +8499,7 @@
         // jogador local andava, todo mundo em volta "andava" junto na tela
         const rRaw = worldToScreenRaw(sm.x, sm.y);
         const anim = updateWalkAnim('rp:'+uname, rRaw.x, rRaw.y);
-        const dr = drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
+        const dr = drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors, rp.mount || null);
         drawnTopByKey['rp:'+uname] = dr ? dr.topY : null; drawnCxByKey['rp:'+uname] = (dr && dr.cx != null) ? dr.cx - s.x : null;
       }, topKey:'rp:'+uname, headCart:{x:sm.x,y:sm.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.merc?' (mercenário)':rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
       // Barra de vida flutuante (pedido do usuário, 26/09/2026) -- hp/hpMax
@@ -8492,7 +8532,7 @@
       const castAnim = (now() < castPoseUntil)
         ? { dir: anim.dir, frameIdx: anim.frameIdx, pose: true, idle: anim.idle }
         : anim;
-      const dr = drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors);
+      const dr = drawCharacterLayers(s, breathe, genero, hairId, cosmetics.outfit, cosmetics.wings, cosmetics.aura, '#d3ab54', undefined, hairStyleId, castAnim, cosmeticColors, cosmetics.mount || null);
       drawnTopByKey['__player__'] = dr ? dr.topY : null; drawnCxByKey['__player__'] = (dr && dr.cx != null) ? dr.cx - s.x : null;
     }, topKey:'__player__', headCart:{x:player.x,y:player.y}, headLift:33*SPRITE_SCALE, isPlayer:true, nick:PLAYER_NICK, ornament: cosmetics.ornament || null,
     // Barra de vida flutuante do próprio jogador (pedido do usuário,
@@ -19875,7 +19915,7 @@
     const sep = preview.indexOf(':');
     const kind = sep > 0 ? preview.slice(0, sep) : 'outfit', id = sep > 0 ? preview.slice(sep+1) : preview;
     shHoverId = preview; shHoverT0 = performance.now();
-    const cat = kind === 'outfit' ? outfitCatalog : kind === 'ornament' ? ornamentCatalog : kind === 'wing' ? wingCatalog : auraCatalog;
+    const cat = kind === 'outfit' ? outfitCatalog : kind === 'ornament' ? ornamentCatalog : kind === 'wing' ? wingCatalog : kind === 'mount' ? mountCatalog : auraCatalog;
     const def = cat.find(o => o.id === id);
     shHover.querySelector('.t').textContent = def ? def.name : '';
     shHover.style.display = 'block'; shHoverMove(e);
@@ -19892,8 +19932,9 @@
       const outfitId = kind === 'outfit' ? id : cosmetics.outfit;
       const wingId = kind === 'wing' ? id : (kind === 'outfit' ? null : cosmetics.wings);
       const auraId = kind === 'aura' ? id : (kind === 'outfit' ? null : cosmetics.aura);
-      const feetY = kind === 'ornament' ? 172 : 160;
-      try{ drawCharacterLayers({ x: cv.width/2, y: feetY }, 0, a.genero, a.hairId, outfitId, wingId, auraId, '#d3ab54', c2, a.hairStyleId, { dir, frameIdx }, cosmeticColors); }catch(_){}
+      const feetY = kind === 'ornament' ? 172 : kind === 'mount' ? 150 : 160;
+      const mountId = kind === 'mount' ? id : null;
+      try{ drawCharacterLayers({ x: cv.width/2 - (mountId ? 14 : 0), y: feetY }, 0, a.genero, a.hairId, outfitId, wingId, auraId, '#d3ab54', c2, a.hairStyleId, { dir, frameIdx }, cosmeticColors, mountId); }catch(_){}
       if(kind === 'ornament'){
         const nickY = feetY - 70;
         c2.font = '10px "JetBrains Mono"'; c2.textAlign = 'center';
@@ -20033,7 +20074,32 @@
         shConfirmId = null; sendWS({ type:t+':buy', [key]: id });
       }));
     } else if(shCat === 'montarias'){
-      main.innerHTML = H('Montarias', '') + `<div class="sh-soon"><b>EM BREVE</b>As montarias estão sendo preparadas e chegam numa próxima atualização.</div>`;
+      // 07/11/2026: montarias de verdade (animadas, o personagem monta com o traje dele).
+      // source 'torre' = prêmio do andar 100 da Torre do elemento (não se compra).
+      const TW = { fogo:'Fogo', agua:'Água', terra:'Terra', ar:'Ar', luz:'Luz', trevas:'Trevas' };
+      const eqId = cosmetics.mount || null;
+      const card = x => {
+        const has = ownedMounts.includes(x.id), eq = eqId === x.id, conf = shConfirmId === 'mt:'+x.id;
+        const tower = x.source === 'torre', coin = x.currency === 'elementalCoin';
+        const can = tower ? false : coin ? (elementalCoins||0) >= x.cost : (player.gold||0) >= x.cost;
+        const btn = eq ? 'Desmontar' : has ? 'Montar' : tower ? `Torre ${TW[x.towerId]||''} · andar 100` : conf ? `Confirmar ${x.cost.toLocaleString('pt-BR')} ${coin?'💎':'🪙'}` : (can ? 'Comprar' : (coin ? 'Coin insuficiente' : 'Gold insuficiente'));
+        return shCard({ tag: eq ? 'Montado' : has ? 'Adquirida' : tower ? 'Prêmio' : 'Montaria', feat: eq,
+          art: `<img src="${URL_BASE}mounts/mount_${x.cid}_icon.png" onerror="this.replaceWith(document.createTextNode('🐎'))">`,
+          name: x.name, price: (has || tower) ? '' : `${x.cost.toLocaleString('pt-BR')} <small>${coin?'💎 Coin':'Gold'}</small>`,
+          btn, btnClass: (eq||has) ? 'owned' : (conf ? 'confirm' : ''), btnDisabled: !has && !eq && (tower || (!can && !conf)), data: `data-sh-mt="${x.id}"`, preview: 'mount:' + x.id });
+      };
+      const shop = mountCatalog.filter(x => x.source !== 'torre'), towers = mountCatalog.filter(x => x.source === 'torre');
+      main.innerHTML = H('Montarias', 'O personagem monta com o traje e as cores dele. Passe o mouse para ver andando.')
+        + `<div class="sh-grid">${shop.map(card).join('')}</div>`
+        + `<div class="sh-section">Prêmios das Torres — vença o andar 100 da Torre do elemento</div><div class="sh-grid">${towers.map(card).join('')}</div>`;
+      main.querySelectorAll('[data-sh-mt]').forEach(b => b.addEventListener('click', ()=>{
+        const id = b.dataset.shMt, def = mountCatalog.find(m => m.id === id);
+        if(eqId === id){ sendWS({ type:'mount:equip', mountId: null }); return; }
+        if(ownedMounts.includes(id)){ sendWS({ type:'mount:equip', mountId: id }); return; }
+        if(!def || def.source === 'torre') return;
+        if(shConfirmId !== 'mt:'+id){ shConfirmId = 'mt:'+id; renderStoreHub(false); return; }
+        shConfirmId = null; sendWS({ type:'mount:buy', mountId: id });
+      }));
     } else if(shCat === 'premium'){
       const st = isPremium ? `<div class="sh-sub" style="color:var(--ok);">👑 Premium ativo${premiumExpiresAt ? ` — até ${new Date(premiumExpiresAt).toLocaleDateString('pt-BR')}` : ''}</div>` : '';
       main.innerHTML = H('Tempo de Premium', 'Vantagens de VIP pelo período escolhido.') + st + `<div class="sh-grid">${shPremiumCards()}</div>`
