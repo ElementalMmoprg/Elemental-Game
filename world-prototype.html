@@ -19725,7 +19725,7 @@
     { id:'coins', tab:'loja', name:'Elemental Coin', icon:'💎', count:()=> ELEMENTAL_COIN_PACKAGES.length },
     { id:'itens', tab:'loja', name:'Itens', icon:'🗝️', count:()=> 1 },
     { id:'treino', tab:'loja', name:'Kit de Treino Veloz', icon:'⚡', count:()=> TRAINING_BOOSTS_CLIENT.length },
-    { id:'pets', tab:'loja', name:'Pets', img:SH_ICON+'pets.png', dock:'pets-modal', open:()=>{ petsModal.classList.add('open'); renderPets(); } },
+    { id:'pets', tab:'loja', name:'Pets (em breve)', img:SH_ICON+'pets.png', count:()=> 0 }, // 07/11/2026: pets fora até ficarem prontos (Gacha pago = loot box, ECA Digital)
     { id:'battlepass', tab:'loja', name:'Battle Pass', img:SH_ICON+'battlepass.png', dock:'battlepass-modal', open:()=>{ battlePassModal.classList.add('open'); renderBattlePass(); } },
     { id:'ferreiro', tab:'npc', name:'Ferreiro Bran', img:SH_ICON+'shop.png', dock:'shop-modal', open:()=>{ shopModal.classList.add('open'); renderShop(); } },
     { id:'bencaos', tab:'npc', name:'Bênçãos', icon:'🙏', dock:'blessings-modal', open:()=>{ blessingsModal.classList.add('open'); renderBlessings(); } },
@@ -20005,6 +20005,8 @@
         if(shConfirmId !== 'or:'+id){ shConfirmId = 'or:'+id; renderStoreHub(false); return; }
         shConfirmId = null; sendWS({ type:'ornament:buy', ornamentId:id });
       }));
+    } else if(shCat === 'pets'){
+      main.innerHTML = H('Pets', 'Em breve.') + `<div style="padding:40px 10px;text-align:center;font-family:var(--font-mono);color:var(--ink-dim);"><div style="font-size:42px;margin-bottom:10px;">🐾</div><b style="color:var(--gold-bright);font-size:14px;">Em breve</b><br><br>Os Pets estão sendo preparados e chegam numa próxima atualização.</div>`;
     } else if(shCat === 'asas'){
       main.innerHTML = H('Asas', 'Em breve.') + `<div style="padding:40px 10px;text-align:center;font-family:var(--font-mono);color:var(--ink-dim);"><div style="font-size:42px;margin-bottom:10px;">🪽</div><b style="color:var(--gold-bright);font-size:14px;">Em breve</b><br><br>O sistema de asas está sendo refeito e volta numa próxima atualização.</div>`;
     } else if(shCat === 'auras'){
