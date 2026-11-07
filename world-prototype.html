@@ -10461,7 +10461,7 @@
         <div class="note">Venda <b>${escapeHtml(me.nick)}</b> (Nv. ${me.level}) num leilão em Elemental Coin. Quem vencer leva o personagem com tudo: equipamento, mochila, armazém, ouro, banco e visuais. Taxa de anúncio: <b>${me.fee} Coin</b> (não volta). No fim você recebe <b>${Math.round((1-me.tax)*100)}%</b> do lance vencedor pelo Correio — se a conta ficar sem personagem, ele chega no primeiro que você criar.</div>
         ${!me.isPremium ? '<div class="warn">⭐ Só contas <b>Premium</b> podem vender personagem.</div>' : `
         <div><label>Duração do leilão</label><div class="opts">${me.days.map(d=>`<button data-bd="${d}" class="${bzSell.days===d?'on':''}">${d} dia${d>1?'s':''}</button>`).join('')}</div></div>
-        ${lootfyState.enabled ? `<div><label>Como vender</label><div class="opts"><button data-bcur="coin" class="${bzSell.cur!=='brl'?'on':''}">⚖️ Leilão em Elemental Coin</button><button data-bcur="brl" class="${bzSell.cur==='brl'?'on':''}">💠 Venda direta em R$ (Pix · Lootfy)</button></div></div>` : ''}
+        ${lootfyState.enabled && lootfyState.bazaar!==false ? `<div><label>Como vender</label><div class="opts"><button data-bcur="coin" class="${bzSell.cur!=='brl'?'on':''}">⚖️ Leilão em Elemental Coin</button><button data-bcur="brl" class="${bzSell.cur==='brl'?'on':''}">💠 Venda direta em R$ (Pix · Lootfy)</button></div></div>` : ''}
         ${bzSell.cur==='brl' ? `<div class="row"><div><label>Preço em R$</label><input id="bz-pricebrl" type="number" min="1" max="10000" step="0.01" value="${bzSell.priceBrl}" placeholder="Ex.: 150,00" style="width:140px;"></div>
           <div style="padding-bottom:6px;">${lootfyState.connected?'<span style="color:#9be37a">● Lootfy conectada</span>':'<button class="lf-pill" data-lootfy-connect>Conectar Lootfy</button>'}</div></div>
           <div class="note">Quem comprar paga o Pix no Lootfy e o personagem passa na hora pra conta dele. Sem taxa de anúncio no jogo; o valor cai na sua conta Lootfy (menos a taxa do Lootfy). Primeiro que pagar leva.</div>
@@ -10589,11 +10589,11 @@
   }
   const BZ_REASON = { precisa_premium:'Só contas Premium podem vender.', duracao_invalida:'Duração inválida.', lance_minimo_invalido:'Lance mínimo inválido.', apenas_na_cidade_principal:'Só na Cidade, fora de caçada.',
     mercenario_ativo:'Encerre o anúncio de mercenário antes.', saia_da_guilda:'Saia da guilda antes de vender.', ofertas_no_mercado:'Cancele suas ofertas no Mercado antes.', ja_anunciado:'Já está à venda.',
-    moedas_insuficientes:'Elemental Coin insuficiente.', leilao_encerrado:'Esse leilão já acabou.', propria_conta:'Você não pode dar lance num personagem da sua própria conta.', lance_baixo:'Lance abaixo do mínimo.', use_pix:'Este anúncio é em R$ — use Comprar com Pix.', lootfy_desconectado:'Conecte sua conta Lootfy primeiro.', preco_pix_invalido:'Preço em R$ inválido.', pix_indisponivel:'Pix ainda não está disponível.',
+    moedas_insuficientes:'Elemental Coin insuficiente.', leilao_encerrado:'Esse leilão já acabou.', propria_conta:'Você não pode dar lance num personagem da sua própria conta.', lance_baixo:'Lance abaixo do mínimo.', use_pix:'Este anúncio é em R$ — use Comprar com Pix.', pix_bazar_aguardando_lootfy:'Venda de personagem por Pix ainda não liberada.', lootfy_desconectado:'Conecte sua conta Lootfy primeiro.', preco_pix_invalido:'Preço em R$ inválido.', pix_indisponivel:'Pix ainda não está disponível.',
     leilao_nao_encontrado:'Leilão não encontrado.', ja_tem_lance:'Já tem lance — não dá pra cancelar.' };
   function handleBazaarAck(msg){
-    if(msg.forType === 'bazaar:list'){ bzData = { active:msg.active||[], sold:msg.sold||[], mine:msg.mine||[], me:msg.me||null }; if(msg.lootfy) lootfyState = { ...lootfyState, enabled: msg.lootfy.enabled, connected: !!msg.lootfy.connected }; renderBazaar(); if(bzpId && bzpEl.style.display !== 'none' && document.activeElement && document.activeElement.id !== 'bzp-amount') renderBzProfile(); return; }
-    if(!msg.ok){ partySimpleToast(`⚠️ ${BZ_REASON[msg.reason]||msg.reason}${msg.min?` (mín. ${msg.min.toLocaleString('pt-BR')})`:''}`); return; }
+    if(msg.forType === 'bazaar:list'){ bzData = { active:msg.active||[], sold:msg.sold||[], mine:msg.mine||[], me:msg.me||null }; if(msg.lootfy) lootfyState = { ...lootfyState, bazaar: !!msg.lootfy.enabled, ...(msg.lootfy.enabled ? { enabled:true, connected: !!msg.lootfy.connected } : {}) }; renderBazaar(); if(bzpId && bzpEl.style.display !== 'none' && document.activeElement && document.activeElement.id !== 'bzp-amount') renderBzProfile(); return; }
+    if(!msg.ok){ partySimpleToast(`⚠️ ${msg.reason==='lootfy_msg'?escapeHtml(msg.message||''):BZ_REASON[msg.reason]||msg.reason}${msg.min?` (mín. ${msg.min.toLocaleString('pt-BR')})`:''}`); return; }
     if(msg.forType === 'bazaar:create'){
       partySimpleToast(`⚖️ ${escapeHtml(msg.nick)} anunciado no Bazar! Voltando pra seleção de personagem...`);
       try{ sessionStorage.setItem('elemental_cs_msg', `⚖️ ${msg.nick} está à venda no Bazar por ${msg.days} dia(s). O pagamento chega pelo Correio.`); }catch(e){}
@@ -11256,8 +11256,11 @@
       aucRequest(); renderInventoryIfOpen();
     }
     if(msg.forType === 'lootfy:status' || msg.forType === 'lootfy:connect' || msg.forType === 'lootfy:disconnect'){
-      if(msg.ok){ lootfyState = { ...lootfyState, ...(msg.enabled!=null?{enabled:msg.enabled, mode:msg.mode}:{}), connected: !!msg.connected }; if(msg.forType==='lootfy:connect') partySimpleToast('✅ Conta Lootfy conectada! Agora você pode vender em R$ (Pix).'); }
-      else partySimpleToast(`⚠️ Lootfy: ${({ pix_indisponivel:'Pix ainda não está disponível no jogo.', lootfy_nao_configurado:'integração com o Lootfy ainda não configurada.' })[msg.reason]||msg.reason}`);
+      if(msg.ok && msg.linkUrl){ // Lootfy real: confirmar o vínculo do personagem no site deles
+        const w = window.open(msg.linkUrl, '_blank'); lootfyState._waitingLink = true;
+        partySimpleToast(`🔗 Confirme o vínculo do personagem no site da Lootfy (faça login lá) e volte pro jogo.${w?'':` <a href="${msg.linkUrl}" target="_blank" style="color:#9be37a">Abrir Lootfy</a>`}`);
+      } else if(msg.ok){ lootfyState = { ...lootfyState, ...(msg.enabled!=null?{enabled:msg.enabled, mode:msg.mode, bazaar:!!msg.bazaar}:{}), connected: !!msg.connected, canSell: msg.canSell!==false, sellMsg: msg.message||null }; if(msg.forType==='lootfy:connect') partySimpleToast('✅ Conta Lootfy conectada! Agora você pode vender em R$ (Pix).'); if(msg.connected && lootfyState._waitingLink){ lootfyState._waitingLink = false; partySimpleToast('✅ Personagem vinculado à Lootfy!'); } }
+      else partySimpleToast(`⚠️ Lootfy: ${msg.reason==='lootfy_msg' ? escapeHtml(msg.message||'') : ({ pix_indisponivel:'Pix ainda não está disponível no jogo.', lootfy_nao_configurado:'integração com o Lootfy ainda não configurada.' })[msg.reason]||msg.reason}`);
       renderMarketIfOpen(); if(typeof renderBazaar==='function') renderBazaar();
     }
     if(msg.forType === 'pix:checkout'){
@@ -11265,12 +11268,12 @@
         const url = /^https?:/.test(msg.url) ? msg.url : API_BASE + msg.url;
         const w = window.open(url, '_blank');
         partySimpleToast(`💠 Pagamento Pix aberto (${escapeHtml(msg.title)} · ${fmtBrl(msg.amountCents)}). Reservado pra você até ${new Date(msg.expiresAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}.${w?'':` <a href="${url}" target="_blank" style="color:#9be37a">Abrir pagamento</a>`}`);
-      } else partySimpleToast(`⚠️ ${({ pix_indisponivel:'Pix ainda não está disponível no jogo.', reservado_pix:'Outro jogador está pagando este item agora — tente em alguns minutos.', oferta_indisponivel:'esse anúncio já foi vendido.', oferta_propria:'esse anúncio é seu.', propria_conta:'personagem da sua conta.', leilao_encerrado:'esse anúncio acabou.', lootfy_nao_configurado:'integração com o Lootfy ainda não configurada.' })[msg.reason]||msg.reason}`);
+      } else partySimpleToast(`⚠️ ${msg.reason==='lootfy_msg' ? escapeHtml(msg.message||'') : ({ pix_indisponivel:'Pix ainda não está disponível no jogo.', pix_bazar_aguardando_lootfy:'venda de personagem por Pix ainda não liberada.', reservado_pix:'Outro jogador está pagando este item agora — tente em alguns minutos.', oferta_indisponivel:'esse anúncio já foi vendido.', oferta_propria:'esse anúncio é seu.', propria_conta:'personagem da sua conta.', leilao_encerrado:'esse anúncio acabou.', lootfy_nao_configurado:'integração com o Lootfy ainda não configurada.' })[msg.reason]||msg.reason}`);
       aucRequest(); if(typeof bazaarPanel!=='undefined' && bazaarPanel.classList.contains('open')) sendWS({ type:'bazaar:list' });
     }
     if(msg.forType === 'market:listItem'){
       if(msg.ok){ logLoot(msg.listingFee ? `🔨 Item anunciado no Mercado (taxa de anúncio: ${aucFmt(msg.listingFee||0)}).` : '🔨 Item anunciado no Mercado.'); aucTab = 'mine'; sendWS({ type:'market:history' }); }
-      else logLoot(`⚠️ Não foi possível anunciar: ${({ preco_invalido:'defina um preço válido.', preco_minimo:'o preço mínimo é 20 por unidade.', ouro_insuficiente_taxa:`ouro insuficiente para a taxa de anúncio (${aucFmt(msg.fee)}).`, lootfy_desconectado:'conecte sua conta Lootfy pra vender em R$.', preco_pix_invalido:'valor em R$ inválido (R$ 1,00 a R$ 10.000).', pix_indisponivel:'Pix ainda não está disponível.', quantidade_invalida:'quantidade inválida.', limite_de_ofertas_atingido:'limite de 10 anúncios ativos.', item_bloqueado:'item bloqueado.', item_invalido:'item inválido.', apenas_na_cidade_principal:'o Leilão só funciona na Cidade Principal.' })[msg.reason] || msg.reason}`);
+      else logLoot(`⚠️ Não foi possível anunciar: ${({ preco_invalido:'defina um preço válido.', preco_minimo:'o preço mínimo é 20 por unidade.', ouro_insuficiente_taxa:`ouro insuficiente para a taxa de anúncio (${aucFmt(msg.fee)}).`, lootfy_desconectado:'conecte sua conta Lootfy pra vender em R$.', lootfy_msg: escapeHtml(msg.message||''), preco_pix_invalido:'valor em R$ inválido (R$ 1,00 a R$ 10.000).', pix_indisponivel:'Pix ainda não está disponível.', quantidade_invalida:'quantidade inválida.', limite_de_ofertas_atingido:'limite de 10 anúncios ativos.', item_bloqueado:'item bloqueado.', item_invalido:'item inválido.', apenas_na_cidade_principal:'o Leilão só funciona na Cidade Principal.' })[msg.reason] || msg.reason}`);
       aucRequest(); renderInventoryIfOpen();
     }
     if(msg.forType === 'market:history'){
@@ -18675,6 +18678,7 @@
       : `<button type="button" class="lf-pill" data-lootfy-connect title="Ligue sua conta Lootfy pra vender em R$ (Pix)">Conectar Lootfy</button>`;
   }
   function openPixCheckout(kind, refId){ sendWS({ type:'pix:checkout', kind, refId }); }
+  window.addEventListener('focus', ()=>{ if(lootfyState._waitingLink) sendWS({ type:'lootfy:status', fresh:true }); });
   const MK_SILVER = () => `<img src="${RAVENDAWN_UI_BASE}inventory/icon_silver.png" alt="">`;
   function mkLootNames(){ if(mkLootNames.c) return mkLootNames.c; const m = {}; (typeof HUNTS !== 'undefined' ? HUNTS : []).forEach(h=> (h.possibleLoot||[]).forEach(l=>{ if(l && l.id && !m[l.id]) m[l.id] = { name:l.name, rarity:l.rarity||'comum' }; })); return (mkLootNames.c = m); }
   const MK_INF_NAMES = { infusion_basic:['Infusion','comum'], infusion_warband:['Warband Infusion','comum'], infusion_ancient:['Ancient Infusion','incomum'], infusion_tidal:['Tidal Infusion','incomum'], infusion_carved:['Carved Infusion','rara'], infusion_ghostly:['Ghostly Infusion','rara'], infusion_ornate:['Ornate Infusion','épica'], infusion_oceanic:['Oceanic Infusion','épica'], infusion_abyssal:['Abyssal Infusion','lendária'], infusion_maelstrom:['Maelstrom Infusion','lendária'] };
@@ -18804,7 +18808,7 @@
         ${sel ? `<label>Quantidade</label>${sel.slot?'<div style="font-size:12px">1</div>':qtyCtl(maxQ)}
         <label>Receber em</label><div class="mk-toggle" style="margin:0 0 6px 0;align-self:flex-start"><button type="button" data-dcur="gold" class="${d.cur!=='brl'?'on':''}">Ouro</button>${lootfyState.enabled?`<button type="button" data-dcur="brl" class="${d.cur==='brl'?'on':''}">R$ · Pix (Lootfy)</button>`:''}</div>
         ${d.cur==='brl' ? `<label>Valor do lote em R$ (todas as unidades)</label><input id="mk-dbrl" class="mk-price" type="number" min="1" max="10000" step="0.01" value="${d.priceBrl||''}" placeholder="Ex.: 10,00">
-          ${lootfyState.connected ? '' : `<div style="margin:6px 0"><button type="button" class="lf-pill" data-lootfy-connect>Conectar Lootfy</button></div>`}
+          ${lootfyState.connected ? (lootfyState.canSell===false && lootfyState.sellMsg ? `<div class="mk-note" style="color:#ffb08a">${escapeHtml(lootfyState.sellMsg)}</div>` : '') : `<div style="margin:6px 0"><button type="button" class="lf-pill" data-lootfy-connect>Conectar Lootfy</button></div>`}
           <div class="mk-note">Venda em R$ pelo <b>Lootfy</b>: sem taxa em ouro. Quem comprar paga o Pix no Lootfy e recebe o item na hora; o valor cai na sua conta Lootfy (menos a taxa deles). O lote é vendido inteiro.</div>` : `
         <div class="mk-two"><div style="flex:1"><label>Preço p/ un. (mín. ${MK_MIN_PRICE})</label><input id="mk-dp" class="mk-price" type="number" min="${MK_MIN_PRICE}" value="${d.price||''}" placeholder="Seu preço"></div><div style="flex:1"><label>Total a receber</label><div class="mk-line" style="height:30px;align-items:center"><b>${MK_SILVER()}${aucFmt(gross - listFee - saleFee)}</b></div></div></div>
         <div class="mk-note">O mercado cobra uma taxa de 4% do valor total ao anunciar (agora: ${aucFmt(listFee)}) e mais 4% quando o item é vendido. O anúncio vale 72 h; o que não vender volta para você.</div>`}` : ''}</div>`;
