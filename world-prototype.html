@@ -1276,7 +1276,7 @@
   .skill-node-tip .tt-price{ display:block; margin-top:4px; color:var(--gold-bright); }
 
   /* ===== TORRES ELEMENTAIS ===== */
-  #towers-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:780px; max-width:96vw; height:540px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #towers-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:780px; max-width:96vw; height:590px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
   #towers-panel.open{ display:flex; }
   .towers-body{ flex:1; min-height:0; display:flex; flex-direction:column; padding:6px 14px 14px; }
   .tower-attempts-line{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-dim); padding:2px 2px 8px; border-bottom:1px solid var(--gold-deep); margin-bottom:8px; display:flex; gap:12px; flex-wrap:wrap; }
@@ -1313,6 +1313,12 @@
   .tw-boss.next img, .tw-boss.next .em{ filter:none; }
   .tw-boss.key::before{ content:'🗝️'; position:absolute; top:0; left:2px; font-size:9px; }
   .tw-boss, .tw-mon, .tw-nextboss{ overflow:hidden; }
+  .tw-ico{ object-fit:contain; vertical-align:middle; image-rendering:auto; filter:none !important; transform:none !important; }
+  .tw-item .ic{ width:36px !important; }
+  .tower-btns button{ display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+  .tw-loot span{ display:flex; align-items:center; gap:5px; }
+  .tw-boss.done::after{ content:''; width:14px; height:14px; top:1px; right:1px; background:url('https://elementalmmoprg.github.io/Elemental_assets/assets/ui/towers/cleared.png') center/contain no-repeat; }
+  .tw-boss.key::before{ content:''; width:15px; height:15px; top:1px; left:1px; background:var(--bk) center/contain no-repeat; }
   .tw-cols{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .tw-card{ border:1px solid rgba(191,161,95,.25); border-radius:6px; padding:8px; background:rgba(0,0,0,.25); }
   .tw-nextboss{ display:flex; gap:10px; align-items:center; }
@@ -4421,7 +4427,7 @@
   // 20/10/2026: itens de loot sem PNG próprio em items/loot/ usam a foto do
   // item mais parecido (mesma família) em vez do SVG genérico.
   const LOOT_ICON_ALIAS = { wolf_steak:'boar_steak', eldermight_fragment:'sageheart_fragment', the_corsairs_ambrosia:'foreign_alcohol' };
-  function itemIconUrl(itemId){ return URL_BASE + 'items/loot/' + (LOOT_ICON_ALIAS[itemId] || itemId) + '.png'; }
+  function itemIconUrl(itemId){ if(String(itemId||'').startsWith('kit_treino')) itemId = 'kit_treino'; else if(String(itemId||'').startsWith('tower_boss_key__')) itemId = 'boss_key_' + (String(itemId).split('__')[1] || 'central'); return URL_BASE + 'items/loot/' + (LOOT_ICON_ALIAS[itemId] || itemId) + '.png'; }
   // Ícone real de arma/armadura extraído do client Ravendawn (ver Elemental_assets/assets/items/equip/)
   // — `icon` vem do catálogo/servidor; itens antigos sem esse campo caem no SVG genérico via onerror.
   function equipIconUrl(icon){ return URL_BASE + 'items/equip/' + icon; }
@@ -10995,7 +11001,7 @@
     const permKit = (bag||[]).some(it=> it && it.id === 'kit_treino' && !it.expiresAt);
     const boostLine = tBoost ? `<div class="ok-line">⚡ Kit de Treino Veloz <b>${tBoost.mult}x</b> ativo — ${fmtTimeLeft(tBoost.until - Date.now())} restantes.</div>` : `<div class="missing-line" style="opacity:.8">⚡ Treine 2x ou 3x mais rápido com o Kit de Treino Veloz (Loja › Kit de Treino Veloz).</div>`;
     if(hasTrainingKit){
-      kitEl.innerHTML = (permKit ? `<div class="ok-line">✅ Você tem o Kit de Treino na mochila.</div>` : timedKit ? `<div class="ok-line">✅ ${escapeHtml(timedKit.name)} — expira em ${fmtTimeLeft(timedKit.expiresAt - Date.now())}.</div>` : '') + boostLine;
+      kitEl.innerHTML = (permKit ? `<div class="ok-line"><img src="${URL_BASE}items/loot/kit_treino.png" style="width:26px;height:26px;object-fit:contain;vertical-align:middle;margin-right:4px;">Você tem o Kit de Treino na mochila.</div>` : timedKit ? `<div class="ok-line"><img src="${URL_BASE}items/loot/kit_treino.png" style="width:26px;height:26px;object-fit:contain;vertical-align:middle;margin-right:4px;">${escapeHtml(timedKit.name)} — expira em ${fmtTimeLeft(timedKit.expiresAt - Date.now())}.</div>` : '') + boostLine;
     } else {
       kitEl.innerHTML = `<div class="missing-line">❌ Sem Kit de Treino — sem ele não dá pra treinar no boneco.</div><button class="treino-inline-btn" id="treino-buy-kit-btn">Comprar Kit de Treino (300 Gold)</button>`;
       document.getElementById('treino-buy-kit-btn').addEventListener('click', ()=> sendWS({ type:'npc:buy', npcId:'ferreiro_bran', itemId:'kit_treino', qty:1 }));
@@ -13790,10 +13796,10 @@
         ? `<span class="item-icon" style="font-size:24px;line-height:1;">🎁</span>`
         : it.kind === 'trainboost'
         ? `<span class="item-icon" style="font-size:22px;line-height:1;">⚡</span>`
-        : (it.id && String(it.id).startsWith('kit_treino') && it.expiresAt)
-        ? `<span class="item-icon" style="font-size:22px;line-height:1;">🎯</span>`
+        : (it.id && (String(it.id).startsWith('kit_treino') || String(it.id).startsWith('tower_boss_key__') || it.id==='tower_key'))
+        ? `<img class="item-icon" src="${itemIconUrl(it.id)}" style="width:42px;height:42px;object-fit:contain;" />`
         : gemIconUrl
-        ? `<img class="item-icon" src="${gemIconUrl}" style="width:26px;height:26px;object-fit:contain;" />`
+        ? `<img class="item-icon" src="${gemIconUrl}" style="width:38px;height:38px;object-fit:contain;" />`
         : rawMatHtml
           ? rawMatHtml
           : (it.icon)
@@ -15715,6 +15721,8 @@
   }
   // Ícones de monstro têm muita borda transparente (âncora do Tibia) — recorta
   // pelo conteúdo real pra o sprite ocupar a caixinha inteira (cache por URL).
+  const TOWER_UI_URL = (k)=> URL_BASE + 'ui/towers/' + k + '.png';
+  const twIco = (k, size, fb)=> `<img class="tw-ico" src="${TOWER_UI_URL(k)}" style="width:${size}px;height:${size}px;" alt="" onerror="this.outerHTML='${fb||''}'">`;
   const towerCropCache = {};
   function towerCropImg(el){
     const url = el.dataset.crop; if(!url) return;
@@ -15755,13 +15763,13 @@
       towerSelectedId = (activeHunt.running && activeHunt.isTower && activeHunt.towerId) || 'central';
     }
     const attemptsLine = `<div class="tower-attempts-line"><span>Tentativas de Escalada hoje: <b style="color:${towerClimb.remaining>0?'var(--ok)':'#ff9a80'}">${towerClimb.usedToday}/${towerClimb.limit}</b></span>`
-      + (towerClimb.towerKeys>0 ? `<span style="color:var(--gold-bright)">🗝️ ${towerClimb.towerKeys} Chave(s) da Torre</span>` : '')
-      + `<span>👑 Chefe a cada 10 andares</span></div>`;
+      + (towerClimb.towerKeys>0 ? `<span style="color:var(--gold-bright)">${twIco('tower_key',16,'🗝️')} ${towerClimb.towerKeys} Chave(s) da Torre</span>` : '')
+      + `<span>${twIco('boss_crown',16,'👑')} Chefe a cada 10 andares</span></div>`;
     const listHtml = TOWERS_CATALOG_CLIENT.map(t=>{
       const floor = (towers && towers[t.id]) || 0;
       const live = activeHunt.running && activeHunt.isTower && activeHunt.towerId===t.id;
       return `<button class="tw-item${t.id===towerSelectedId?' sel':''}" data-tw-sel="${t.id}" style="--twc:${t.color}">
-        <span class="ic">${t.icon}</span>
+        <span class="ic">${twIco('tower_'+t.id, 34, t.icon)}</span>
         <span style="flex:1;min-width:0;"><span class="nm">${t.name}</span>
           <span class="fl">${live?'<span class="live">● Escalando · </span>':''}Andar ${floor}/100</span>
           <span class="mini"><i style="width:${floor}%"></i></span></span>
@@ -15772,7 +15780,7 @@
     const climbing = activeHunt.running && activeHunt.isTower && activeHunt.towerMode==='boss' && activeHunt.towerId===t.id;
     const bossFloors = towerBossKeysFor(t.id, floor);
     const canClimb = towerClimb.remaining>0 || towerClimb.towerKeys>0;
-    const climbBtnLabel = floor>0 ? `⛰️ Continuar Escalada (andar ${Math.min(100,floor+1)})` : '⛰️ Subir a Torre';
+    const climbBtnLabel = twIco('climb',20,'⛰️') + (floor>0 ? ` Continuar Escalada (andar ${Math.min(100,floor+1)})` : ' Subir a Torre');
     const climbBtnTitle = canClimb ? '' : 'title="Sem tentativas hoje — compre uma Chave da Torre na Loja de Elemental Coin"';
     const bossList = BOSSTIARY ? BOSSTIARY.tower.filter(b=>b.towerId===t.id).sort((a,b)=>a.floor-b.floor) : [];
     const bossByFloor = {}; bossList.forEach(b=> bossByFloor[b.floor]=b);
@@ -15790,8 +15798,8 @@
     const loot = (BOSSTIARY && BOSSTIARY.towerLoot) || [];
     const keyPct = bossList[0] ? bossList[0].keyDropPct : null;
     const weak = mons[0] && mons[0].weakTo ? mons[0].weakTo.join(', ') : '';
-    const detail = `<div class="tw-detail" style="--twc:${t.color}">
-      <div class="tw-head"><span class="big">${t.icon}</span>
+    const detail = `<div class="tw-detail" style="--twc:${t.color};--bk:url('${TOWER_UI_URL('boss_key_'+t.id)}')">
+      <div class="tw-head"><span class="big">${twIco('tower_'+t.id, 52, t.icon)}</span>
         <div><h3>${t.name}</h3><div class="sub">${t.id==='central'?'Sem elemento · monstros variados':'Monstros fracos a '+escapeHtml(weak||'—')}</div></div>
         <div class="pct">Andar salvo<b>${floor}/100</b></div></div>
       ${climbing?`<div class="floor" style="color:var(--gold-bright);font-family:var(--font-mono);font-size:10.5px;margin-bottom:6px;">⛰️ Escalando agora — andar ${activeHunt.climbFloor}/100</div>`:''}
@@ -15802,11 +15810,11 @@
         <div class="tw-card"><div class="tw-sec" style="margin-top:0;">Próximo chefe</div>
           ${nextBoss ? `<div class="tw-nextboss">${imgOr(nextBoss)}<div><div class="n">${escapeHtml(nextBoss.name)}</div>
             <div class="d">Andar ${nextBoss.floor} · Nv. ${escapeHtml(String(nextBoss.level))}<br>❤️ ${Number(nextBoss.hp||0).toLocaleString('pt-BR')} de vida<br>Faltam ${nextBoss.floor-floor} andar(es)</div></div></div>`
-            : (floor>=100 ? '<div class="d" style="color:var(--ok);font-size:11px;">🏆 Torre concluída!</div>' : '<span class="italic-note">Carregando...</span>')}
+            : (floor>=100 ? `<div class="d" style="color:var(--ok);font-size:11px;">${twIco('tower_crown',28,'🏆')} Torre concluída!</div>` : '<span class="italic-note">Carregando...</span>')}
         </div>
         <div class="tw-card"><div class="tw-sec" style="margin-top:0;">Recompensas dos chefes</div>
-          <div class="tw-loot">${loot.map(it=>`<span class="r-${it.rarity}">◆ ${escapeHtml(it.name)} <span class="dim">(${it.rarity})</span></span>`).join('')}
-            ${keyPct!=null?`<span class="dim">🗝️ ${keyPct}% de chance de dropar a Chave do Chefe</span>`:''}
+          <div class="tw-loot">${loot.map(it=>`<span class="r-${it.rarity}">${twIco(it.id,22,'◆')} ${escapeHtml(it.name)} <span class="dim">(${it.rarity})</span></span>`).join('')}
+            ${keyPct!=null?`<span class="dim">${twIco('boss_key_'+t.id,18,'🗝️')} ${keyPct}% de chance de dropar a Chave do Chefe</span>`:''}
             <span class="dim">Sala do Chefe: 1 entrada grátis por dia</span></div>
         </div>
       </div>
@@ -15814,8 +15822,8 @@
       <div class="tw-mons">${monsHtml}</div>
       <div class="tower-btns">
         <button class="tower-climb-btn" data-tower="${t.id}" data-mode="boss" ${(activeHunt.running||!canClimb)?'disabled':''} ${climbBtnTitle}>${climbBtnLabel}</button>
-        ${bossFloors.map(f=>`<button class="tower-boss-btn" data-boss-tower="${t.id}" data-boss-floor="${f}" ${activeHunt.running?'disabled':''}>👑 Desafiar Chefe (andar ${f})</button>`).join('')}
-        <button class="tower-reset-btn" data-reset-tower="${t.id}" ${(activeHunt.running||floor===0)?'disabled':''} title="Reseta o andar salvo desta torre pro 1">↺ Resetar</button>
+        ${bossFloors.map(f=>`<button class="tower-boss-btn" data-boss-tower="${t.id}" data-boss-floor="${f}" ${activeHunt.running?'disabled':''}>${twIco('boss_key_'+t.id,18,'👑')} Desafiar Chefe (andar ${f})</button>`).join('')}
+        <button class="tower-reset-btn" data-reset-tower="${t.id}" ${(activeHunt.running||floor===0)?'disabled':''} title="Reseta o andar salvo desta torre pro 1">${twIco('reset',18,'↺')} Resetar</button>
       </div>
     </div>`;
     body.innerHTML = attemptsLine + `<div class="tw-wrap"><div class="tw-list">${listHtml}</div>${detail}</div>`;
