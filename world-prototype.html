@@ -5565,6 +5565,15 @@
         // finas) de cada direção: virar não tira mais o corpo do lugar. O Y
         // continua sendo a linha mais baixa (pé no chão).
         dirNames.forEach(name=>{ if(out.foot[name] && out.mass[name]) out.foot[name] = { x: out.mass[name].x, y: out.foot[name].y }; });
+        // 07/11/2026 (usuário: Bruxaria "dá um passo pra diagonal de cima" ao
+        // andar pra esquerda): a linha mais baixa de UMA direção pegava a
+        // barra do manto/foice (ex.: esquerda 63 px vs 57-58 nas outras), e o
+        // boneco subia ~6 px só nela. No Tibia/RavenDawn todas as direções
+        // dividem a MESMA âncora da célula, então o Y do pé agora é um só por
+        // traje: a mediana das 4 direções (ignora a direção fora da curva).
+        // Afetava ~76 trajes (3 a 12 px de pulo ao virar).
+        { const ys = dirNames.map(n => out.foot[n] && out.foot[n].y).filter(v => v != null).sort((p,q)=>p-q);
+          if(ys.length === 4){ const my = (ys[1] + ys[2]) / 2; dirNames.forEach(n => { out.foot[n] = { x: out.foot[n].x, y: my }; }); } }
         return out;
       }catch(e){ return null; }
     }
@@ -7606,6 +7615,9 @@
         spawnFxRing(()=>({x:player.x,y:player.y}), 'rgba(126,224,138,.75)', 30, 380);
         castPoseUntil = now() + CAST_POSE_MS;
         if(!spellFxOnSelf(fx.spellName, player.x, player.y, ()=>({x:player.x,y:player.y})) && fx.archetypeId) SpellFxManager.spawnAreaEffect(fx.archetypeId, 'heal', player.x, player.y, fx.element);
+      } else if(fx.t === 'dotHeal'){
+        // cura por tique (Leech / Bloodmancer): só o número verde, sem animação de magia
+        if(fx.amount > 0) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
       } else if(fx.t === 'healedOther'){
         // Cura em ALIADO (Alvo da cura configurado, ver resolveHealTarget no
         // huntEngine.js) -- o "+X" de verdade aparece na TELA DO ALIADO (via
@@ -16267,11 +16279,17 @@
   // PRÉVIA EM VÍDEO (25/10/2026): assets/spell_previews/<nome em minúsculo com _>.mp4
   // (95 magias; as ultimates não têm vídeo). Some sozinho se o arquivo não existir.
   const SPELL_PREVIEW_URL = URL_BASE + 'spell_previews/';
+  const SPELL_PREVIEW_MISSING = window.SPELL_PREVIEW_MISSING = new Set(); // magias sem vídeo (não tenta de novo)
   function spellPreviewSlug(name){ return String(name||'').toLowerCase().replace(/'/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); }
   function spellPreviewVideoHtml(sp){
     if(!sp || sp.kind === 'passive') return '';
-    const base = SPELL_PREVIEW_URL + spellPreviewSlug(sp.name);
-    return `<video class="spell-preview-video" data-preview="${base}" autoplay muted loop playsinline preload="auto"><source src="${base}.webm" type="video/webm"><source src="${base}.mp4" type="video/mp4" onerror="this.parentNode.remove()"></video>`;
+    const slug = spellPreviewSlug(sp.name);
+    if(SPELL_PREVIEW_MISSING.has(slug)) return '';
+    const base = SPELL_PREVIEW_URL + slug;
+    // 07/11/2026 (usuário: "erro ao entrar na ultimate"): magia sem vídeo (as
+    // ultimates) mostrava um quadro preto vazio até o navegador desistir. Agora
+    // o vídeo só aparece quando carrega; se não existir, some e não tenta de novo.
+    return `<video class="spell-preview-video" style="display:none" data-preview="${base}" autoplay muted loop playsinline preload="auto" onloadeddata="this.style.display='block'"><source src="${base}.webm" type="video/webm"><source src="${base}.mp4" type="video/mp4" onerror="SPELL_PREVIEW_MISSING.add('${slug}'); this.parentNode.remove()"></video>`;
   }
   function availablePointsForDraft(archId, draft){
     const total = (skillPoints && skillPoints.total) || 0;

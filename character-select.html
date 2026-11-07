@@ -852,6 +852,14 @@
   // world-prototype.html, só sem outfit/asa/aura (não existem antes de entrar
   // no mundo). Cai num boneco procedural simples enquanto o sprite ainda não
   // terminou de carregar (load() é assíncrono) ou numa eventual falha de rede.
+  // Mesmo mapa de OUTFIT_CATALOG[].looks do huntEngine.js (manter igual).
+  const ARCHETYPE_LOOKS = {
+    holy: { male: 'holy_m', female: 'holy_f' },
+    warfare: { male: 'warfare', female: 'warfare_f' },
+    archery: { male: 'archery', female: 'archery_f' },
+    wizardry: { male: 'wizardry', female: 'wizardry_f' },
+    witchcraft: { male: 'witchcraft_m', female: 'witchcraft' },
+  };
   function drawCharacterPreview(canvas, gender, hairColorId, hairStyleId, outfitId, colors, walkAnim){
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
@@ -873,6 +881,11 @@
     let bodyDraw = null;
     let isArchetypeBody = false;
     if(outfitId){
+      // 07/11/2026 (usuário: "ao criar não troca o sexo"): os Arquétipos têm
+      // arte masculina e feminina (OUTFIT_CATALOG[].looks no servidor) e esta
+      // tela desenhava sempre a do id puro (= masculina). Agora segue o gênero.
+      const look = ARCHETYPE_LOOKS[outfitId];
+      if(look) outfitId = (gender === 'female' ? look.female : look.male) || outfitId;
       const armor = getRecoloredArmor(outfitId, colors || DEFAULT_COSMETIC_COLORS);
       if(armor){
         // walkAnim ({dir,frameIdx}, ver setInterval em setupCreateView) anima
