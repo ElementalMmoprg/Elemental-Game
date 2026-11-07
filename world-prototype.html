@@ -1283,6 +1283,49 @@
   .skill-node-tip .hint{ display:block; margin-top:4px; color:#7fbf6a; }
   .skill-node-tip .tt-price{ display:block; margin-top:4px; color:var(--gold-bright); }
 
+  /* ===== MERCENÁRIOS ===== */
+  #merc-panel{ top:50%; left:50%; transform:translate(-50%,-50%); width:820px; max-width:96vw; height:560px; max-height:92vh; display:none; flex-direction:column; overflow:hidden; z-index:16; }
+  #merc-panel.open{ display:flex; }
+  .merc-body{ flex:1; min-height:0; display:flex; flex-direction:column; padding:6px 14px 12px; gap:8px; }
+  .merc-content{ flex:1; min-height:0; overflow:auto; }
+  .merc-filters{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+  .merc-filters select, .merc-filters input, .merc-form select, .merc-form input{ background:#0d0a08; border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:5px 7px; font-size:11.5px; }
+  .merc-filters input{ width:64px; }
+  .merc-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(360px, 1fr)); gap:8px; }
+  .merc-card{ border:1px solid rgba(191,161,95,.28); border-radius:8px; padding:10px; background:rgba(0,0,0,.28); display:flex; flex-direction:column; gap:6px; }
+  .merc-card .top{ display:flex; gap:10px; align-items:center; }
+  .merc-card .arch{ display:flex; gap:2px; }
+  .merc-card .arch img{ width:30px; height:30px; object-fit:contain; }
+  .merc-card .nm{ font-size:13px; color:var(--gold-bright); font-weight:700; }
+  .merc-card .sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin-top:2px; }
+  .merc-card .role{ margin-left:auto; font-family:var(--font-mono); font-size:9.5px; padding:2px 8px; border-radius:9px; border:1px solid; }
+  .merc-card .role.tanque{ color:#7fb6ff; border-color:#3a6aa8; } .merc-card .role.dano{ color:#ff9a80; border-color:#a8483a; } .merc-card .role.suporte{ color:#8fe08a; border-color:#3a8a44; }
+  .merc-card .stats{ display:flex; gap:12px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); flex-wrap:wrap; }
+  .merc-card .stats b{ color:var(--ink); }
+  .merc-card .spells{ display:flex; gap:3px; flex-wrap:wrap; }
+  .merc-card .spells img{ width:26px; height:26px; border:1px solid rgba(191,161,95,.3); border-radius:4px; background:#0a0705; }
+  .merc-card .bot{ display:flex; align-items:center; gap:8px; }
+  .merc-card .price{ font-size:13px; color:var(--gold-bright); font-weight:700; }
+  .merc-card .price small{ font-weight:400; color:var(--ink-dim); font-size:10px; }
+  .merc-card .stars{ color:#ffcf4a; font-size:11px; }
+  .merc-card button, .merc-form button, #merc-hire-modal button{ font-family:var(--font-mono); font-size:10.5px; padding:7px 12px; border:1px solid var(--gold-deep); border-radius:5px; background:rgba(0,0,0,.3); color:var(--ink-dim); cursor:pointer; }
+  .merc-card button.go, .merc-form button.go, #merc-hire-modal button.go{ border-color:var(--ok); color:var(--ok); font-weight:700; margin-left:auto; }
+  .merc-card button:hover, .merc-form button:hover, #merc-hire-modal button:hover{ border-color:var(--gold-bright); color:var(--gold-bright); }
+  .merc-card button:disabled{ opacity:.4; cursor:default; }
+  .merc-empty{ padding:30px; text-align:center; color:#8a887f; font-size:12px; line-height:1.6; }
+  .merc-form{ display:flex; flex-direction:column; gap:10px; max-width:560px; font-size:12px; }
+  .merc-form .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; } .merc-form .row > div{ display:flex; flex-direction:column; gap:3px; }
+  .merc-form label{ font-family:var(--font-mono); font-size:9.5px; color:var(--gold); text-transform:uppercase; letter-spacing:.06em; }
+  .merc-form .opts{ display:flex; gap:6px; } .merc-form .opts button.on{ border-color:var(--gold-bright); color:var(--gold-bright); background:rgba(191,161,95,.12); }
+  .merc-form .note{ font-size:11px; color:var(--ink-dim); line-height:1.5; border-left:2px solid var(--gold-deep); padding-left:8px; }
+  .merc-form .warn{ font-size:11px; color:#ffb08a; line-height:1.5; }
+  #merc-hire-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:400px; max-width:94vw; padding:16px 18px; z-index:60; display:flex; flex-direction:column; gap:10px; font-size:12px; }
+  #merc-hire-modal h3{ margin:0; color:var(--gold-bright); font-size:15px; }
+  #merc-hire-modal input{ background:#0d0a08; border:1px solid var(--gold-deep); border-radius:4px; color:var(--ink); padding:5px 7px; width:120px; }
+  .mail-rate{ margin-top:14px; display:flex; align-items:center; gap:6px; font-size:12px; }
+  .mail-rate button{ font-size:22px; background:none; border:none; cursor:pointer; color:#5a5446; padding:0 2px; }
+  .mail-rate button:hover, .mail-rate button.on{ color:#ffcf4a; }
+
   /* ===== CORREIO ===== */
   .tb-icon{ position:relative; }
   .tb-badge{ position:absolute; top:-5px; right:-5px; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#d63a2a; color:#fff; font:700 10.5px/18px var(--font-mono); text-align:center; box-shadow:0 0 0 2px #120c08; pointer-events:none; z-index:2; }
@@ -3321,6 +3364,7 @@
       <div class="tb-icon" id="btn-open-battlepass" title="Battle Pass"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/battlepass.png" alt=""></div>
       <div class="tb-icon tb-hidden" id="btn-open-partydps" title="Party DPS Results (ALT+D)"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/dps.png" alt=""></div>
       <div class="tb-icon" id="btn-open-analyzer" title="Analisador"><img src="https://elementalmmoprg.github.io/Elemental_assets/assets/hud/menu/analyzer.png" alt=""></div>
+      <div class="tb-icon" id="btn-open-merc" title="Mercenários">🗡️</div>
       <div class="tb-icon" id="btn-open-mail" title="Correio">✉️<span class="tb-badge" id="mail-badge" style="display:none;">0</span></div>
       <div class="tb-icon" id="btn-open-wiki" title="Wiki (itens e bestiário)">📖</div>
       <!-- Item 11 da lista de tarefas (2026-09-20): antes eram 2 ícones soltos
@@ -3450,6 +3494,18 @@
     </div>
   </div>
   <div class="skill-node-tip" id="skill-node-tip"></div>
+
+  <!-- MERCENÁRIOS (07/11/2026) -->
+  <div id="merc-panel" class="glass ornate win">
+    <div class="panel-title win-drag" style="padding:12px 14px 0;">⋮⋮ Mercenários<span class="rule"></span><span class="win-close-x" data-close-win="merc-panel">✕</span></div>
+    <div class="merc-body">
+      <div class="mail-tabs" id="merc-tabs">
+        <button data-mt="hire" class="on">🗡️ Contratar</button><button data-mt="mine">📜 Meus contratos <span id="merc-mine-n"></span></button><button data-mt="sign">✍️ Me cadastrar</button>
+      </div>
+      <div id="merc-content" class="merc-content"></div>
+    </div>
+  </div>
+  <div id="merc-hire-modal" class="glass ornate" style="display:none;"></div>
 
   <!-- CORREIO (07/11/2026) -->
   <div id="mail-panel" class="glass ornate win">
@@ -8299,7 +8355,7 @@
         const anim = updateWalkAnim('rp:'+uname, rRaw.x, rRaw.y);
         const dr = drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
         drawnTopByKey['rp:'+uname] = dr ? dr.topY : null; drawnCxByKey['rp:'+uname] = (dr && dr.cx != null) ? dr.cx - s.x : null;
-      }, topKey:'rp:'+uname, headCart:{x:sm.x,y:sm.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
+      }, topKey:'rp:'+uname, headCart:{x:sm.x,y:sm.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.merc?' (mercenário)':rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
       // Barra de vida flutuante (pedido do usuário, 26/09/2026) -- hp/hpMax
       // de QUALQUER jogador só chegam aqui a partir de agora (ver
       // broadcastPositions em server.js); null/null em snapshots antigos ou
@@ -9845,6 +9901,7 @@
             localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.portal; break;
           }
           if(msg.error === 'manutencao'){ showServerDown({ message: msg.message, etaAt: msg.etaAt }, true); break; } // continua tentando sozinho
+          if(msg.error === 'mercenario_ativo'){ netState.stopReconnect = true; try{ sessionStorage.setItem('elemental_cs_msg', `🗡️ Este personagem está trabalhando como mercenário para ${msg.hirer||'outro jogador'} até ${new Date(msg.until).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}. Entre com outro personagem ou espere o contrato acabar.`); }catch(e){} window.location.href = ELEM_ROUTE.personagens; break; }
           if(msg.error === 'personagem_invalido'){ netState.stopReconnect = true; localStorage.removeItem(LS_CHARACTER); window.location.href = ELEM_ROUTE.personagens; break; }
           logLoot(`⚠️ ${msg.error}`); break;
       }
@@ -10229,6 +10286,132 @@
     return null;
   }
 
+
+  /* ===== MERCENÁRIOS (07/11/2026, item 14) — contratar / meus contratos /
+     me cadastrar. Servidor é dono de tudo (merc:*). ===== */
+  const mercPanel = document.getElementById('merc-panel');
+  let mercData = { list:[], mine:[], me:null }, mercTab = 'hire';
+  let mercFilter = { arch:'', role:'', cur:'', minLv:'', maxLv:'', sort:'price' };
+  let mercSign = { hours:2, currency:'gold', pph:0 };
+  const MERC_ROLE_NAME = { tanque:'🛡️ Tanque', dano:'⚔️ Dano', suporte:'✚ Suporte' };
+  document.getElementById('btn-open-merc').addEventListener('click', ()=>{
+    mercPanel.classList.toggle('open');
+    if(mercPanel.classList.contains('open')){ sendWS({ type:'merc:list' }); renderMerc(); }
+  });
+  document.getElementById('merc-tabs').addEventListener('click', e=>{ const b = e.target.closest('button[data-mt]'); if(!b) return; mercTab = b.dataset.mt; renderMerc(); });
+  setInterval(()=>{ if(mercPanel.classList.contains('open')) sendWS({ type:'merc:list' }); }, 15000);
+  function mercSpellInfo(compId){
+    const arch = (typeof ARCHETYPE_IDS!=='undefined' ? ARCHETYPE_IDS : []).find(a=> String(compId).indexOf(a+'_')===0);
+    if(!arch) return null;
+    const sp = (ARCHETYPE_SPELLBOOK[arch]||[]).find(x=> x.id === String(compId).slice(arch.length+1));
+    return sp ? { name: sp.name, icon: spellIconUrl(sp.name) } : null;
+  }
+  function mercPriceTxt(v, cur){ return cur==='coin' ? `${(v||0).toLocaleString('pt-BR')} <small>Elemental Coin</small>` : `${(v||0).toLocaleString('pt-BR')} <small>Gold</small>`; }
+  function mercLeft(ms){ ms = Math.max(0, ms); const h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000); return h ? `${h}h ${m}min` : `${m}min`; }
+  function mercCardHtml(x, mine){
+    const archs = (x.archetypes||[]).map(a=>`<img src="${archetypeIconUrl(a,'28x28')}" title="${escapeHtml(ARCHETYPE_LABEL[a]||a)}" onerror="this.style.display='none'">`).join('');
+    const spells = (x.spells||[]).map(id=>{ const si = mercSpellInfo(id); return si ? `<img src="${si.icon}" title="${escapeHtml(si.name)}" onerror="this.style.display='none'">` : ''; }).join('');
+    const stars = x.rating!=null ? `<span class="stars">★ ${String(x.rating).replace('.',',')}</span> <span class="sub">(${x.ratingCount})</span>` : '<span class="sub">Sem avaliações</span>';
+    const meLv = (mercData.me && mercData.me.level) || 1;
+    const tooHigh = x.level > meLv + 50;
+    return `<div class="merc-card">
+      <div class="top"><div class="arch">${archs||'🗡️'}</div>
+        <div><div class="nm">${escapeHtml(x.nick)}</div><div class="sub">Nv. ${x.level}${x.className?' · '+escapeHtml(x.className):''} · ${x.contracts} contrato(s)</div></div>
+        <span class="role ${x.role}">${MERC_ROLE_NAME[x.role]||x.role}</span></div>
+      <div class="stats"><span>⚔️ Poder de Ataque <b>${(x.dps||0).toLocaleString('pt-BR')}</b></span><span>🛡️ Defesa <b>${(x.armor||0).toLocaleString('pt-BR')}</b></span><span>❤️ <b>${(x.hpMax||0).toLocaleString('pt-BR')}</b></span></div>
+      <div class="spells">${spells || '<span class="sub">Sem habilidades na barra</span>'}</div>
+      ${mine ? `<div class="stats"><span>⏳ Termina em <b>${mercLeft(x.endsAt - Date.now())}</b></span><span>🧪 Poções <b>${(x.potionSpent||0).toLocaleString('pt-BR')}${x.potionCap?' / '+x.potionCap.toLocaleString('pt-BR'):''}</b> Gold</span></div>
+        <div class="bot">${stars}<button data-merc-fire="${escapeHtml(x.key)}" class="go" style="border-color:#c9573a;color:#ff9a80;">✖ Encerrar contrato</button></div>`
+      : `<div class="bot"><div><div class="price">${mercPriceTxt(x.price, x.currency)}</div><div class="sub">${x.hours}h · ${mercPriceTxt(x.pricePerHour, x.currency)}/h</div></div><div>${stars}</div>
+        <button class="go" data-merc-hire="${escapeHtml(x.key)}" ${x.own?'disabled title="Personagem da sua própria conta"':tooHigh?'disabled title="Nível muito acima do seu (máx. +50)"':''}>${x.own?'Sua conta':'Contratar'}</button></div>`}
+    </div>`;
+  }
+  function renderMerc(){
+    if(!mercPanel.classList.contains('open')) return;
+    document.querySelectorAll('#merc-tabs button').forEach(b=> b.classList.toggle('on', b.dataset.mt===mercTab));
+    document.getElementById('merc-mine-n').textContent = mercData.mine.length ? `(${mercData.mine.length})` : '';
+    const el = document.getElementById('merc-content');
+    if(mercTab === 'hire'){
+      const f = mercFilter;
+      let list = mercData.list.filter(x=> (!f.arch || (x.archetypes||[]).includes(f.arch)) && (!f.role || x.role===f.role) && (!f.cur || x.currency===f.cur)
+        && (!f.minLv || x.level >= +f.minLv) && (!f.maxLv || x.level <= +f.maxLv));
+      list.sort((a,b)=> f.sort==='level' ? b.level-a.level : f.sort==='rating' ? (b.rating||0)-(a.rating||0) : (a.currency===b.currency ? a.price-b.price : a.currency==='gold'?-1:1));
+      const archOpts = (typeof ARCHETYPE_IDS!=='undefined'?ARCHETYPE_IDS:[]).map(a=>`<option value="${a}" ${f.arch===a?'selected':''}>${escapeHtml(ARCHETYPE_LABEL[a]||a)}</option>`).join('');
+      el.innerHTML = `<div class="merc-filters">
+          <select data-mf="arch"><option value="">Todas as classes</option>${archOpts}</select>
+          <select data-mf="role"><option value="">Qualquer função</option><option value="tanque" ${f.role==='tanque'?'selected':''}>🛡️ Tanque</option><option value="dano" ${f.role==='dano'?'selected':''}>⚔️ Dano</option><option value="suporte" ${f.role==='suporte'?'selected':''}>✚ Suporte</option></select>
+          <select data-mf="cur"><option value="">Ouro ou Coin</option><option value="gold" ${f.cur==='gold'?'selected':''}>Só Ouro</option><option value="coin" ${f.cur==='coin'?'selected':''}>Só Elemental Coin</option></select>
+          <span class="sub">Nível</span><input data-mf="minLv" type="number" placeholder="de" value="${f.minLv}"><input data-mf="maxLv" type="number" placeholder="até" value="${f.maxLv}">
+          <select data-mf="sort" style="margin-left:auto;"><option value="price" ${f.sort==='price'?'selected':''}>Menor preço</option><option value="level" ${f.sort==='level'?'selected':''}>Maior nível</option><option value="rating" ${f.sort==='rating'?'selected':''}>Melhor avaliação</option></select>
+        </div>
+        ${list.length ? `<div class="merc-grid">${list.map(x=> mercCardHtml(x,false)).join('')}</div>` : `<div class="merc-empty">🗡️<br>Nenhum mercenário disponível${mercData.list.length?' com esses filtros':' agora'}.<br>Jogadores Premium podem anunciar o personagem na aba "Me cadastrar".</div>`}`;
+      el.querySelectorAll('[data-mf]').forEach(inp=> inp.addEventListener('change', ()=>{ mercFilter[inp.dataset.mf] = inp.value; renderMerc(); }));
+      el.querySelectorAll('[data-merc-hire]').forEach(b=> b.addEventListener('click', ()=> openMercHire(mercData.list.find(x=>x.key===b.dataset.mercHire))));
+    } else if(mercTab === 'mine'){
+      el.innerHTML = mercData.mine.length ? `<div class="merc-grid">${mercData.mine.map(x=> mercCardHtml(x,true)).join('')}</div>
+        <div class="merc-form" style="margin-top:12px;"><div class="note">O mercenário fica no seu Grupo e vai junto pra caçada, Torre e Sala do Chefe. Ele acompanha você; se você escolher <b>Seguir</b> ele no seletor de Alvo, ele vai na frente como tanque. O loot e o ouro do que ele mata são seus. As poções dele saem do seu ouro (até o teto que você definiu). Encerrar antes da hora <b>não devolve</b> o valor pago.</div></div>`
+        : `<div class="merc-empty">📜<br>Você não tem mercenários contratados agora.</div>`;
+      el.querySelectorAll('[data-merc-fire]').forEach(b=> b.addEventListener('click', ()=>{ const x = mercData.mine.find(y=>y.key===b.dataset.mercFire); if(x && confirm(`Encerrar o contrato com ${x.nick} agora? O valor pago NÃO é devolvido.`)) sendWS({ type:'merc:fire', key:x.key }); }));
+    } else {
+      const me = mercData.me;
+      if(!me){ el.innerHTML = '<div class="merc-empty">Carregando...</div>'; return; }
+      const lim = me.limits[mercSign.currency];
+      if(!mercSign.pph || mercSign.pph < lim.min || mercSign.pph > lim.max) mercSign.pph = Math.min(lim.max, Math.max(lim.min, mercSign.currency==='coin' ? 5 : lim.min*5));
+      const total = mercSign.pph * mercSign.hours, net = Math.floor(total * (1 - me.fee));
+      const st = me.stats;
+      el.innerHTML = `<div class="merc-form">
+        <div class="note">Anuncie este personagem como mercenário. Quem contratar leva ele no Grupo e ele luta sozinho, com as habilidades da sua barra. No fim você recebe <b>${Math.round((1-me.fee)*100)}%</b> do valor (taxa de ${Math.round(me.fee*100)}%) — Ouro vai pro Banco. Você recebe o contrato inteiro mesmo se ele acabar antes. Ele não perde XP nem itens se cair, e ganha 25% da XP dos abates.</div>
+        <div class="stats" style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);">Seu histórico: ${st.contracts} contrato(s) · ${st.rating!=null?'★ '+String(st.rating).replace('.',',')+' ('+st.ratingCount+')':'sem avaliações'} · ganhou ${st.earnedGold.toLocaleString('pt-BR')} Gold e ${st.earnedCoins.toLocaleString('pt-BR')} Coin</div>
+        ${!me.isPremium ? `<div class="warn">⭐ Só jogadores <b>Premium</b> podem se cadastrar como mercenário.</div>` : me.level < me.minLevel ? `<div class="warn">Precisa ter nível ${me.minLevel} ou mais.</div>` : `
+        <div><label>Duração do contrato</label><div class="opts">${me.hours.map(h=>`<button data-sh="${h}" class="${mercSign.hours===h?'on':''}">${h}h</button>`).join('')}</div></div>
+        <div><label>Receber em</label><div class="opts"><button data-sc="gold" class="${mercSign.currency==='gold'?'on':''}">🪙 Ouro</button><button data-sc="coin" class="${mercSign.currency==='coin'?'on':''}">💎 Elemental Coin</button></div></div>
+        <div class="row"><div><label>Preço por hora</label><input id="merc-pph" type="number" min="${lim.min}" max="${lim.max}" value="${mercSign.pph}" style="width:130px;"></div>
+          <div class="sub" style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);padding-bottom:6px;">mín. ${lim.min.toLocaleString('pt-BR')} · máx. ${lim.max.toLocaleString('pt-BR')} (pelo seu nível)</div></div>
+        <div style="font-size:13px;">Total do contrato: <b style="color:var(--gold-bright)">${mercPriceTxt(total, mercSign.currency)}</b> · você recebe <b style="color:var(--ok)">${mercPriceTxt(net, mercSign.currency)}</b></div>
+        <div class="warn">⚠️ Ao cadastrar, você volta pra seleção de personagem e <b>não pode jogar com este personagem</b> enquanto ele estiver contratado. Se ninguém contratar, é só entrar com ele de novo que o anúncio cai (ou ele sai sozinho em 24h). Você pode jogar com seus outros personagens normalmente.</div>
+        <div class="row"><button class="go" id="merc-sign-btn" style="margin-left:0;">✍️ Cadastrar como mercenário</button></div>`}
+      </div>`;
+      el.querySelectorAll('[data-sh]').forEach(b=> b.addEventListener('click', ()=>{ mercSign.hours = +b.dataset.sh; renderMerc(); }));
+      el.querySelectorAll('[data-sc]').forEach(b=> b.addEventListener('click', ()=>{ mercSign.currency = b.dataset.sc; mercSign.pph = 0; renderMerc(); }));
+      const pi = document.getElementById('merc-pph'); if(pi) pi.addEventListener('change', ()=>{ mercSign.pph = Math.floor(+pi.value||0); renderMerc(); });
+      const sb = document.getElementById('merc-sign-btn'); if(sb) sb.addEventListener('click', ()=>{
+        if(!confirm(`Cadastrar ${PLAYER_NICK||'este personagem'} como mercenário por ${mercSign.hours}h a ${mercSign.pph}/h (${mercSign.currency==='coin'?'Elemental Coin':'Ouro'})? Você vai voltar pra seleção de personagem.`)) return;
+        sendWS({ type:'merc:register', hours: mercSign.hours, currency: mercSign.currency, pricePerHour: mercSign.pph });
+      });
+    }
+  }
+  function openMercHire(x){
+    if(!x) return;
+    const box = document.getElementById('merc-hire-modal');
+    box.innerHTML = `<h3>🗡️ Contratar ${escapeHtml(x.nick)}</h3>
+      <div>Nv. ${x.level} · ${MERC_ROLE_NAME[x.role]||''} · por <b>${x.hours}h</b></div>
+      <div>Preço: <b style="color:var(--gold-bright)">${mercPriceTxt(x.price, x.currency)}</b> (pago agora — <b>não é devolvido</b> se você encerrar antes)</div>
+      <div>Teto de gasto com poções dele: <input type="number" id="merc-potcap" min="0" value="5000"> Gold <span class="sub">(0 = sem teto)</span></div>
+      <div class="sub" style="font-size:10.5px;color:var(--ink-dim);">Ele entra no seu Grupo agora e vai junto pra caçada, Torre e Sala do Chefe.</div>
+      <div style="display:flex;gap:8px;"><button id="merc-hire-cancel">Cancelar</button><button class="go" id="merc-hire-ok">Contratar</button></div>`;
+    box.style.display = 'flex';
+    document.getElementById('merc-hire-cancel').onclick = ()=> box.style.display = 'none';
+    document.getElementById('merc-hire-ok').onclick = ()=>{ sendWS({ type:'merc:hire', key:x.key, potionCap: Math.max(0, Math.floor(+document.getElementById('merc-potcap').value||0)) }); box.style.display = 'none'; };
+  }
+  const MERC_REASON = { precisa_premium:'Só jogadores Premium podem se cadastrar.', ja_anunciado:'Este personagem já está anunciado.', nivel_baixo:'Nível insuficiente.', apenas_na_cidade_principal:'Só dá pra fazer isso na Cidade, fora de caçada.',
+    duracao_invalida:'Duração inválida.', preco_fora_do_limite:'Preço fora do limite.', saia_do_grupo:'Saia do Grupo antes de se cadastrar.', mercenario_indisponivel:'Esse mercenário não está mais disponível.',
+    proprio_personagem:'Você não pode contratar um personagem da sua própria conta.', nivel_muito_acima:'Mercenário com nível muito acima do seu (máx. +50).', ocupado:'Saia da Torre antes de contratar.',
+    limite_mercenarios:'Seu Grupo já tem 2 mercenários.', grupo_cheio:'Seu Grupo está cheio.', moedas_insuficientes:'Elemental Coin insuficiente.', ouro_insuficiente:'Ouro insuficiente.', contrato_nao_encontrado:'Contrato não encontrado.', ja_avaliado:'Você já avaliou.' };
+  function handleMercAck(msg){
+    if(msg.forType === 'merc:list'){ mercData = { list: msg.list||[], mine: msg.mine||[], me: msg.me||null }; renderMerc(); return; }
+    if(!msg.ok){ partySimpleToast(`⚠️ ${MERC_REASON[msg.reason]||msg.reason}`); return; }
+    if(msg.forType === 'merc:register'){
+      partySimpleToast('🗡️ Personagem cadastrado como mercenário! Voltando pra seleção de personagem...');
+      try{ sessionStorage.setItem('elemental_cs_msg', `🗡️ ${PLAYER_NICK||'Seu personagem'} está anunciado como mercenário (${msg.hours}h). Você recebe pelo Correio dele quando o contrato acabar.`); }catch(e){}
+      netState.stopReconnect = true;
+      setTimeout(()=>{ window.location.href = ELEM_ROUTE.personagens; }, 1800);
+      return;
+    }
+    if(msg.forType === 'merc:hire'){ partySimpleToast(`🗡️ ${escapeHtml(msg.nick)} contratado por ${msg.hours}h! Ele já está no seu Grupo.`); mercTab = 'mine'; }
+    if(msg.forType === 'merc:fire') partySimpleToast(`📜 Contrato com ${escapeHtml(msg.nick)} encerrado.`);
+    if(msg.forType === 'merc:rate'){ partySimpleToast(`★ Obrigado! Você deu ${msg.stars} estrela(s) para ${escapeHtml(msg.nick)}.`); sendWS({ type:'mail:list' }); return; }
+    sendWS({ type:'merc:list' });
+  }
   /* ===== CORREIO (07/11/2026, item 10) — compras da Loja, presentes do ADM
      e avisos (atualização, evento...). Servidor é dono de tudo (mail:*). ===== */
   const MAIL_CAT_ICON = { loja:'🛒', presente:'🎁', aviso:'📢', atualizacao:'🔧', evento:'🎉', sistema:'⚙️' };
@@ -10300,10 +10483,16 @@
     readEl.innerHTML = `<h3>${MAIL_CAT_ICON[m.cat]||'✉️'} ${escapeHtml(m.title)}</h3>
       <div class="meta">De: ${escapeHtml(m.from)} · ${MAIL_CAT_NAME[m.cat]||''} · ${fmtMailDate(m.createdAt)}${m.expiresAt?` · some em ${Math.max(1,Math.ceil((m.expiresAt-Date.now())/86400000))} dia(s)`:''}</div>
       <div class="txt">${escapeHtml(m.body||'')}</div>${att}
+      ${m.rateMerc ? (m.rateMerc.rated ? `<div class="mail-rate">Sua avaliação para ${escapeHtml(m.rateMerc.nick)}: <span style="color:#ffcf4a">${'★'.repeat(m.rateMerc.rated)}${'☆'.repeat(5-m.rateMerc.rated)}</span></div>`
+        : `<div class="mail-rate">Avaliar ${escapeHtml(m.rateMerc.nick)}: ${[1,2,3,4,5].map(n=>`<button data-rate="${n}" title="${n} estrela(s)">★</button>`).join('')}</div>`) : ''}
       <div class="mail-actions">
         ${m.hasAttach?`<button class="claim" id="mail-claim-btn" ${m.claimed?'disabled':''}>${m.claimed?'✓ Coletado':'📥 Coletar'}</button>`:''}
         <button id="mail-del-btn" ${m.claimed?'':'disabled title="Colete o anexo antes de excluir"'}>🗑️ Excluir</button>
       </div>`;
+    readEl.querySelectorAll('[data-rate]').forEach(b=>{
+      b.addEventListener('mouseenter', ()=> readEl.querySelectorAll('[data-rate]').forEach(x=> x.classList.toggle('on', +x.dataset.rate <= +b.dataset.rate)));
+      b.addEventListener('click', ()=> sendWS({ type:'merc:rate', mailId:m.id, stars:+b.dataset.rate }));
+    });
     const cb = document.getElementById('mail-claim-btn'); if(cb && !m.claimed) cb.addEventListener('click', ()=> sendWS({ type:'mail:claim', id:m.id }));
     const db = document.getElementById('mail-del-btn'); if(db && m.claimed) db.addEventListener('click', ()=> sendWS({ type:'mail:delete', id:m.id }));
   }
@@ -10369,6 +10558,7 @@
   }
   function handleAck(msg){
     if(msg.forType && msg.forType.indexOf('mail:')===0){ handleMailAck(msg); return; }
+    if(msg.forType && msg.forType.indexOf('merc:')===0){ handleMercAck(msg); return; }
     if(msg.forType === 'bag:openBox'){
       if(msg.ok && msg.activated){
         const b = msg.boost || {};

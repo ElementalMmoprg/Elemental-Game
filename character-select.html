@@ -1223,5 +1223,12 @@
   loadCharacters();
 })();
 </script>
+<script>
+/* 07/11/2026: aviso vindo do jogo (ex.: personagem trabalhando como mercenário) */
+(function(){ var t=null; try{ t=sessionStorage.getItem('elemental_cs_msg'); sessionStorage.removeItem('elemental_cs_msg'); }catch(e){}
+  if(!t) return; var d=document.createElement('div');
+  d.style.cssText='position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:9999;max-width:92vw;padding:12px 18px;border:1px solid var(--gold);border-radius:8px;background:rgba(14,10,6,.95);color:var(--ink);font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.6);cursor:pointer;';
+  d.textContent=t; d.title='Clique pra fechar'; d.onclick=function(){ d.remove(); }; document.body.appendChild(d); setTimeout(function(){ if(d.parentNode) d.remove(); }, 12000); })();
+</script>
 </body>
 </html>
