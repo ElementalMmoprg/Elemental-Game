@@ -20046,7 +20046,7 @@
       <div class="ecs-tiers">Bônus por valor: ${EC_BONUS_TIERS.slice().reverse().map(t=> `<span class="t">${fmtBRL(t.min)}+ · +${t.pct}%</span>`).join('')}</div>
       <div class="ecs-form">
         <div><label>Quanto você quer comprar (R$)</label><input id="ecs-amount" type="number" min="${EC_MIN_BRL}" max="${EC_MAX_BRL}" step="1" value="${v||''}"></div>
-        <div><label>Código de quem te indicou (opcional) · ele ganha 2%</label><input id="ecs-ref" type="text" maxlength="24" placeholder="nick do personagem que te indicou" value="${escapeHtml(ecsRef)}"></div>
+        <div><label>Código de quem te indicou (opcional) · ele ganha 10%</label><input id="ecs-ref" type="text" maxlength="24" placeholder="nick do personagem que te indicou" value="${escapeHtml(ecsRef)}"></div>
       </div>
       <div class="ecs-get" id="ecs-get">${ecsResultHtml()}</div>
       <button class="ecs-buy" id="ecs-buy" ${v >= EC_MIN_BRL && v <= EC_MAX_BRL ? '' : 'disabled'}>Comprar ${v >= EC_MIN_BRL ? fmtBRL(v) : ''}</button>
