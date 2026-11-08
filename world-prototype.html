@@ -5081,9 +5081,11 @@
     global:   { label:'Global',   messages:[] },
     local:    { label:'Local',    messages:[] },
     guild:    { label:'Guild',    messages:[] },
+    comercio: { label:'Comércio', messages:[] }, // 07/11/2026: canal de compra/venda
+    duvidas:  { label:'Dúvidas',  messages:[] }, // 07/11/2026: canal de perguntas (liberado pra iniciantes)
     combate:  { label:'Combate',  messages:[] },
   };
-  const CHAT_SENDABLE = ['global','local','guild'];
+  const CHAT_SENDABLE = ['global','local','guild','comercio','duvidas'];
   let activeChatTab = 'sistema';
   const chatTabsEl = document.getElementById('chat-tabs');
   const chatMsgEl = document.getElementById('chat-messages');
@@ -5126,9 +5128,39 @@
   }
   function renderChatMessages(){
     const t = chatTabsData[activeChatTab];
-    chatMsgEl.innerHTML = t.messages.map(m=>`<div class="${m.cls}">${m.text}</div>`).join('');
+    const list = activeChatTab === 'combate' ? t.messages.filter(m=> !m.cat || combatLogPrefs[m.cat]) : t.messages;
+    chatMsgEl.innerHTML = list.map(m=>`<div class="${m.cls}">${m.text}</div>`).join('');
     chatMsgEl.scrollTop = chatMsgEl.scrollHeight;
+    const g = document.getElementById('chat-combat-gear'); if(g) g.style.display = activeChatTab === 'combate' ? '' : 'none';
   }
+  /* LOG DE COMBATE (07/11/2026, no estilo do Huntera): ações, dano causado e
+     recebido (crítico com valor), cura, experiência e condições. A engrenagem
+     escolhe o que aparece; desmarcar esconde as linhas daquele tipo, marcar
+     volta a registrar dali pra frente. */
+  const COMBAT_LOG_CATS = [['acoes','🧙 Ações'],['dano','⚔️ Dano'],['cura','💚 Cura'],['xp','⭐ Experiência'],['cond','🐌 Condições']];
+  let combatLogPrefs = { acoes:true, dano:true, cura:true, xp:true, cond:true };
+  try{ const sv = JSON.parse(localStorage.getItem('elemental_combat_log_prefs') || 'null'); if(sv) combatLogPrefs = Object.assign(combatLogPrefs, sv); }catch(_){}
+  function logCombat(cat, text, color){
+    if(!combatLogPrefs[cat]) return;
+    const t = chatTabsData.combate;
+    const hh = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    t.messages.push({ cls:'ch-combate', cat, text: `<span style="color:var(--ink-dim);font-size:9.5px;">${hh}</span> <span style="color:${color||'var(--ink)'}">${text}</span>` });
+    if(t.messages.length > 300) t.messages.shift();
+    if(activeChatTab === 'combate') renderChatMessages();
+  }
+  function combatMonName(id){ const m = findMonsterById(id); return m ? escapeHtml(m.name || 'monstro') : 'monstro'; }
+  (function setupCombatGear(){
+    const bar = document.getElementById('chat-titlebar'); if(!bar) return;
+    const g = document.createElement('button'); g.id = 'chat-combat-gear'; g.className = 'hud-mini-btn'; g.title = 'Escolher o que aparece no log de combate'; g.textContent = '⚙'; g.style.display = 'none'; g.style.marginLeft = 'auto'; g.style.marginRight = '6px';
+    bar.insertBefore(g, bar.querySelector('#chat-hide-btn'));
+    const pop = document.createElement('div'); pop.id = 'chat-combat-pop';
+    pop.style.cssText = 'position:fixed;display:none;z-index:9001;background:#16141f;border:1px solid var(--gold-deep);border-radius:8px;padding:10px 12px;font-family:var(--font-mono);font-size:12px;color:var(--ink);min-width:220px;max-width:270px;box-shadow:0 6px 20px rgba(0,0,0,.55)';
+    document.body.appendChild(pop);
+    const draw = ()=>{ pop.innerHTML = `<div style="color:var(--gold-bright);font-weight:700;margin-bottom:8px;">Registrar no log de combate:</div>` + COMBAT_LOG_CATS.map(([k,l])=> `<label style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid rgba(191,161,95,.12);cursor:pointer;">${l}<input type="checkbox" data-clog="${k}" ${combatLogPrefs[k]?'checked':''} style="appearance:auto;-webkit-appearance:checkbox;display:inline-block;opacity:1;position:static;width:16px;height:16px;margin:0;accent-color:#6f8fff;cursor:pointer;"></label>`).join('') + `<div style="color:var(--ink-dim);font-size:10px;margin-top:8px;line-height:1.4;">Registra a partir do momento em que você marca; ao desmarcar, as linhas somem.</div>`;
+      pop.querySelectorAll('[data-clog]').forEach(cb=> cb.addEventListener('change', ()=>{ combatLogPrefs[cb.dataset.clog] = cb.checked; try{ localStorage.setItem('elemental_combat_log_prefs', JSON.stringify(combatLogPrefs)); }catch(_){} renderChatMessages(); })); };
+    g.addEventListener('click', e=>{ e.stopPropagation(); if(pop.style.display === 'block'){ pop.style.display = 'none'; return; } draw(); const r = g.getBoundingClientRect(); pop.style.left = Math.max(8, Math.min(window.innerWidth - 250, r.right - 240)) + 'px'; pop.style.top = (r.bottom + 6) + 'px'; pop.style.display = 'block'; });
+    document.addEventListener('click', e=>{ if(!pop.contains(e.target) && e.target !== g) pop.style.display = 'none'; });
+  })();
   function logChat(channel, text, cls){
     if(!chatTabsData[channel]) channel = 'sistema';
     const t = chatTabsData[channel];
@@ -5359,7 +5391,7 @@
     } else if(CHAT_SENDABLE.includes(activeChatTab)){
       sendWS({ type:'chat', channel:activeChatTab, text, links });
     } else {
-      logChat('sistema', 'Este canal é só leitura — fale em Global, Local ou Guild.');
+      logChat('sistema', 'Este canal é só leitura — fale em Global, Local, Comércio, Dúvidas ou Guild.');
     }
     e.target.value = '';
   });
@@ -7523,8 +7555,15 @@
     return `<span class="cond-ico" title="${escapeHtml(tip)}"><img src="${COND_URL}${file}.png" alt="" onerror="this.replaceWith(document.createTextNode('${fallback||'•'}'))">${secs!=null?`<b>${secs}s</b>`:''}</span>`;
   }
   let lastBuffList = [];
+  let condLogPrev = new Set();
   function renderDebuffs(list, buffs){
     const row = document.getElementById('debuff-row'); if(!row) return;
+    try{ // log de Condições (07/11/2026): avisa quando um efeito NOVO entra
+      const cur = new Set((list||[]).map(d=> 'd:'+d.type).concat((buffs||lastBuffList||[]).map(b=> 'b:'+(b.name||b.key))));
+      (list||[]).forEach(d=>{ if(!condLogPrev.has('d:'+d.type)) logCombat('cond', `🐌 Você está com ${escapeHtml(d.label||d.type)}${d.slowPct?` (−${d.slowPct}% de velocidade)`:''}.`, '#ffb36b'); });
+      (buffs||[]).forEach(b=>{ const k = 'b:'+(b.name||b.key); if(!condLogPrev.has(k)) logCombat('cond', `🛡️ Efeito ativo: ${escapeHtml(b.name || b.key)}.`, '#9fd8ff'); });
+      condLogPrev = cur;
+    }catch(_){}
     if(Array.isArray(buffs)) lastBuffList = buffs;
     const bHtml = (lastBuffList||[]).map(b=>{
       const secs = Math.max(1, Math.ceil(b.leftMs/1000));
@@ -7553,6 +7592,39 @@
       ctx.beginPath(); ctx.arc(p.x, p.y - 18, 3.5, 0, Math.PI*2); ctx.fill(); ctx.restore();
     }
   }
+  const COND_NAME = { burn:'Queimadura', poison:'Envenenamento', bleed:'Sangramento', freeze:'Congelamento', shock:'Eletrificação', deepwound:'Ferida Profunda', holydot:'Correntes Sagradas', wcurse:'Curse', leech:'Leech', siphon:'Siphon', raven:"Witch's Call", vgren:'Venom Grenade', dfire:"Dragon's Arrow" };
+  const cn = (v)=> Math.round(Number(v)||0).toLocaleString('pt-BR');
+  function combatLogFx(fx, castSeen){
+    const sp = fx.spellName ? ` <span style="color:#c9a8ff">(${escapeHtml(fx.spellName)})</span>` : '';
+    if((fx.t === 'spellHit' || fx.t === 'buff' || fx.t === 'shield' || (fx.t === 'heal' && !fx.potion)) && fx.spellName){
+      const k = fx.spellName; if(!castSeen.has(k)){ castSeen.add(k); logCombat('acoes', `🧙 Você conjurou ${escapeHtml(fx.spellName)}.`, '#c9a8ff'); }
+    }
+    switch(fx.t){
+      case 'playerHit': case 'spellHit':
+        if(fx.crit) logCombat('dano', `💥 CRÍTICO! Você causou <b>${cn(fx.dmg)}</b> de dano em ${combatMonName(fx.monsterId)}${sp}.`, '#ffd23f');
+        else logCombat('dano', `⚔️ Você causou ${cn(fx.dmg)} de dano em ${combatMonName(fx.monsterId)}${fx.t === 'playerHit' ? ' (ataque básico)' : sp}.`, '#e8e8e8');
+        break;
+      case 'monsterDot': logCombat('dano', `🩸 ${combatMonName(fx.monsterId)} sofreu ${cn(fx.dmg)} de dano de ${COND_NAME[fx.status] || fx.status}.`, '#cfa0ff'); break;
+      case 'monsterHit': logCombat('dano', `🔻 ${combatMonName(fx.monsterId)} te causou <b>${cn(fx.dmg)}</b> de dano${fx.abilityName ? ` (${escapeHtml(fx.abilityName)})` : ''}.`, '#ff7a6a'); break;
+      case 'dot': logCombat('dano', `🔻 Você sofreu ${cn(fx.dmg)} de dano${fx.label ? ` de ${escapeHtml(fx.label)}` : ''}.`, '#ff7a6a'); break;
+      case 'dodge': logCombat('dano', '💨 Você esquivou de um ataque.', '#8fd0ff'); break;
+      case 'blocked': logCombat('dano', fx.immune ? '✨ Ataque anulado (invulnerável).' : '🌪️ Você bloqueou um ataque.', '#bfe8ff'); break;
+      case 'heal':
+        if(fx.potion){ logCombat('acoes', `🧪 Você bebeu uma ${escapeHtml(potionName(fx.potion))}.`, '#9ff0b0'); if(fx.amount > 0) logCombat('cura', `💚 Você recuperou ${cn(fx.amount)} de vida.`, '#7ee08a'); }
+        else if(fx.amount > 0) logCombat('cura', `💚 Você curou ${cn(fx.amount)} de vida${sp}.`, '#7ee08a');
+        break;
+      case 'hot': case 'dotHeal': if(fx.amount > 0) logCombat('cura', `💚 Você recuperou ${cn(fx.amount)} de vida${sp || (fx.t === 'dotHeal' ? ' (roubo de vida)' : '')}.`, '#7ee08a'); break;
+      case 'manaRestore':
+        if(fx.potion) logCombat('acoes', `🧪 Você bebeu uma ${escapeHtml(potionName(fx.potion))}.`, '#9fd8ff');
+        if(fx.amount > 0) logCombat('cura', `💧 Você recuperou ${cn(fx.amount)} de mana.`, '#6fb8ff');
+        break;
+      case 'healedOther': logCombat('cura', `💚 Você curou ${fx.targetNick ? escapeHtml(fx.targetNick) : 'um aliado'}${fx.amount ? ` em ${cn(fx.amount)}` : ''}${sp}.`, '#7ee08a'); break;
+      case 'cleanse': logCombat('cond', '✨ Você foi purificado (efeitos removidos).', '#9ff0b0'); break;
+      case 'reaction': logCombat('cond', `⚡ Reação elemental: ${escapeHtml(fx.name || '')} em ${combatMonName(fx.monsterId)}.`, '#ffe45c'); break;
+      case 'death': logCombat('cond', '💀 Você morreu.', '#ff5a5a'); break;
+    }
+  }
+  function potionName(id){ const p = (typeof POTIONS !== 'undefined') && POTIONS.find(x=> x.id === id); return p ? p.name + ' Potion' : id; }
   function processCombatFx(fxList){
     if(!Array.isArray(fxList) || !fxList.length) return;
     // Magia de área (20/10/2026): o servidor manda 1 'spellHit' por monstro
@@ -7560,7 +7632,9 @@
     // empilhava N vezes e não havia o "estouro" da área. Agora: nome/anel/
     // estouro grande 1x por conjuração, e só um impacto menor em cada alvo.
     const aoeSeen = new Set();
+    const castSeen = new Set();
     fxList.forEach(fx=>{
+      try{ combatLogFx(fx, castSeen); }catch(_){}
       if(fx.t === 'playerHit' || fx.t === 'spellHit'){
         const m = findMonsterById(fx.monsterId);
         const anchor = m ? (()=>({x:m.x,y:m.y})) : (()=>({x:player.x,y:player.y}));
@@ -7665,6 +7739,10 @@
       } else if(fx.t === 'dotHeal'){
         // cura por tique (Leech / Bloodmancer): só o número verde, sem animação de magia
         if(fx.amount > 0) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
+      } else if(fx.t === 'huntSwitched'){
+        stopHuntSwitchBanner(); logLoot(`🧭 Você chegou em <b>${escapeHtml(fx.huntName||'')}</b>.`); if(typeof renderHuntCenter === 'function' && document.getElementById('hunts-modal').classList.contains('open')) renderHuntCenter();
+      } else if(fx.t === 'huntSwitchFail'){
+        stopHuntSwitchBanner(); logLoot(`⚠️ Não foi possível entrar na nova área (${fx.reason}) — voltou pra Cidade.`);
       } else if(fx.t === 'healedOther'){
         // Cura em ALIADO (Alvo da cura configurado, ver resolveHealTarget no
         // huntEngine.js) -- o "+X" de verdade aparece na TELA DO ALIADO (via
@@ -9247,7 +9325,7 @@
   }
   function loop(){
     const t = now(); const dt = Math.min(.05,(t-lastT)/1000); lastT = t;
-    if(player.xp > lastXp) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.xp-lastXp} XP`, '#ffffff');
+    if(player.xp > lastXp){ spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.xp-lastXp} XP`, '#ffffff'); if(lastXp > 0 && activeHunt.running) logCombat('xp', `⭐ Você ganhou ${(player.xp-lastXp).toLocaleString('pt-BR')} de experiência.`, '#ffe08a'); }
     if(player.gold > lastGold) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${player.gold-lastGold} ouro`, '#ffd84a');
     // dano recebido de monstro agora vem via combatFx (processCombatFx),
     // que sabe distinguir crítico/esquiva/especial — um diff de HP não sabe.
@@ -9960,7 +10038,7 @@
           (msg.problems||[]).forEach(p=>{ const t = `👑 O jogador ${p.nick} ${R[p.reason]||'não pode entrar no boss'}.`; logLoot(escapeHtml(t)); partySimpleToast(escapeHtml(t)); });
           break;
         }
-        case 'hunt:partyStarted': {
+        case 'hunt:partyStarted': { stopHuntSwitchBanner();
           closeHuntPartyModal(); closeHuntInviteAcceptModal(); cancelAutoWalk();
           const REASON_PT = { offline:'offline', sem_stamina:'sem stamina', ocupado:'ocupado na Torre', fora_da_cidade:'fora da Cidade' };
           const sk = (msg.skipped||[]).map(x=>`${escapeHtml(x.nick)} (${REASON_PT[x.reason]||x.reason})`).join(', ');
@@ -9971,8 +10049,13 @@
         case 'hunt:inviteProgress': showHuntPartyModal('convite', msg.partyId, msg.accepted, msg.total); break;
         case 'hunt:inviteCancelled':
           closeHuntPartyModal(); closeHuntInviteAcceptModal(); cancelAutoWalk();
-          logLoot(msg.reason === 'tempo' ? '🏹 Nem todo mundo respondeu em 30 segundos — caçada em grupo cancelada.'
-            : msg.by ? `🏹 <b>${escapeHtml(msg.by)}</b> recusou a caçada em grupo — convite cancelado.` : '🏹 A caçada em grupo foi cancelada.');
+          { const t = msg.reason === 'tempo' ? '🏹 Nem todo mundo respondeu em 30 segundos — ' + (msg.isSwitch ? 'o grupo continua na mesma área.' : 'caçada em grupo cancelada.')
+              : msg.by ? (msg.isSwitch ? `🏹 Jogador (<b>${escapeHtml(msg.by)}</b>) não aceitou a mudança — o grupo continua na mesma área.` : `🏹 <b>${escapeHtml(msg.by)}</b> recusou a caçada em grupo — convite cancelado.`) : '🏹 A caçada em grupo foi cancelada.';
+            logLoot(t); logChat('sistema', t); if(typeof partySimpleToast === 'function') partySimpleToast(t.replace(/<[^>]+>/g,'')); }
+          break;
+        case 'hunt:switchCountdown': // troca de área do grupo (5 s)
+          closeHuntPartyModal(); closeHuntInviteAcceptModal();
+          startHuntSwitchBanner(msg.huntName, msg.delayMs || 5000, true);
           break;
         case 'hunt:approachStart':
           closeHuntPartyModal(); closeHuntInviteAcceptModal();
@@ -11040,7 +11123,7 @@
         logLoot(`⚠️ ${huntLevelGateMessage(msg) || `Não foi possível iniciar: ${msg.reason}`}`);
       }
     }
-    if(msg.forType === 'party:huntInvite' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode iniciar com o time.' : (huntLevelGateMessage(msg) || msg.reason)}`);
+    if(msg.forType === 'party:huntInvite' && !msg.ok) logLoot(`⚠️ ${msg.reason==='mesma_area' ? 'O grupo já está nessa área.' : msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode iniciar com o time.' : (huntLevelGateMessage(msg) || msg.reason)}`);
     if(msg.forType === 'party:go' && !msg.ok) logLoot(`⚠️ ${msg.reason==='apenas_lider_pode_ir' ? 'Só o Líder pode clicar em IR.' : (huntLevelGateMessage(msg) || msg.reason)}`);
     if(msg.forType === 'matchmaking:join'){
       if(msg.ok){
@@ -11508,6 +11591,10 @@
       if(msg.ok) showGachaResult(msg);
       else logLoot('⚠️ Elemental Coin insuficiente pro Gacha.');
       renderPetsIfOpen();
+    }
+    if(msg.forType === 'hunt:switch'){
+      if(msg.ok) startHuntSwitchBanner(msg.huntName, msg.delayMs || 5000);
+      else logLoot(`⚠️ Não foi possível mudar de área: ${({ mesma_area:'você já está nessa área.', em_grupo:'em grupo, só o grupo inteiro pode trocar (saia pela cidade).', na_torre:'não dá pra trocar de área dentro da Torre.', fora_de_cacada:'você não está numa caçada.', sem_stamina:'sem stamina.', nivel_insuficiente:'nível insuficiente pra essa área.', estrela_necessaria:'precisa de estrela no Altar pra essa área.' })[msg.reason] || msg.reason}`);
     }
     if(msg.forType === 'battlepass:buyPremium'){
       if(msg.ok) logLoot(`🎫 Trilha Premium do Battle Pass liberada (${msg.cost} Elemental Coin)!`);
@@ -12018,7 +12105,10 @@
   function renderHuntCenter(){
     const isRunning = activeHunt.running && activeHunt.huntId===selectedHunt.id;
     const center = document.getElementById('hunts-center');
-    const goLabel = isLeaderOfParty() ? 'IR (Grupo)' : 'Iniciar Caçada';
+    // 07/11/2026: dentro de uma caçada solo dá pra trocar de área (não pra mesma) — 5 s de contagem
+    const canSwitch = activeHunt.running && !activeHunt.isTower && !party && activeHunt.huntId !== selectedHunt.id;
+    const partySwitch = activeHunt.running && !activeHunt.isTower && isLeaderOfParty() && activeHunt.huntId !== selectedHunt.id; // líder troca o grupo todo (aceitar tudo / pergunta)
+    const goLabel = canSwitch ? 'Mudar para esta área' : partySwitch ? 'Mudar para esta área (Grupo)' : (isLeaderOfParty() ? 'IR (Grupo)' : 'Iniciar Caçada');
     const disabledForFollower = isNonLeaderMember();
     center.innerHTML = `
       <h2>${selectedHunt.name}</h2>
@@ -12055,6 +12145,8 @@
     document.getElementById('hunt-action-btn').addEventListener('click', ()=>{
       if(activeHunt.running && activeHunt.huntId===selectedHunt.id){
         sendWS({ type:'hunt:stop' });
+      } else if(canSwitch){
+        sendWS({ type:'hunt:switch', huntId:selectedHunt.id, difficulty:selectedDifficulty });
       } else if(isLeaderOfParty()){
         // Não teleporta na hora — manda o convite pro resto do grupo (modal de
         // aceite) primeiro; só depois que TODOS aceitarem é que todo mundo
@@ -19154,6 +19246,21 @@
     return '?';
   }
   document.getElementById('btn-open-battlepass').addEventListener('click', ()=>{ battlePassModal.classList.toggle('open'); renderBattlePass(); });
+  // Contagem "Mudando para área (X)" (07/11/2026)
+  let huntSwitchTimer = null;
+  function stopHuntSwitchBanner(){ clearInterval(huntSwitchTimer); huntSwitchTimer = null; const b = document.getElementById('hunt-switch-banner'); if(b) b.remove(); }
+  function startHuntSwitchBanner(name, ms, isParty){
+    stopHuntSwitchBanner();
+    const end = Date.now() + ms;
+    const b = document.createElement('div'); b.id = 'hunt-switch-banner';
+    b.style.cssText = 'position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:60;background:rgba(14,14,20,.92);border:1px solid var(--gold-bright);border-radius:8px;padding:10px 18px;font-family:var(--font-mono);font-size:13px;color:var(--ink);display:flex;align-items:center;gap:14px;box-shadow:0 4px 18px rgba(0,0,0,.5)';
+    document.body.appendChild(b);
+    const tick = ()=>{ const left = Math.max(0, Math.ceil((end - Date.now())/1000));
+      b.innerHTML = `🧭 Mudando para área <b style="color:var(--gold-bright)">(${escapeHtml(name||'')})</b> em <b style="font-size:17px;color:var(--gold-bright)">${left}</b>${isParty ? ' <span style="color:var(--ink-dim)">(grupo)</span>' : ' <button class="party-btn" id="hunt-switch-cancel">Cancelar</button>'}`;
+      const c = document.getElementById('hunt-switch-cancel'); if(c) c.onclick = ()=>{ sendWS({ type:'hunt:switchCancel' }); stopHuntSwitchBanner(); };
+      if(Date.now() >= end + 2500) stopHuntSwitchBanner(); };
+    tick(); huntSwitchTimer = setInterval(tick, 250);
+  }
   let bpConfirm = false; // 2 cliques pra comprar a trilha Premium
   function renderBattlePassIfOpen(){ if(battlePassModal.classList.contains('open')) renderBattlePass(); }
   function renderBattlePass(){
