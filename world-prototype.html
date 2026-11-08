@@ -11711,8 +11711,8 @@
       else logLoot(`⚠️ Não foi possível mudar de área: ${({ mesma_area:'você já está nessa área.', em_grupo:'em grupo, só o grupo inteiro pode trocar (saia pela cidade).', na_torre:'não dá pra trocar de área dentro da Torre.', fora_de_cacada:'você não está numa caçada.', sem_stamina:'sem stamina.', nivel_insuficiente:'nível insuficiente pra essa área.', estrela_necessaria:'precisa de estrela no Altar pra essa área.' })[msg.reason] || msg.reason}`);
     }
     if(msg.forType === 'shop:buyFragmentBox'){
-      if(msg.ok){ logLoot(`💠 Caixa de Fragmentos: você ganhou <b>${msg.got}</b> Fragmento${msg.got>1?'s':''} de estrela!`); partySimpleToast(`💠 +${msg.got} Fragmento${msg.got>1?'s':''} de estrela`); }
-      else logLoot(msg.reason === 'moedas_insuficientes' ? `⚠️ Elemental Coin insuficiente (a caixa custa ${msg.cost}).` : `⚠️ Não foi possível abrir a caixa: ${msg.reason}`);
+      if(msg.ok){ logLoot(`💠 Baú de Fragmentos: você ganhou <b>${msg.got}</b> Fragmento${msg.got>1?'s':''} de estrela!`); partySimpleToast(`💠 +${msg.got} Fragmento${msg.got>1?'s':''} de estrela`); }
+      else logLoot(msg.reason === 'moedas_insuficientes' ? `⚠️ Elemental Coin insuficiente (o baú custa ${msg.cost}).` : `⚠️ Não foi possível abrir o baú: ${msg.reason}`);
       storeHubRenderIfOpen();
     }
     if(msg.forType === 'battlepass:buyPremium'){
@@ -20365,7 +20365,7 @@
   const FRAGMENT_BOX_COST = 10, FRAGMENT_BOX_ODDS = [[1,35],[2,25],[3,20],[4,12],[5,8]]; // espelho de huntEngine
   function shItemCards(){
     const fbConf = shConfirmId === 'fbox', fbPoor = (elementalCoins||0) < FRAGMENT_BOX_COST;
-    return shCard({ tag:'Sorteio', art:`<img src="${URL_BASE}items/gems/gema_luz.png">`, name:'Caixa de Fragmentos', price:`${FRAGMENT_BOX_COST} <small>${EC} Coin</small>`,
+    return shCard({ tag:'Sorteio', art:`<span style="position:relative;display:inline-block;"><img src="${URL_BASE}ravendawn/ui/windows/house/preview/icons/chest.png"><img src="${URL_BASE}items/gems/gema_luz.png" style="position:absolute;right:10%;bottom:12%;width:34%;height:auto;filter:drop-shadow(0 0 4px #000)"></span>`, name:'Baú de Fragmentos', price:`${FRAGMENT_BOX_COST} <small>${EC} Coin</small>`,
         desc:'1 a 5 Fragmentos de estrela. Chances: ' + FRAGMENT_BOX_ODDS.map(([q,p])=> `${q} → ${p}%`).join(' · '),
         btn: fbConf ? `Confirmar ${FRAGMENT_BOX_COST} ${EC}` : (fbPoor ? 'Coin insuficiente' : 'Abrir'), btnClass: fbConf ? 'confirm' : '', btnDisabled: fbPoor && !fbConf, data:'data-sh-fbox="1"' })
       + shCard({ tag:'Torres', art:`<img src="${URL_BASE}items/loot/boss_key_central.png">`, name:'Chave da Torre', price:`${TOWER_KEY_PRICE_COIN} <small>${EC} Coin</small>`, desc:'+1 tentativa de Escalada no dia', btn:'Comprar', btnDisabled:(elementalCoins||0) < TOWER_KEY_PRICE_COIN, data:'data-sh-towerkey="1"' });
