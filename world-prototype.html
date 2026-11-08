@@ -7434,10 +7434,10 @@
     opts = opts || {};
     const a0 = getAnchor(), t0 = now();
     const near = floatingTexts.filter(f => t0 - f.bornAt < 420 && f.ax != null && Math.abs(f.ax - a0.x) < 24 && Math.abs(f.ay - a0.y) < 24 && !f.yOffset).length;
-    floatingTexts.push({ getAnchor, text: String(text).replace(FLOAT_EMOJI_RE, '').replace(/\d+\.\d+/g, m => String(Math.max(1, Math.round(+m)))).trim(), color, bornAt: t0, yOffset: (opts.yOffset||0) + (opts.yOffset ? 0 : near*11),
-      big: !!opts.big, kind: opts.kind || null, icon: opts.icon ? floatIconImg(opts.icon) : null, ax: a0.x, ay: a0.y, dx: opts.yOffset ? 0 : ((near % 2) ? 7 : -7) * (near ? 1 : 0) });
+    floatingTexts.push({ getAnchor, text: String(text).replace(FLOAT_EMOJI_RE, '').replace(/\d+\.\d+/g, m => String(Math.max(1, Math.round(+m)))).trim(), color, bornAt: t0, yOffset: (opts.yOffset||0) + (opts.yOffset ? 0 : near*15),
+      big: !!opts.big, kind: opts.kind || null, icon: opts.icon ? floatIconImg(opts.icon) : null, ax: a0.x, ay: a0.y, dx: opts.yOffset ? 0 : ((near % 2) ? 12 : -12) * (near ? 1 : 0) });
   }
-  const FLOAT_LIFETIME_MS = 1100;
+  const FLOAT_LIFETIME_MS = 1300; // 08/11/2026: números maiores e um pouco mais demorados (estilo Ravendawn)
   // ícone ao lado do texto (habilidade / poção), igual o "exori hur" do Tibia
   const floatIconCache = {};
   function floatIconImg(url){
@@ -7453,6 +7453,37 @@
   // pushCombatFx em huntEngine.js), não por diff de HP local (isso cobre
   // crítico/esquiva/especial, que um diff de HP não sabe distinguir). ----
   const fxRings = []; // pulsos de ataque/magia (anel que expande e some)
+  // GOLPE AVISADO DO CHEFE (08/11/2026): o servidor manda 'telegraph' com a
+  // forma (círculo = quadrado de tiles em volta do centro / linha = faixa reta)
+  // e o tempo; a área fica vermelha e vai "enchendo" até o golpe sair.
+  const bossTelegraphs = [];
+  function drawBossTelegraphs(toScreen0){
+    const t = now(), T = TILE_STEP;
+    const fo = (activeHunt && activeHunt.isTower && !activeHunt.realMapId) ? 0 : TILE_FOOT_OFFSET; // mesmo deslocamento do chão (drawHuntMapGround)
+    const toScreen = (x, y)=> toScreen0(x, y - fo);
+    for(let i = bossTelegraphs.length - 1; i >= 0; i--){
+      const g = bossTelegraphs[i], k = (t - g.bornAt) / g.ms;
+      if(k > 1.25){ bossTelegraphs.splice(i, 1); continue; }
+      const p = Math.min(1, Math.max(0, k)), fade = k > 1 ? Math.max(0, 1 - (k - 1) / 0.25) : 1;
+      ctx.save(); ctx.globalAlpha = fade;
+      const edge = k > 1 ? 'rgba(255,230,200,.95)' : 'rgba(255,60,50,.9)';
+      if(g.shape === 'circle'){
+        const h = (g.r + 0.5) * T, a = toScreen(g.x - h, g.y - h), b = toScreen(g.x + h, g.y + h);
+        const w = b.x - a.x, hh = b.y - a.y, cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+        ctx.fillStyle = 'rgba(220,20,20,.3)'; ctx.fillRect(a.x, a.y, w, hh);
+        ctx.fillStyle = 'rgba(255,30,20,.5)'; ctx.fillRect(cx - w * p / 2, cy - hh * p / 2, w * p, hh * p); // enche do centro pra borda
+        ctx.strokeStyle = edge; ctx.lineWidth = 3; ctx.strokeRect(a.x + 1, a.y + 1, w - 2, hh - 2);
+      } else {
+        const o = toScreen(g.x, g.y), u = toScreen(g.x + T, g.y), sc = u.x - o.x; // px de tela por unidade de mundo/T
+        ctx.translate(o.x, o.y); ctx.rotate(g.ang);
+        const L = (g.len + 0.5) * sc, W = (g.hw + 0.5) * sc, x0 = -0.5 * sc;
+        ctx.fillStyle = 'rgba(220,20,20,.3)'; ctx.fillRect(x0, -W, L - x0, W * 2);
+        ctx.fillStyle = 'rgba(255,30,20,.5)'; ctx.fillRect(x0, -W, (L - x0) * p, W * 2); // enche do chefe pra ponta
+        ctx.strokeStyle = edge; ctx.lineWidth = 3; ctx.strokeRect(x0, -W, L - x0, W * 2);
+      }
+      ctx.restore();
+    }
+  }
   function spawnFxRing(getAnchor, color, maxRadius, durationMs){ fxRings.push({ getAnchor, color, maxRadius, durationMs, bornAt: now() }); }
   // Alem do anel (fxRing), o personagem agora tambem MUDA DE POSE por um
   // instante ao usar uma habilidade -- reaproveita um quadro que ja existe
@@ -7769,6 +7800,9 @@
       } else if(fx.t === 'dotHeal'){
         // cura por tique (Leech / Bloodmancer): só o número verde, sem animação de magia
         if(fx.amount > 0) spawnFloatingText(()=>({x:player.x,y:player.y}), `+${fx.amount}`, '#7ee08a');
+      } else if(fx.t === 'telegraph'){
+        bossTelegraphs.push({ shape: fx.shape, x: fx.x, y: fx.y, r: fx.r, ang: fx.ang, len: fx.len, hw: fx.hw, ms: fx.ms || 1300, bornAt: now() });
+        const bm = findMonsterById(fx.monsterId); if(bm && fx.abilityName) spawnFloatingText(()=>({x:bm.x,y:bm.y}), fx.abilityName + '!', '#ff5a4a', { yOffset: 50, big: true });
       } else if(fx.t === 'huntSwitched'){
         stopHuntSwitchBanner(); logLoot(`🧭 Você chegou em <b>${escapeHtml(fx.huntName||'')}</b>.`); if(typeof renderHuntCenter === 'function' && document.getElementById('hunts-modal').classList.contains('open')) renderHuntCenter();
       } else if(fx.t === 'huntSwitchFail'){
@@ -8690,6 +8724,7 @@
     // applyHuntSnapshot), só faltava desenhar em cima da cabeça também.
     hpPct: (player.hpMax ? player.hp/player.hpMax : null) });
 
+    drawBossTelegraphs(toScreen); // 08/11/2026: área vermelha no chão (golpe avisado do chefe), por baixo dos personagens
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     // 01/11/2026 (vídeo do usuário: personagem "sumia" embaixo do Chefe da
     // Área): o chefe é desenhado 1,55x maior e cobria o jogador encostado nele.
@@ -8759,10 +8794,13 @@
       const ft = floatingTexts[i]; const age = now() - ft.bornAt;
       if(age > FLOAT_LIFETIME_MS){ floatingTexts.splice(i,1); continue; }
       const anchor = ft.getAnchor(); const s = toScreen(anchor.x, anchor.y);
-      const rise = (age/FLOAT_LIFETIME_MS) * 26; const alpha = 1 - age/FLOAT_LIFETIME_MS;
+      const rise = (age/FLOAT_LIFETIME_MS) * 34; const alpha = 1 - age/FLOAT_LIFETIME_MS;
       // some só no último terço (antes ia sumindo desde o 1º quadro)
       ctx.globalAlpha = Math.max(0, Math.min(1, alpha * 3));
-      const fsz = ft.kind === 'spell' ? 11 : (ft.big ? 13 : 11);
+      // 08/11/2026: número de dano/cura maior, crítico bem maior, com "pulo" ao nascer
+      const isNum = ft.kind !== 'spell' && /^[+\-]?\d/.test(ft.text);
+      const pop = isNum && age < 140 ? 1 + 0.35 * (1 - age / 140) : 1;
+      const fsz = (ft.kind === 'spell' ? 11 : (ft.big ? (isNum ? 18 : 13) : (isNum ? 14 : 11))) * pop;
       ctx.font = `bold ${Math.round(fsz*Math.max(1, SPRITE_SCALE*0.85))}px Verdana, "JetBrains Mono", sans-serif`;
       ctx.textAlign='center'; ctx.lineJoin = 'round';
       const tx = s.x + (ft.dx||0), ty = s.y - 26 - rise - (ft.yOffset||0);
@@ -8774,7 +8812,7 @@
         ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(ix-1, iy-1, isz+2, isz+2);
         ctx.drawImage(ft.icon.img, ix, iy, isz, isz);
       }
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.9)'; ctx.strokeText(ft.text, txx, ty);
+      ctx.lineWidth = isNum ? 4 : 3; ctx.strokeStyle = 'rgba(0,0,0,.92)'; ctx.strokeText(ft.text, txx, ty);
       ctx.fillStyle = ft.color; ctx.fillText(ft.text, txx, ty); ctx.globalAlpha = 1;
     }
 
