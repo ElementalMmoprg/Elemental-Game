@@ -19379,7 +19379,8 @@
     const xpIntoTier = battlePass.xp - battlePass.tier*BATTLE_PASS_XP_PER_TIER;
     const pct = Math.min(100, Math.round(xpIntoTier / BATTLE_PASS_XP_PER_TIER * 100));
     const bpOwn = !!battlePass.premiumUnlocked, bpCost = battlePass.premiumCost || 80;
-    document.getElementById('bp-header').innerHTML = `Tier <b style="color:var(--gold-bright);">${battlePass.tier}</b>/${BATTLE_PASS_MAX_TIER} — ${xpIntoTier}/${BATTLE_PASS_XP_PER_TIER} XP pro próximo tier · Trilha Premium: ${bpOwn ? '<b style="color:var(--ok)">liberada</b>' : `<b style="color:#ff9a80">bloqueada</b> <button class="party-btn primary" id="bp-buy-premium" style="margin-left:6px;">${bpConfirm ? `Confirmar ${bpCost} ${EC}` : `Liberar por ${bpCost} ${EC}`}</button>`}`;
+    const bpLeftD = battlePass.seasonEndsAt ? Math.max(0, Math.ceil((battlePass.seasonEndsAt - Date.now()) / 86400000)) : null;
+    document.getElementById('bp-header').innerHTML = (battlePass.season ? `<b style="color:var(--gold-bright);">Temporada ${battlePass.season}</b>${bpLeftD != null ? ` · termina em ${bpLeftD} dia${bpLeftD===1?'':'s'}` : ''}<br>` : '') + `Tier <b style="color:var(--gold-bright);">${battlePass.tier}</b>/${BATTLE_PASS_MAX_TIER} — ${xpIntoTier}/${BATTLE_PASS_XP_PER_TIER} XP pro próximo tier · Trilha Premium: ${bpOwn ? '<b style="color:var(--ok)">liberada</b>' : `<b style="color:#ff9a80">bloqueada</b> <button class="party-btn primary" id="bp-buy-premium" style="margin-left:6px;">${bpConfirm ? `Confirmar ${bpCost} ${EC}` : `Liberar por ${bpCost} ${EC}`}</button>`}`;
     const bpb = document.getElementById('bp-buy-premium');
     if(bpb) bpb.addEventListener('click', ()=>{ if(!bpConfirm){ bpConfirm = true; renderBattlePass(); return; } bpConfirm = false; sendWS({ type:'battlepass:buyPremium' }); });
     document.getElementById('bp-progress-fill').style.width = pct+'%';
