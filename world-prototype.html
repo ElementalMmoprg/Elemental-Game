@@ -7841,6 +7841,9 @@
       } else if(fx.t === 'telegraph'){
         bossTelegraphs.push({ shape: fx.shape, x: fx.x, y: fx.y, r: fx.r, ang: fx.ang, len: fx.len, hw: fx.hw, ms: fx.ms || 1300, bornAt: now() });
         const bm = findMonsterById(fx.monsterId); if(bm && fx.abilityName) spawnFloatingText(()=>({x:bm.x,y:bm.y}), fx.abilityName + '!', '#ff5a4a', { yOffset: 50, big: true });
+      } else if(fx.t === 'rareDrop'){
+        spawnFloatingText(()=>({x:player.x,y:player.y}), '✦ ' + fx.name + '!', '#f5b800', { yOffset: 46, big: true });
+        logLoot(`✦ Drop raro: <b style="color:#f5b800">${escapeHtml(fx.name)}</b>!`);
       } else if(fx.t === 'huntSwitched'){
         stopHuntSwitchBanner(); logLoot(`🧭 Você chegou em <b>${escapeHtml(fx.huntName||'')}</b>.`); if(typeof renderHuntCenter === 'function' && document.getElementById('hunts-modal').classList.contains('open')) renderHuntCenter();
       } else if(fx.t === 'huntSwitchFail'){
@@ -11707,6 +11710,11 @@
       if(msg.ok) startHuntSwitchBanner(msg.huntName, msg.delayMs || 5000);
       else logLoot(`⚠️ Não foi possível mudar de área: ${({ mesma_area:'você já está nessa área.', em_grupo:'em grupo, só o grupo inteiro pode trocar (saia pela cidade).', na_torre:'não dá pra trocar de área dentro da Torre.', fora_de_cacada:'você não está numa caçada.', sem_stamina:'sem stamina.', nivel_insuficiente:'nível insuficiente pra essa área.', estrela_necessaria:'precisa de estrela no Altar pra essa área.' })[msg.reason] || msg.reason}`);
     }
+    if(msg.forType === 'shop:buyFragmentBox'){
+      if(msg.ok){ logLoot(`💠 Caixa de Fragmentos: você ganhou <b>${msg.got}</b> Fragmento${msg.got>1?'s':''} de estrela!`); partySimpleToast(`💠 +${msg.got} Fragmento${msg.got>1?'s':''} de estrela`); }
+      else logLoot(msg.reason === 'moedas_insuficientes' ? `⚠️ Elemental Coin insuficiente (a caixa custa ${msg.cost}).` : `⚠️ Não foi possível abrir a caixa: ${msg.reason}`);
+      storeHubRenderIfOpen();
+    }
     if(msg.forType === 'battlepass:buyPremium'){
       if(msg.ok) logLoot(`🎫 Trilha Premium do Battle Pass liberada (${msg.cost} Elemental Coin)!`);
       else logLoot(msg.reason === 'moedas_insuficientes' ? `⚠️ Elemental Coin insuficiente: a trilha Premium custa ${msg.cost}.` : `⚠️ Não foi possível liberar a trilha Premium: ${msg.reason}`);
@@ -13813,6 +13821,7 @@
       })()}
       <div class="panel-title" style="margin-top:10px;">Loot<span class="rule"></span></div>
       ${lootHtml || '<div class="italic-note">Sem loot cadastrado.</div>'}
+      <div style="margin-top:4px;"><b style="color:${RARITY_COLORS['lendária']||'#f5b800'};font-size:10px;">Drops raros de chefe</b><div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);">Cristal de Fusão (0,3%) · Fragmento de estrela (0,5%)</div></div>
       ${extra}
     `;
     document.getElementById('wiki-boss-back-btn').addEventListener('click', ()=>{ wikiSelectedBoss = null; renderWiki(); });
@@ -14123,6 +14132,7 @@
       <div class="bestiary-phase-row">${tiersHtml}</div>
       <div class="panel-title" style="margin-top:10px;">Tabela de Loot da Zona<span class="rule"></span></div>
       ${lootHtml || '<div class="italic-note">Sem loot cadastrado.</div>'}
+      ${inferMonsterPowerTier(m.name) === 'elite' ? `<div style="margin-top:4px;"><b style="color:${RARITY_COLORS['lendária']||'#f5b800'};font-size:10px;">Drops raros de elite</b><div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);">Cristal de Fusão (0,3%) · Fragmento de estrela (0,3%)</div></div>` : ''}
       ${(()=>{
         // Item 10 da lista de tarefas (20/09/2026): rodapé "Bônus do
         // Bestiário" igual o print de referência -- bônus GLOBAL (soma de
@@ -19350,6 +19360,7 @@
   const bpIco = (path)=> `<img class="bp-ico" src="${URL_BASE}${path}">`;
   function formatBpReward(reward){
     if(reward.type==='gold') return `${bpIco('ravendawn-ui/gold.png')}${reward.amount.toLocaleString('pt-BR')} Gold`;
+    if(reward.type==='material' && reward.key==='infusionShard') return `${bpIco('items/loot/infusion_maelstrom.png')}${reward.amount*2}× Maelstrom Infusion`; // 08/11/2026: 1 fragmento = 2 Maelstrom
     if(reward.type==='material') return `${bpIco(BP_MATERIAL_ICON[reward.key]||'items/loot/elemental_crystal.png')}${reward.amount}× ${BP_MATERIAL_LABEL[reward.key]||reward.key}`;
     if(reward.type==='fragments') return `${bpIco('items/gems/gema_luz.png')}${reward.amount} Fragmentos`;
     if(reward.type==='elementalCoins') return `${bpIco('ui/elemental_coin/elemental_coin_64.png')}${reward.amount} Elemental Coin`;
@@ -20061,7 +20072,7 @@
     { id:'montarias', tab:'loja', name:'Montarias', img:URL_BASE + 'ui/bazaar/'+'chip_mounts.png', count:()=> mountCatalog.length },
     { id:'premium', tab:'loja', name:'Tempo de Premium', img:URL_BASE + 'ui/bazaar/'+'chip_time.png', count:()=> PREMIUM_PACKAGES.length },
     { id:'coins', tab:'loja', name:'Elemental Coin', img:EC_IMG_URL, count:()=> ELEMENTAL_COIN_PACKAGES.length },
-    { id:'itens', tab:'loja', name:'Itens', img:URL_BASE + 'ui/bazaar/'+'tab_towers.png', count:()=> 1 },
+    { id:'itens', tab:'loja', name:'Itens', img:URL_BASE + 'ui/bazaar/'+'tab_towers.png', count:()=> 2 },
     { id:'treino', tab:'loja', name:'Kit de Treino Veloz', img:URL_BASE + 'ravendawn/ui/windows/premium_store/'+'icon_premium_benefit_6.png', count:()=> TRAINING_BOOSTS_CLIENT.length },
     { id:'battlepass', tab:'loja', name:'Battle Pass', img:URL_BASE + 'ui/menu2/'+'menu_battlepass.png', dock:'battlepass-modal', open:()=>{ battlePassModal.classList.add('open'); renderBattlePass(); } },
     { id:'ferreiro', tab:'npc', name:'Ferreiro Bran', img:URL_BASE + 'ui/menu2/'+'menu_forge.png', dock:'shop-modal', open:()=>{ shopModal.classList.add('open'); renderShop(); } },
@@ -20351,8 +20362,13 @@
         btn: conf ? `Confirmar ${b.cost} ${EC}` : (poor ? 'Coin insuficiente' : 'Comprar'), btnClass: conf ? 'confirm' : '', btnDisabled: poor && !conf, data:`data-sh-tboost="${b.id}"` });
     }).join('');
   }
+  const FRAGMENT_BOX_COST = 10, FRAGMENT_BOX_ODDS = [[1,35],[2,25],[3,20],[4,12],[5,8]]; // espelho de huntEngine
   function shItemCards(){
-    return shCard({ tag:'Torres', art:`<img src="${URL_BASE}items/loot/boss_key_central.png">`, name:'Chave da Torre', price:`${TOWER_KEY_PRICE_COIN} <small>${EC} Coin</small>`, desc:'+1 tentativa de Escalada no dia', btn:'Comprar', btnDisabled:(elementalCoins||0) < TOWER_KEY_PRICE_COIN, data:'data-sh-towerkey="1"' });
+    const fbConf = shConfirmId === 'fbox', fbPoor = (elementalCoins||0) < FRAGMENT_BOX_COST;
+    return shCard({ tag:'Sorteio', art:`<img src="${URL_BASE}items/gems/gema_luz.png">`, name:'Caixa de Fragmentos', price:`${FRAGMENT_BOX_COST} <small>${EC} Coin</small>`,
+        desc:'1 a 5 Fragmentos de estrela. Chances: ' + FRAGMENT_BOX_ODDS.map(([q,p])=> `${q} → ${p}%`).join(' · '),
+        btn: fbConf ? `Confirmar ${FRAGMENT_BOX_COST} ${EC}` : (fbPoor ? 'Coin insuficiente' : 'Abrir'), btnClass: fbConf ? 'confirm' : '', btnDisabled: fbPoor && !fbConf, data:'data-sh-fbox="1"' })
+      + shCard({ tag:'Torres', art:`<img src="${URL_BASE}items/loot/boss_key_central.png">`, name:'Chave da Torre', price:`${TOWER_KEY_PRICE_COIN} <small>${EC} Coin</small>`, desc:'+1 tentativa de Escalada no dia', btn:'Comprar', btnDisabled:(elementalCoins||0) < TOWER_KEY_PRICE_COIN, data:'data-sh-towerkey="1"' });
   }
   function shBindCommon(main){
     main.querySelectorAll('[data-sh-premium]').forEach(b => b.addEventListener('click', ()=>{
@@ -20362,6 +20378,10 @@
     }));
     main.querySelectorAll('[data-sh-coin]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'shop:buyElementalCoins', packageId: b.dataset.shCoin })));
     main.querySelectorAll('[data-sh-towerkey]').forEach(b => b.addEventListener('click', ()=> sendWS({ type:'tower:buyKey', qty:1 })));
+    main.querySelectorAll('[data-sh-fbox]').forEach(b => b.addEventListener('click', ()=>{
+      if(shConfirmId !== 'fbox'){ shConfirmId = 'fbox'; renderStoreHub(false); return; }
+      shConfirmId = null; sendWS({ type:'shop:buyFragmentBox' });
+    }));
     main.querySelectorAll('[data-sh-tboost]').forEach(b => b.addEventListener('click', ()=>{
       const id = b.dataset.shTboost;
       if(shConfirmId !== 'tb:'+id){ shConfirmId = 'tb:'+id; renderStoreHub(false); return; }
