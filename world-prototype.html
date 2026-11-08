@@ -7457,6 +7457,44 @@
   // forma (círculo = quadrado de tiles em volta do centro / linha = faixa reta)
   // e o tempo; a área fica vermelha e vai "enchendo" até o golpe sair.
   const bossTelegraphs = [];
+  // PORTAL DO CHEFE (08/11/2026): chefe da área que nasce durante a caçada
+  // surge de um portal vermelho (o servidor deixa ele parado ~2,8 s).
+  const BOSS_PORTAL_MS = 2800, bossPortals = new Map(), bossSeen = new Set();
+  let bossSeenHuntKey = null, bossSeenSince = 0;
+  function bossArriveWrap(m, drawFn){
+    return ()=>{
+      const key = activeHunt.huntId + ':' + (activeHunt.lurePoints && activeHunt.lurePoints.length);
+      if(key !== bossSeenHuntKey){ bossSeenHuntKey = key; bossSeen.clear(); bossSeenSince = now(); }
+      if(m.isAreaBoss && !bossSeen.has(m.id)){
+        bossSeen.add(m.id);
+        if(now() - bossSeenSince > 2500) bossPortals.set(m.id, { t0: now(), m });
+      }
+      const pt = bossPortals.get(m.id);
+      const k = pt ? (now() - pt.t0) / BOSS_PORTAL_MS : 1;
+      if(k >= 1){ if(pt && k > 1.4) bossPortals.delete(m.id); drawFn(); return; }
+      const appear = Math.max(0, (k - 0.35) / 0.65); // portal abre primeiro, chefe surge depois
+      if(appear <= 0) return;
+      ctx.save(); ctx.globalAlpha = appear;
+      const s = worldToScreen(m.x, m.y), sc = 0.6 + 0.4 * appear;
+      ctx.translate(s.x, s.y); ctx.scale(sc, sc); ctx.translate(-s.x, -s.y);
+      drawFn(); ctx.restore();
+    };
+  }
+  function drawBossPortals(toScreen){
+    const t = now();
+    bossPortals.forEach(pt=>{
+      const k = (t - pt.t0) / BOSS_PORTAL_MS; if(k > 1.4) return;
+      const open = Math.min(1, k / 0.3), close = k > 1 ? Math.max(0, 1 - (k - 1) / 0.4) : 1;
+      const s = toScreen(pt.m.x, pt.m.y), R = TILE_STEP * WORLD_SCALE * 1.9 * open;
+      ctx.save(); ctx.globalAlpha = close;
+      const g = ctx.createRadialGradient(s.x, s.y, R * 0.1, s.x, s.y, R);
+      g.addColorStop(0, 'rgba(20,0,0,.95)'); g.addColorStop(0.55, 'rgba(90,0,0,.85)'); g.addColorStop(0.8, 'rgba(230,30,20,.85)'); g.addColorStop(1, 'rgba(255,60,30,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(s.x, s.y, R, R * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,120,60,.8)'; ctx.lineWidth = 2;
+      for(let i = 0; i < 3; i++){ const a = t / 300 + i * 2.1; ctx.beginPath(); ctx.ellipse(s.x, s.y, R * 0.85, R * 0.52, 0, a, a + 1.2); ctx.stroke(); }
+      ctx.restore();
+    });
+  }
   function drawBossTelegraphs(toScreen0){
     const t = now(), T = TILE_STEP;
     const fo = (activeHunt && activeHunt.isTower && !activeHunt.realMapId) ? 0 : TILE_FOOT_OFFSET; // mesmo deslocamento do chão (drawHuntMapGround)
@@ -8536,7 +8574,7 @@
           // monstro, que ainda não existe no projeto), mas já tira o efeito
           // "parado feito estátua" enquanto esperam o combate.
           if(m._bobPhase == null) m._bobPhase = Math.random()*Math.PI*2;
-          drawList.push({ baseCart:{x:m.x,y:m.y}, draw:()=>{
+          drawList.push({ baseCart:{x:m.x,y:m.y}, draw:bossArriveWrap(m, ()=>{
             const bob = Math.sin(now()/1000*1.6 + m._bobPhase)*1.6;
             const s = toScreen(m.x,m.y);
             // Bosses tinham a MESMA caixa de desenho (68px) de qualquer
@@ -8652,7 +8690,7 @@
               }
             }
             if(monsterMirror) ctx.restore();
-          }, headCart:{x:m.x,y:m.y}, headLift:(m.isBoss?24*1.55:24)*SPRITE_SCALE, bobOffset:()=>(m.walkAtlas ? 0 : Math.sin(now()/1000*1.6 + m._bobPhase)*1.6), hpPct:m.hp/m.hpMax, kind:'monster', monsterId:m.id, monsterName:m.name, monsterIsBoss:!!m.isBoss, monsterBossKind:(m.isAreaBoss?'area':(m.isBoss&&!m.isDuelMirror?'tower':null)), monsterSt:m.st||null });
+          }), headCart:{x:m.x,y:m.y}, headLift:(m.isBoss?24*1.55:24)*SPRITE_SCALE, bobOffset:()=>(m.walkAtlas ? 0 : Math.sin(now()/1000*1.6 + m._bobPhase)*1.6), hpPct:m.hp/m.hpMax, kind:'monster', monsterId:m.id, monsterName:m.name, monsterIsBoss:!!m.isBoss, monsterBossKind:(m.isAreaBoss?'area':(m.isBoss&&!m.isDuelMirror?'tower':null)), monsterSt:m.st||null });
         });
       });
     }
@@ -8724,7 +8762,7 @@
     // applyHuntSnapshot), só faltava desenhar em cima da cabeça também.
     hpPct: (player.hpMax ? player.hp/player.hpMax : null) });
 
-    drawBossTelegraphs(toScreen); // 08/11/2026: área vermelha no chão (golpe avisado do chefe), por baixo dos personagens
+    drawBossPortals(toScreen); drawBossTelegraphs(toScreen); // 08/11/2026: área vermelha no chão (golpe avisado do chefe), por baixo dos personagens
     drawList.sort((a,b)=> toScreen(a.baseCart.x,a.baseCart.y).y - toScreen(b.baseCart.x,b.baseCart.y).y);
     // 01/11/2026 (vídeo do usuário: personagem "sumia" embaixo do Chefe da
     // Área): o chefe é desenhado 1,55x maior e cobria o jogador encostado nele.
