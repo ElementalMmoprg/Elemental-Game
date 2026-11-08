@@ -2027,6 +2027,8 @@
   .ecs-get .big small{ font-size:13px; color:#8fe0a0; margin-left:6px; }
   .ecs-get .tier{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:#ffcf8a; border:1px solid #5a4a26; border-radius:10px; padding:3px 9px; text-align:right; }
   .ecs-buy{ margin-top:12px; width:100%; padding:11px; border-radius:8px; border:1px solid var(--gold-bright); background:linear-gradient(180deg,#3a2e12,#221a0a); color:var(--gold-bright); font-family:var(--font-mono); font-weight:700; font-size:13px; cursor:pointer; }
+  .ecs-legal{ margin-top:12px; background:#151722; border:1px solid #2c3042; border-radius:8px; padding:10px 12px; font-size:11.5px; line-height:1.5; color:var(--ink-dim); }
+  .ecs-legal a{ color:var(--gold-bright); }
   .ecs-buy:disabled{ opacity:.45; cursor:not-allowed; }
   @media (max-width:700px){ .ecs-grid{ grid-template-columns:repeat(2,1fr); } .ecs-form{ grid-template-columns:1fr; } }
   .sh-res{ display:flex; align-items:center; gap:10px; padding:8px 10px; background:#151722; border:1px solid #2c3042; border-radius:4px; margin-bottom:6px; cursor:pointer; }
@@ -20203,7 +20205,8 @@
       </div>
       <div class="ecs-get" id="ecs-get">${ecsResultHtml()}</div>
       <button class="ecs-buy" id="ecs-buy" ${v >= EC_MIN_BRL && v <= EC_MAX_BRL ? '' : 'disabled'}>Comprar ${v >= EC_MIN_BRL ? fmtBRL(v) : ''}</button>
-      <div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real; a compra credita na hora, sem cobrança. Confira o valor e as Coins antes de pagar.</div>`;
+      <div class="ecs-legal">Confira o personagem, o valor e as Coins antes de pagar. Reembolso em até 7 dias pelo suporte (Coins não gastas). Benefícios de pagamento estornado podem ser retirados; contestar não gera bloqueio automático. <a href="/termos" target="_blank" rel="noopener">Termos e pagamentos</a> · <a href="/privacidade" target="_blank" rel="noopener">Privacidade</a> (07/11/2026).</div>
+      <div class="sh-note">⚠️ Modo teste — ainda sem gateway de pagamento real; a compra credita na hora, sem cobrança.</div>`;
   }
   function shBindCoinShop(main){
     const upd = ()=>{ const g = main.querySelector('#ecs-get'); if(g) g.innerHTML = ecsResultHtml();
