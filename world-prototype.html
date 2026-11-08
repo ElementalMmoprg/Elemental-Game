@@ -17498,7 +17498,7 @@
   const CRAFT_PRIMARY_CLIENT = ['vitality','might','intelligence','dexterity','wisdom'];
   const CRAFT_STAT_POOLS_CLIENT = {
     defense: ['def', ...CRAFT_PRIMARY_CLIENT, 'speedPct', ...CRAFT_ELEMENTS_CLIENT.map(e=>'res_'+e), 'dodgePct', 'bagSlots'],
-    weapon: ['magicLevel','atk','critPct','speedPct','atkSpeedPct','sk_sword','sk_axe','sk_club','sk_distance','sk_dagger', ...CRAFT_PRIMARY_CLIENT, 'critDmgPct', ...CRAFT_ELEMENTS_CLIENT.map(e=>'dmg_'+e)],
+    weapon: ['magicLevel','atk','magicPct','critPct','speedPct','atkSpeedPct','sk_sword','sk_axe','sk_club','sk_distance','sk_dagger', ...CRAFT_PRIMARY_CLIENT, 'critDmgPct', ...CRAFT_ELEMENTS_CLIENT.map(e=>'dmg_'+e)],
   };
   CRAFT_STAT_POOLS_CLIENT.accessory = Array.from(new Set([...CRAFT_STAT_POOLS_CLIENT.weapon, ...CRAFT_STAT_POOLS_CLIENT.defense]));
   const CRAFT_FIXED_RANGES_CLIENT = {
@@ -18846,7 +18846,7 @@
           <div class="prec-row" style="opacity:.75;font-size:11px;margin-top:2px;">Raridade sorteada ao criar:</div>
           ${oddsLines}
           ${r.slot ? `<button type="button" class="party-btn craft-stat-toggle" style="width:100%;margin-top:6px;" data-craft-stat-toggle="${r.id}">⚙️ Atributos: ${craftStatsFor(r.slot).map(k=>CRAFT_STAT_LABEL_CLIENT[k]||k).join(' + ')} · 🔒 ${CRAFT_FIXED_LABEL_CLIENT[craftFixedFor(r.slot)]||''} ${craftStatPickerOpen===r.id?'▲':'▼'}</button>
-          ${craftStatPickerOpen===r.id ? `<div class="craft-stat-picker">${craftPoolFor(r.slot).map(k=>`<span class="craft-stat-chip${craftStatsFor(r.slot).includes(k)?' on':''}" data-craft-stat="${k}" data-craft-slot="${r.slot}">${CRAFT_STAT_LABEL_CLIENT[k]||k}</span>`).join('')}<div class="craft-stat-note">Escolha até 2 atributos — o item nasce com eles.</div>
+          ${craftStatPickerOpen===r.id ? `<div class="craft-stat-picker">${craftPoolFor(r.slot).map(k=>`<span class="craft-stat-chip${craftStatsFor(r.slot).includes(k)?' on':''}" data-craft-stat="${k}" data-craft-slot="${r.slot}">${k==='atk' && (r.weaponType==='staff' || /cetro|cajado|sceptre|staff|wand|varinha/i.test(r.name||'')) ? 'Ataque Mágico' : (CRAFT_STAT_LABEL_CLIENT[k]||k)}</span>`).join('')}<div class="craft-stat-note">Escolha até 2 atributos — o item nasce com eles.</div>
             <div class="craft-stat-note" style="margin-top:8px;color:var(--gold-bright);">🔒 Atributo fixo (escolha 1) — o valor sai da faixa abaixo, conforme a raridade sorteada:</div>
             ${(CRAFT_FIXED_OPTIONS_CLIENT[CRAFT_SLOT_GROUP_CLIENT[r.slot]]||[]).map(k=>{ const rg = CRAFT_FIXED_RANGES_CLIENT[k][Math.max(0,Math.min(4,(r.powerTier||1)-1))]; return `<span class="craft-stat-chip${craftFixedFor(r.slot)===k?' on':''}" data-craft-fixed="${k}" data-craft-slot="${r.slot}">${CRAFT_FIXED_LABEL_CLIENT[k]} ${rg[0]}–${rg[1]}${/Leech/.test(k)?'%':''}</span>`; }).join('')}</div>` : ''}` : ''}
           <button class="party-btn" style="width:100%;margin-top:6px;" data-craft-recipe="${r.id}" data-craft-slot="${r.slot||''}" ${canCraft?'':'disabled'}>Criar</button>
