@@ -753,6 +753,11 @@
      jogo-fonte). .cond-select-sm reusa a mesma paleta de .cond-select só
      que compacta o bastante pra 3 caberem lado a lado numa linha. */
   .hotbar-cond-row{ display:flex; gap:4px; align-items:center; margin:4px 0; }
+  .tb-star{ margin-left:6px; padding:1px 7px; border-radius:9px; border:1px solid var(--star-cor); color:var(--star-cor); background:rgba(0,0,0,.45); font-family:var(--font-mono); font-size:10px; font-weight:700; white-space:nowrap; text-shadow:0 0 6px var(--star-cor); box-shadow:0 0 6px -2px var(--star-cor); }
+  .cs-star{ display:inline-flex; align-items:center; gap:8px; margin-bottom:12px; padding:4px 10px; border:1px solid var(--star-cor); border-radius:6px; background:linear-gradient(90deg, rgba(0,0,0,.5), rgba(0,0,0,.15)); }
+  .cs-star-icons{ color:var(--star-cor); font-size:17px; letter-spacing:2px; text-shadow:0 0 8px var(--star-cor); }
+  .cs-star-icons i{ font-style:normal; opacity:.35; text-shadow:none; }
+  .cs-star-txt{ font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--star-cor); }
   .cond-select-sm{ flex:1; min-width:0; width:auto; margin:0; padding:5px 4px; font-size:9.5px; }
   .cond-select-sm:disabled{ opacity:.5; cursor:not-allowed; }
   .cond-select-op{ flex:1.9; }
@@ -3504,7 +3509,7 @@
   <div id="top-bar" class="glass">
     <div class="tb-portrait hover-trigger" id="profile-hover">
       <span class="tb-avatar"><canvas id="tb-face-canvas" width="44" height="44"></canvas></span>
-      <span class="tb-namelv"><b id="tb-nick">—</b><span id="premium-badge" class="free">FREE</span><small id="tb-level">Nv. 1</small></span>
+      <span class="tb-namelv"><b id="tb-nick">—</b><span id="premium-badge" class="free">FREE</span><small id="tb-level">Nv. 1</small><span id="tb-star" class="tb-star" style="display:none"></span></span>
       <div class="popover glass" id="profile-popover">
         <div class="pf-pop-bar-row"><div class="char-bar-track"><div class="char-bar-fill hp" id="pf-hp-fill" style="width:100%"></div></div><span class="val" id="pf-hp-text">0/0</span></div>
         <div class="pf-pop-bar-row"><div class="char-bar-track"><div class="char-bar-fill mp" id="pf-mp-fill" style="width:100%"></div></div><span class="val" id="pf-mp-text">0/0</span></div>
@@ -4991,6 +4996,14 @@
   let wasdPositionSynced = false;
   let location = 'city'; // 'city' | 'dungeon'
   const prestige = { bronzeStars:0, silverStars:0, goldStars:0, diamondRank:false };
+  // 14/11/2026: rank de estrela em destaque (barra do topo + janela do personagem)
+  const STAR_TIER_UI = { nenhum:{ label:'Sem estrela', cor:'#8a889f' }, bronze:{ label:'Bronze', cor:'#e09a55' }, prata:{ label:'Prata', cor:'#d8dde6' }, ouro:{ label:'Ouro', cor:'#ffd166' }, diamante:{ label:'Diamante', cor:'#7fe7ff' } };
+  function myStarInfo(){
+    const p = prestige || {};
+    const rank = p.diamondRank ? 'diamante' : (p.goldStars||0) > 0 ? 'ouro' : (p.silverStars||0) > 0 ? 'prata' : (p.bronzeStars||0) > 0 ? 'bronze' : 'nenhum';
+    const n = rank === 'diamante' ? 5 : rank === 'ouro' ? p.goldStars : rank === 'prata' ? p.silverStars : rank === 'bronze' ? p.bronzeStars : 0;
+    return { rank, n: n||0, max: 5, ...STAR_TIER_UI[rank] };
+  }
   let isPremium = false;
   let premiumExpiresAt = null;
   const training = { magia:0, defesa:0, esquiva:0, critico:0, sword:0, axe:0, club:0, distance:0, dagger:0, staff:0 };
@@ -9753,6 +9766,10 @@
 
     document.getElementById('tb-nick').textContent = PLAYER_NICK;
     document.getElementById('tb-level').textContent = `Nv. ${player.level}`;
+    { const si = myStarInfo(), el = document.getElementById('tb-star');
+      if(el){ el.style.display = si.rank === 'nenhum' ? 'none' : ''; el.style.setProperty('--star-cor', si.cor);
+        const txt = si.rank === 'diamante' ? '◆ Diamante' : `★ ${si.n} ${si.label}`; if(el.textContent !== txt) el.textContent = txt;
+        el.title = si.rank === 'diamante' ? 'Rank Diamante' : `${si.n}ª estrela de ${si.label} (${si.n}/${si.max}) — evolua no Altar de Evolução`; } }
     document.getElementById('tb-gold').textContent = Math.round(player.gold).toLocaleString('pt-BR');
     document.getElementById('tb-elementalcoins').textContent = Math.round(elementalCoins).toLocaleString('pt-BR');
     { // conta só quem está realmente conectado — companheiros offline visíveis no grupo (ver 'positions'/broadcastPositions) não entram nessa contagem
@@ -12230,7 +12247,8 @@
 
   /* MAPA-MÚNDI: iframe same-origin; o mapa avisa 'map:enter' com o id da caçada */
   const worldMapOv = document.getElementById('world-map-overlay'), worldMapFrame = document.getElementById('world-map-frame');
-  function sendMapLevel(){ try{ const ne = player.nivelEstrela || {}, rk = ne.rank || 'nenhum', hasStar = rk !== 'nenhum' || (ne.starsInTier || 0) > 0;
+  function sendMapLevel(){ try{ // 14/11/2026: usa o prestige ao vivo (player.nivelEstrela era só o do login e ficava velho depois de evoluir no Altar)
+      const pr = prestige || {}, hasStar = (pr.bronzeStars||0) + (pr.silverStars||0) + (pr.goldStars||0) > 0 || !!pr.diamondRank, rk = pr.diamondRank ? 'diamante' : (pr.goldStars||0) > 0 ? 'ouro' : (pr.silverStars||0) > 0 ? 'prata' : hasStar ? 'bronze' : 'nenhum';
       let last = null; try{ const id = localStorage.getItem('elemental_last_hunt'); const h = id && HUNTS.find(x=> x.id === id); if(h) last = { id:h.id, name:h.name }; }catch(_){}
       worldMapFrame.contentWindow.postMessage({type:'map:level', level: (player && player.level) || 1, ranks:{ bronze: hasStar, prata: ['prata','ouro','diamante'].includes(rk) }, last}, '*'); }catch(_){} }
   let markedHuntId = null; // destino marcado no mapa: o teleporte da cidade brilha até a caçada começar
@@ -13172,7 +13190,10 @@
     document.getElementById('char-summary').innerHTML = `
       <div class="cs-left">
         <div style="font-family:var(--font-display);font-size:16px;color:var(--gold-bright);margin-bottom:4px;">${escapeHtml(PLAYER_NICK)}</div>
-        <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);margin-bottom:12px;">Level ${player.level} — ${rankLabel}</div>
+        <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);margin-bottom:6px;">Level ${player.level}</div>
+        ${(()=>{ const si = myStarInfo(); return `<div class="cs-star" style="--star-cor:${si.cor}" title="Evolua no Altar de Evolução">
+          <span class="cs-star-icons">${si.rank==='diamante' ? '◆' : '★'.repeat(si.n) + '<i>' + '☆'.repeat(Math.max(0, si.max - si.n)) + '</i>'}</span>
+          <span class="cs-star-txt">${si.rank==='nenhum' ? 'Sem estrela — conquiste a 1ª no Altar de Evolução' : si.rank==='diamante' ? 'Rank Diamante' : `Estrela de ${si.label} · ${si.n}/${si.max}`}</span></div>`; })()}
         <div class="char-bar-row"><span class="lbl">Pontos de vida</span><div class="char-bar-track"><div class="char-bar-fill hp" style="width:${Math.max(0,player.hp/player.hpMax*100)}%"></div></div><span class="val">${Math.round(player.hp)} / ${player.hpMax}</span></div>
         <div class="char-bar-row"><span class="lbl">Mana</span><div class="char-bar-track"><div class="char-bar-fill mp" style="width:${Math.max(0,player.mp/player.mpMax*100)}%"></div></div><span class="val">${Math.round(player.mp)} / ${player.mpMax}</span></div>
         <div class="char-bar-row"><span class="lbl">Experiência</span><div class="char-bar-track"><div class="char-bar-fill xp" style="width:${player.level>=100?100:Math.max(0,Math.min(100,(player.xp-xpLevelStartClient(player.level))/xpForNextLevelClient(player.level)*100))}%"></div></div><span class="val">${Math.round(player.xp).toLocaleString('pt-BR')} XP</span></div>
@@ -14713,6 +14734,7 @@
     'btn-open-pvp-shop':'pvpshop', 'btn-open-forge':'forge', 'btn-open-enchant':'forge', 'btn-open-infusion':'infusion',
     'btn-open-fusion':'fusion', 'btn-open-pets':'pets', 'btn-open-battlepass':'battlepass', 'btn-open-partydps':'dps',
     'btn-open-analyzer':'analyzer', 'btn-open-wiki':'wiki', 'btn-open-mail':'mail', 'btn-open-settings':'settings', 'bag-shortcut':'backpack',
+    'btn-open-merc':'merc', 'btn-open-bazaar':'bazaar', // 14/11/2026: faltavam (ficavam sem o tema)
   };
   const LS_UI_THEME = 'elemental_ui_theme';
   function prepThemeIcons(){
