@@ -296,6 +296,10 @@
   .hunts-tab{ padding:12px 20px; font-family:var(--font-display); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer; }
   .hunts-tab.active{ color:var(--gold-bright); box-shadow:inset 0 -2px 0 var(--gold-bright); background:rgba(191,161,95,.06); }
   .hunts-tab.disabled{ opacity:.4; cursor:default; }
+  /* MODO MAPA (13/11/2026): a janela de caçadas só aparece depois do ENTRAR no mapa; sem lista nem abas */
+  #hunts-modal.map-mode #hunts-left{ display:none !important; }
+  #hunts-modal.map-mode .hunts-tab:not(#hunts-map-tab){ display:none; }
+  #hunts-modal.map-mode #hunts-map-tab{ color:var(--gold-bright); }
   #treino-body{ flex:1; padding:16px 20px; overflow-y:auto; display:none; }
   #bosses-body{ flex:1; padding:16px 20px; overflow-y:auto; display:none; font-family:var(--font-mono); font-size:11px; }
   #bosses-body .boss-intro{ color:var(--ink-dim); font-size:10.5px; margin-bottom:12px; line-height:1.5; }
@@ -4397,11 +4401,17 @@
     </div>
   </div>
 
+  <!-- MAPA-MÚNDI (13/11/2026): atalho visual para escolher a caçada -->
+  <div id="world-map-overlay" style="display:none;position:fixed;inset:0;z-index:9500;background:#06121c">
+    <iframe id="world-map-frame" title="Mapa-múndi" style="width:100%;height:100%;border:0"></iframe>
+    <div id="world-map-close" style="position:absolute;top:10px;right:14px;z-index:2;padding:8px 14px;border-radius:8px;background:rgba(10,18,28,.85);border:1px solid #bfa15f;color:#f0d38a;font:600 12px sans-serif;letter-spacing:.08em;cursor:pointer">✕ FECHAR MAPA</div>
+  </div>
   <!-- MODAL DE CAÇADAS -->
   <div id="hunts-modal" class="glass win">
     <div id="hunts-tabs" class="win-drag">
       <div class="hunts-tab active" data-tab="cacadas">Caçadas</div>
       <div class="hunts-tab" data-tab="material">⛏️ Caça de Material</div>
+      <div class="hunts-tab" data-tab="mapa" id="hunts-map-tab">🗺️ Voltar ao mapa</div>
       <div class="hunts-tab" data-tab="treino">Treino</div>
       <div class="hunts-tab disabled" data-tab="quests">Quests</div>
       <div class="hunts-tab disabled" data-tab="arena">Arena</div>
@@ -11975,16 +11985,51 @@
   HUNTS.forEach(h=> h.possibleLoot.forEach(it=> lootFilter[it.id] = (it.rarity!=='comum')));
 
   const huntsModal = document.getElementById('hunts-modal');
-  document.getElementById('open-hunts-btn').addEventListener('click', ()=>{
+  document.getElementById('open-hunts-btn').addEventListener('click', ()=>{ openWorldMap(); });
+  function openHuntsModalLegacy(){
     huntsModal.classList.add('open');
     document.getElementById('party-mode-chip').classList.toggle('show', !!(party && party.leaderUsername===AUTH_USERNAME));
     if(huntListMode !== 'material' && !huntMatchesMode(selectedHunt)){ huntRankMode = huntListMode = huntRankOf(selectedHunt) || 'normal'; } // abre no rank da caçada selecionada
     renderHuntsList(); selectHunt(selectedHunt);
-  });
+  }
   document.getElementById('hunts-close').addEventListener('click', ()=> huntsModal.classList.remove('open'));
+
+  /* MAPA-MÚNDI: iframe same-origin; o mapa avisa 'map:enter' com o id da caçada */
+  const worldMapOv = document.getElementById('world-map-overlay'), worldMapFrame = document.getElementById('world-map-frame');
+  function sendMapLevel(){ try{ worldMapFrame.contentWindow.postMessage({type:'map:level', level: (player && player.level) || 1}, '*'); }catch(_){} }
+  function openWorldMap(){
+    if(!worldMapFrame.getAttribute('src')) worldMapFrame.setAttribute('src', '/mapa-mundo.html');
+    huntsModal.classList.remove('open'); worldMapOv.style.display = 'block'; sendMapLevel(); setTimeout(sendMapLevel, 600);
+  }
+  function closeWorldMap(){ worldMapOv.style.display = 'none'; }
+  worldMapFrame.addEventListener('load', sendMapLevel);
+  document.getElementById('world-map-close').addEventListener('click', closeWorldMap);
+  window.addEventListener('message', ev=>{
+    if(ev.origin !== window.location.origin || ev.source !== worldMapFrame.contentWindow) return;
+    const d = ev.data || {};
+    if(d.type === 'map:tower'){ closeWorldMap(); huntsModal.classList.remove('open'); const b = document.getElementById('btn-open-towers'); if(b) b.click(); return; }
+    if(d.type === 'map:treino' || d.type === 'map:bosses'){
+      closeWorldMap(); huntsModal.classList.add('open', 'map-mode');
+      const tb = document.querySelector('.hunts-tab[data-tab="' + (d.type === 'map:treino' ? 'treino' : 'bosses') + '"]'); if(tb) tb.click();
+      return;
+    }
+    if(d.type !== 'map:enter' || typeof d.huntId !== 'string') return;
+    let h = HUNTS.find(x=> x.id === d.huntId);
+    if(!h){ const m = /^mat_([a-z]+)_(\d)$/.exec(d.huntId); if(m) h = HUNTS.find(x=> x.material && String(x.id).includes(m[1]) && String(x.id).endsWith(m[2])) || HUNTS.find(x=> x.material && String(x.id).includes(m[1])); }
+    if(!h) return;
+    closeWorldMap();
+    huntListMode = h.material ? 'material' : (huntRankOf(h) || 'normal'); if(!h.material) huntRankMode = huntListMode;
+    huntsModal.classList.add('open', 'map-mode');
+    document.querySelectorAll('.hunts-tab').forEach(x=> x.classList.toggle('active', x.dataset.tab === (h.material ? 'material' : 'cacadas')));
+    ['hunts-left','hunts-center','hunts-right'].forEach(i=> document.getElementById(i).style.display = '');
+    document.getElementById('treino-body').style.display = 'none'; document.getElementById('bosses-body').style.display = 'none';
+    if(typeof renderHuntRankTabs === 'function') renderHuntRankTabs();
+    selectHunt(h);
+  });
   document.querySelectorAll('.hunts-tab').forEach(t=>{
     t.addEventListener('click', ()=>{
       if(t.classList.contains('disabled')) return;
+      if(t.dataset.tab === 'mapa'){ openWorldMap(); return; }
       document.querySelectorAll('.hunts-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
       const tab = t.dataset.tab, isCacadas = tab === 'cacadas' || tab === 'material';
       if(isCacadas){
@@ -20647,7 +20692,7 @@
     },
     'hunt': {
       title:'Primeira caçada', target:()=> tutShown('#hunts-modal') ? '#hunt-action-btn' : '#open-hunts-btn',
-      text:()=> 'Abra a <b>lista de Caçadas</b>, escolha a <b>primeira</b> da lista e clique em <b>Iniciar Caçada</b>. O personagem anda sozinho até a entrada.',
+      text:()=> 'Abra o <b>mapa de Caçadas</b>, clique na <b>primeira caçada</b> da primeira ilha, em <b>ENTRAR</b> e depois em <b>Iniciar Caçada</b>. O personagem anda sozinho até o teleporte.',
       done:()=> location === 'dungeon',
     },
     'kill': {
@@ -20666,8 +20711,8 @@
       done:()=> tutorialFlags.sold,
     },
     'training': {
-      title:'Treino na cidade', target:()=> !tutShown('#hunts-modal') ? '#open-hunts-btn' : (document.querySelector('.hunts-tab[data-tab="treino"].active') ? '#treino-online-btn' : '.hunts-tab[data-tab="treino"]'),
-      text:()=> 'Presente: um <b>Kit de Treino</b> permanente na sua Mochila (🔒 vinculado ao personagem).<br><br>Abra a lista de Caçadas, aba <b>Treino</b>, e clique em <b>Iniciar Treino</b>: o personagem anda até o <b>boneco da cidade</b> e treina as habilidades da arma — dá pra evoluir mesmo sem caçar, e até offline.',
+      title:'Treino na cidade', target:()=> !tutShown('#hunts-modal') ? '#open-hunts-btn' : '#treino-online-btn',
+      text:()=> 'Presente: um <b>Kit de Treino</b> permanente na sua Mochila (🔒 vinculado ao personagem).<br><br>Abra o mapa de Caçadas, toque em <b>Ravencrest</b> → <b>Treino na cidade</b>, e clique em <b>Iniciar Treino</b>: o personagem anda até o <b>boneco da cidade</b> e treina as habilidades da arma — dá pra evoluir mesmo sem caçar, e até offline.',
       finishLabel:'Concluir',
       done:()=> !!(trainingActive && trainingActive.mode === 'online') || !!offlineTrainingArmed,
     },
