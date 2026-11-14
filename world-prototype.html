@@ -755,11 +755,26 @@
   .hotbar-cond-row{ display:flex; gap:4px; align-items:center; margin:4px 0; }
   .cond-select-sm{ flex:1; min-width:0; width:auto; margin:0; padding:5px 4px; font-size:9.5px; }
   .cond-select-sm:disabled{ opacity:.5; cursor:not-allowed; }
-  .cond-select-op{ flex:1.3; }
+  .cond-select-op{ flex:1.9; }
   .hotbar-cond-value{ display:flex; align-items:center; gap:1px; flex-shrink:0; background:rgba(0,0,0,.35); border:1px solid var(--gold-deep); border-radius:4px; padding:0 4px; font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); }
-  .hotbar-cond-value input{ width:32px; background:transparent; border:none; color:var(--ink); font-family:var(--font-mono); font-size:11px; padding:5px 0; text-align:right; }
+  .hotbar-cond-value input{ width:26px; background:transparent; border:none; color:var(--ink); font-family:var(--font-mono); font-size:11px; padding:5px 0; text-align:right; }
   .hotbar-cond-value input:focus{ outline:none; }
-  .hotbar-cond-remove{ cursor:pointer; color:#ff9a80; flex-shrink:0; padding:0 2px; }
+  .hotbar-cond-remove{ cursor:pointer; color:#ff9a80; flex-shrink:0; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(255,120,100,.45); border-radius:4px; background:rgba(120,30,20,.25); font-size:11px; }
+  .hotbar-cond-remove:hover{ background:rgba(160,40,25,.45); border-color:#ff9a80; }
+  /* 14/11/2026: painel de Condições no estilo do Huntera -- botões com borda dourada, passo -/+ no valor e sem select branco */
+  .cond-head{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .cond-title{ font-family:var(--font-display, inherit); font-size:14px; font-weight:700; color:var(--gold-bright); }
+  .cond-sub{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-dim); margin:3px 0 6px; }
+  .cond-btn{ display:inline-flex; align-items:center; gap:4px; cursor:pointer; white-space:nowrap; padding:5px 12px; border:1px solid var(--gold); border-radius:5px; background:linear-gradient(#2a2216,#17120c); color:var(--gold-bright); font-family:var(--font-mono); font-size:10.5px; font-weight:700; box-shadow:inset 0 0 0 1px rgba(0,0,0,.6); user-select:none; }
+  .cond-btn:hover{ border-color:var(--gold-bright); background:linear-gradient(#3a2e1c,#1f1810); }
+  .cond-btn.disabled{ opacity:.45; cursor:not-allowed; }
+  .cond-step{ width:20px; height:26px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid var(--gold-deep); border-radius:4px; background:rgba(0,0,0,.35); color:var(--ink); font-family:var(--font-mono); font-size:13px; user-select:none; flex-shrink:0; }
+  .cond-step:hover{ border-color:var(--gold); color:var(--gold-bright); }
+  .hotbar-cond-value input::-webkit-outer-spin-button, .hotbar-cond-value input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .hotbar-cond-value input{ -moz-appearance:textfield; text-align:center; }
+  .cond-select, .cond-select option, .cond-select optgroup{ color-scheme:dark; }
+  .cond-select option{ background:#17120c; color:var(--ink); }
+  .cond-label{ font-family:var(--font-mono); font-size:10px; color:var(--ink-dim); display:block; }
   #action-close{ text-align:center; padding:8px; font-family:var(--font-mono); font-size:10px; color:var(--danger); cursor:pointer; border-top:1px solid var(--gold-deep); }
 
   /* ============ INVENTÁRIO DIVIDIDO ============ */
@@ -15888,11 +15903,11 @@
   // pra saber se o valor é "%" (HP/Mana/Escudo) ou uma contagem crua (Alvos).
   const HOTBAR_COND_FIXED_TYPE = { target: 'hp', ally: 'hp', area: 'monsterCount' };
   const HOTBAR_COND_OPERATORS = [
-    { id:'lt',  label:'menor que' },
-    { id:'lte', label:'menor ou igual a' },
-    { id:'eq',  label:'igual a' },
-    { id:'gte', label:'maior ou igual a' },
-    { id:'gt',  label:'maior que' },
+    { id:'lt',  label:'< menor que' },
+    { id:'lte', label:'≤ ou menos' },
+    { id:'eq',  label:'= igual a' },
+    { id:'gte', label:'≥ ou mais' },
+    { id:'gt',  label:'> maior que' },
   ];
   const HOTBAR_MAX_CONDITIONS_CLIENT = 5;
   // Detecta magia de cura (mesma heurística de classifySpellEffect no
@@ -15901,7 +15916,11 @@
   // verdade o efeito da magia (e portanto se cura alguém) é sempre o
   // servidor, recalculando a partir da mesma descrição no cast.
   function isHealSpellDesc(desc){
-    return /\bcura\b|restaura[a-z]* (a )?(sua )?vida|restaura[a-z]* hp|recupera[a-z]* vida|regenera[a-z]* vida/i.test(String(desc||''));
+    // 14/11/2026: só magia que CURA UM ALVO/ALIADO ganha "Alvo da cura". Antes qualquer
+    // "cura" no texto contava -- Pyroblast ("a cura recebida é reduzida") e Brutal Strike
+    // (cura a si mesmo ao bater) apareciam como cura.
+    const d = String(desc||'').replace(/(reduz[a-z]*|aumenta[a-z]*) (a |em \d+% a )?cura recebida[^.]*\.?|cura recebida[^.]*\.?/gi, '');
+    return /^\s*(cura|restaura)\b|\bcura[a-z]*\b.{0,60}(aliad|membros do grupo)|(aliad|membros do grupo).{0,80}\bcura/i.test(d);
   }
   const HOTBAR_SIZE = 8;
   // Slots 'spell' são espelho do state.hotbar do servidor (ver applyHuntSnapshot)
@@ -16232,13 +16251,11 @@
       const spellNode = getUnlockedSpells().find(s=>s.id===slot.id);
       const isHeal = !!(spellNode && isHealSpellDesc(spellNode.node && spellNode.node.desc));
       html += `<div style="margin-top:12px;">
-        <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;gap:6px;">
-          <span>Condições (todas precisam bater pra disparar)</span>
-          <span class="opt-row" data-add-cond="1" style="display:inline-block;padding:2px 8px;margin:0;white-space:nowrap;">+ Adicionar condição</span>
-        </div>`;
-      if(!slot.conditions.length){
-        html += `<div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);opacity:.7;padding:4px 0;">Nada — dispara sempre que possível.</div>`;
-      }
+        <div class="cond-head">
+          <span class="cond-title">Condições</span>
+          <span class="cond-btn ${slot.conditions.length >= HOTBAR_MAX_CONDITIONS_CLIENT ? 'disabled' : ''}" data-add-cond="1">+ Adicionar condição</span>
+        </div>
+        <div class="cond-sub">Todas as condições precisam bater. Sem condições, dispara sempre que possível.</div>`;
       slot.conditions.forEach((c,idx)=>{
         // task #127: subject 'target'/'ally'/'area' têm o type TRAVADO
         // (ver HOTBAR_COND_FIXED_TYPE) -- só 'you' escolhe de verdade entre
@@ -16250,8 +16267,10 @@
           <select class="cond-select cond-select-sm" data-cond-idx="${idx}" data-cond-field="subject">${HOTBAR_COND_SUBJECTS.map(s=>`<option value="${s.id}" ${c.subject===s.id?'selected':''}>${s.label}</option>`).join('')}</select>
           <select class="cond-select cond-select-sm" data-cond-idx="${idx}" data-cond-field="type" ${fixedType?'disabled':''}>${HOTBAR_COND_TYPES.filter(t=> fixedType ? t.id===fixedType : t.id!=='monsterCount').map(t=>`<option value="${t.id}" ${(fixedType||c.type)===t.id?'selected':''}>${t.label}</option>`).join('')}</select>
           <select class="cond-select cond-select-sm cond-select-op" data-cond-idx="${idx}" data-cond-field="operator">${HOTBAR_COND_OPERATORS.map(o=>`<option value="${o.id}" ${c.operator===o.id?'selected':''}>${o.label}</option>`).join('')}</select>
+          <span class="cond-step" data-cond-step="-1" data-cond-idx="${idx}">−</span>
           <div class="hotbar-cond-value"><input type="number" min="${isCount?0:1}" max="${isCount?99:100}" data-cond-idx="${idx}" data-cond-field="value" value="${c.value}">${isCount?'':'%'}</div>
-          <span data-cond-remove="${idx}" class="hotbar-cond-remove">✖</span>
+          <span class="cond-step" data-cond-step="1" data-cond-idx="${idx}">+</span>
+          <span data-cond-remove="${idx}" class="hotbar-cond-remove" title="Remover condição">✕</span>
         </div>`;
       });
       // Item 124 (21/09/2026): Escudo Mágico não tem "%" real (é só
@@ -16264,30 +16283,31 @@
       html += `</div>`;
       const availableToIgnore = currentZoneMonsterNames().filter(n=>!slot.ignoredMonsters.includes(n));
       html += `<div style="margin-top:12px;">
-        <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Monstros ignorados (este slot nunca dispara contra eles)</label>
+        <span class="cond-title">Monstros ignorados</span>
+        <div class="cond-sub">Este slot nunca dispara contra eles.</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0;">
           ${slot.ignoredMonsters.length ? slot.ignoredMonsters.map(n=>`<span class="cond-chip" style="cursor:pointer;" data-remove-ignored="${escapeHtml(n)}" title="Clique pra remover">${escapeHtml(n)} ✖</span>`).join('') : `<span style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);opacity:.7;">Nenhum — este slot ataca tudo.</span>`}
         </div>
         <div style="display:flex;gap:4px;">
-          <select id="ignore-monster-select" style="flex:1;min-width:0;">
+          <select id="ignore-monster-select" class="cond-select" style="flex:1;min-width:0;margin:0;">
             <option value="">${availableToIgnore.length?'Escolher monstro...':'(entre numa caçada pra listar)'}</option>
             ${availableToIgnore.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('')}
           </select>
-          <span class="opt-row" data-add-ignored-btn="1" style="display:inline-block;padding:2px 8px;margin:0;white-space:nowrap;">+ Ignorar</span>
+          <span class="cond-btn" data-add-ignored-btn="1">+ Ignorar</span>
         </div>
       </div>`;
       if(isHeal){
         const members = (party ? party.members : []).filter(u=>u!==AUTH_USERNAME);
         const ht = slot.healTarget;
         html += `<div style="margin-top:12px;">
-          <label style="font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);">Alvo da cura</label>
-          <select id="heal-target-select" style="width:100%;">
+          <span class="cond-title">Alvo da cura</span>
+          <select id="heal-target-select" class="cond-select" style="margin:6px 0 0;">
             <option value="self" ${!ht?'selected':''}>Você mesmo (padrão)</option>
             <option value="lowestHpAlly" ${ht&&ht.mode==='lowestHpAlly'?'selected':''}>Aliado da party com menos vida</option>
             ${members.map(u=>`<option value="party:${u}" ${ht&&ht.mode==='partyMember'&&ht.username===u?'selected':''}>Membro da party: ${escapeHtml((party.nicks&&party.nicks[u])||u)}</option>`).join('')}
             <option value="named" ${ht&&ht.mode==='namedPlayer'?'selected':''}>Jogador pelo nome...</option>
           </select>
-          <input type="text" id="heal-target-name-input" placeholder="Nick do jogador (ex.: Nex Trex)" maxlength="24" value="${ht&&ht.mode==='namedPlayer'?escapeHtml(ht.name):''}" style="width:100%;margin-top:4px;box-sizing:border-box;${ht&&ht.mode==='namedPlayer'?'':'display:none;'}">
+          <input type="text" id="heal-target-name-input" class="cond-select" placeholder="Nick do jogador (ex.: Nex Trex)" maxlength="24" value="${ht&&ht.mode==='namedPlayer'?escapeHtml(ht.name):''}" style="width:100%;margin-top:4px;box-sizing:border-box;${ht&&ht.mode==='namedPlayer'?'':'display:none;'}">
           ${!members.length?`<div style="font-family:var(--font-mono);font-size:9.5px;color:var(--ink-dim);opacity:.7;margin-top:4px;">Sem membros de party além de você agora — só "Você mesmo"/"Jogador pelo nome" funcionam.</div>`:''}
         </div>`;
       }
@@ -16356,6 +16376,11 @@
         slot.conditions.push({ subject:'you', type:'hp', operator:'lte', value:50 });
         pushHotbarConfigure(); renderActionBody(); renderHotbar();
       });
+      body.querySelectorAll('[data-cond-step]').forEach(el=> el.addEventListener('click', ()=>{
+        const inp = body.querySelector(`input[data-cond-idx="${el.dataset.condIdx}"][data-cond-field="value"]`); if(!inp) return;
+        const mn = +inp.min, mx = +inp.max; inp.value = Math.max(mn, Math.min(mx, (Math.round(+inp.value)||0) + (+el.dataset.condStep)));
+        inp.dispatchEvent(new Event('change'));
+      }));
       body.querySelectorAll('[data-cond-remove]').forEach(el=> el.addEventListener('click', ()=>{
         slot.conditions.splice(+el.dataset.condRemove, 1);
         pushHotbarConfigure(); renderActionBody(); renderHotbar();
