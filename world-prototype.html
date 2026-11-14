@@ -4544,6 +4544,7 @@
               <div class="outfit-subtab" data-osub="wings" style="display:none">Asas</div>
               <div class="outfit-subtab" data-osub="auras">Auras</div>
               <div class="outfit-subtab" data-osub="cores">Cores</div>
+              <div class="outfit-subtab" data-osub="pecas">RavenQuest</div>
             </div>
             <div id="outfit-grid"></div>
           </div>
@@ -6324,6 +6325,73 @@
     if(def && def.looks) return (gender === 'female' ? def.looks.female : def.looks.male) || def.looks.male || outfitId;
     return outfitId;
   }
+  /* PEÇAS RAVENQUEST (cabeça/arma, 14/11/2026 — teste): corpo-base do
+     Ravendawn do tipo da arma + cabeça + arma, cada um num atlas próprio
+     (player/cosmetics_rq/rq_<lookId>_base|mask.png): 4 linhas (N, L, S, O)
+     x 9 colunas (0 = parado, 1-8 = andando), células de 128 px ancoradas
+     embaixo-direita (igual ao cliente do Ravendawn) — por isso as camadas
+     encaixam sem ajuste. Cor do corpo/peças = mesma máscara dos trajes. */
+  const RQ_COSMETICS = [
+    { id:'ornamental_helmet', name:'Ornamental Helmet', slot:'head', wt:'greataxe', m:2270, f:2762 },
+    { id:'darksteel_axe', name:'Darksteel Axe', slot:'weapon', wt:'greataxe', m:2276, f:2768 },
+    { id:'not_so_magical_hat', name:'Not-so-Magical Hat', slot:'head', wt:'staff', m:2340, f:2690 },
+    { id:'igneas_ice_staff', name:'Igneas Ice Staff', slot:'weapon', wt:'staff', m:2349, f:2699 },
+    { id:'blessed_hood', name:'Blessed Hood', slot:'head', wt:'sceptre', m:2738, f:2356 },
+    { id:'knights_helmet', name:"Knight's Helmet", slot:'head', wt:'swordshield', m:5773, f:5737 },
+    { id:'magical_sigils', name:'Magical Sigils', slot:'weapon', wt:'swordshield', m:2292, f:2610 },
+  ];
+  const RQ_BODIES = { greataxe:{ m:2267, f:2760 }, staff:{ m:2338, f:2688 }, sceptre:{ m:2734, f:2351 }, swordshield:{ m:2278, f:2572 } };
+  const RQ_WT_LABEL = { greataxe:'Machado Grande', staff:'Cajado', sceptre:'Cetro', swordshield:'Espada e Escudo' };
+  const RQ_CELL = 128, RQ_DIR_ROW = { up:0, right:1, down:2, left:3 };
+  const _rqImg = {}, _rqRecolor = {};
+  function rqImg(look, kind){
+    const k = look + '_' + kind; let e = _rqImg[k]; if(e) return e;
+    e = _rqImg[k] = { img:new Image(), loaded:false };
+    e.img.crossOrigin = 'anonymous'; e.img.onload = ()=>{ e.loaded = true; }; e.img.src = URL_BASE + `player/cosmetics_rq/rq_${look}_${kind}.png`;
+    return e;
+  }
+  function rqRecolored(look, colors){
+    const c = colors || { head:0, body:0, legs:0, feet:0 };
+    const key = look + '|' + c.head + ',' + c.body + ',' + c.legs + ',' + c.feet;
+    if(_rqRecolor[key]) return _rqRecolor[key];
+    const b = rqImg(look, 'base'), m = rqImg(look, 'mask');
+    if(!b.loaded) return null;
+    if(!m.loaded || !colorPalette || !colorPalette.length) return b.img; // sem máscara ainda: arte cinza mesmo
+    const w = b.img.naturalWidth, h = b.img.naturalHeight;
+    const bc = document.createElement('canvas'); bc.width = w; bc.height = h; const bx = bc.getContext('2d'); bx.drawImage(b.img, 0, 0);
+    const mc = document.createElement('canvas'); mc.width = w; mc.height = h; const mx = mc.getContext('2d'); mx.drawImage(m.img, 0, 0);
+    let bd, md; try{ bd = bx.getImageData(0,0,w,h); md = mx.getImageData(0,0,w,h); }catch(_){ return b.img; }
+    const T = {}; ['head','body','legs','feet'].forEach(p=>{ T[p] = hexToRgbTriplet(colorPalette[c[p]] || colorPalette[0]); });
+    const B = bd.data, M = md.data;
+    for(let i = 0; i < B.length; i += 4){
+      if(B[i+3] < 5 || M[i+3] < 5) continue;
+      const reg = classifyMaskRegion(M[i], M[i+1], M[i+2]); if(!reg) continue;
+      const t = T[reg], g = B[i] / 255; B[i] = Math.round(t.r*g); B[i+1] = Math.round(t.g*g); B[i+2] = Math.round(t.b*g);
+    }
+    bx.putImageData(bd, 0, 0);
+    _rqRecolor[key] = bc; return bc;
+  }
+  // quais peças valem pra este desenho: anim.rq (jogador remoto) ou as do próprio jogador
+  function rqLoadoutFor(walkAnim, outfitId){
+    const src = (walkAnim && 'rq' in walkAnim) ? walkAnim.rq : ((typeof cosmetics !== 'undefined' && cosmetics && outfitId === cosmetics.outfit) ? cosmetics : null);
+    if(!src) return null;
+    const head = RQ_COSMETICS.find(x=> x.id === src.rqHead), weapon = RQ_COSMETICS.find(x=> x.id === src.rqWeapon);
+    if(!head || !weapon || head.wt !== weapon.wt) return null; // só conjunto completo
+    return { head, weapon, wt: weapon.wt };
+  }
+  function drawRqCharacter(tctx, s, breathe, scl, genero, L, walkAnim, colors){
+    const g = genero === 'female' ? 'f' : 'm';
+    const looks = [RQ_BODIES[L.wt] && RQ_BODIES[L.wt][g], L.weapon && L.weapon[g], L.head && L.head[g]].filter(Boolean);
+    const imgs = looks.map(l=> rqRecolored(l, colors));
+    if(!imgs[0]) return null; // corpo ainda carregando: desenha o traje normal
+    const row = RQ_DIR_ROW[(walkAnim && walkAnim.dir) || 'down'] ?? 2;
+    const col = (walkAnim && !walkAnim.idle && walkAnim.frameIdx != null) ? 1 + (walkAnim.frameIdx % 8) : 0;
+    const k = scl * OUTFIT_PIXEL_SCALE, C = RQ_CELL, d = C * k;
+    // o pé fica no tile de baixo-direita da célula (32 px): centro dele no ponto do chão
+    const dx = Math.round(s.x - (C - 16) * k), dy = Math.round(s.y + breathe - (C - 6) * k);
+    imgs.forEach(im=>{ if(im) tctx.drawImage(im, col * C, row * C, C, C, dx, dy, d, d); });
+    return { topY: dy + (C - 72) * k, cx: s.x };
+  }
   function getRecoloredArmor(outfitId, colors, palette, spriteIdArg){
     const c = colors || { head:0, body:0, legs:0, feet:0 };
     const spriteId = spriteIdArg || outfitId;
@@ -6456,6 +6524,7 @@
     const scl = targetCtx ? 1 : SPRITE_SCALE;
     const genero = gender === 'female' ? 'female' : 'male';
     let drewBody = false, drewHead = false;
+    { const rqL = rqLoadoutFor(walkAnim, outfitId); if(rqL){ const r = drawRqCharacter(tctx, s, breathe, scl, genero, rqL, walkAnim, cosmeticColorsArg || cosmeticColors); if(r) return r; } }
     // Precisa saber ANTES do espelhamento se o traje é um Arquétipo já
     // carregado (atlas outfits_template, com as 4 direções REAIS -- ver
     // claude/outfit-atlas-4-direcoes-notas.md) -- ver comentário do mirror
@@ -8863,6 +8932,7 @@
         // jogador local andava, todo mundo em volta "andava" junto na tela
         const rRaw = worldToScreenRaw(sm.x, sm.y);
         const anim = updateWalkAnim('rp:'+uname, rRaw.x, rRaw.y);
+        if(anim) anim.rq = rp.cosmetics || null; // peças RavenQuest do jogador remoto
         const dr = drawCharacterLayers(s, breathe, rp.gender, rp.hairId, rp.outfit, rp.wings, rp.aura, isPartyMember ? (rp.offline?'#8a7a4e':'#6f8f4e') : '#5a6b8a', undefined, rp.hairStyleId, anim, rp.cosmeticColors);
         drawnTopByKey['rp:'+uname] = dr ? dr.topY : null; drawnCxByKey['rp:'+uname] = (dr && dr.cx != null) ? dr.cx - s.x : null;
       }, topKey:'rp:'+uname, headCart:{x:sm.x,y:sm.y}, headLift:27*SPRITE_SCALE, nick: (rp.nick || uname) + (rp.merc?' (mercenário)':rp.offline?' (offline)':''), dimNick:!isPartyMember, ornament: rp.ornament || null,
@@ -13155,8 +13225,43 @@
     if(o.looks) return `<canvas width="64" height="72" data-draw-outfit="${o.id}"></canvas>`; // 07/11/2026: 1:1 (antes 90x150 encolhido p/ 48x80 = boneco minúsculo) // desenhado já com a cor/gênero do personagem
     return `<canvas width="64" height="72" data-draw-outfit="${o.id}"></canvas>`;
   }
+  // aba "RavenQuest" (14/11/2026): conjuntos COMPLETOS (corpo + cabeça + arma),
+  // iguais ao GIF aprovado — nada de peça solta em corpo careca/sem arma.
+  const RQ_SETS = [
+    { id:'rq_set_greataxe', name:'Guerreiro do Machado', head:'ornamental_helmet', weapon:'darksteel_axe', wt:'greataxe' },
+    { id:'rq_set_staff', name:'Mago do Cajado', head:'not_so_magical_hat', weapon:'igneas_ice_staff', wt:'staff' },
+    { id:'rq_set_knight', name:'Cavaleiro', head:'knights_helmet', weapon:'magical_sigils', wt:'swordshield' },
+  ];
+  function renderRqPieces(grid){
+    grid.classList.remove('cores-mode');
+    const cur = cosmetics || {};
+    const g = (SELECTED_CHARACTER && SELECTED_CHARACTER.gender === 'female') ? 'f' : 'm';
+    let html = `<div style="grid-column:1/-1;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);margin-bottom:6px;">Trajes completos do RavenQuest: corpo, elmo e arma juntos (a cor segue a aba Cores). Clique de novo para tirar.</div>`;
+    RQ_SETS.forEach(x=>{
+      const on = cur.rqHead === x.head && cur.rqWeapon === x.weapon;
+      const H = RQ_COSMETICS.find(c=> c.id === x.head), W = RQ_COSMETICS.find(c=> c.id === x.weapon);
+      html += `<div class="outfit-card ${on?'equipped':''}" data-rqset="${x.id}" style="cursor:pointer;">
+        <canvas width="96" height="96" data-looks="${[RQ_BODIES[x.wt][g], W[g], H[g]].join(',')}"></canvas>
+        <div class="outfit-name">${escapeHtml(x.name)}</div><div style="font-size:9.5px;color:var(--ink-dim);">${escapeHtml(H.name)} + ${escapeHtml(W.name)}${on?' · equipado':''}</div></div>`;
+    });
+    grid.innerHTML = html;
+    grid.querySelectorAll('canvas[data-looks]').forEach(cv=>{
+      const looks = cv.dataset.looks.split(',').map(Number);
+      const draw = ()=>{ const ims = looks.map(l=> rqRecolored(l, cosmeticColors)); const cx = cv.getContext('2d'); cx.clearRect(0,0,96,96);
+        if(ims.some(im=> !im)){ setTimeout(draw, 300); return; }
+        cx.imageSmoothingEnabled = false; ims.forEach(im=> cx.drawImage(im, 2*RQ_CELL, 2*RQ_CELL, RQ_CELL, RQ_CELL, -86, -104, 192, 192)); };
+      draw();
+    });
+    grid.querySelectorAll('[data-rqset]').forEach(el=> el.addEventListener('click', ()=>{
+      const x = RQ_SETS.find(s=> s.id === el.dataset.rqset); const on = (cosmetics||{}).rqHead === x.head && (cosmetics||{}).rqWeapon === x.weapon;
+      if(on){ sendWS({ type:'cosmetic:rq', slot:'head', id:null }); sendWS({ type:'cosmetic:rq', slot:'weapon', id:null }); }
+      else { sendWS({ type:'cosmetic:rq', slot:'weapon', id:x.weapon }); sendWS({ type:'cosmetic:rq', slot:'head', id:x.head }); }
+      setTimeout(renderCharOutfit, 500);
+    }));
+  }
   function renderCharOutfit(){
     const grid = document.getElementById('outfit-grid');
+    if(outfitSubTab === 'pecas'){ renderRqPieces(grid); return; }
     grid.classList.toggle('cores-mode', outfitSubTab === 'cores');
     if(outfitSubTab !== 'outfits') outfitTryOn = null;
     if(outfitSubTab !== 'auras') auraTryOn = null;
