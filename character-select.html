@@ -1008,6 +1008,7 @@
       statsEl.innerHTML = `
         <div class="cs-bar hp"><div class="top"><span>Vida</span><b>${p.hp!=null?`${Math.floor(p.hp)} / ${p.hpMax}`:'—'}</b></div><div class="track"><i style="width:${pct(p.hp,p.hpMax)}%"></i></div></div>
         <div class="cs-bar mp"><div class="top"><span>Mana</span><b>${p.mp!=null?`${Math.floor(p.mp)} / ${p.mpMax}`:'—'}</b></div><div class="track"><i style="width:${pct(p.mp,p.mpMax)}%"></i></div></div>
+        <div class="cs-kv"><span>Poder de Combate</span><b>${c.cp?Number(c.cp).toLocaleString('pt-BR'):'—'}</b></div>
         <div class="cs-kv"><span>Ouro</span><b>${p.gold!=null?Math.round(p.gold).toLocaleString('pt-BR'):'—'}</b></div>
         <div class="cs-kv"><span>Experiência</span><b>${p.xp!=null?Math.round(p.xp).toLocaleString('pt-BR'):'—'}</b></div>`;
     }
@@ -1017,7 +1018,7 @@
         const arch = archOf(c), info = arch ? ARCHETYPE_INFO[arch] : null;
         const row = document.createElement('div');
         row.className = 'cs-row' + (idx===selectedIdx ? ' selected' : '');
-        row.innerHTML = `<canvas width="90" height="115"></canvas><div class="info"><div class="nm">${c.nick}</div><div class="meta">Nível ${c.level||1}${info?` · ${info.label}`:''}${starsOf(c)?` · ★${starsOf(c)}`:''}${c.bazaarId?' · <span style="color:#ffcf4a">⚖️ Em leilão</span>':''}${c.progress&&c.progress.mercenary?' · <span style="color:#ff9a80">🗡️ Mercenário</span>':''}</div></div>${arch?`<img class="arch" src="${archetypeIconUrl(arch)}" alt="" onerror="this.style.display='none'">`:''}`;
+        row.innerHTML = `<canvas width="90" height="115"></canvas><div class="info"><div class="nm">${c.nick}</div><div class="meta">Nível ${c.level||1}${info?` · ${info.label}`:''}${c.cp?` · CP ${Number(c.cp).toLocaleString('pt-BR')}`:''}${starsOf(c)?` · ★${starsOf(c)}`:''}${c.bazaarId?' · <span style="color:#ffcf4a">⚖️ Em leilão</span>':''}${c.progress&&c.progress.mercenary?' · <span style="color:#ff9a80">🗡️ Mercenário</span>':''}</div></div>${arch?`<img class="arch" src="${archetypeIconUrl(arch)}" alt="" onerror="this.style.display='none'">`:''}`;
         row.addEventListener('click', ()=>{ selectedIdx = idx; renderSlots(); renderStatus(characters[selectedIdx]); });
         row.addEventListener('dblclick', ()=>{ const b = document.getElementById('connect-btn'); if(!b.disabled) b.click(); });
         listEl.appendChild(row);

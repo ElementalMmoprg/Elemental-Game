@@ -12075,9 +12075,29 @@
     }
     if(Date.now() - cpAskAt > 5000){ cpAskAt = Date.now(); sendWS({ type:'cp:get' }); }
     if(cpInfo && out.huntId){ const hc = cpInfo.hunts[out.huntId] || {}; out.cp = { me:cpInfo.cp, rec:hc.rec||null, avg:hc.avg||null, n:hc.n||0, team:cpInfo.team }; }
+    if(out.huntId){ const y = yieldStore()[out.huntId]; if(y) out.yield = y; }
     out.me = { level:player.level||1, gold:player.gold||0, group:party && party.members ? party.members.length : 1 };
     try{ worldMapFrame.contentWindow.postMessage(out, '*'); }catch(_){}
   }
+  // RENDIMENTO MEDIDO (14/11/2026): mede XP, loot (gp) e abates por hora da
+  // caçada atual; depois de 5 min guarda o resultado por personagem e caçada
+  // (localStorage) e a ficha do mapa mostra. Reinicia se trocar de caçada,
+  // morrer (XP cai) ou o contador do servidor zerar.
+  let yieldSess = null;
+  const YIELD_KEY = ()=> 'elemental_yield_' + (PLAYER_NICK || AUTH_USERNAME || '');
+  function yieldStore(){ try{ return JSON.parse(localStorage.getItem(YIELD_KEY()) || '{}') || {}; }catch(_){ return {}; } }
+  function trackYield(){
+    if(location !== 'dungeon' || !activeHunt || !activeHunt.running || activeHunt.isTower || !activeHunt.huntId){ yieldSess = null; return; }
+    const now = Date.now(), xp = Number(player.xp)||0, k = Number(huntStats.kills)||0, g = Number(huntStats.lootGold)||0;
+    const s = yieldSess;
+    if(!s || s.huntId !== activeHunt.huntId || xp < s.xp0 || k < s.k0 || g < s.g0){ yieldSess = { huntId:activeHunt.huntId, t0:now, xp0:xp, k0:k, g0:g }; return; }
+    const ms = now - s.t0; if(ms < 5*60*1000) return;
+    const h = ms / 3600000, st = yieldStore();
+    st[s.huntId] = { xph:(xp-s.xp0)/h, gph:(g-s.g0)/h, kph:(k-s.k0)/h, min:Math.round(ms/60000), at:now,
+      group: party && party.members ? party.members.length : 1, diff:(DIFFICULTIES[activeHunt.difficulty]||{}).label || '' };
+    try{ localStorage.setItem(YIELD_KEY(), JSON.stringify(st)); }catch(_){}
+  }
+  setInterval(trackYield, 5000);
   setInterval(sendHuntToMap, 1500);
   function closeWorldMap(){ worldMapOv.style.display = 'none'; huntsModal.classList.remove('sheet-mode'); }
   worldMapFrame.addEventListener('load', sendMapLevel);
@@ -12627,23 +12647,26 @@
       rateioBox.innerHTML = '';
       return;
     }
+    if(Date.now() - cpAskAt > 5000){ cpAskAt = Date.now(); sendWS({ type:'cp:get' }); } // CP da equipe (14/11/2026)
     const isLeader = party.leaderUsername === AUTH_USERNAME;
     // Pedido do usuário (26/09/2026): o painel mostrava a CONTA (party.members
     // é sempre username) em vez do nick do personagem -- party.nicks já vem
     // do servidor pra isso (ver comentário em server.js), só faltava usar
     // aqui (o seletor de Alvo e o "Membro da party" já usavam corretamente).
     list.innerHTML = party.members.map(u=>{ const nick = escapeHtml((party.nicks && party.nicks[u]) || u); return `
-      <div class="party-row"><span class="pname">${u===party.leaderUsername?'<span class="crown">👑</span> ':''}${nick}${party.levels && party.levels[u] ? ` <span style="color:var(--ink-dim);">nv ${party.levels[u]}</span>` : ''}${u===AUTH_USERNAME?' (você)':''}</span><span>${rateio && rateio.members ? (()=>{ const m = rateio.members.find(x=>x.username===u); return m ? `${Math.round(m.gasto).toLocaleString('pt-BR')} gp` : ''; })() : ''}${u!==AUTH_USERNAME ? ` <button class="party-kick-btn" data-kick="${escapeHtml(u)}" title="Abrir votação para tirar do grupo" ${party.kick && party.kick.vote ? 'disabled' : ''}>✖</button>` : ''}</span></div>
+      <div class="party-row"><span class="pname">${u===party.leaderUsername?'<span class="crown">👑</span> ':''}${nick}${party.levels && party.levels[u] ? ` <span style="color:var(--ink-dim);">nv ${party.levels[u]}</span>` : ''}${party.cps && party.cps[u] ? ` <span style="color:var(--gold-bright);" title="Poder de Combate">⚔ ${Number(party.cps[u]).toLocaleString('pt-BR')}</span>` : ''}${u===AUTH_USERNAME?' (você)':''}</span><span>${rateio && rateio.members ? (()=>{ const m = rateio.members.find(x=>x.username===u); return m ? `${Math.round(m.gasto).toLocaleString('pt-BR')} gp` : ''; })() : ''}${u!==AUTH_USERNAME ? ` <button class="party-kick-btn" data-kick="${escapeHtml(u)}" title="Abrir votação para tirar do grupo" ${party.kick && party.kick.vote ? 'disabled' : ''}>✖</button>` : ''}</span></div>
     `; }).join('') + (()=>{
       // XP compartilhada (21/10/2026): só vale numa caçada em grupo, com todos
       // vivos na mesma instância e dentro da faixa de nível (menor >= 2/3 do maior).
+      const tm = (typeof cpInfo!=='undefined' && cpInfo && cpInfo.team && cpInfo.team.size>1) ? cpInfo.team : null;
+      const teamLine = tm ? `<div style="font-family:var(--font-mono);font-size:10px;color:var(--gold-bright);padding:6px 0 0;" title="${escapeHtml((tm.reasons||[]).join(' · '))}">⚔ Poder da equipe: <b>${Number(tm.realCP).toLocaleString('pt-BR')}</b>${tm.synergyPct?` <span style="color:var(--ink-dim);">(soma ${Number(tm.baseCP).toLocaleString('pt-BR')} · sinergia +${Math.round(tm.synergyPct*100)}%)</span>`:''}</div>` : '';
       const xs = party.xpShare;
-      if(!xs) return '';
+      if(!xs) return teamLine;
       let txt;
       if(xs.active) txt = `✨ XP compartilhada ativa — ${xs.members} membros, bônus x${xs.mult.toFixed(1)}`;
       else if(xs.reason === 'fora_da_faixa') txt = `⚠️ XP não está sendo dividida: todos precisam de nível ${xs.minLevel} ou mais`;
       else txt = `XP compartilhada: liga numa caçada em grupo (todos juntos e vivos, menor nível ≥ 2/3 do maior)`;
-      return `<div style="font-family:var(--font-mono);font-size:9.5px;color:${xs.active?'var(--gold-bright)':'var(--ink-dim)'};padding:6px 0 2px;">${txt}</div>`;
+      return teamLine + `<div style="font-family:var(--font-mono);font-size:9.5px;color:${xs.active?'var(--gold-bright)':'var(--ink-dim)'};padding:6px 0 2px;">${txt}</div>`;
     })();
     if(!isLeader){
       list.insertAdjacentHTML('beforeend', `<label style="display:flex;gap:6px;align-items:center;font-family:var(--font-mono);font-size:10px;padding:6px 0 0;cursor:pointer;"><input type="checkbox" id="party-autoaccept-chk" ${partyAutoAccept?'checked':''}> Aceitar tudo do líder (caçadas e trocas de caçada, sem perguntar)</label>`);
